@@ -307,6 +307,12 @@
   .stgl #ttog { color: #555; background: rgba(0,0,0,.07); } .stgl #stage { color: #333; }
   .stgl .sb .box { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); } .stgl .sb button { background: rgba(0,0,0,.07); color: #222; } .stgl .sb button:hover:not(:disabled) { background: rgba(0,0,0,.14); } .stgl .sb button.on { background: var(--blue); color: #fff; }
   .stgl .sb .box > i, .stgl .sb .cnt span { color: #666; } .stgl .sb .cnt b { color: #111; } .stgl #hint { color: #666; }
+  /* fascia strumenti fluttuante: sta sopra lo spread, compare col mouse in alto (o fissa col tasto Strumenti) */
+  #stage { padding-top: 16px; } #tools { position: absolute; z-index: 25; top: 38px; left: 50%; transform: translate(-50%, -6px); width: max-content; max-width: calc(100% - 28px); margin: 0; justify-content: center; padding: 8px; border-radius: 16px; background: rgba(28,28,30,.92); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
+  #stage.tshow #tools, body.tpin #tools { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  #thot { position: absolute; z-index: 24; top: 0; left: 0; right: 0; height: 14px; } #ttog { position: absolute; z-index: 26; top: 8px; left: 12px; margin: 0; } body.tpin #ttog { background: var(--blue); color: #fff; }
+  #sbarR { flex: 0 1 auto !important; width: auto !important; } #sbarL { flex-wrap: nowrap; } #tools .box > i { display: none; } #tools .box > div { flex-wrap: nowrap; } #tools { flex-wrap: wrap; } .sb { flex-wrap: nowrap; }
+  .stgl #tools { background: rgba(245,245,247,.94); border-color: rgba(0,0,0,.15); } .stgl .sb .box { background: rgba(0,0,0,.04); }
 </style>
 </head>
 <body>
@@ -332,7 +338,7 @@
   <div id="list"><div id="thumbs" title="Trascina gli spread per riordinarli"></div></div>
   <div id="stage">
     <div id="nospread"><b>Nessuno spread</b><br>Vai su <u id="gofoto" style="cursor:pointer">Foto</u>, seleziona le foto e scegli un modello.</div>
-    <button id="ttog" title="Mostra/nascondi la fascia degli strumenti">▾ Strumenti</button>
+    <div id="thot"></div><button id="ttog">Strumenti</button>
     <div id="tools"><div id="sbarL" class="sb"></div><div id="sbarR" class="sb"></div></div>
     <div id="rwrap"><canvas id="rh"></canvas><canvas id="rv"></canvas><div id="rc"></div>
       <div id="wrap"><img id="main" alt=""><div id="slots"></div><div id="guides"></div></div></div>
@@ -1034,9 +1040,12 @@ const panels = () => [!document.body.classList.contains("nolist"), !document.bod
 $("tlist").onclick = () => { const [l, s_, p_] = panels(); setPanels(!l, s_, p_); };
 $("tside").onclick = () => { const [l, s_, p_] = panels(); setPanels(l, !s_, p_); };
 $("tfull").onclick = () => { const [l, s_, p_] = panels(); const all = l || s_ || p_; setPanels(!all, !all, !all); };
-function setTools(on, save = true) { document.body.classList.toggle("notools", !on); $("ttog").textContent = (on ? "▾" : "▸") + " Strumenti"; try { if (save) localStorage.setItem("tbar", on ? "1" : "0"); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
-$("ttog").onclick = () => setTools(document.body.classList.contains("notools"));
-try { const tb = localStorage.getItem("tbar"); setTools(tb === null ? innerHeight >= 900 && innerWidth >= 1250 : tb === "1", false); const pn0 = localStorage.getItem("pan"); if (pn0 === null && innerWidth < 1250) { setPanels(false, true, true); localStorage.removeItem("pan"); } } catch (e) { setTools(true, false); }
+function setTools(on, save = true) { document.body.classList.toggle("tpin", on); $("ttog").classList.toggle("on", on); $("ttog").title = on ? "Fascia fissa: clicca per farla comparire solo col mouse" : "Fascia a scomparsa: clicca per tenerla sempre visibile"; try { if (save) localStorage.setItem("tbar2", on ? "1" : "0"); } catch (e) {} }
+let tHide = null;
+function showTools(v) { clearTimeout(tHide); if (v) $("stage").classList.add("tshow"); else tHide = setTimeout(() => $("stage").classList.remove("tshow"), 900); }
+["ttog", "tools", "thot"].forEach(i => { $(i).addEventListener("mouseenter", () => showTools(true)); $(i).addEventListener("mouseleave", () => showTools(false)); });
+$("ttog").onclick = () => setTools(!document.body.classList.contains("tpin"));
+try { setTools(localStorage.getItem("tbar2") === "1", false); const pn0 = localStorage.getItem("pan"); if (pn0 === null && innerWidth < 1250) { setPanels(false, true, true); localStorage.removeItem("pan"); } } catch (e) { setTools(false, false); }
 try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPanels(pn[0] === "1", pn[1] === "1", pn[2] === "1"); } catch (e) {}
 
 // ---- libreria foto: seleziona le foto e compaiono i modelli per quel numero di foto
