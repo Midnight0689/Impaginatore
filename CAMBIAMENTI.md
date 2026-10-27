@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 59 — Doppio clic su una foto della galleria
+- Doppio clic su una foto libera in basso: viene messa al centro dello spread aperto (come trascinarla). — `index.html` (`renderPool`).
+
 ## Versione 58 — Opacità della foto
 - Nuovo cursore «Opacità» (0–100%) sotto Esposizione nel pannello della foto: la foto diventa trasparente sullo spread (anteprima, JPG, PDF). Salvata nello spec (`STY(..., oc=)`), mantenuta nei modelli. Nel PSD il livello riceve la stessa opacità (da verificare in Photoshop). — `album_libere.py`, `editor.py`, `genera_psd_angolo.py`, `index.html`.
 

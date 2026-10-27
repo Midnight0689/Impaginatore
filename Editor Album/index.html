@@ -994,6 +994,7 @@ function renderPool() {
   if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);
   free.forEach(f => {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
+    im.ondblclick = () => { if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
