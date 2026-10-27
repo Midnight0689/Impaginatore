@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 54 — Modelli: un solo pulsante apre e chiude
+- Il pulsante Modelli in alto apre e richiude la schermata (resta acceso quando è aperta); tolto il tasto Chiudi separato. — `index.html`.
+
 ## Versione 53 — Con i Modelli aperti spariscono i pulsanti degli strumenti
 - Aprendo la schermata Modelli la barra strumenti non si vede più attraverso. — `index.html` (`body.tplopen`).
 

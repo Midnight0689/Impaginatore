@@ -1420,16 +1420,15 @@ $("tabF").onclick = () => { view = "foto"; render(); }; $("tabA").onclick = () =
 // ---- galleria modelli (come la scelta dei template di Smart Albums)
 let tplFor = -1;
 async function openTpl() {
-  const T = $("tpl"), mine = tplFor = cur; T.style.display = "block"; document.body.classList.add("tplopen"); T.innerHTML = '<div class="empty">Carico i modelli…</div>';
+  const T = $("tpl"), mine = tplFor = cur; T.style.display = "block"; document.body.classList.add("tplopen"); $("tplb").classList.add("on"); T.innerHTML = '<div class="empty">Carico i modelli…</div>';
   const d = await api("/api/templates?s=" + mine); if (tplFor !== mine) return;                       // nel frattempo hai cambiato spread: vale l'ultima richiesta
   const ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
   const apply = t => async () => { closeTpl(); sel = null; await op({ op: "template", s: cur, L: t.L, R: t.R }); };
   const mod = async (body, msg) => { try { await api("/api/modelli", body); toast(msg); openTpl(); } catch (e) {} };
-  T.innerHTML = `<div class="bar"><button id="tclose">✕ Chiudi</button><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : "")}</span></div>
+  T.innerHTML = `<div class="bar"><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : "")}</span></div>
     <div id="tut" style="display:none"><div class="sec" style="margin:10px 4px 4px">I tuoi modelli</div><div class="grid" id="gut"></div></div>
     <div id="tstd" style="display:none"><div class="sec" style="margin:10px 4px 4px">Modelli standard</div><div class="grid" id="gstd"></div></div>
     <div class="empty" id="tnone" style="display:none">${d.nota || "Nessun modello per questo numero di foto."}</div>`;
-  $("tclose").onclick = closeTpl;
   if ($("tsave")) $("tsave").onclick = async () => { const n = prompt(`Nome del modello (layout di questo spread, ${d.n} foto):`); if (n && n.trim()) mod({ azione: "salva", s: cur, nome: n.trim() }, "Modello salvato"); };
   ut.forEach(t => {
     const tile = mkTile(t, t.cur ? t.nome + " · attuale" : t.nome, apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
@@ -1442,8 +1441,8 @@ async function openTpl() {
   $("tut").style.display = ut.length ? "" : "none"; $("tstd").style.display = d.items.length ? "" : "none"; if (!d.items.length && !ut.length) $("tnone").style.display = "";
   if (!ut.length) T.querySelector("#tstd .sec").style.display = "none";
 }
-function closeTpl() { $("tpl").style.display = "none"; document.body.classList.remove("tplopen"); tplFor = -1; }
-$("tplb").onclick = () => openTpl();
+function closeTpl() { $("tpl").style.display = "none"; document.body.classList.remove("tplopen"); $("tplb").classList.remove("on"); tplFor = -1; }
+$("tplb").onclick = () => $("tpl").style.display === "block" ? closeTpl() : openTpl();
 
 $("undo").onclick = () => op({ op: "undo" });
 $("redo").onclick = () => op({ op: "redo" });
