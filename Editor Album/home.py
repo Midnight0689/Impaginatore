@@ -134,6 +134,51 @@ def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.js
     return r.stdout.strip().rstrip("/") if r.returncode == 0 else ""
 
 
+AGG = dict(da_aggiornare=False, novita=[], controllato=0, errore="")
+
+
+def _git(*a, t=30):
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    return subprocess.run(["git", "-C", BASE, *a], capture_output=True, text=True, timeout=t, env=env)
+
+
+def controlla_aggiornamenti():
+    """confronta questa versione con quella su GitHub (solo lettura: fetch + confronto); mai pull da solo"""
+    try:
+        if not os.path.isdir(os.path.join(BASE, ".git")): return
+        f = _git("fetch", "-q", "origin")
+        if f.returncode != 0: AGG.update(errore=(f.stderr or "")[:200], controllato=time.time()); return
+        n = _git("log", "--pretty=%s", "HEAD..@{u}").stdout.strip().splitlines()
+        AGG.update(da_aggiornare=bool(n), novita=n[:12], controllato=time.time(), errore="")
+    except Exception as e: AGG.update(errore=str(e)[:200], controllato=time.time())
+
+
+def ciclo_aggiornamenti():
+    while True:
+        controlla_aggiornamenti(); time.sleep(3 * 3600)
+
+
+def aggiorna_programma():
+    """pull + ripristino ambiente + riavvio del programma (i progetti sono già salvati: l'editor salva da solo)"""
+    for pr, _ in list(EDITORS.values()):
+        try: pr.poll()
+        except Exception: pass
+    r = _git("pull", "--ff-only", t=120)
+    if r.returncode != 0: raise ValueError("Aggiornamento non riuscito: " + (r.stderr or r.stdout)[:300])
+    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
+    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+    app = os.path.join(BASE, "Impaginatore.app")
+    def riavvia():
+        time.sleep(.6)
+        for pr, _ in EDITORS.values():
+            try: pr.terminate()
+            except Exception: pass
+        subprocess.Popen(["/bin/sh", "-c", f'sleep 1.5; open "{app}"'], start_new_session=True)
+        os._exit(0)
+    threading.Thread(target=riavvia, daemon=True).start()
+    return True
+
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
 
@@ -141,6 +186,7 @@ class H(BaseHTTPRequestHandler):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()
         self.send_response(code); self.send_header("Content-Type", ctype); self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Cache-Control", "no-store" if ctype != "image/jpeg" else "max-age=600"); self.end_headers(); self.wfile.write(body)
 
     def do_GET(self):
@@ -149,6 +195,7 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/": self.send(open(os.path.join(HERE, "home.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/ping": self.send({"ok": True})
             elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI))
+            elif u.path == "/api/aggiornamento": self.send(AGG)
             elif u.path == "/api/pronto": self.send({"pronto": pronto(int(q["porta"][0]))})
             elif u.path == "/api/cover":
                 p = q["path"][0]; n = q["n"][0]
@@ -169,6 +216,8 @@ class H(BaseHTTPRequestHandler):
                 salva_registro(registro() + [p]); self.send({"path": p})
             elif u.path == "/api/scegli-foto":
                 self.send({"path": scegli_cartella("Scegli la cartella con le foto del cliente")})
+            elif u.path == "/api/aggiorna": self.send({"ok": aggiorna_programma()})
+            elif u.path == "/api/controlla": controlla_aggiornamenti(); self.send(AGG)
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
             elif u.path == "/api/rimuovi":
@@ -195,6 +244,7 @@ if __name__ == "__main__":
         if os.fork(): os._exit(0)
         fd = os.open(os.path.join(PROGETTI, "impaginatore.log"), os.O_WRONLY | os.O_CREAT | os.O_APPEND); dn = os.open(os.devnull, os.O_RDONLY)
         os.dup2(dn, 0); os.dup2(fd, 1); os.dup2(fd, 2)
+    threading.Thread(target=ciclo_aggiornamenti, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", ARGS.porta), H)
     print(f"Impaginatore: http://127.0.0.1:{ARGS.porta}  | progetti: {PROGETTI}", flush=True)
     try: srv.serve_forever()

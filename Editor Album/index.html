@@ -169,6 +169,7 @@
 <body>
 <div id="app">
   <div id="top">
+    <a id="updn" href="#" target="_self" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700;text-decoration:none;border-radius:4px;padding:2px 8px;margin-right:6px;font-size:12px" title="Torna ai progetti per aggiornare">⬆ Aggiornamento</a>
     <a id="home" href="#" title="Torna ai progetti" style="display:none;color:var(--dim);text-decoration:none;margin-right:4px">◀ Progetti</a>
     <span class="title" id="title">Album</span>
     <span class="tabs"><button id="tabF">Foto</button><button id="tabA">Album</button></span>
@@ -282,7 +283,7 @@ function render() {
   $("undo").disabled = !S.canundo; $("redo").disabled = !S.canredo;
   $("status").textContent = S.dirty ? "salvo…" : "tutto salvato"; $("status").className = S.dirty ? "dirty" : "";
   clearTimeout(render.t); if (S.dirty) render.t = setTimeout(async () => { try { const d = await api("/api/state"); if (!d.dirty && S.dirty) { S.dirty = false; $("status").textContent = "tutto salvato"; $("status").className = ""; } else if (d.dirty) render(); } catch (e) {} }, 3000);
-  if (S.home) { $("home").style.display = ""; $("home").href = S.home; }
+  if (S.home) { $("home").style.display = ""; $("home").href = S.home; if (!window._upd) { window._upd = 1; const chk = () => fetch(S.home + "/api/aggiornamento").then(r => r.json()).then(r => { $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").href = S.home; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
   document.body.classList.toggle("foto", view === "foto"); $("tabF").classList.toggle("on", view === "foto"); $("tabA").classList.toggle("on", view === "album");
   renderLib();
   const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; ["sbar", "rwrap", "hint"].forEach(i => $(i).style.display = empty ? "none" : "");

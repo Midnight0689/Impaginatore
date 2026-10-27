@@ -45,6 +45,7 @@
 <body>
 <header>
   <h1>Impaginatore</h1>
+  <button id="upd" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700" title="">⬆ Aggiornamento disponibile</button>
   <button id="add" title="Apri un progetto che sta in un'altra cartella (quella con progetto.json)">Apri progetto esistente…</button>
   <button id="addzip" title="Importa un progetto esportato come file ZIP (Esporta progetto dall'editor)">Importa ZIP…</button>
   <button id="quit" title="Chiude il programma">Chiudi programma</button>
@@ -142,6 +143,9 @@ $("nome").onkeydown = e => { if (e.key === "Enter") $("create").onclick(); };
 $("addzip").onclick = async () => { const b = $("addzip"); b.disabled = true; b.textContent = "Importo…"; try { const r = await api("/api/importa-zip", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Importa ZIP…"; };
 $("add").onclick = async () => { try { const r = await api("/api/aggiungi", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } };
 $("quit").onclick = async () => { if (confirm("Chiudere il programma? Le modifiche sono già salvate.")) { try { await api("/api/esci", {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;color:#aaa">Programma chiuso. Puoi chiudere questa scheda.</p>'; } };
+async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); const b = $("upd"); b.style.display = r.da_aggiornare ? "" : "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
+$("upd").onclick = async () => { const b = $("upd"); if (!confirm("Novità:\n" + b.dataset.n + "\n\nAggiorno e riavvio il programma? Il lavoro è già salvato.")) return; b.textContent = "Aggiorno…"; b.disabled = true; try { await api("/api/aggiorna", {}); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Aggiornato: il programma si riapre da solo tra qualche secondo…</p>'; setTimeout(() => location.reload(), 6000); } catch (e) { alert(e.message); b.disabled = false; b.textContent = "⬆ Aggiornamento disponibile"; } };
+checkUpd(); setInterval(checkUpd, 600000);
 load();
 </script>
 </body>
