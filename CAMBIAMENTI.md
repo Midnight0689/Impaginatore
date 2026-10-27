@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 11 — Livelli delle foto
+- Davanti/dietro non funzionava sulle foto che sono ancora «cornici del modello»: restavano sempre SOTTO le cornici libere. Ora, prima di spostare i livelli, le foto scelte e quelle che le toccano diventano cornici libere (stessa posizione) e partono dal fondo. — `editor.py` (`_zprep`, op `zorder`).
+
 ## Versione 10 — Correzioni pannello Modelli
 - Con il pannello Modelli aperto, cambiando spread i modelli si ricaricano per lo spread nuovo (prima restavano quelli del precedente). `tplFor` + controllo in fondo a `render()`; le richieste in ritardo vengono scartate. — `index.html`.
 - Sparita la striscia verticale sopra i modelli: le guide dello spread stavano SOPRA il pannello (z-index). `#tpl` ora z-index 20, `#toast` 60; il pannello nasconde le barre di scorrimento dello stage. — `index.html`.

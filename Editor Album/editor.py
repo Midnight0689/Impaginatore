@@ -148,6 +148,17 @@ def _draw_order(s):
     """cornici libere dal fondo alla cima, come le disegna il motore"""
     fl = _flat(s); return [fl[L["_o"]][:2] for L in A.layout(spread_tuple(s)) if L.get("libera")]
 
+def _zprep(s, sel):
+    """prima di spostare i livelli: le foto scelte (e quelle che le toccano) che sono ancora cornici del modello diventano cornici libere (stessa posizione),
+    altrimenti restano sempre SOTTO le libere e non si possono più portare davanti/dietro. Restituisce l'ordine dal fondo alla cima."""
+    R = _rects(s); free = _draw_order(s); fs = set(free)
+    rs = [R[k] for k in sel if k in R]
+    hit = lambda L: any(L["x"] < r["x"] + r["W"] and r["x"] < L["x"] + L["W"] and L["y"] < r["y"] + r["H"] and r["y"] < L["y"] + L["H"] for r in rs)
+    conv = [(side, idx) for side, idx, it in _flat(s) if (side, idx) not in fs and it["k"] != "t" and (side, idx) in R and ((side, idx) in sel or hit(R[(side, idx)]))]
+    for side, idx in conv:
+        L = R[(side, idx)]; _put_px(s, side, idx, L["x"], L["y"], L["W"], L["H"])
+    return conv + free
+
 def _put_px(s, side, idx, x, y, W, H):
     pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]; (x0, x1), (y0, y1) = A._frame(side, pg[0]); w, h = W / (x1 - x0), H / (y1 - y0)
     fx, fy = (x - x0) / (x1 - x0), (y - y0) / (y1 - y0)
@@ -405,7 +416,7 @@ def apply(o):
         cx = (float(o["fx"]) * A.CW - x0) / (x1 - x0); cy = (float(o["fy"]) * A.CH - y0) / (y1 - y0)
         pg[1].append(FL.FREE(o["photo"], round(min(max(cx - w / 2, 0), 1 - w), 4), round(min(max(cy - h / 2, 0), 1 - h), 4), round(w, 4), round(h, 4)))
     elif t == "zorder":                                   # livelli come in Photoshop: davanti / dietro
-        s_ = o["s"]; sel = {(a[0], int(a[1])) for a in o["ats"]}; order = _draw_order(s_)
+        s_ = o["s"]; sel = {(a[0], int(a[1])) for a in o["ats"]}; order = _zprep(s_, sel)
         if o["dir"] == "front": order = [x for x in order if x not in sel] + [x for x in order if x in sel]
         elif o["dir"] == "back": order = [x for x in order if x in sel] + [x for x in order if x not in sel]
         elif o["dir"] == "forward":
