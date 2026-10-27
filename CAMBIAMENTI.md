@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 30 — Zoom dello spread con Alt + rotella
+- Alt + rotella (o trackpad) ingrandisce lo spread fino al 500%, centrato sul puntatore; si scorre con rotella/trackpad normali; il pulsante «NNN% · Adatta» in basso a destra torna alla vista intera. A zoom alto l'anteprima viene richiesta più nitida (fino a k=1). Righelli, cornici e guide seguono lo zoom. — `index.html` (`applyZoom`, `ZM`).
+
 ## Versione 29 — Menu del tasto destro a due livelli
 - Il menu mostra in alto i colori e le 5 voci più usate (se non hai ancora usato nulla: «Suggeriti», le prime 5); le altre stanno nel sottomenu «Tutti i comandi ▸». I clic si contano per tipo di menu (foto dello spread, galleria/striscia, sfondo, miniatura) in `localStorage` «ctxUso»; le voci che cambiano nome (es. Bianco e nero / Togli…) hanno un `id` fisso. — `index.html` (`ctxMenu`).
 
