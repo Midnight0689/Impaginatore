@@ -78,7 +78,7 @@ LOCK = threading.RLock()
 CFG = A.CFG
 CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
 CFG.setdefault("centri_volto", {})
-CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
 
 # ------------------------------------------------------------------ stato
 NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3}
@@ -120,7 +120,7 @@ UNDO, REDO = [], []
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "tx": CFG["testo"], "st": CFG["stili"]})
 SAVED = snap()                                       # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -128,12 +128,12 @@ def restore(s):
     CFG["esposizione"].clear(); CFG["esposizione"].update(d["ev"])
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
-    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["stelle"][:] = d.get("sr", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
 
-def keep(it): return {k: it[k] for k in ("a", "zo", "ts", "stile") if it.get(k) is not None}
+def keep(it): return {k: it[k] for k in ("a", "zo", "ts", "stile", "bd", "sh") if it.get(k) is not None}
 
 def mkfree(it, x, y, w, h):
     """cornice libera (foto) o blocco di testo libero (stessa posizione in frazioni della pagina)"""
@@ -242,6 +242,27 @@ def apply(o):
         if "bw" in o: a["bw"] = bool(o["bw"])
         if "z" in o: a["z"] = round(float(o["z"]), 2)
         if "a" in o: a["a"] = round(max(-45.0, min(45.0, float(o["a"]))), 1)
+        if "bd" in o:                                     # bordo: [millimetri, "#rrggbb"] oppure null
+            v = o["bd"]
+            if v and float(v[0]) > 0 and re.fullmatch(r"#[0-9a-fA-F]{6}", str(v[1])): a["bd"] = [round(min(float(v[0]), 40.0), 1), str(v[1]).lower()]
+            else: a.pop("bd", None)
+        if "sh" in o:
+            v = int(round(min(max(float(o["sh"] or 0), 0), 100)))
+            if v: a["sh"] = v
+            else: a.pop("sh", None)
+    elif t == "stella":                                  # foto preferite
+        for n in o.get("photos") or [o["photo"]]:
+            if o.get("value", True):
+                if n not in CFG["stelle"]: CFG["stelle"].append(n)
+            elif n in CFG["stelle"]: CFG["stelle"].remove(n)
+    elif t == "ratio":                                   # cornici alla proporzione r (larghezza/altezza): stessa area, stesso centro
+        s_ = o["s"]; R = _rects(s_); r_ = float(o["r"])
+        for a in o["ats"]:
+            key = (a[0], int(a[1])); L = R.get(key); pg_ = SP[s_][0 if key[0] == "L" else 1]; it = pg_[1][key[1]]
+            if L is None or it["k"] == "t": continue
+            (x0, x1), (y0, y1) = A._frame(key[0], pg_[0]); area = L["W"] * L["H"]; W = (area * r_) ** 0.5; H = W / r_
+            f = min(1.0, (x1 - x0) / W, (y1 - y0) / H); W, H = W * f, H * f
+            _put_px(s_, key[0], key[1], L["x"] + L["W"] / 2 - W / 2, L["y"] + L["H"] / 2 - H / 2, W, H); pg_[1][key[1]]["z"] = 1.0
     elif t == "blank":
         pos = min(max(int(o.get("pos", len(SP))), 0), len(SP)); SP.insert(pos, [["W", []], ["W", []]]); GD.insert(pos, dict(v=[], h=[]))
     elif t == "evg":
@@ -606,7 +627,7 @@ def spread_view(s):
                 e.update(box=[round(l_, 4), round(t_, 4), round(r_, 4), round(b_, 4)], cm=[round(L["W"] / A.PPI * 2.54, 2), round(L["H"] / A.PPI * 2.54, 2)],
                          ppi=round(m_["w"] * (r_ - l_) / (L["W"] / A.PPI)), dim=[m_["w"], m_["h"]], uses=sum(1 for x in SP for pg_ in x for y in pg_[1] if y["k"] != "t" and y["i"] == it["i"]))
                 n = A.name(it["i"]); e.update(name=n, bw=bool(it.get("bw")), z=it.get("z", 1.0), a=it.get("a") or 0, ar=A.M[it["i"]]["ar"],
-                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), face=list(A._faces_center(it["i"]) or []))
+                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), bd=it.get("bd"), sh=it.get("sh") or 0, face=list(A._faces_center(it["i"]) or []))
             out.append(e)
     return dict(h=spread_hash(s), guides=GD[s], L=SP[s][0][0], R=SP[s][1][0], items=out, grid=dict(L=page_grid("L", SP[s][0][0]), R=page_grid("R", SP[s][1][0])))
 
@@ -726,7 +747,7 @@ def photo_list():
             for it in pg[1]:
                 if it["k"] != "t": where.setdefault(it["i"], k)
     tolte = set(CFG.get("tolte", [])); col = CFG.get("colori", {})
-    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i)), rit=CFG.get("ritocco", {}).get(A.name(i))) for i in range(len(A.M))]
+    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i)), rit=CFG.get("ritocco", {}).get(A.name(i)), star=A.name(i) in CFG["stelle"]) for i in range(len(A.M))]
 
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
@@ -830,6 +851,7 @@ def photo_info(n):
 # ------------------------------------------------------------------ salvataggio
 def fmt(it):
     x = fmt0(it)
+    if it["k"] != "t" and (it.get("bd") or it.get("sh")): x = f'STY({x}, bd={tuple(it["bd"]) if it.get("bd") else None!r}, sh={int(it.get("sh") or 0)})'
     return f'ROT({x}, {it["a"]})' if it["k"] != "t" and it.get("a") else x
 def fmt0(it):
     if is_txt(it):
@@ -852,7 +874,7 @@ def save(backup=True):
             for f in ("spec.py", "progetto.json"):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): shutil.copy2(p, os.path.join(bk, f"{ts}_{f}"))
-        has_free = any(it["k"] == "f" or it.get("a") or "fx" in it for sp in SP for pg in sp for it in pg[1])
+        has_free = any(it["k"] == "f" or it.get("a") or it.get("bd") or it.get("sh") or "fx" in it for sp in SP for pg in sp for it in pg[1])
         if has_free: shutil.copy2(os.path.join(HERE, "album_libere.py"), os.path.join(PROJ, "album_libere.py")); shutil.copy2(os.path.join(HERE, "testo.py"), os.path.join(PROJ, "testo.py"))
         lines = [f'"""{CFG.get("nome", "Album")}: {len(SP)} spread. Salvato dall\'editor il {time.strftime("%d/%m/%Y %H:%M")}."""', "from album import *"]
         if has_free: lines.append("from album_libere import *     # cornici libere FREE(...) e angoli ROT(...): serve questo file, sta nella cartella del progetto")
@@ -863,7 +885,7 @@ def save(backup=True):
         lines.append("]")
         open(os.path.join(PROJ, "spec.py"), "w").write("\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)

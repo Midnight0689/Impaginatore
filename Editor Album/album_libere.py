@@ -57,6 +57,22 @@ def ROT(it, deg):
     return dict(it, a=round(float(deg), 1))
 
 
+def STY(it, bd=None, sh=0):
+    """bordo (millimetri, colore) e ombra (0-100) di una cornice"""
+    d = dict(it)
+    if bd: d["bd"] = [float(bd[0]), str(bd[1])]
+    if sh: d["sh"] = int(sh)
+    return d
+
+
+def sty_job(it):
+    """per genera_psd: bordo in pixel del documento e ombra, o None"""
+    if not (it.get("bd") or it.get("sh")): return None
+    bd = it.get("bd"); px = round(float(bd[0]) / 25.4 * _a.PPI, 1) if bd else 0
+    col = [int(bd[1][k:k + 2], 16) for k in (1, 3, 5)] if bd else [255, 255, 255]
+    return dict(bd=px, col=col, sh=int(it.get("sh") or 0), ppi=_a.PPI)
+
+
 def _zcrop(it):                                # attenzione: il codice gira nel modulo album (crop e M sono suoi)
     l, t, r, b = crop(it["i"], it["W"], it["H"], it.get("z", 1.0))              # noqa: F821
     a = it.get("a") or 0
@@ -88,6 +104,36 @@ def _photo_rot(_orig):
             out = ImageOps.grayscale(out).convert("RGB")
         return out
     return _photo
+
+
+def _photo_bordo(_orig):
+    def _photo(it, K, corrected=False):
+        out = _orig(it, K, corrected)
+        bd = it.get("bd")
+        if bd:
+            from PIL import ImageDraw
+            w = max(1, round(float(bd[0]) / 25.4 * _a.PPI * K)); d = ImageDraw.Draw(out); col = str(bd[1])
+            for k in range(w): d.rectangle([k, k, out.width - 1 - k, out.height - 1 - k], outline=col)
+        return out
+    return _photo
+
+
+def _render_ombre(spread, K, corrected=True):
+    """come render del motore, con in più l'ombra morbida sotto le cornici che ce l'hanno (sh 0-100)"""
+    from PIL import Image, ImageFilter
+    S = Image.new("RGB", (round(_a.CW * K), round(_a.CH * K)), "white")
+    for it in _a.layout(spread):
+        pos = (round(it["x"] * K), round(it["y"] * K))
+        if it["k"] == "t": t = _a._text(it, K); S.paste(t, pos, t); continue
+        ph = _a._photo(it, K, corrected)
+        sh = it.get("sh")
+        if sh:
+            blur = max(1.0, (1.5 + sh / 100 * 4.5) / 25.4 * _a.PPI * K); dy = round(blur * 0.55); m = round(blur * 3)
+            mask = Image.new("L", (ph.width + 2 * m, ph.height + 2 * m), 0); mask.paste(255, (m, m, m + ph.width, m + ph.height))
+            mask = mask.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: int(v * (0.15 + 0.5 * sh / 100)))
+            S.paste(Image.new("RGB", mask.size, (0, 0, 0)), (pos[0] - m, pos[1] - m + dy), mask)
+        S.paste(ph, pos)
+    return S
 
 
 def tono_lut(t):
@@ -223,7 +269,8 @@ def _install():
     _a._place = _place
 
     _a.zcrop.__code__ = _zcrop.__code__        # ritaglio che tiene conto dell'angolo (anche per gli script che l'hanno già importato)
-    _a._photo = _photo_rot(_a._photo)
+    _a._photo = _photo_bordo(_photo_rot(_a._photo))
+    _a.render = _render_ombre
     _a._text = _text_scaled(_a._text)
     _ev0 = _a.apply_ev
 
