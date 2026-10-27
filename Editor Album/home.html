@@ -60,6 +60,8 @@
 <div class="veil" id="vnew"><div class="dlg">
   <h3>Nuovo progetto</h3>
   <label>Nome del progetto</label><input id="nome" placeholder="Es. Battesimo Serena" autofocus>
+  <label>Cartella delle foto (facoltativa: il progetto nasce accanto, in «Impaginatore»)</label>
+  <div class="two" style="grid-template-columns:1fr auto"><input id="fdir" placeholder="Nessuna: userò una cartella Foto nel progetto" readonly><button id="fpick" type="button">Scegli…</button></div>
   <label>Dimensioni dell'album aperto (due pagine), in cm</label>
   <div class="two"><input id="w" inputmode="decimal" placeholder="Larghezza" value="60"><span>×</span><input id="h" inputmode="decimal" placeholder="Altezza" value="22,5"></div>
   <div class="pre"><button data-p="60,22.5">60 × 22,5</button><button data-p="70,25">70 × 25</button><button data-p="50,20">50 × 20</button><button data-p="40,30">40 × 30</button></div>
@@ -124,14 +126,15 @@ async function openProject(p) {
 // ---- nuovo progetto
 const parse = v => parseFloat(String(v).replace(",", "."));
 function pinfo() { const w = parse($("w").value), h = parse($("h").value); $("pinfo").textContent = w > 0 && h > 0 ? `Ogni pagina: ${cm(+(w / 2).toFixed(2))} × ${cm(h)} cm` : ""; }
-function openNew() { $("err").textContent = ""; $("vnew").style.display = "flex"; $("nome").value = ""; $("nome").focus(); pinfo(); }
+function openNew() { $("err").textContent = ""; $("vnew").style.display = "flex"; $("nome").value = ""; $("fdir").value = ""; $("nome").focus(); pinfo(); }
 $("w").oninput = $("h").oninput = pinfo;
 document.querySelectorAll(".pre button").forEach(b => b.onclick = () => { const [w, h] = b.dataset.p.split(","); $("w").value = cm(w); $("h").value = cm(h); pinfo(); });
 $("advt").onclick = () => { $("adv").classList.toggle("on"); $("advt").textContent = ($("adv").classList.contains("on") ? "▾" : "▸") + " Avanzate (abbondanza, spazio tra le foto, margine)"; };
+$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.path.split("/").filter(Boolean).pop().replace(/\s*JPG$/i, ""); } } catch (e) { $("err").textContent = e.message; } };
 $("cancel").onclick = () => $("vnew").style.display = "none";
 $("create").onclick = async () => {
   try {
-    const r = await api("/api/nuovo", { nome: $("nome").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value });
+    const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value });
     $("vnew").style.display = "none"; await load(); const p = LIST.find(x => x.path === r.path); if (p) openProject(p);
   } catch (e) { $("err").textContent = e.message; }
 };

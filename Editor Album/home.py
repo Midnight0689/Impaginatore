@@ -67,14 +67,20 @@ def nuovo(d):
     w, h = num(d.get("w")), num(d.get("h"))
     if not (5 <= w <= 300 and 5 <= h <= 200): raise ValueError("Misure fuori dal normale: larghezza 5–300 cm, altezza 5–200 cm")
     cartella = re.sub(r'[\\/:*?"<>|]', "-", nome).strip(" .") or "Progetto"
-    p = os.path.join(PROGETTI, cartella); k = 2
-    while os.path.exists(p): p = os.path.join(PROGETTI, f"{cartella} {k}"); k += 1
-    os.makedirs(os.path.join(p, "Foto"))
+    fotodir = (d.get("foto") or "").strip().rstrip("/")
+    if fotodir:                                          # progetto accanto alle foto del cliente: <cartella cliente>/Impaginatore, le foto restano dove sono
+        if not os.path.isdir(fotodir): raise ValueError("La cartella delle foto non esiste")
+        base, cartella = os.path.dirname(fotodir), "Impaginatore"
+    else: base = PROGETTI
+    p = os.path.join(base, cartella); k = 2
+    while os.path.exists(p): p = os.path.join(base, f"{cartella} {k}"); k += 1
+    os.makedirs(p if fotodir else os.path.join(p, "Foto"))
     mm = lambda key, dflt: float(str(d.get(key, dflt)).replace(",", ".") or dflt)
-    cfg = dict(nome=nome, foto=os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
+    cfg = dict(nome=nome, foto=fotodir or os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
                abbondanza_mm=mm("abb", 0), spazio_mm=mm("spazio", 2.5), margine_mm=mm("margine", 10), uscita_psd=os.path.join(p, "PSD"),
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
     json.dump(cfg, open(os.path.join(p, "progetto.json"), "w"), indent=2, ensure_ascii=False)
+    if fotodir: salva_registro(registro() + [p])
     open(os.path.join(p, "spec.py"), "w").write(f'"""{nome}: 0 spread."""\nfrom album import *\n\nSPREADS = [\n]\n')
     return p
 
@@ -123,8 +129,8 @@ def importa_zip():
     finally: shutil.rmtree(tmp, ignore_errors=True)
 
 
-def scegli_cartella():
-    r = subprocess.run(["osascript", "-e", 'POSIX path of (choose folder with prompt "Scegli la cartella del progetto (quella con progetto.json)")'], capture_output=True, text=True)
+def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.json)"):
+    r = subprocess.run(["osascript", "-e", f'POSIX path of (choose folder with prompt "{msg}")'], capture_output=True, text=True)
     return r.stdout.strip().rstrip("/") if r.returncode == 0 else ""
 
 
@@ -161,6 +167,8 @@ class H(BaseHTTPRequestHandler):
                 if not p: self.send({"annullato": True}); return
                 if not os.path.exists(os.path.join(p, "progetto.json")): raise ValueError("In quella cartella non c'è progetto.json: scegli la cartella del progetto")
                 salva_registro(registro() + [p]); self.send({"path": p})
+            elif u.path == "/api/scegli-foto":
+                self.send({"path": scegli_cartella("Scegli la cartella con le foto del cliente")})
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
             elif u.path == "/api/rimuovi":
