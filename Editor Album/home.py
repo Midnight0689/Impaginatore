@@ -134,7 +134,7 @@ def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.js
     return r.stdout.strip().rstrip("/") if r.returncode == 0 else ""
 
 
-AGG = dict(da_aggiornare=False, novita=[], controllato=0, errore="")
+AGG = dict(da_aggiornare=False, novita=[], controllato=0, errore="", attuale=None, ultima=None)
 
 
 def _git(*a, t=30):
@@ -142,14 +142,24 @@ def _git(*a, t=30):
     return subprocess.run(["git", "-C", BASE, *a], capture_output=True, text=True, timeout=t, env=env)
 
 
+def info_versione(rif):
+    """numero progressivo (commit), codice breve, data e titolo di una versione (rif = HEAD oppure @{u})"""
+    try:
+        n = _git("rev-list", "--count", rif).stdout.strip()
+        h, d, t = (_git("log", "-1", "--pretty=%h|%cd|%s", "--date=format:%d/%m/%Y %H:%M", rif).stdout.strip().split("|", 2) + ["", ""])[:3]
+        return dict(n=int(n), codice=h, data=d, titolo=t)
+    except Exception: return None
+
+
 def controlla_aggiornamenti():
     """confronta questa versione con quella su GitHub (solo lettura: fetch + confronto); mai pull da solo"""
     try:
         if not os.path.isdir(os.path.join(BASE, ".git")): return
+        AGG.update(attuale=info_versione("HEAD"))
         f = _git("fetch", "-q", "origin")
         if f.returncode != 0: AGG.update(errore=(f.stderr or "")[:200], controllato=time.time()); return
         n = _git("log", "--pretty=%s", "HEAD..@{u}").stdout.strip().splitlines()
-        AGG.update(da_aggiornare=bool(n), novita=n[:12], controllato=time.time(), errore="")
+        AGG.update(da_aggiornare=bool(n), novita=n[:12], ultima=info_versione("@{u}"), controllato=time.time(), errore="")
     except Exception as e: AGG.update(errore=str(e)[:200], controllato=time.time())
 
 

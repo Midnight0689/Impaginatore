@@ -45,6 +45,7 @@
 <body>
 <header>
   <h1>Impaginatore</h1>
+  <button id="verb" title="Versione in uso e controllo aggiornamenti" style="background:none;border:0;color:var(--dim);cursor:pointer;font-size:12px">v…</button>
   <button id="upd" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700" title="">⬆ Aggiornamento disponibile</button>
   <button id="add" title="Apri un progetto che sta in un'altra cartella (quella con progetto.json)">Apri progetto esistente…</button>
   <button id="addzip" title="Importa un progetto esportato come file ZIP (Esporta progetto dall'editor)">Importa ZIP…</button>
@@ -57,6 +58,12 @@
 </main>
 
 <div id="menu"></div>
+
+<div class="veil" id="vver"><div class="dlg">
+  <h3>Versione del programma</h3>
+  <div id="vbody" style="line-height:1.8;font-size:14px"></div>
+  <div class="btns"><button id="vchk">Controlla aggiornamenti</button><button id="vgo" class="primary" style="display:none">Aggiorna ora</button><button id="vclose">Chiudi</button></div>
+</div></div>
 
 <div class="veil" id="vnew"><div class="dlg">
   <h3>Nuovo progetto</h3>
@@ -143,8 +150,19 @@ $("nome").onkeydown = e => { if (e.key === "Enter") $("create").onclick(); };
 $("addzip").onclick = async () => { const b = $("addzip"); b.disabled = true; b.textContent = "Importo…"; try { const r = await api("/api/importa-zip", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Importa ZIP…"; };
 $("add").onclick = async () => { try { const r = await api("/api/aggiungi", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } };
 $("quit").onclick = async () => { if (confirm("Chiudere il programma? Le modifiche sono già salvate.")) { try { await api("/api/esci", {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;color:#aaa">Programma chiuso. Puoi chiudere questa scheda.</p>'; } };
-async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); const b = $("upd"); b.style.display = r.da_aggiornare ? "" : "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
+async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = r.da_aggiornare ? "" : "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
 $("upd").onclick = async () => { const b = $("upd"); if (!confirm("Novità:\n" + b.dataset.n + "\n\nAggiorno e riavvio il programma? Il lavoro è già salvato.")) return; b.textContent = "Aggiorno…"; b.disabled = true; try { await api("/api/aggiorna", {}); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Aggiornato: il programma si riapre da solo tra qualche secondo…</p>'; setTimeout(() => location.reload(), 6000); } catch (e) { alert(e.message); b.disabled = false; b.textContent = "⬆ Aggiornamento disponibile"; } };
+const fmtV = v => v ? `<b>v${v.n}</b> · ${v.data} · ${v.titolo} <span style="color:var(--dim)">(${v.codice})</span>` : "—";
+function showVer(r) {
+  $("verb").textContent = r.attuale ? `v${r.attuale.n}` : "v?";
+  const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "mai";
+  $("vbody").innerHTML = `In uso: ${fmtV(r.attuale)}<br>` + (r.errore ? `<span style="color:#e5484d">Non riesco a controllare GitHub (internet?)</span>` : r.da_aggiornare ? `Disponibile: ${fmtV(r.ultima)}<br><b>Novità:</b><br>${(r.novita || []).map(x => "• " + x).join("<br>")}` : `<span style="color:#5cb85c">✓ Hai già l'ultima versione</span>`) + `<br><span style="color:var(--dim);font-size:12px">Ultimo controllo: ${ago}</span>`;
+  $("vgo").style.display = r.da_aggiornare ? "" : "none";
+}
+$("verb").onclick = async () => { $("vver").style.display = "flex"; try { showVer(await (await fetch("/api/aggiornamento")).json()); } catch (e) {} };
+$("vclose").onclick = () => $("vver").style.display = "none";
+$("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
+$("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };
 checkUpd(); setInterval(checkUpd, 600000);
 load();
 </script>
