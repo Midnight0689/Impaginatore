@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 60 — Allargamento di gruppo libero, Maiusc = in proporzione
+- Le maniglie d'angolo del riquadro di gruppo ora ridimensionano liberamente (larghezza e altezza indipendenti); tenendo premuto Maiusc mentre trascini restano in proporzione, come in Photoshop. — `index.html` (`startGroup`).
+
 ## Versione 59 — Doppio clic su una foto della galleria
 - Doppio clic su una foto libera in basso: viene messa al centro dello spread aperto (come trascinarla). — `index.html` (`renderPool`).
 
