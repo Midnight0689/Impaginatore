@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 28 — Tolta la riga di istruzioni sotto lo spread
+- Via la frase «Foto: trascina per spostare…» sotto lo spread; resta solo il messaggio che compare quando si usa il ritaglio. — `index.html`.
+
 ## Versione 27 — Sostituisci, preferite, bordo e ombra, proporzioni, menu sfondo e miniature
 - Tasto destro su foto dello spread: «Sostituisci con un'altra foto…» (elenco delle libere, o anche già usate = scambio), «Proporzioni» 1:1, 3:2, 2:3, 4:5, 5:4, 16:9 (stessa area e centro), bordo bianco e ombra al volo. Pannello foto: nuova sezione «Cornice» con bordo (0–20 mm, bianco/crema/grigio/nero) e ombra (0–100). Nello spec.py: `STY(FREE(...), bd=(mm, '#hex'), sh=N)` (prima di ROT). Anteprima/JPG/PDF: bordo disegnato dentro la cornice, ombra sfumata sotto (`_photo_bordo`, `_render_ombre` in `album_libere.py`). PSD: livello «Ombra …» sotto la cornice e «Bordo …» sopra (rettangoli con effetto Contorno interno/Ombra esterna, a zero riempimento per il bordo), provato in Photoshop; gli effetti sulla cornice stessa non funzionano (vengono ritagliati), per questo livelli separati.
 - Preferite ★: tasto P (o menu), stella sulla miniatura, filtro ★ nella barra (galleria e striscia). Dati `stelle` in progetto.json, annullabile.
