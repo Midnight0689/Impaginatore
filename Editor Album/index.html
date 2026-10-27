@@ -359,6 +359,7 @@
   body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
   body.tplopen #tools, body.tplopen .sb { visibility: hidden; }
   #poolrow img { object-fit: cover; min-width: 0; }
+  #grpbox { position: absolute; border: 2px dashed var(--accent); pointer-events: none; z-index: 40; } #grpbox .hd { pointer-events: auto; }
 </style>
 </head>
 <body>
@@ -583,6 +584,37 @@ function renderStage() {
     }
     box.appendChild(d);
   });
+  groupBox();
+}
+function groupBox() {       // due o più foto selezionate: riquadro unico con le maniglie, si allargano tutte insieme
+  const sp = S.spreads[cur], its = msel.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
+  if (its.length < 2 || cropMode) return;
+  const L = Math.min(...its.map(i => i.x)), T = Math.min(...its.map(i => i.y)), R = Math.max(...its.map(i => i.x + i.w)), B = Math.max(...its.map(i => i.y + i.h));
+  const g = document.createElement("div"); g.id = "grpbox"; g.style.left = L / S.W * 100 + "%"; g.style.top = T / S.H * 100 + "%"; g.style.width = (R - L) / S.W * 100 + "%"; g.style.height = (B - T) / S.H * 100 + "%";
+  ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(k => { const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k; hd.onpointerdown = e => { if (e.button === 0) startGroup(e, its, { L, T, R, B }, k); }; g.appendChild(hd); });
+  $("slots").appendChild(g);
+}
+function startGroup(e, its, bb, kind) {
+  e.preventDefault(); e.stopPropagation();
+  const k = S.W / $("wrap").clientWidth, x0 = e.clientX, y0 = e.clientY, bw = bb.R - bb.L, bh = bb.B - bb.T;
+  const ax = kind.includes("w") ? bb.R : bb.L, ay = kind.includes("n") ? bb.B : bb.T;       // il bordo opposto resta fermo
+  const corner = kind.length === 2; let sx = 1, sy = 1, moved = false, raf = 0, last = null; const gh = [];
+  const draw = () => { const sc = $("wrap").clientWidth / S.W;
+    if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
+    its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; }); };
+  const calc = ev => { const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k, fx = kind.includes("e") ? 1 : -1, fy = kind.includes("s") ? 1 : -1;
+    sx = kind.includes("e") || kind.includes("w") ? (bw + fx * dx) / bw : 1; sy = kind.includes("n") || kind.includes("s") ? (bh + fy * dy) / bh : 1;
+    if (corner) sx = sy = Math.max(sx, sy); sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1); };
+  const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; last = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; calc(last); draw(); }); };
+  const onUp = async ev => {
+    window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
+    if (raf) { cancelAnimationFrame(raf); raf = 0; if (moved) { calc(ev); draw(); } }
+    document.body.classList.remove("dragging"); DRAG = false;
+    if (!moved) { clearGhosts(); return; }
+    setTimeout(clearGhosts, 2500);
+    await op({ op: "gscale", s: cur, ats: its.map(i => [i.side, i.idx]), sx, sy, ax, ay });
+  };
+  window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);
 }
 
 function toggleM(it) {

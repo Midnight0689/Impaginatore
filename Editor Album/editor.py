@@ -517,6 +517,12 @@ def apply(o):
             key = (a[0], int(a[1])); L = R.get(key)
             if L is None or SP[s_][0 if key[0] == "L" else 1][1][key[1]]["k"] == "t": continue
             _put_px(s_, key[0], key[1], L["x"] + float(o["dx"]), L["y"] + float(o["dy"]), L["W"], L["H"])
+    elif t == "gscale":                                   # allargamento di gruppo: le foto scelte si ingrandiscono/rimpiccioliscono insieme attorno a un punto fisso (px della vista)
+        s_ = o["s"]; R = _rects(s_); sx, sy = min(max(float(o["sx"]), 0.1), 10.0), min(max(float(o["sy"]), 0.1), 10.0); ax, ay = float(o["ax"]) + BL, float(o["ay"]) + BL
+        for a in o["ats"]:
+            key = (a[0], int(a[1])); L = R.get(key)
+            if L is None or SP[s_][0 if key[0] == "L" else 1][1][key[1]]["k"] == "t": continue
+            _put_px(s_, key[0], key[1], ax + (L["x"] - ax) * sx, ay + (L["y"] - ay) * sy, L["W"] * sx, L["H"] * sy)
     elif t == "dup":                                      # spread identico subito dopo (le foto compaiono due volte: si usa per fare varianti)
         s_ = o["s"]
         if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
