@@ -300,6 +300,13 @@
   .ph .rm { top: 6px; right: 6px; }
   #pool { background: #161618; } #pool img { border: 0; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.4); } #poolrow img:hover { box-shadow: 0 0 0 2px var(--blue); } #poolrow img.star { outline-width: 1.5px; }
   #poolrow .cap, #pool .cap { color: var(--dim); font-size: 11px; }
+  /* fascia solo icone (il nome compare nel tooltip), ombra leggera su fondo bianco, righelli chiari */
+  .sb button > span { display: none; } .sb button { width: 40px; height: 36px; } .sb .navrow button { width: 28px; height: 32px; } #sbarR .box > div > button, #sbarR .box > div > button.al2 { height: 36px; } #sbarR .box.alb button { height: 32px; }
+  .sb .box > i { font-size: 9px; } .sb button .ic2 { width: 20px; height: 20px; }
+  .stgl #wrap { box-shadow: 0 2px 10px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); } .stgl #rh, .stgl #rv, .stgl #rc { background: #e4e4e7; }
+  .stgl #ttog { color: #555; background: rgba(0,0,0,.07); } .stgl #stage { color: #333; }
+  .stgl .sb .box { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); } .stgl .sb button { background: rgba(0,0,0,.07); color: #222; } .stgl .sb button:hover:not(:disabled) { background: rgba(0,0,0,.14); } .stgl .sb button.on { background: var(--blue); color: #fff; }
+  .stgl .sb .box > i, .stgl .sb .cnt span { color: #666; } .stgl .sb .cnt b { color: #111; } .stgl #hint { color: #666; }
 </style>
 </head>
 <body>
@@ -790,7 +797,7 @@ function drawRulers() {
   const step = [1, 2, 5, 10, 20].find(c => c * pxcm >= 42) || 20, minor = pxcm >= 7;
   const draw = (cv, len, thick, horiz, total) => {
     cv.width = (horiz ? len : thick) * dpr; cv.height = (horiz ? thick : len) * dpr; cv.style.width = (horiz ? len : thick) + "px"; cv.style.height = (horiz ? thick : len) + "px";
-    const c = cv.getContext("2d"); c.scale(dpr, dpr); c.fillStyle = "#3b3b3b"; c.fillRect(0, 0, cv.width, cv.height); c.strokeStyle = "#9a9a9a"; c.fillStyle = "#c8c8c8"; c.font = "10px -apple-system, Arial"; c.lineWidth = 1;
+    const c = cv.getContext("2d"); c.scale(dpr, dpr); c.fillStyle = STGL ? "#e4e4e7" : "#3b3b3b"; c.fillRect(0, 0, cv.width, cv.height); c.strokeStyle = STGL ? "#6e6e73" : "#9a9a9a"; c.fillStyle = STGL ? "#3a3a3c" : "#c8c8c8"; c.font = "10px -apple-system, Arial"; c.lineWidth = 1;
     for (let cm = 0; cm * pxcm <= total + 1; cm += (minor ? 1 : step)) {
       const p = Math.round(cm * pxcm) + .5, major = cm % step === 0;
       c.beginPath();
@@ -1445,7 +1452,8 @@ document.addEventListener("keydown", e => {
 
 
 const STG = [["#000000", "Nero"], ["#1b1b1d", "Grigio scuro"], ["#6b6b70", "Grigio chiaro"], ["#ffffff", "Bianco"]];
-function setStg(c) { document.documentElement.style.setProperty("--stg", c); try { localStorage.stgBg = c; } catch (_) {} $("stgsw").innerHTML = STG.map(([k, n]) => `<i style="--c:${k}" data-c="${k}" title="Sfondo ${n.toLowerCase()}" class="${k === c ? "on" : ""}"></i>`).join(""); }
+let STGL = false;
+function setStg(c) { STGL = c === "#ffffff"; document.documentElement.classList.toggle("stgl", STGL); document.documentElement.style.setProperty("--stg", c); if (S) drawRulers(); try { localStorage.stgBg = c; } catch (_) {} $("stgsw").innerHTML = STG.map(([k, n]) => `<i style="--c:${k}" data-c="${k}" title="Sfondo ${n.toLowerCase()}" class="${k === c ? "on" : ""}"></i>`).join(""); }
 $("stgsw").addEventListener("click", e => { const c = e.target.dataset && e.target.dataset.c; if (c) setStg(c); });
 setStg((() => { try { return localStorage.stgBg || "#1b1b1d"; } catch (_) { return "#1b1b1d"; } })());
 api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = S.spreads.length ? "album" : "foto"; render(); });

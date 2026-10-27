@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 33 — Fascia solo icone e tema chiaro dello sfondo
+- I pulsanti della fascia strumenti mostrano solo l'icona (il nome è nel tooltip): più compatta. — `index.html`.
+- Con lo sfondo bianco: fascia, righelli e ombra dello spread si adattano per restare leggibili.
+
 ## Versione 32 — Sfondo dello spread e grafica più pulita
 - Quattro pallini in alto (nero, grigio scuro, grigio chiaro, bianco) cambiano lo sfondo dietro lo spread; si ricorda la scelta. — `index.html`.
 - Fascia strumenti più piccola (frecce avanti/indietro compatte) e più staccata dallo spread.
