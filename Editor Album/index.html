@@ -127,6 +127,8 @@
   .ph { position: relative; cursor: pointer; border: 3px solid transparent; border-radius: 4px; background: #222; aspect-ratio: 1 / 1; overflow: hidden; }
   .ph img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .ph { position: relative; } .ph .rm { display: none; position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,.7); color: #fff; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 11px; } .ph:hover .rm { display: block; } .ph.tolta .u { background: #b04a3a; }
+  .ph.manca { border-color: #e5484d; } .ph.manca img { opacity: .55; } .ph .mc { position: absolute; top: 4px; left: 4px; right: 4px; background: #e5484d; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-align: center; z-index: 1; }
+  #pool img.manca { border-color: #e5484d; opacity: .6; }
   .ph.sel { border-color: var(--accent); } .ph.used img { opacity: .3; } .ph.tolta img { opacity: .2; filter: grayscale(1); }
   .ph .n { position: absolute; top: 4px; left: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 700; border-radius: 10px; min-width: 20px; text-align: center; padding: 0 6px; font-size: 12px; }
   .ph .u { position: absolute; bottom: 4px; left: 4px; right: 4px; background: rgba(0,0,0,.65); color: #ddd; font-size: 11px; padding: 1px 6px; border-radius: 3px; text-align: center; }
@@ -677,6 +679,7 @@ function renderPool() {
   if (!free.length) P.innerHTML += `<span class="empty">Nessuna: tutte le foto sono usate.</span>`;
   free.forEach(n => {
     const im = document.createElement("img"); im.src = `/img/thumb/${n}?w=240`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
+    if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
     if (S.tolte.includes(n)) { im.className = "tolta"; im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
     P.appendChild(im);
   });
@@ -850,10 +853,11 @@ function renderLib() {
   const free = S.photos.filter(p => p.sp == null && !p.tolta).length;
   $("libinfo").textContent = `${S.photos.length} foto · ${free} da usare · ${S.photos.filter(p => p.sp != null).length} già in uno spread`;
   if (!S.photos.length) { G.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0;line-height:2">Nessuna foto nel progetto.<br>Premi <b>+ Importa cartella…</b> o <b>+ Importa foto…</b> per cominciare.</div>'; }
+  const MISS = new Set((S.mancanti || []).map(x => x.replace(/\.[^.]+$/, "")));
   S.photos.forEach(p => {
     if (hide && (p.sp != null || p.tolta)) return;
-    const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "");
-    d.innerHTML = `<img src="/img/thumb/${p.n}?w=300" title="${p.n} · ${p.dt}">${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
+    const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
+    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=300" title="${p.n} · ${p.dt}">${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
