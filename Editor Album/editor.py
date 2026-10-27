@@ -294,6 +294,8 @@ def apply(o):
         if "tr" in o: it["tr"] = round(min(max(float(o["tr"]), -200), 2000), 1)
         if "col" in o: it["col"] = [int(min(max(float(v), 0), 255)) for v in o["col"]][:3]
         if "auto" in o: it["auto"] = bool(o["auto"])
+        if "lh" in o: it["lh"] = round(min(max(float(o["lh"]), 0.6), 3.0), 2)
+        if "caps" in o: it["caps"] = bool(o["caps"])
         if it.get("stile") in CFG["stili"] and any(k in o for k in STILE_K):      # il testo ha uno stile: la modifica vale per tutti i testi con quello stile
             CFG["stili"][it["stile"]] = {k: it[k] for k in STILE_K}; fit_stile(it["stile"])
         elif it.get("auto", True): fit_it(side, pg, it)
@@ -619,7 +621,7 @@ def spread_view(s):
             e["zr"] = zr.get((side, idx), 0)
             if it["k"] == "t":
                 e["kind"] = it.get("kind")
-                if is_txt(it): e.update(tx=it["tx"], font=it["font"], size=it["size"], col=it["col"], al=it["al"], tr=it["tr"], auto=bool(it.get("auto", True)), stile=it.get("stile"))
+                if is_txt(it): e.update(tx=it["tx"], font=it["font"], size=it["size"], col=it["col"], al=it["al"], tr=it["tr"], lh=TX.lead(it), caps=bool(it.get("caps")), auto=bool(it.get("auto", True)), stile=it.get("stile"))
             else:
                 n = A.name(it["i"]); ar = A.M[it["i"]]["ar"]; fa = L["W"] / L["H"]
                 e.update(crop=round(max(fa / ar, ar / fa) * it.get("z", 1.0), 2))
@@ -855,7 +857,7 @@ def fmt(it):
     return f'ROT({x}, {it["a"]})' if it["k"] != "t" and it.get("a") else x
 def fmt0(it):
     if is_txt(it):
-        return ("TEXT(%r, %s, %s, %s, %s, font=%r, size=%s, col=%r, al=%r, tr=%s, auto=%s" % (it["tx"], it["fx"], it["fy"], it["fw"], it["fh"], it["font"], it["size"], tuple(it["col"]), it["al"], it["tr"], bool(it.get("auto", True)))) + (f', zo={it["zo"]}' if it.get("zo") is not None else "") + (f', stile={it["stile"]!r}' if it.get("stile") else "") + ")"
+        return ("TEXT(%r, %s, %s, %s, %s, font=%r, size=%s, col=%r, al=%r, tr=%s, auto=%s" % (it["tx"], it["fx"], it["fy"], it["fw"], it["fh"], it["font"], it["size"], tuple(it["col"]), it["al"], it["tr"], bool(it.get("auto", True)))) + (f', lh={TX.lead(it)}' if TX.lead(it) != 1.2 else "") + (", caps=True" if it.get("caps") else "") + (f', zo={it["zo"]}' if it.get("zo") is not None else "") + (f', stile={it["stile"]!r}' if it.get("stile") else "") + ")"
     if it["k"] == "t":
         if "fx" in it: return f'TXTF({it["kind"]!r}, {it["fx"]}, {it["fy"]}, {it["fw"]}, {it["fh"]}, ts={it.get("ts", 1.0)}' + (f', zo={it["zo"]}' if it.get("zo") is not None else "") + ")"
         return f'TXT({it["kind"]!r}, {it["c"]}, {it["r"]}, {it["w"]}, {it["h"]})'

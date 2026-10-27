@@ -90,10 +90,21 @@ def _width(text, font, size, tr):
     return sum(font.getlength(c) for c in text) + tr / 1000 * size * max(len(text) - 1, 0)
 
 
+def shown(it):
+    """testo come si vede (tutto maiuscolo se richiesto)"""
+    t = str(it.get("tx", "")); return t.upper() if it.get("caps") else t
+
+
+def lead(it):
+    """interlinea come moltiplicatore del corpo (1.2 = come prima)"""
+    try: return min(max(float(it.get("lh", 1.2)), 0.6), 3.0)
+    except Exception: return 1.2
+
+
 def wrap(it, box_w, K=1.0):
     """righe del testo dopo l'a capo automatico nella larghezza del riquadro (box_w in pixel della pagina)"""
     size = float(it.get("size", 100)); tr = float(it.get("tr", 0)); font = _font(it.get("font", ""), size * K); lines = []
-    for para in str(it.get("tx", "")).split("\n"):
+    for para in shown(it).split("\n"):
         words = para.split(" "); cur = ""
         for w in words:
             t = (cur + " " + w) if cur else w
@@ -105,7 +116,7 @@ def wrap(it, box_w, K=1.0):
 
 def fit_height(it, box_w):
     """altezza del riquadro che contiene tutto il testo (pixel della pagina)"""
-    return len(wrap(it, box_w)) * float(it.get("size", 100)) * 1.2 + float(it.get("size", 100)) * 0.1
+    return len(wrap(it, box_w)) * float(it.get("size", 100)) * lead(it) + float(it.get("size", 100)) * 0.1
 
 
 def render(it, K):
@@ -113,7 +124,7 @@ def render(it, K):
     from PIL import Image, ImageDraw
     Wd, Hd = max(1, round(it["W"] * K)), max(1, round(it["H"] * K)); im = Image.new("RGBA", (Wd, Hd), (255, 255, 255, 0)); d = ImageDraw.Draw(im)
     size = float(it.get("size", 100)); tr = float(it.get("tr", 0)); font = _font(it.get("font", ""), size * K); col = tuple(int(v) for v in (it.get("col") or (58, 54, 51)))[:3]
-    lh = size * 1.2 * K; al = it.get("al", "left"); y = 0.0
+    lh = size * lead(it) * K; al = it.get("al", "left"); y = 0.0
     for line in wrap(it, it["W"], K):
         w = _width(line, font, size * K, tr); x = 0 if al == "left" else (Wd - w) / 2 if al == "center" else Wd - w
         if tr:
@@ -126,11 +137,11 @@ def render(it, K):
 def job_x(it):
     """campi del testo per il PSD + posizione (gx, gy) del primo pixel d'inchiostro rispetto all'angolo del riquadro, come lo disegna l'anteprima:
     Photoshop e Pillow impostano la prima riga in modo diverso, così in Photoshop si allinea il livello a questo punto"""
-    size = float(it.get("size", 100)); tr = float(it.get("tr", 0)); font = _font(it.get("font", ""), size); lh = size * 1.2; al = it.get("al", "left"); W = float(it["W"])
+    size = float(it.get("size", 100)); tr = float(it.get("tr", 0)); font = _font(it.get("font", ""), size); lh = size * lead(it); al = it.get("al", "left"); W = float(it["W"])
     gx = gy = None
     for i, line in enumerate(wrap(it, W)):
         if not line.strip(): continue
         w = _width(line, font, size, tr); x = 0 if al == "left" else (W - w) / 2 if al == "center" else W - w
         l, t, r, b = font.getbbox(line.strip()); lead = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * lead if lead else 0)
         gx = x if gx is None else min(gx, x); gy = i * lh + t if gy is None else min(gy, i * lh + t)
-    d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d.update(gx=gx or 0, gy=gy or 0); return d
+    d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d["tx"] = shown(it); d.update(lh=lead(it), gx=gx or 0, gy=gy or 0); return d

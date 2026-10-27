@@ -3,6 +3,11 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 40 — Testo: barra del carattere stile Photoshop
+- Selezionando un testo compare sopra di lui una barra con: elenco dei caratteri con anteprima e ricerca, stile (Regular/Bold/Italic…), corpo con corpi comuni, interlinea, spaziatura, allineamento, TT tutto maiuscolo, colore. — `index.html`.
+- Nuovi: interlinea e maiuscolo, salvati nel progetto, nell'anteprima e nei PSD. — `testo.py`, `editor.py`, `album_libere.py`, `genera_psd_angolo.py`.
+- Tolta l'etichetta «Testo» che copriva le prime lettere del testo.
+
 ## Versione 39 — Nomi dei comandi nella fascia, più grande e più in alto
 - I comandi della fascia hanno di nuovo il nome sotto l'icona, pulsanti più grandi (66×58). — `index.html`.
 - La fascia sta più in alto e c'è più spazio tra la fascia e lo spread.

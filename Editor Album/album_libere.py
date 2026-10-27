@@ -34,9 +34,9 @@ def TXTF(kind, fx, fy, fw, fh, ts=1.0, zo=None):
     return d
 
 
-def TEXT(tx, fx, fy, fw, fh, font="AvenirNext-Regular", size=100, col=(58, 54, 51), al="left", tr=0, auto=True, zo=None, stile=None):
+def TEXT(tx, fx, fy, fw, fh, font="AvenirNext-Regular", size=100, col=(58, 54, 51), al="left", tr=0, auto=True, zo=None, stile=None, lh=1.2, caps=False):
     """livello di testo libero (strumento Testo): vedi testo.py"""
-    d = dict(k="t", kind="txt", tx=str(tx), fx=float(fx), fy=float(fy), fw=float(fw), fh=float(fh), c=0, r=0, w=1, h=1, font=font, size=float(size), col=list(col), al=al, tr=float(tr), auto=bool(auto))
+    d = dict(k="t", kind="txt", tx=str(tx), fx=float(fx), fy=float(fy), fw=float(fw), fh=float(fh), c=0, r=0, w=1, h=1, font=font, size=float(size), col=list(col), al=al, tr=float(tr), auto=bool(auto), lh=float(lh), caps=bool(caps))
     if zo is not None: d["zo"] = int(zo)
     if stile: d["stile"] = stile
     return d
