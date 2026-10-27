@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 29 — Menu del tasto destro a due livelli
+- Il menu mostra in alto i colori e le 5 voci più usate (se non hai ancora usato nulla: «Suggeriti», le prime 5); le altre stanno nel sottomenu «Tutti i comandi ▸». I clic si contano per tipo di menu (foto dello spread, galleria/striscia, sfondo, miniatura) in `localStorage` «ctxUso»; le voci che cambiano nome (es. Bianco e nero / Togli…) hanno un `id` fisso. — `index.html` (`ctxMenu`).
+
 ## Versione 28 — Tolta la riga di istruzioni sotto lo spread
 - Via la frase «Foto: trascina per spostare…» sotto lo spread; resta solo il messaggio che compare quando si usa il ritaglio. — `index.html`.
 
