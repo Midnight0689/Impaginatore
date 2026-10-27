@@ -763,11 +763,17 @@ def state():
 CACHE = {}
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
 AGG = dict(n=0, t=0, nomi=[], ar=[])               # ultimo aggiornamento automatico delle foto modificate
-def spread_jpg(s, K):
+def spread_jpg(s, K, hide=None):
+    """immagine dello spread; hide = (side, idx) di una cornice libera da NON disegnare (serve mentre la si trascina)"""
     with LOCK:
-        key = (spread_hash(s), K)
+        key = (spread_hash(s), K, hide)
         if key in CACHE: return CACHE[key]
-        im = A.render(spread_tuple(s), K, True)
+        tup = spread_tuple(s)
+        if hide:
+            pi = 0 if hide[0] == "L" else 1; its = SP[s][pi][1]
+            if 0 <= hide[1] < len(its) and (its[hide[1]]["k"] == "f" or "fx" in its[hide[1]]):             # solo cornici libere: togliendo una cella del modello si sposterebbero le altre
+                tup = tuple((pg[0], [it for j, it in enumerate(pg[1]) if not (n == pi and j == hide[1])]) for n, pg in enumerate(SP[s]))
+        im = A.render(tup, K, True)
         b = round(A.B * K)
         if b: im = im.crop((b, b, im.width - b, im.height - b))
         buf = io.BytesIO(); im.save(buf, "JPEG", quality=86); CACHE[key] = buf.getvalue()
@@ -1275,7 +1281,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
-            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0])), "image/jpeg")
+            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
                 n = u.path.rsplit("/", 1)[1]; w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (n, w, PV.get(n, 0))
                 if self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()

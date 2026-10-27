@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 52 — La foto lascia davvero il suo posto mentre la trascini
+- Trascinando una foto libera, nell'immagine dello spread il suo posto di partenza resta vuoto (prima rimaneva una copia della foto sotto). Per le foto ancora nelle celle dei modelli resta il segnaposto scuro tratteggiato. — `editor.py` (`spread_jpg(..., hide)`, `/img/spread/N?hide=L:3`), `index.html` (`startFree`).
+
 ## Versione 51 — Trascinamento: la foto con la sua inquadratura
 - La foto che trascini mostra il ritaglio vero della cornice (non più una versione centrata), è più nitida e resta in bianco e nero se lo è. — `index.html`.
 

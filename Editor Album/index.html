@@ -1055,6 +1055,9 @@ function startFree(e, it, kind) {
         if (it.bw) ghost.style.filter = "grayscale(1)"; }
       ghost.style.cssText += `;left:${it.x * sc}px;top:${it.y * sc}px;width:${it.w * sc}px;height:${it.h * sc}px`; $("ghosts").appendChild(ghost);
       srcEl = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (srcEl && kind === "move") srcEl.classList.add("srcdrag");       // dove stava: segnaposto scuro
+      if (kind === "move" && it.free && msel.length < 2) {       // cornice libera: lo spread viene ridisegnato SENZA questa foto, così lascia davvero il suo posto
+        const hs = `/img/spread/${cur}?k=${stageK()}&h=${S.spreads[cur].h}&hide=${it.side}:${it.idx}`, im2 = new Image();
+        im2.onload = () => { if (DRAG) { $("main").src = hs; if (srcEl) srcEl.classList.remove("srcdrag"); } }; im2.src = hs; }
     }
     if (kind === "move") ghost.style.transform = `translate(${(rect.x - it.x) * sc}px,${(rect.y - it.y) * sc}px)`;
     else { ghost.style.left = rect.x * sc + "px"; ghost.style.top = rect.y * sc + "px"; ghost.style.width = rect.w * sc + "px"; ghost.style.height = rect.h * sc + "px"; }
