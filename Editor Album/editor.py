@@ -78,7 +78,7 @@ LOCK = threading.RLock()
 CFG = A.CFG
 CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
 CFG.setdefault("centri_volto", {})
-CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
 
 # ------------------------------------------------------------------ stato
 NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3}
@@ -120,7 +120,7 @@ UNDO, REDO = [], []
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "tx": CFG["testo"], "st": CFG["stili"]})
 SAVED = snap()                                       # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -128,7 +128,7 @@ def restore(s):
     CFG["esposizione"].clear(); CFG["esposizione"].update(d["ev"])
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
-    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -317,6 +317,12 @@ def apply(o):
         if o.get("value", True):
             if n not in CFG["tolte"]: CFG["tolte"].append(n)
         elif n in CFG["tolte"]: CFG["tolte"].remove(n)
+    elif t == "colore":                                # etichetta colore (come Lightroom) su una o più foto
+        v = o.get("value")
+        if v is not None and v not in COLORI: raise ValueError("colore sconosciuto")
+        for n in o.get("photos") or [o["photo"]]:
+            if v: CFG["colori"][n] = v
+            else: CFG["colori"].pop(n, None)
     elif t == "tono":
         n = o["photo"]; v = o.get("value")
         if not v: CFG["tono"].pop(n, None)
@@ -702,14 +708,15 @@ def templates_for(names):
         return tpl_options(ph) if ph else dict(items=[], n=0, tot=0)
 
 BOOT = str(time.time())
+COLORI = ("rosso", "arancio", "giallo", "verde", "azzurro", "viola", "rosa")
 def photo_list():
     where = {}
     for k, sp in enumerate(SP):
         for pg in sp:
             for it in pg[1]:
                 if it["k"] != "t": where.setdefault(it["i"], k)
-    tolte = set(CFG.get("tolte", []))
-    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte) for i in range(len(A.M))]
+    tolte = set(CFG.get("tolte", [])); col = CFG.get("colori", {})
+    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i))) for i in range(len(A.M))]
 
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
@@ -846,7 +853,7 @@ def save(backup=True):
         lines.append("]")
         open(os.path.join(PROJ, "spec.py"), "w").write("\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)

@@ -70,7 +70,7 @@
   .mods button { padding: 6px 2px; }
   #pool { grid-column: 2; grid-row: 3; background: var(--panel); border-top: 1px solid var(--line); padding: 6px 10px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   #pool .cap { color: var(--dim); font-size: 11px; margin-bottom: 4px; }
-  #pool img { height: 100px; margin-right: 6px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
+  #pool img { height: 100px; box-sizing: content-box; margin-right: 6px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
   #pool img:hover { border-color: var(--accent); }
   #pool img.tolta { opacity: .4; }
   #log { position: fixed; right: 12px; bottom: 12px; width: 460px; max-height: 260px; overflow: auto; background: #1d1d1d; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 11px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; display: none; z-index: 5; }
@@ -186,10 +186,11 @@
   #libgrid::-webkit-scrollbar { width: 16px; } #libgrid::-webkit-scrollbar-track { background: rgba(255,255,255,.05); border-left: 1px solid var(--line); }
   #libgrid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.38); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; min-height: 48px; } #libgrid::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.6); background-clip: padding-box; border: 3px solid transparent; }
   .libbar2 { display: flex; gap: 12px; align-items: center; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  .libbar2 .seg { margin: 0; } .libbar2 .seg button { padding: 0 11px; white-space: nowrap; } .libbar2 .seg button.on { background: var(--blue) !important; color: #fff; }
-  .libbar2 .seg { background: #1b1b1d; border-radius: 8px; padding: 2px; } .libbar2 .seg button .c { opacity: .6; margin-left: 4px; font-size: 11px; }
-  .libbar2 .zoom { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; } .libbar2 .zoom button { width: 28px; height: 28px; padding: 0; font-size: 17px; line-height: 1; } .libbar2 .zoom input[type=range] { width: 130px; padding: 0; accent-color: var(--blue); }
-  #libq { width: 100px; } .libbar2 { gap: 8px; } .libbar2 .seg button { padding: 0 8px; } .libbar2 .zoom input[type=range] { width: 90px; }
+  .fbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .fbar .seg { margin: 0; } .fbar .seg button { padding: 0 11px; white-space: nowrap; } .fbar .seg button.on { background: var(--blue) !important; color: #fff; }
+  .fbar .seg { background: #1b1b1d; border-radius: 8px; padding: 2px; } .fbar .seg button .c { opacity: .6; margin-left: 4px; font-size: 11px; }
+  .fbar .zoom { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; } .fbar .zoom button { width: 28px; height: 28px; padding: 0; font-size: 17px; line-height: 1; } .fbar .zoom input[type=range] { width: 130px; padding: 0; accent-color: var(--blue); }
+  .fbar .gQ { width: 100px; } .fbar select { height: 28px; padding: 0 6px; } .fbar .dots { display: inline-flex; gap: 5px; align-items: center; } .fbar .dots i { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background: var(--c); } .fbar .dots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .fbar .dots i.nc { background: transparent; border: 2px dashed #777; } .fbar .dots i.nc.on { border-color: #fff; } .fbar .dots .lb { color: var(--dim); font-size: 11px; } .fbar .dots.as i { width: 18px; height: 18px; }
+  .ph .cl { position: absolute; bottom: 24px; left: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.6); } #pool { display: flex; flex-direction: column; overflow: hidden !important; } #pool .fbar { padding-bottom: 4px; font-size: 12px; flex: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; } #pool .fbar > * { flex: none; } #pool .fbar::-webkit-scrollbar { display: none; } #pool .fbar button { height: 24px !important; } #poolrow { flex: 1; overflow-x: auto; overflow-y: hidden; white-space: nowrap; } #poolrow img { height: var(--ph, 100px); } .fbar .seg button { padding: 0 8px; } .fbar .zoom input[type=range] { width: 90px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; } ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: padding-box; border: 2px solid transparent; }
   #app { grid-template-rows: 52px 1fr var(--pr, 150px); }
@@ -290,13 +291,12 @@
     <div id="tpl"></div>
   </div>
   <div id="side"><div id="insp"></div></div>
-  <div id="pool"></div>
+  <div id="pool"><div class="fbar" id="poolbar"></div><div id="poolrow"></div></div>
   <div id="libview">
     <div id="libmain">
       <div class="libbar"><button id="impF">+ Importa cartella…</button><button id="impP">+ Importa foto…</button><span id="libinfo"></span><span class="sp"></span>
         <button id="selall" title="⌘A">Seleziona tutte</button><button id="selclear">Deseleziona</button></div>
-      <div class="libbar2"><div class="seg" id="gfF"></div><div class="seg" id="gfO"></div><input id="libq" type="search" placeholder="Cerca nome…">
-        <span class="zoom"><button id="thm" title="Miniature più piccole">−</button><input type="range" id="thr" min="80" max="360" step="10" title="Dimensione miniature"><button id="thp" title="Miniature più grandi">+</button></span></div>
+      <div class="libbar2 fbar" id="libfbar"></div>
       <div id="libgrid"></div>
     </div>
     <div id="libtpl"><div class="cap" id="tplcap"></div>
@@ -803,16 +803,24 @@ $("rh").onpointerdown = e => { if (e.button === 0) { if (!showGuides) setGuides(
 $("rv").onpointerdown = e => { if (e.button === 0) { if (!showGuides) setGuides(true); dragGuide(e, "v", -1); } };
 new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
+let pBar = null;
+function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${PF.sz + 78}px; } #poolrow { --ph: ${PF.sz}px; }`; }
 function renderPool() {
-  const P = $("pool"); const free = S.unused;
-  P.innerHTML = `<div class="cap">Foto libere (${free.length}) — non sono in nessuno spread${S.tolte.length ? " · in grigio: tolte apposta" : ""}</div>`;
-  if (!free.length) P.innerHTML += `<span class="empty">Nessuna: tutte le foto sono usate.</span>`;
-  free.forEach(n => {
-    const im = document.createElement("img"); im.src = `/img/thumb/${n}?w=240`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
+  const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
+  if (!pBar) pBar = mkBar($("poolbar"), PF, { filters: PFILT, zmin: 50, zmax: 220, onChange: renderPool, onZoom: setPoolH });
+  setPoolH(); pBar(freeAll);
+  const free = filterList(freeAll, PF), keep = P.scrollLeft; P.innerHTML = "";
+  const info = document.createElement("div"); info.className = "cap"; info.textContent = `Foto libere: ${free.length}${free.length !== freeAll.length ? " di " + freeAll.length : ""} — non sono in nessuno spread${S.tolte.length ? " · in grigio: tolte apposta" : ""} · passa sopra una foto e premi 1-7 per il colore (0 lo toglie)`; P.appendChild(info);
+  if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);
+  free.forEach(f => {
+    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
+    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; };
+    if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
     if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
     if (S.tolte.includes(n)) { im.className = "tolta"; im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
     P.appendChild(im);
   });
+  P.scrollLeft = keep;
 }
 
 // ---- cornici: si spostano e si ridimensionano liberamente; si agganciano ai bordi della pagina e delle altre foto (anche col giusto spazio)
@@ -977,25 +985,50 @@ function mkTile(t, label, onclick) {
   t.frames.forEach(f => { const i = document.createElement("i"); i.style.cssText = `left:${f.x / S.W * 100}%;top:${f.y / S.H * 100}%;width:${f.w / S.W * 100}%;height:${f.h / S.H * 100}%;background-image:url(/img/thumb/${f.n}?w=520)`; pv.appendChild(i); });
   pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${label}</span>`); c.onclick = onclick; return c;
 }
-const GF = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem("galleriaFoto") || "{}"); } catch (e) {} return { f: o.f || "tutte", o: o.o || "tutte", sz: +o.sz || 140, q: "" }; })();
-const saveGF = () => { try { localStorage.setItem("galleriaFoto", JSON.stringify({ f: GF.f, o: GF.o, sz: GF.sz })); } catch (e) {} };
-const GFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["used", "Già usate"], ["tolta", "Tolte"], ["manca", "Mancanti"]], GORI = [["tutte", "Tutte"], ["v", "Verticali"], ["h", "Orizzontali"]];
+// ---- filtri, colori, ordinamento e zoom: uguali per la galleria Foto e per la striscia «foto libere» dell'album
+const COLS = [["rosso", "#ff453a"], ["arancio", "#ff9f0a"], ["giallo", "#ffd60a"], ["verde", "#30d158"], ["azzurro", "#0a84ff"], ["viola", "#bf5af2"], ["rosa", "#ff6bb5"]], COLC = Object.fromEntries(COLS);
+const SORTS = [["ord", "Ordine di import"], ["nome", "Nome A→Z"], ["nomeD", "Nome Z→A"], ["data", "Data scatto ↑"], ["dataD", "Data scatto ↓"], ["col", "Per colore"]];
+function mkF(key, sz) { let o = {}; try { o = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) {} return { key, f: o.f || "tutte", o: o.o || "tutte", c: Array.isArray(o.c) ? o.c : [], s: o.s || "ord", sz: +o.sz || sz, q: "" }; }
+const saveF = st => { try { localStorage.setItem(st.key, JSON.stringify({ f: st.f, o: st.o, c: st.c, s: st.s, sz: st.sz })); } catch (e) {} };
+const GF = mkF("galleriaFoto2", 140), PF = mkF("stricciaFoto", 100);
+const GFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["used", "Già usate"], ["tolta", "Tolte"], ["manca", "Mancanti"]], PFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["tolta", "Tolte"], ["manca", "Mancanti"]], GORI = [["tutte", "Tutte"], ["v", "Vert."], ["h", "Orizz."]];
 const missSet = () => new Set((S.mancanti || []).map(x => x.replace(/\.[^.]+$/, "")));
 const gPass = (p, f, M) => f === "tutte" ? true : f === "free" ? p.sp == null && !p.tolta : f === "used" ? p.sp != null : f === "tolta" ? !!p.tolta : M.has(p.n);
-function visPhotos() {          // foto che passano filtri e ricerca, nell'ordine della galleria
-  const M = missSet(), q = GF.q.trim().toLowerCase();
-  return S.photos.filter(p => gPass(p, GF.f, M) && (GF.o === "tutte" || (GF.o === "v" ? p.ar < 1 : p.ar >= 1)) && (!q || p.n.toLowerCase().includes(q)));
+function filterList(list, st) {          // list: foto del programma; applica filtro, orientamento, colori, ricerca, ordinamento
+  const M = missSet(), q = st.q.trim().toLowerCase(), ix = new Map(S.photos.map((p, i) => [p.n, i]));
+  const a = list.filter(p => gPass(p, st.f, M) && (st.o === "tutte" || (st.o === "v" ? p.ar < 1 : p.ar >= 1)) && (!st.c.length || st.c.includes(p.col || "-")) && (!q || p.n.toLowerCase().includes(q)));
+  const nm = (x, y) => x.n.localeCompare(y.n, undefined, { numeric: true }), cx = p => p.col ? COLS.findIndex(c => c[0] === p.col) : 99;
+  const cmp = { ord: (x, y) => ix.get(x.n) - ix.get(y.n), nome: nm, nomeD: (x, y) => nm(y, x), data: (x, y) => (x.dt < y.dt ? -1 : x.dt > y.dt ? 1 : nm(x, y)), dataD: (x, y) => (x.dt < y.dt ? 1 : x.dt > y.dt ? -1 : nm(y, x)), col: (x, y) => cx(x) - cx(y) || ix.get(x.n) - ix.get(y.n) }[st.s] || (() => 0);
+  return a.sort(cmp);
 }
+// barra: filtri, orientamento, colori, ordinamento, ricerca, zoom. cfg = { filters, zmin, zmax, onChange(), onZoom(live), assign() }
+function mkBar(el, st, cfg) {
+  el.innerHTML = '<div class="seg gF"></div><div class="seg gO"></div><span class="dots gC"></span><select class="gS" title="Ordina per"></select><input class="gQ" type="search" placeholder="Cerca nome…"><span class="zoom"><button class="zm" title="Miniature più piccole">−</button><input class="zr" type="range" title="Dimensione miniature"><button class="zp" title="Miniature più grandi">+</button></span>' + (cfg.assign ? '<span class="dots as"><span class="lb">Colora:</span></span>' : "");
+  const $q = c => el.querySelector(c), rg = $q(".zr"); rg.min = cfg.zmin; rg.max = cfg.zmax; rg.step = 10;
+  $q(".gS").innerHTML = SORTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join(""); $q(".gS").onchange = e => { st.s = e.target.value; saveF(st); cfg.onChange(); };
+  $q(".gQ").oninput = e => { st.q = e.target.value; cfg.onChange(); }; $q(".gQ").onkeydown = e => e.stopPropagation();
+  const zoom = v => { st.sz = Math.max(cfg.zmin, Math.min(cfg.zmax, Math.round(v / 10) * 10)); rg.value = st.sz; saveF(st); cfg.onZoom(); };
+  $q(".zm").onclick = () => { zoom(st.sz - 20); cfg.onChange(); }; $q(".zp").onclick = () => { zoom(st.sz + 20); cfg.onChange(); };
+  rg.oninput = () => zoom(+rg.value); rg.onchange = () => cfg.onChange();
+  if (cfg.assign) { const A = $q(".as"); COLS.forEach(([k, c]) => { const i = document.createElement("i"); i.style.setProperty("--c", c); i.title = "Colora: " + k; i.onclick = () => cfg.assign(k); A.appendChild(i); }); const x = document.createElement("i"); x.className = "nc"; x.title = "Togli il colore"; x.onclick = () => cfg.assign(null); A.appendChild(x); }
+  return function refresh(list) {
+    const M = missSet(), cnt = f => list.filter(p => gPass(p, f, M)).length;
+    const F = $q(".gF"); F.innerHTML = ""; cfg.filters.forEach(([k, l]) => { if (k === "manca" && !cnt(k) && st.f !== k) return; const b = document.createElement("button"); b.className = st.f === k ? "on" : ""; b.innerHTML = `${l}<span class="c">${cnt(k)}</span>`; b.onclick = () => { st.f = k; saveF(st); cfg.onChange(); }; F.appendChild(b); });
+    const O = $q(".gO"); O.innerHTML = ""; GORI.forEach(([k, l]) => { const b = document.createElement("button"); b.className = st.o === k ? "on" : ""; b.textContent = l; b.onclick = () => { st.o = k; saveF(st); cfg.onChange(); }; O.appendChild(b); });
+    const C = $q(".gC"); C.innerHTML = ""; [...COLS, ["-", ""]].forEach(([k, c]) => { const i = document.createElement("i"); if (k === "-") i.className = "nc"; else i.style.setProperty("--c", c); if (st.c.includes(k)) i.classList.add("on"); i.title = k === "-" ? "Senza colore" : "Mostra solo: " + k; i.onclick = () => { const n = st.c.indexOf(k); if (n >= 0) st.c.splice(n, 1); else st.c.push(k); saveF(st); cfg.onChange(); }; C.appendChild(i); });
+    $q(".gS").value = st.s; rg.value = st.sz;
+  };
+}
+let HOV = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
+function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
+const visPhotos = () => filterList(S.photos, GF);
 const selectable = () => visPhotos().filter(x => x.sp == null && !x.tolta).map(x => x.n);
-function setThumb(v) { GF.sz = Math.max(80, Math.min(360, Math.round(v / 10) * 10)); $("thr").value = GF.sz; $("libgrid").style.setProperty("--th", GF.sz + "px"); saveGF(); }
-function renderLibBars() {
-  const M = missSet(), cnt = f => S.photos.filter(p => gPass(p, f, M)).length;
-  $("gfF").innerHTML = ""; GFILT.forEach(([k, l]) => { if (k === "manca" && !cnt(k) && GF.f !== k) return; const b = document.createElement("button"); b.className = GF.f === k ? "on" : ""; b.innerHTML = `${l}<span class="c">${cnt(k)}</span>`; b.onclick = () => { GF.f = k; saveGF(); renderLib(); }; $("gfF").appendChild(b); });
-  $("gfO").innerHTML = ""; GORI.forEach(([k, l]) => { const b = document.createElement("button"); b.className = GF.o === k ? "on" : ""; b.textContent = l; b.onclick = () => { GF.o = k; saveGF(); renderLib(); }; $("gfO").appendChild(b); });
-}
+let gBar = null;
 function renderLib() {
   if (view !== "foto") return;
-  const G = $("libgrid"), keep = G.scrollTop; G.innerHTML = ""; renderLibBars(); setThumb(GF.sz);
+  const G = $("libgrid"), keep = G.scrollTop; G.innerHTML = "";
+  if (!gBar) gBar = mkBar($("libfbar"), GF, { filters: GFILT, zmin: 80, zmax: 360, onChange: renderLib, onZoom: () => G.style.setProperty("--th", GF.sz + "px"), assign: assignColor.bind(null) });
+  G.style.setProperty("--th", GF.sz + "px"); gBar(S.photos);
   const VIS = visPhotos(), tw = GF.sz > 200 ? 560 : 300;
   const free = S.photos.filter(p => p.sp == null && !p.tolta).length;
   $("libinfo").textContent = `${S.photos.length} foto · ${free} da usare · ${S.photos.filter(p => p.sp != null).length} già in uno spread`;
@@ -1004,8 +1037,9 @@ function renderLib() {
   const MISS = missSet();
   VIS.forEach(p => {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
-    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
+    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${p.col ? `<span class="cl" style="background:${COLC[p.col]}" title="${p.col}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
+    d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; };
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
       if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast("Foto ripristinata: torna tra quelle da usare")); return; }
@@ -1086,9 +1120,6 @@ async function doImport(paths) {
 $("impF").onclick = () => fbOpen("folder"); $("impP").onclick = () => fbOpen("files");
 $("selclear").onclick = () => { SELP = []; renderLib(); };
 $("selall").onclick = () => { SELP = selectable(); lastClick = SELP[SELP.length - 1] || null; renderLib(); };
-$("thm").onclick = () => { setThumb(GF.sz - 20); renderLib(); }; $("thp").onclick = () => { setThumb(GF.sz + 20); renderLib(); };
-$("thr").oninput = () => { setThumb(+$("thr").value); }; $("thr").onchange = renderLib;
-$("libq").oninput = () => { GF.q = $("libq").value; renderLib(); }; $("libq").onkeydown = e => e.stopPropagation();
 $("tabF").onclick = () => { view = "foto"; render(); }; $("tabA").onclick = () => { view = "album"; render(); }; $("gofoto").onclick = () => { view = "foto"; render(); };
 
 // ---- galleria modelli (come la scelta dei template di Smart Albums)
@@ -1204,6 +1235,7 @@ $("ego").onclick = async () => {
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 document.addEventListener("keydown", e => {
+  if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
   if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !(document.activeElement && (/TEXTAREA|SELECT/.test(document.activeElement.tagName) || (document.activeElement.tagName === "INPUT" && /text|number|search/.test(document.activeElement.type))))) {       // ⌘A nella galleria (le caselle da spuntare non lo bloccano): tutte le foto ancora da usare
     e.preventDefault(); SELP = selectable(); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
   }

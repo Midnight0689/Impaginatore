@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 19 — Filtri, colori e ordinamento anche in Album; colori stile Lightroom
+- La striscia «foto libere» dell'album ha la stessa barra della galleria Foto: filtri, Verticali/Orizzontali, colori, ordinamento, ricerca e zoom (la striscia si alza/abbassa con lo zoom). Etichette colore (rosso, arancio, giallo, verde, azzurro, viola, rosa): si assegnano con i pallini «Colora:» alle foto selezionate, o coi tasti 1–7 (0 toglie) sulla selezione, o sulla foto sotto il mouse (anche nella striscia dell'album). Pallino sulla miniatura e filtro per colore (anche «senza colore»). Ordinamento: import, nome A→Z/Z→A, data di scatto ↑/↓, colore. Server: `CFG["colori"]` (progetto.json, annullabile), op `colore`, campo `col` nelle foto. — `editor.py`, `index.html` (`mkBar`, `filterList`, `renderPool`).
+
 ## Versione 18 — Galleria foto: scorrimento, filtri, ricerca, zoom miniature
 - Barra di scorrimento della galleria larga e ben visibile (sempre presente). Nuova riga sotto i pulsanti: filtri Tutte / Da usare / Già usate / Tolte / Mancanti (con conteggi), Tutte / Verticali / Orizzontali, ricerca per nome, e zoom miniature con − / cursore / + (80–360 px). Scelte ricordate (`localStorage` «galleriaFoto»). «Seleziona tutte» (e ⌘A) e Maiusc-clic agiscono solo sulle foto visibili e ancora da usare. Rimossa la casella «nascondi le già usate» (ora è il filtro «Da usare»). La posizione di scorrimento resta quando si seleziona. — `index.html` (`renderLib`, `visPhotos`, `GF`).
 
