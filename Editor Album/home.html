@@ -12,6 +12,7 @@
   button { cursor: pointer; } button:hover { border-color: #777; }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
   header { display: flex; align-items: center; gap: 10px; padding: 14px 28px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  #verb { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; } #verb i { width: 9px; height: 9px; border-radius: 50%; background: #666; display: inline-block; } #verb.ok i { background: #3fb950; } #verb.nuova { background: #e0a526; color: #1a1a1a; border-color: #e0a526; } #verb.nuova i { background: #1a1a1a; } #verb.off i { background: #e5484d; }
   header h1 { font-size: 18px; margin: 0; flex: 1; }
   main { padding: 28px; max-width: 1200px; margin: 0 auto; }
   h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--dim); margin: 0 0 14px; }
@@ -45,7 +46,7 @@
 <body>
 <header>
   <h1>Impaginatore</h1>
-  <button id="verb" title="Versione in uso e controllo aggiornamenti" style="background:none;border:0;color:var(--dim);cursor:pointer;font-size:12px">v…</button>
+  <button id="verb" title="Versione in uso e controllo aggiornamenti"><i id="vdot"></i><span id="vtxt">Versione…</span></button>
   <button id="upd" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700" title="">⬆ Aggiornamento disponibile</button>
   <button id="add" title="Apri un progetto che sta in un'altra cartella (quella con progetto.json)">Apri progetto esistente…</button>
   <button id="addzip" title="Importa un progetto esportato come file ZIP (Esporta progetto dall'editor)">Importa ZIP…</button>
@@ -150,11 +151,12 @@ $("nome").onkeydown = e => { if (e.key === "Enter") $("create").onclick(); };
 $("addzip").onclick = async () => { const b = $("addzip"); b.disabled = true; b.textContent = "Importo…"; try { const r = await api("/api/importa-zip", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Importa ZIP…"; };
 $("add").onclick = async () => { try { const r = await api("/api/aggiungi", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } };
 $("quit").onclick = async () => { if (confirm("Chiudere il programma? Le modifiche sono già salvate.")) { try { await api("/api/esci", {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;color:#aaa">Programma chiuso. Puoi chiudere questa scheda.</p>'; } };
-async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = r.da_aggiornare ? "" : "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
+async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
 $("upd").onclick = async () => { const b = $("upd"); if (!confirm("Novità:\n" + b.dataset.n + "\n\nAggiorno e riavvio il programma? Il lavoro è già salvato.")) return; b.textContent = "Aggiorno…"; b.disabled = true; try { await api("/api/aggiorna", {}); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Aggiornato: il programma si riapre da solo tra qualche secondo…</p>'; setTimeout(() => location.reload(), 6000); } catch (e) { alert(e.message); b.disabled = false; b.textContent = "⬆ Aggiornamento disponibile"; } };
-const fmtV = v => v ? `<b>v${v.n}</b> · ${v.data} · ${v.titolo} <span style="color:var(--dim)">(${v.codice})</span>` : "—";
+const fmtV = v => v ? `<b>Versione ${v.n}</b> · ${v.data} · ${v.titolo} <span style="color:var(--dim)">(${v.codice})</span>` : "—";
 function showVer(r) {
-  $("verb").textContent = r.attuale ? `v${r.attuale.n}` : "v?";
+  const vb = $("verb"); vb.className = r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
+  $("vtxt").textContent = !r.attuale ? "Versione ?" : r.errore ? `Versione ${r.attuale.n} · non riesco a controllare` : r.da_aggiornare ? `Versione ${r.attuale.n} · disponibile la ${r.ultima ? r.ultima.n : "nuova"} — clicca per aggiornare` : `Versione ${r.attuale.n} · aggiornata`;
   const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "mai";
   $("vbody").innerHTML = `In uso: ${fmtV(r.attuale)}<br>` + (r.errore ? `<span style="color:#e5484d">Non riesco a controllare GitHub (internet?)</span>` : r.da_aggiornare ? `Disponibile: ${fmtV(r.ultima)}<br><b>Novità:</b><br>${(r.novita || []).map(x => "• " + x).join("<br>")}` : `<span style="color:#5cb85c">✓ Hai già l'ultima versione</span>`) + `<br><span style="color:var(--dim);font-size:12px">Ultimo controllo: ${ago}</span>`;
   $("vgo").style.display = r.da_aggiornare ? "" : "none";
