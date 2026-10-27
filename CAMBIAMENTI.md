@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 14 — Strumenti divisi: sinistra e destra
+- A SINISTRA (sopra l'elenco degli spread, `#sbarL`): Spread, Strumenti, Vista. A DESTRA (sopra l'ispettore, `#sbarR`): Allinea alla pagina e Foto selezionata (compaiono solo con una selezione), pulsanti grandi come nella v12. `#list` è ora un contenitore con `#sbarL` + `#thumbs` (l'elenco: `renderList` scrive in `#thumbs`); `#side` contiene `#sbarR` + `#insp`. I selettori dei pulsanti sono `.sb [data-al]`. Colonne: sinistra 288 px, destra 330 px. — `index.html`.
+
 ## Versione 13 — Strumenti di nuovo SOPRA la pagina
 - Il pannello della v12 (a destra) non andava bene: `#sbar` è tornato sopra la pagina, dentro `#stage`; a destra resta solo l'ispettore (`#insp` dentro `#side`). Restano i pulsanti grandi a icona, ma più compatti (56×50 px, etichette corte: Prima/Dopo, Uguali, Originale, Pagina, Vertic., Orizz.; distribuisci solo icona) per stare su 2-3 righe. — `index.html`.
 

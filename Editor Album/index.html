@@ -227,21 +227,24 @@
   .chip { background: var(--blue); color: #fff; }
   .hd { border-radius: 50%; border: 2px solid #fff; background: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.5); }
   #hint { color: var(--dim); }
-  /* ===== Barra strumenti sopra la pagina, pulsanti grandi ===== */
-  #sbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; width: 100%; max-width: 1522px; margin: 0 0 10px; font-size: 12px; }
-  #sbar .box { padding: 6px 8px 8px; gap: 5px; border-radius: 14px; background: rgba(255,255,255,.04); box-shadow: none; }
-  #sbar .box > i { font-size: 10px; padding-left: 2px; }
-  #sbar .box > div { display: flex; flex-wrap: wrap; gap: 4px; align-items: stretch; }
-  #sbar button { width: 56px; height: 50px; padding: 3px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 500; line-height: 1.1; text-align: center; white-space: normal; border-radius: 10px; background: rgba(255,255,255,.07); }
-  #sbar button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
-  #sbar button.on { background: var(--blue); color: #fff; }
-  #sbar button.al { width: 42px; height: 50px; }
-  #sbar .vs { width: 1px; background: var(--line); margin: 4px 3px; }
-  .ic2 { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-  #sbar .navrow { display: flex; align-items: center; gap: 2px; }
-  #sbar .navrow button { width: 40px; height: 50px; } #sbar .cnt { text-align: center; line-height: 1.05; min-width: 48px; } #sbar .cnt b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; min-width: 0; display: block; } #sbar .cnt span { color: var(--dim); font-size: 10.5px; }
-  #sbar button.danger:hover:not(:disabled) { background: rgba(255,105,97,.2); color: var(--danger); }
-  #insp { padding: 0; }
+  /* ===== Strumenti a sinistra (spread, strumenti, vista) e a destra (selezione, allinea): pulsanti grandi ===== */
+  :root { --lc: 288px; --rc: 330px; }
+  #list { display: flex; flex-direction: column; overflow: hidden; padding: 0; } #thumbs { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 12px; }
+  #side { display: flex; flex-direction: column; overflow-y: auto; padding: 0 !important; } #insp { padding: 0; flex: none; }
+  .sb { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 4px; font-size: 12px; flex: none; }
+  .sb:empty { display: none; }
+  #sbarL { overflow-y: auto; max-height: 62%; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  .sb .box { background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 14px; padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: none; }
+  .sb .box > i { font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); padding-left: 2px; }
+  .sb .box > div { display: grid; gap: 6px; } .sb .g3 { grid-template-columns: repeat(3, 1fr); } .sb .g4 { grid-template-columns: repeat(4, 1fr); }
+  .sb button { height: 62px; padding: 6px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 11px; font-weight: 500; line-height: 1.15; text-align: center; white-space: normal; border-radius: 12px; background: rgba(255,255,255,.07); width: auto; }
+  .sb button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+  .sb button.on { background: var(--blue); color: #fff; }
+  .sb button.al { height: 46px; } .sb button.al2 { flex-direction: row; gap: 6px; height: 46px; } .sb .g3 > .al2:nth-last-child(2) { grid-column: 1 / span 2; } .sb .g3 > .al2:last-child { grid-column: 3; }
+  .ic2 { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .sb .navrow { grid-column: 1 / -1; display: grid; grid-template-columns: 56px 1fr 56px; gap: 6px; align-items: center; }
+  .sb .navrow button { height: 50px; } .sb .cnt { text-align: center; line-height: 1.1; } .sb .cnt b { font-size: 28px; font-weight: 700; letter-spacing: -.03em; display: block; } .sb .cnt span { color: var(--dim); font-size: 12px; }
+  .sb button.danger:hover:not(:disabled) { background: rgba(255,105,97,.2); color: var(--danger); }
   #toast { z-index: 60; }
   #stage:has(#tpl[style*="display: block"]) { overflow: hidden; }
   #tpl .bar { flex-wrap: wrap; row-gap: 6px; } #tpl .bar b { white-space: nowrap; } #tpl .bar .empty { flex: 1 1 280px; }
@@ -268,16 +271,15 @@
     <button id="tlist" class="ico" title="Mostra/nascondi l'elenco degli spread"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><button id="tside" class="ico" title="Mostra/nascondi il pannello delle impostazioni"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></svg></button><button id="tfull" class="ico" title="Modifica a tutto schermo (Tab)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     <button id="expb" class="primary"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span class="lbl">Esporta…</span></button>
   </div>
-  <div id="list" title="Trascina gli spread per riordinarli"></div>
+  <div id="list"><div id="sbarL" class="sb"></div><div id="thumbs" title="Trascina gli spread per riordinarli"></div></div>
   <div id="stage">
     <div id="nospread"><b>Nessuno spread</b><br>Vai su <u id="gofoto" style="cursor:pointer">Foto</u>, seleziona le foto e scegli un modello.</div>
-    <div id="sbar"></div>
     <div id="rwrap"><canvas id="rh"></canvas><canvas id="rv"></canvas><div id="rc"></div>
       <div id="wrap"><img id="main" alt=""><div id="slots"></div><div id="guides"></div></div></div>
     <div id="hint">Foto: trascina per spostare, quadratini per ridimensionare (si aggancia a bordi e guide; Alt = libero) · Guide: trascinale dal righello (fuori dallo spread le togli)</div>
     <div id="tpl"></div>
   </div>
-  <div id="side"><div id="insp"></div></div>
+  <div id="side"><div id="sbarR" class="sb"></div><div id="insp"></div></div>
   <div id="pool"></div>
   <div id="libview">
     <div id="libmain">
@@ -369,7 +371,7 @@ function render() {
   if (S.home) { $("home").style.display = ""; $("home").href = S.home; if (!window._upd) { window._upd = 1; const chk = () => fetch(S.home + "/api/aggiornamento").then(r => r.json()).then(r => { $("home").title = r.attuale ? `Torna ai progetti · versione ${r.attuale.n}` : "Torna ai progetti"; $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").href = S.home; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
   document.body.classList.toggle("foto", view === "foto"); $("tabF").classList.toggle("on", view === "foto"); $("tabA").classList.toggle("on", view === "album");
   renderLib();
-  const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; ["sbar", "rwrap", "hint"].forEach(i => $(i).style.display = empty ? "none" : "");
+  const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; ["sbarL", "sbarR", "rwrap", "hint"].forEach(i => $(i).style.display = empty ? "none" : "");
   renderList(); renderPool();
   if (empty) { sel = null; $("insp").innerHTML = ""; return; }
   updMiss(); renderSbar(); renderStage(); renderSide(); drawRulers(); renderGuides();
@@ -377,7 +379,7 @@ function render() {
 }
 
 function renderList() {
-  const L = $("list"), have = L.children.length;
+  const L = $("thumbs"), have = L.children.length;
   while (L.children.length > S.spreads.length) L.lastChild.remove();
   S.spreads.forEach((sp, k) => {
     let d = L.children[k];
@@ -489,34 +491,33 @@ function renderSbar() {
   const sel_lbl = `${msel.length} ${onlyTxt ? (msel.length === 1 ? "testo selezionato" : "testi selezionati") : msel.length === 1 ? "foto selezionata" : "foto selezionate"}`;
   const B = (id, ic, lbl, ttl, extra = "") => `<button id="${id}" title="${ttl}" ${extra}>${IC(ic)}${lbl ? `<span>${lbl}</span>` : ""}</button>`;
   const AL = (m, ic, ttl, extra = "") => `<button data-al="${m}" title="${ttl}" class="al" ${extra}>${IC(ic)}</button>`;
-  $("sbar").innerHTML =
-    `<div class="box"><i>Spread</i><div class="g3"><div class="navrow">${B("mvl", "prev", "", "Spread precedente (↑)", cur === 0 ? "disabled" : "")}<div class="cnt"><b>${cur + 1}</b><span>di ${n}</span></div>${B("mvr", "next", "", "Spread successivo (↓)", cur === n - 1 ? "disabled" : "")}</div>
+    $("sbarL").innerHTML = `<div class="box"><i>Spread</i><div class="g3"><div class="navrow">${B("mvl", "prev", "", "Spread precedente (↑)", cur === 0 ? "disabled" : "")}<div class="cnt"><b>${cur + 1}</b><span>di ${n}</span></div>${B("mvr", "next", "", "Spread successivo (↓)", cur === n - 1 ? "disabled" : "")}</div>
       ${B("newsp", "plus", "Nuovo", "Aggiungi uno spread")}${B("dupsp", "dup", "Duplica", "Duplica questo spread subito dopo (Cmd+D)")}${B("delsp", "trash", "Elimina", "Elimina lo spread (le foto tornano libere)", (n < 2 ? "disabled " : "") + 'class="danger"')}
-      ${B("mvup", "mprev", "Prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>` +
-    (msel.length ? `<div class="box"><i>Allinea${msel.length === 1 ? " alla pagina" : ""}</i><div class="g3">
-      ${AL("l", "al-l", "Allinea a sinistra")}${AL("ch", "al-ch", "Centra in orizzontale")}${AL("r", "al-r", "Allinea a destra")}
-      ${AL("t", "al-t", "Allinea in alto")}${AL("cv", "al-cv", "Centra in verticale")}${AL("b", "al-b", "Allinea in basso")}
-      <button data-al="dh" class="al" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in orizzontale (servono 3 elementi)">${IC("dist-h")}</button>
-      <button data-al="dv" class="al" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in verticale (servono 3 elementi)">${IC("dist-v")}</button></div></div>` : "") +
-    (msel.length ? `<div class="box"><i>${sel_lbl}</i><div class="g4">
-      ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (])")}${B("zbw", "down", "Indietro", "Un livello indietro ([)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}
-      ${onlyTxt ? "" : `<span class="vs"></span>${B("msame", "same", "Uguali", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Originale", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Vertic.", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizz.", "Tutte le cornici selezionate in orizzontale")}`}</div></div>` : "") +
+      ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>` +
     `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}</div></div>` +
     `<div class="box"><i>Vista</i><div class="g4">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length ? "" : "disabled")}</div></div>`;
+  $("sbarR").innerHTML = (msel.length ? `<div class="box"><i>Allinea${msel.length === 1 ? " alla pagina" : ""}</i><div class="g3">
+      ${AL("l", "al-l", "Allinea a sinistra")}${AL("ch", "al-ch", "Centra in orizzontale")}${AL("r", "al-r", "Allinea a destra")}
+      ${AL("t", "al-t", "Allinea in alto")}${AL("cv", "al-cv", "Centra in verticale")}${AL("b", "al-b", "Allinea in basso")}
+      <button data-al="dh" class="al2" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in orizzontale (servono 3 elementi)">${IC("dist-h")}<span>Spazi ↔</span></button>
+      <button data-al="dv" class="al2" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in verticale (servono 3 elementi)">${IC("dist-v")}<span>Spazi ↕</span></button></div></div>` : "") +
+    (msel.length ? `<div class="box"><i>${sel_lbl}</i><div class="g4">
+      ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (])")}${B("zbw", "down", "Indietro", "Un livello indietro ([)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
+      ${onlyTxt ? "" : `<div class="g3" style="margin-top:6px">${B("msame", "same", "Stessa misura", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Proporzioni", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Tutta pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Verticali", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizzontali", "Tutte le cornici selezionate in orizzontale")}</div>`}</div>` : "");
   $("newsp").onclick = e => { const m = $("nmenu"), r = e.currentTarget.getBoundingClientRect(); m.style.display = "block"; m.style.left = Math.max(8, Math.min(r.left, innerWidth - 270)) + "px"; m.style.top = r.bottom + 4 + "px"; e.stopPropagation(); };
   $("mvup").onclick = () => moveSp(cur, cur - 1); $("mvdn").onclick = () => moveSp(cur, cur + 1);
   $("dupsp").onclick = dupSpread;
   $("mvl").onclick = () => go(cur - 1); $("mvr").onclick = () => go(cur + 1);
   $("delsp").onclick = () => { if (confirm("Eliminare lo spread " + (cur + 1) + "? Le foto tornano libere (puoi annullare).")) op({ op: "delete", s: cur }); };
-  document.querySelectorAll("#sbar [data-mode]").forEach(b => b.onclick = () => { const [side, mode] = b.dataset.mode.split(":"); op({ op: "mode", s: cur, side, mode }); });
-  document.querySelectorAll("#sbar [data-add]").forEach(b => b.onclick = () => op({ op: "addframe", s: cur, side: b.dataset.add }));
+  document.querySelectorAll(".sb [data-mode]").forEach(b => b.onclick = () => { const [side, mode] = b.dataset.mode.split(":"); op({ op: "mode", s: cur, side, mode }); });
+  document.querySelectorAll(".sb [data-add]").forEach(b => b.onclick = () => op({ op: "addframe", s: cur, side: b.dataset.add }));
   if (msel.length) {
     const z = d => () => op({ op: "zorder", s: cur, ats: mAts(), dir: d });
     $("zfront").onclick = z("front"); $("zfw").onclick = z("forward"); $("zbw").onclick = z("backward"); $("zback").onclick = z("back");
     if (!onlyTxt) { $("msame").onclick = () => op({ op: "equalize", s: cur, ...selOrder() }); $("mar").onclick = () => op({ op: "origar", s: cur, ats: mAts() });
     $("mfull").onclick = () => op({ op: "fullpage", s: cur, ats: mAts() }); $("mver").onclick = () => op({ op: "orient", s: cur, dir: "v", ats: mAts() }); $("mhor").onclick = () => op({ op: "orient", s: cur, dir: "h", ats: mAts() }); }
   }
-  document.querySelectorAll("#sbar [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
+  document.querySelectorAll(".sb [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
   $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
