@@ -20,4 +20,7 @@ Rispondi in italiano, breve e diretto, con immagini quando aiutano. La cartella 
 - Mai toccare PSD già ritoccati a mano da Stefano; mai sovrascrivere i suoi PDF/esportazioni.
 - Non usare undo/redo sull'editor vivo per test: lavora su una copia del progetto.
 - Dati globali dell'utente (`~/.album-tools/modelli_utente.json`) non vanno cancellati; i test usano un HOME finto.
+- Prima di modificare il programma leggi `CAMBIAMENTI.md`; dopo ogni modifica aggiungi in cima una voce (cosa, perché, file) con il numero della nuova versione.
 - Dopo ogni modifica al codice: test su copia, riavvio dell'editor, poi `git commit` + `git push` e di' a Stefano che sull'Air basta **Aggiorna.command**.
+
+- Se qualcosa va storto dopo una modifica: riquadro Versione → «Versioni precedenti» → «Torna a questa» (crea una nuova versione, non cancella nulla).

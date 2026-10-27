@@ -63,6 +63,7 @@
 <div class="veil" id="vver"><div class="dlg">
   <h3>Versione del programma</h3>
   <div id="vbody" style="line-height:1.8;font-size:14px"></div>
+  <div style="margin-top:12px"><a href="#" id="vhist" style="color:var(--dim);font-size:13px">▸ Versioni precedenti (tornare indietro)</a><div id="vlist" style="display:none;max-height:220px;overflow:auto;margin-top:8px;font-size:13px"></div></div>
   <div class="btns"><button id="vchk">Controlla aggiornamenti</button><button id="vgo" class="primary" style="display:none">Aggiorna ora</button><button id="vclose">Chiudi</button></div>
 </div></div>
 
@@ -162,6 +163,7 @@ function showVer(r) {
   $("vgo").style.display = r.da_aggiornare ? "" : "none";
 }
 $("verb").onclick = async () => { $("vver").style.display = "flex"; try { showVer(await (await fetch("/api/aggiornamento")).json()); } catch (e) {} };
+$("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (L.style.display === "block") { L.style.display = "none"; return; } L.style.display = "block"; L.textContent = "…"; try { const r = await (await fetch("/api/versioni")).json(); L.innerHTML = ""; r.versioni.forEach(v => { const d = document.createElement("div"); d.style.cssText = "display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)"; d.innerHTML = `<span style="flex:1"><b>Versione ${v.n}</b> · ${v.data}<br><span style="color:var(--dim)">${v.titolo.replace(/</g, "&lt;")}</span></span>` + (v.attuale ? '<span style="color:#3fb950">in uso</span>' : '<button>Torna a questa</button>'); const b = d.querySelector("button"); if (b) b.onclick = async () => { if (!confirm(`Tornare alla versione ${v.n}?\n\n${v.titolo}\n\nIl programma si riavvia. I tuoi progetti non cambiano. Le versioni successive restano salvate.`)) return; b.textContent = "Ripristino…"; try { const x = await api("/api/ripristina", { codice: v.codice }); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Tornato alla versione ' + x.n + (x.caricato ? "" : " (solo su questo Mac: non sono riuscito a caricarla su GitHub)") + '. Il programma si riapre da solo…</p>'; setTimeout(() => location.reload(), 6000); } catch (err) { alert(err.message); b.textContent = "Torna a questa"; } }; L.appendChild(d); }); } catch (err) { L.textContent = "Non riesco a leggere le versioni"; } };
 $("vclose").onclick = () => $("vver").style.display = "none";
 $("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
 $("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };

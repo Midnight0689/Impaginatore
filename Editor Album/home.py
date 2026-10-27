@@ -151,6 +151,26 @@ def info_versione(rif):
     except Exception: return None
 
 
+def elenco_versioni(k=20):
+    out = _git("log", f"-{k}", "--pretty=%h|%cd|%s", "--date=format:%d/%m/%Y %H:%M").stdout.strip().splitlines()
+    tot = int(_git("rev-list", "--count", "HEAD").stdout.strip() or 0)
+    return [dict(n=tot - i, codice=r.split("|", 2)[0], data=r.split("|", 2)[1], titolo=r.split("|", 2)[2], attuale=i == 0) for i, r in enumerate(out)]
+
+
+def ripristina_versione(codice):
+    """riporta il programma allo stato di una versione precedente CREANDO una nuova versione (la storia non si perde, gli altri Mac la ricevono come un normale aggiornamento)"""
+    if not re.fullmatch(r"[0-9a-f]{7,40}", codice or ""): raise ValueError("versione non valida")
+    if _git("status", "--porcelain", "--untracked-files=no").stdout.strip(): raise ValueError("Ci sono modifiche del programma non ancora salvate: chiedi a Claude di salvarle prima")
+    n = _git("rev-list", "--count", codice).stdout.strip()
+    if _git("read-tree", "-u", "--reset", codice).returncode != 0: raise ValueError("Ripristino non riuscito")
+    _git("-c", "user.name=Impaginatore", "-c", "user.email=impaginatore@local", "commit", "-q", "--allow-empty", "-m", f"Ripristino alla versione {n} ({codice})")
+    p = _git("push", "-q", t=60)
+    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
+    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+    riavvia_programma()
+    return dict(n=n, caricato=p.returncode == 0)
+
+
 def controlla_aggiornamenti():
     """confronta questa versione con quella su GitHub (solo lettura: fetch + confronto); mai pull da solo"""
     try:
@@ -168,15 +188,8 @@ def ciclo_aggiornamenti():
         controlla_aggiornamenti(); time.sleep(3 * 3600)
 
 
-def aggiorna_programma():
-    """pull + ripristino ambiente + riavvio del programma (i progetti sono già salvati: l'editor salva da solo)"""
-    for pr, _ in list(EDITORS.values()):
-        try: pr.poll()
-        except Exception: pass
-    r = _git("pull", "--ff-only", t=120)
-    if r.returncode != 0: raise ValueError("Aggiornamento non riuscito: " + (r.stderr or r.stdout)[:300])
-    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
-    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+def riavvia_programma():
+    if os.environ.get("IMPAGINATORE_SENZA_RIAVVIO"): return                       # solo per le prove
     app = os.path.join(BASE, "Impaginatore.app")
     def riavvia():
         time.sleep(.6)
@@ -186,6 +199,18 @@ def aggiorna_programma():
         subprocess.Popen(["/bin/sh", "-c", f'sleep 1.5; open "{app}"'], start_new_session=True)
         os._exit(0)
     threading.Thread(target=riavvia, daemon=True).start()
+
+
+def aggiorna_programma():
+    """pull + ripristino ambiente + riavvio del programma (i progetti sono già salvati: l'editor salva da solo)"""
+    for pr, _ in list(EDITORS.values()):
+        try: pr.poll()
+        except Exception: pass
+    r = _git("pull", "--ff-only", t=120)
+    if r.returncode != 0: raise ValueError("Aggiornamento non riuscito: " + (r.stderr or r.stdout)[:300])
+    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
+    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+    riavvia_programma()
     return True
 
 
@@ -206,6 +231,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ping": self.send({"ok": True})
             elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI))
             elif u.path == "/api/aggiornamento": self.send(AGG)
+            elif u.path == "/api/versioni": self.send({"versioni": elenco_versioni()})
             elif u.path == "/api/pronto": self.send({"pronto": pronto(int(q["porta"][0]))})
             elif u.path == "/api/cover":
                 p = q["path"][0]; n = q["n"][0]
@@ -227,6 +253,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/scegli-foto":
                 self.send({"path": scegli_cartella("Scegli la cartella con le foto del cliente")})
             elif u.path == "/api/aggiorna": self.send({"ok": aggiorna_programma()})
+            elif u.path == "/api/ripristina": self.send(ripristina_versione(d.get("codice")))
             elif u.path == "/api/controlla": controlla_aggiornamenti(); self.send(AGG)
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
