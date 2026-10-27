@@ -955,23 +955,23 @@ def pick(kind):
     return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 def do_import(paths):
-    dst = os.path.join(PROJ, "Foto"); os.makedirs(dst, exist_ok=True); files = []
+    """aggiunge le foto al progetto SENZA copiarle: il progetto punta ai file originali (foto_extra)"""
+    files = []
     for p in paths:
         p = os.path.expanduser(p)
         if os.path.isdir(p):
             for root, _, fs in os.walk(p):
                 files += [os.path.join(root, f) for f in sorted(fs)]
         else: files.append(p)
-    n = skipped = 0; new = []; have = {f.lower() for f in os.listdir(dst)}
+    fd = CFG.get("foto", ""); have = {f.lower() for f in os.listdir(fd)} if os.path.isdir(fd) else set()
+    have |= {os.path.basename(x).lower() for x in CFG.get("foto_extra", [])}
+    n = skipped = 0; new = []
     for f in files:
         base, ext = os.path.splitext(os.path.basename(f))
         if ext.lower() not in (".jpg", ".jpeg") or base.startswith("."): skipped += 1; continue
-        name = base + ".jpg"
-        if name.lower() in have: skipped += 1; continue
-        try: os.link(f, os.path.join(dst, name))
-        except OSError: shutil.copy2(f, os.path.join(dst, name))
-        have.add(name.lower()); n += 1; new.append(os.path.join(dst, name))
-    if new and os.path.abspath(dst) != os.path.abspath(CFG.get("foto", "")):          # il progetto legge un'altra cartella: aggiungo i file nuovi, altrimenti non comparirebbero
+        if os.path.basename(f).lower() in have: skipped += 1; continue
+        have.add(os.path.basename(f).lower()); n += 1; new.append(os.path.abspath(f))
+    if new:
         with LOCK: CFG["foto_extra"] = list(dict.fromkeys(list(CFG.get("foto_extra", [])) + new)); save(backup=False)
     return n, skipped
 
