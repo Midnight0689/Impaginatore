@@ -646,6 +646,7 @@ $("wrap").addEventListener("pointerdown", e => {              // rettangolo di s
 });
 const ICP = {
   prev: '<path d="m15 5-7 7 7 7"/>', next: '<path d="m9 5 7 7-7 7"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+  swap: '<path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/>',
   dup: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   mprev: '<path d="M4 4v16M20 12H9m0 0 5-5m-5 5 5 5"/>', mnext: '<path d="M20 4v16M4 12h11m0 0-5-5m5 5-5 5"/>',
@@ -671,7 +672,7 @@ function renderSbar() {
   const AL = (m, ic, ttl, extra = "") => `<button data-al="${m}" title="${ttl}" class="al" ${extra}>${IC(ic)}</button>`;
     $("sbarL").innerHTML = `<div class="box"><i>Spread</i><div class="g3"><div class="navrow">${B("mvl", "prev", "", "Spread precedente (↑)", cur === 0 ? "disabled" : "")}<div class="cnt"><b>${cur + 1}</b><span>di ${n}</span></div>${B("mvr", "next", "", "Spread successivo (↓)", cur === n - 1 ? "disabled" : "")}</div>
       ${B("newsp", "plus", "Nuovo", "Aggiungi uno spread")}${B("dupsp", "dup", "Duplica", "Duplica questo spread subito dopo (Cmd+D)")}${B("delsp", "trash", "Elimina", "Elimina lo spread (le foto tornano libere)", (n < 2 ? "disabled " : "") + 'class="danger"')}
-      ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>` +
+      ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}</div></div>` +
     `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}</div></div>` +
     `<div class="box"><i>Vista</i><div class="g4">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length ? "" : "disabled")}</div></div>`;
   $("sbarR").innerHTML = (`<div class="box"><i>${msel.length ? sel_lbl : "Selezione"}</i><div class="g4">
@@ -692,7 +693,7 @@ function renderSbar() {
     $("mfull").onclick = () => op({ op: "fullpage", s: cur, ats: mAts() }); $("mver").onclick = () => op({ op: "orient", s: cur, dir: "v", ats: mAts() }); $("mhor").onclick = () => op({ op: "orient", s: cur, dir: "h", ats: mAts() }); }
   }
   document.querySelectorAll(".sb [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
-  $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
+  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
   $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides);

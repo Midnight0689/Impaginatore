@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 63 — Inverti pagine
+- Nuovo pulsante «Inverti pagine» nel riquadro Spread: scambia le due pagine (le foto a sinistra vanno a destra e viceversa, stesse posizioni dentro la pagina; anche le guide verticali si specchiano). Annulla rimette tutto. — `editor.py` (op `swappages`), `index.html`.
+
 ## Versione 62 — Comando Taglia
 - Tasto destro → «Taglia» (e ⌘X): copia gli elementi scelti e li toglie dallo spread; si incolla con ⌘V anche in un altro spread. Annulla rimette tutto. — `index.html` (`cutSel`).
 

@@ -587,6 +587,10 @@ def apply(o):
         s, to = o["s"], max(0, min(len(SP) - 1, o["to"]))
         if not 0 <= s < len(SP): raise ValueError("spread inesistente")
         SP.insert(to, SP.pop(s)); GD.insert(to, GD.pop(s))
+    elif t == "swappages":                                # inverte le due pagine: quello che stava a sinistra va a destra e viceversa (stesse posizioni dentro la pagina)
+        s_ = o["s"]
+        if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
+        SP[s_][0], SP[s_][1] = SP[s_][1], SP[s_][0]; GD[s_]["v"] = [round(VW - x, 1) for x in GD[s_]["v"]]
     elif t == "delete":
         if not 0 <= o["s"] < len(SP): raise ValueError("spread inesistente")
         if len(SP) > 1: SP.pop(o["s"]); GD.pop(o["s"])
