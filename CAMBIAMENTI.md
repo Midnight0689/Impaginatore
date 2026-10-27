@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 12 — Pannello strumenti a destra, pulsanti grandi
+- Spread / Allinea / selezione (livelli e misure) / Strumenti / Vista non stanno più sopra la pagina ma in cima al pannello di DESTRA (`#sbar` dentro `#side`; l'ispettore della foto è sotto, in `#insp`). Pulsanti grandi a icona + etichetta (`ICP`/`IC` in `index.html`), numero dello spread grande con frecce. Pannello largo 330 px (`--rc`). Gli id dei pulsanti e i `data-al`/`data-mode` sono rimasti uguali: i gestori non sono cambiati. — `index.html`.
+
 ## Versione 11 — Livelli delle foto
 - Davanti/dietro non funzionava sulle foto che sono ancora «cornici del modello»: restavano sempre SOTTO le cornici libere. Ora, prima di spostare i livelli, le foto scelte e quelle che le toccano diventano cornici libere (stessa posizione) e partono dal fondo. — `editor.py` (`_zprep`, op `zorder`).
 
