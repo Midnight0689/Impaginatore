@@ -123,7 +123,7 @@
   body.foto #libview { display: grid; } body.foto #list, body.foto #stage, body.foto #side, body.foto #pool { display: none; }
   #libmain { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
   .libbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; } .libbar .sp { flex: 1; } #libinfo { color: var(--dim); }
-  #libgrid { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: max-content; gap: 10px; align-content: start; }
+  #libgrid { flex: 1; overflow-y: scroll; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--th, 140px), 1fr)); grid-auto-rows: max-content; gap: 10px; align-content: start; }
   .ph { position: relative; cursor: pointer; border: 3px solid transparent; border-radius: 4px; background: #222; aspect-ratio: 1 / 1; overflow: hidden; }
   .ph img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .ph { position: relative; } .ph .rm { display: none; position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,.7); color: #fff; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 11px; } .ph:hover .rm { display: block; } .ph.tolta .u { background: #b04a3a; }
@@ -183,6 +183,13 @@
   input[type=checkbox], input[type=radio] { accent-color: var(--blue); }
   input, select, .dlg input, .dlg select { background: #1b1b1d; border: 1px solid var(--line); border-radius: var(--r); padding: 5px 9px; color: var(--text); }
   input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(10,132,255,.25); }
+  #libgrid::-webkit-scrollbar { width: 16px; } #libgrid::-webkit-scrollbar-track { background: rgba(255,255,255,.05); border-left: 1px solid var(--line); }
+  #libgrid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.38); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; min-height: 48px; } #libgrid::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.6); background-clip: padding-box; border: 3px solid transparent; }
+  .libbar2 { display: flex; gap: 12px; align-items: center; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .libbar2 .seg { margin: 0; } .libbar2 .seg button { padding: 0 11px; white-space: nowrap; } .libbar2 .seg button.on { background: var(--blue) !important; color: #fff; }
+  .libbar2 .seg { background: #1b1b1d; border-radius: 8px; padding: 2px; } .libbar2 .seg button .c { opacity: .6; margin-left: 4px; font-size: 11px; }
+  .libbar2 .zoom { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; } .libbar2 .zoom button { width: 28px; height: 28px; padding: 0; font-size: 17px; line-height: 1; } .libbar2 .zoom input[type=range] { width: 130px; padding: 0; accent-color: var(--blue); }
+  #libq { width: 100px; } .libbar2 { gap: 8px; } .libbar2 .seg button { padding: 0 8px; } .libbar2 .zoom input[type=range] { width: 90px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; } ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: padding-box; border: 2px solid transparent; }
   #app { grid-template-rows: 52px 1fr var(--pr, 150px); }
@@ -287,7 +294,9 @@
   <div id="libview">
     <div id="libmain">
       <div class="libbar"><button id="impF">+ Importa cartella…</button><button id="impP">+ Importa foto…</button><span id="libinfo"></span><span class="sp"></span>
-        <label style="cursor:pointer"><input type="checkbox" id="hideUsed"> nascondi le già usate</label><button id="selclear">Deseleziona</button></div>
+        <button id="selall" title="⌘A">Seleziona tutte</button><button id="selclear">Deseleziona</button></div>
+      <div class="libbar2"><div class="seg" id="gfF"></div><div class="seg" id="gfO"></div><input id="libq" type="search" placeholder="Cerca nome…">
+        <span class="zoom"><button id="thm" title="Miniature più piccole">−</button><input type="range" id="thr" min="80" max="360" step="10" title="Dimensione miniature"><button id="thp" title="Miniature più grandi">+</button></span></div>
       <div id="libgrid"></div>
     </div>
     <div id="libtpl"><div class="cap" id="tplcap"></div>
@@ -968,23 +977,40 @@ function mkTile(t, label, onclick) {
   t.frames.forEach(f => { const i = document.createElement("i"); i.style.cssText = `left:${f.x / S.W * 100}%;top:${f.y / S.H * 100}%;width:${f.w / S.W * 100}%;height:${f.h / S.H * 100}%;background-image:url(/img/thumb/${f.n}?w=520)`; pv.appendChild(i); });
   pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${label}</span>`); c.onclick = onclick; return c;
 }
+const GF = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem("galleriaFoto") || "{}"); } catch (e) {} return { f: o.f || "tutte", o: o.o || "tutte", sz: +o.sz || 140, q: "" }; })();
+const saveGF = () => { try { localStorage.setItem("galleriaFoto", JSON.stringify({ f: GF.f, o: GF.o, sz: GF.sz })); } catch (e) {} };
+const GFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["used", "Già usate"], ["tolta", "Tolte"], ["manca", "Mancanti"]], GORI = [["tutte", "Tutte"], ["v", "Verticali"], ["h", "Orizzontali"]];
+const missSet = () => new Set((S.mancanti || []).map(x => x.replace(/\.[^.]+$/, "")));
+const gPass = (p, f, M) => f === "tutte" ? true : f === "free" ? p.sp == null && !p.tolta : f === "used" ? p.sp != null : f === "tolta" ? !!p.tolta : M.has(p.n);
+function visPhotos() {          // foto che passano filtri e ricerca, nell'ordine della galleria
+  const M = missSet(), q = GF.q.trim().toLowerCase();
+  return S.photos.filter(p => gPass(p, GF.f, M) && (GF.o === "tutte" || (GF.o === "v" ? p.ar < 1 : p.ar >= 1)) && (!q || p.n.toLowerCase().includes(q)));
+}
+const selectable = () => visPhotos().filter(x => x.sp == null && !x.tolta).map(x => x.n);
+function setThumb(v) { GF.sz = Math.max(80, Math.min(360, Math.round(v / 10) * 10)); $("thr").value = GF.sz; $("libgrid").style.setProperty("--th", GF.sz + "px"); saveGF(); }
+function renderLibBars() {
+  const M = missSet(), cnt = f => S.photos.filter(p => gPass(p, f, M)).length;
+  $("gfF").innerHTML = ""; GFILT.forEach(([k, l]) => { if (k === "manca" && !cnt(k) && GF.f !== k) return; const b = document.createElement("button"); b.className = GF.f === k ? "on" : ""; b.innerHTML = `${l}<span class="c">${cnt(k)}</span>`; b.onclick = () => { GF.f = k; saveGF(); renderLib(); }; $("gfF").appendChild(b); });
+  $("gfO").innerHTML = ""; GORI.forEach(([k, l]) => { const b = document.createElement("button"); b.className = GF.o === k ? "on" : ""; b.textContent = l; b.onclick = () => { GF.o = k; saveGF(); renderLib(); }; $("gfO").appendChild(b); });
+}
 function renderLib() {
   if (view !== "foto") return;
-  const hide = $("hideUsed").checked, G = $("libgrid"); G.innerHTML = "";
+  const G = $("libgrid"), keep = G.scrollTop; G.innerHTML = ""; renderLibBars(); setThumb(GF.sz);
+  const VIS = visPhotos(), tw = GF.sz > 200 ? 560 : 300;
   const free = S.photos.filter(p => p.sp == null && !p.tolta).length;
   $("libinfo").textContent = `${S.photos.length} foto · ${free} da usare · ${S.photos.filter(p => p.sp != null).length} già in uno spread`;
   if (!S.photos.length) { G.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0;line-height:2">Nessuna foto nel progetto.<br>Premi <b>+ Importa cartella…</b> o <b>+ Importa foto…</b> per cominciare.</div>'; }
-  const MISS = new Set((S.mancanti || []).map(x => x.replace(/\.[^.]+$/, "")));
-  S.photos.forEach(p => {
-    if (hide && (p.sp != null || p.tolta)) return;
+  else if (!VIS.length) G.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0">Nessuna foto con questi filtri.</div>';
+  const MISS = missSet();
+  VIS.forEach(p => {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
-    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=300" title="${p.n} · ${p.dt}">${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
+    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
       if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast("Foto ripristinata: torna tra quelle da usare")); return; }
       if (e.shiftKey && lastClick) {                                  // intervallo dalla foto cliccata prima
-        const vis = S.photos.filter(x => x.sp == null && !x.tolta).map(x => x.n), a = vis.indexOf(lastClick), b = vis.indexOf(p.n);
+        const vis = selectable(), a = vis.indexOf(lastClick), b = vis.indexOf(p.n);
         if (a >= 0 && b >= 0) vis.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(n => { if (!SELP.includes(n)) SELP.push(n); });
       } else if (e.metaKey || e.ctrlKey) { if (k >= 0) SELP.splice(k, 1); else SELP.push(p.n); }          // ⌘-clic: aggiunge/toglie questa foto
       else if (k >= 0 && SELP.length === 1) SELP = []; else SELP = [p.n];                                   // clic semplice: solo questa foto
@@ -992,6 +1018,7 @@ function renderLib() {
     };
     G.appendChild(d);
   });
+  G.scrollTop = keep;
   clearTimeout(renderLib.t); renderLib.t = setTimeout(loadProposals, 120);
 }
 let propSeq = 0;
@@ -1057,7 +1084,11 @@ async function doImport(paths) {
   } catch (e) { $("busy").style.display = "none"; }
 }
 $("impF").onclick = () => fbOpen("folder"); $("impP").onclick = () => fbOpen("files");
-$("selclear").onclick = () => { SELP = []; renderLib(); }; $("hideUsed").onchange = renderLib;
+$("selclear").onclick = () => { SELP = []; renderLib(); };
+$("selall").onclick = () => { SELP = selectable(); lastClick = SELP[SELP.length - 1] || null; renderLib(); };
+$("thm").onclick = () => { setThumb(GF.sz - 20); renderLib(); }; $("thp").onclick = () => { setThumb(GF.sz + 20); renderLib(); };
+$("thr").oninput = () => { setThumb(+$("thr").value); }; $("thr").onchange = renderLib;
+$("libq").oninput = () => { GF.q = $("libq").value; renderLib(); }; $("libq").onkeydown = e => e.stopPropagation();
 $("tabF").onclick = () => { view = "foto"; render(); }; $("tabA").onclick = () => { view = "album"; render(); }; $("gofoto").onclick = () => { view = "foto"; render(); };
 
 // ---- galleria modelli (come la scelta dei template di Smart Albums)
@@ -1174,7 +1205,7 @@ $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 document.addEventListener("keydown", e => {
   if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !(document.activeElement && (/TEXTAREA|SELECT/.test(document.activeElement.tagName) || (document.activeElement.tagName === "INPUT" && /text|number|search/.test(document.activeElement.type))))) {       // ⌘A nella galleria (le caselle da spuntare non lo bloccano): tutte le foto ancora da usare
-    e.preventDefault(); SELP = S.photos.filter(x => x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
+    e.preventDefault(); SELP = selectable(); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
   }
   if (view === "album" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && S) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") { e.preventDefault(); msel = S.spreads[cur].items.filter(i => i.k !== "t").map(kOf); if (msel.length) { const [a, b] = msel[msel.length - 1].split(":"); sel = { s: cur, side: a, idx: +b }; } render(); return; }

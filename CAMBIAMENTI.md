@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 18 — Galleria foto: scorrimento, filtri, ricerca, zoom miniature
+- Barra di scorrimento della galleria larga e ben visibile (sempre presente). Nuova riga sotto i pulsanti: filtri Tutte / Da usare / Già usate / Tolte / Mancanti (con conteggi), Tutte / Verticali / Orizzontali, ricerca per nome, e zoom miniature con − / cursore / + (80–360 px). Scelte ricordate (`localStorage` «galleriaFoto»). «Seleziona tutte» (e ⌘A) e Maiusc-clic agiscono solo sulle foto visibili e ancora da usare. Rimossa la casella «nascondi le già usate» (ora è il filtro «Da usare»). La posizione di scorrimento resta quando si seleziona. — `index.html` (`renderLib`, `visPhotos`, `GF`).
+
 ## Versione 17 — Selettore di foto tutto nostro
 - «Importa foto…» e «Importa cartella…» non aprono più la finestra di macOS (osascript, dove ⌘A e ⌘-clic non andavano) ma un selettore dentro il programma: miniature, sidebar (Scrivania, Documenti, Immagini, Download, Home, dischi), ⌘A, ⌘-clic, Maiusc-clic, Invio/Esc. Server: `ls_dir` e `file_thumb` in `editor.py` (`/api/ls`, `/api/fthumb`, solo lettura, solo JPEG e cartelle); interfaccia: blocco «selettore di foto» e `doImport` in `index.html`. `pick()` e `/api/pick` restano nel codice ma non sono più usati dai pulsanti. — `editor.py`, `index.html`.
 
