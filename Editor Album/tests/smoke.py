@@ -3,15 +3,31 @@
 Uso:  ~/.album-tools/venv/bin/python tests/smoke.py --foto "/cartella/con/jpg"
 Non tocca nessun progetto vero: tutto avviene in una cartella temporanea che alla fine viene tolta.
 """
-import argparse, json, os, shutil, subprocess, sys, tempfile, time, urllib.request
+import argparse, json, os, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ED = os.path.dirname(HERE)
-ap = argparse.ArgumentParser(); ap.add_argument("--foto", required=True); ap.add_argument("--n", type=int, default=6); a = ap.parse_args()
+ap = argparse.ArgumentParser(); ap.add_argument("--foto", required=True); ap.add_argument("--n", type=int, default=6); ap.add_argument("--psd", action="store_true", help="prova anche i PSD (apre Photoshop: lento)"); a = ap.parse_args()
 TMP = tempfile.mkdtemp(prefix="smoke_"); procs = []; ok = []; ko = []
 
 def call(port, path, body=None):
     req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=None if body is None else json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     return json.load(urllib.request.urlopen(req, timeout=60))
+
+def prova(port, path, body):
+    """come call(), ma restituisce (ok, risposta) anche quando il server risponde con un errore"""
+    try: return True, call(port, path, body)
+    except urllib.error.HTTPError as e:
+        try: return False, json.load(e)
+        except Exception: return False, {"errore": str(e)}
+
+def esporta(P, **o):
+    ok_, r = prova(P, "/api/export", o)
+    if not ok_: return False, [r.get("errore", "")]
+    for _ in range(600):
+        L = call(P, "/api/log")
+        if "[finito]" in L: return True, L
+        time.sleep(0.5)
+    return False, ["tempo scaduto"]
 
 def check(nome, cond, extra=""):
     (ok if cond else ko).append(nome); print(("  ok   " if cond else "  ERRORE ") + nome + (f"  {extra}" if extra and not cond else ""), flush=True)
@@ -54,6 +70,29 @@ try:
     start([os.path.join(ED, "editor.py"), "--progetto", proj, "--porta", "8893"], 8893); P = 8893; st = call(P, "/api/state")
     after = json.dumps([[(i.get("kind"), i.get("tx"), i.get("name")) for i in sp["items"]] for sp in st["spreads"]])
     check("riapertura identica", before == after); check("stella ricordata", any(p["star"] for p in st["photos"]))
+
+    # ---- esportazione
+    dj = os.path.join(TMP, "out_jpg"); okx, L = esporta(P, fmt="jpg", range="", dest=dj, res="bozza", q=80)
+    jp = sorted(f for f in os.listdir(dj)) if os.path.isdir(dj) else []
+    check("export JPG riuscito", okx and len(jp) == len(st["spreads"]) and any(x.startswith("RISULTATO:") for x in L), str(L[-3:]))
+    try:
+        from PIL import Image
+        check("JPG si aprono", all(Image.open(os.path.join(dj, f)).size[0] > 100 for f in jp))
+    except Exception as e: check("JPG si aprono", False, str(e))
+    check("nessun .tmp nell'export", not [f for f in jp if f.endswith(".tmp")])
+    dp = os.path.join(TMP, "out_pdf"); okx, L = esporta(P, fmt="pdf", range="", dest=dp, width=800, q=70, numeri=True)
+    pdfs = [f for f in os.listdir(dp)] if os.path.isdir(dp) else []
+    check("export PDF riuscito", okx and len(pdfs) == 1 and open(os.path.join(dp, pdfs[0]), "rb").read(5) == b"%PDF-", str(L[-3:]))
+    okx, L = esporta(P, fmt="jpg", range="99", dest=dj, res="bozza"); check("spread inesistente rifiutato con messaggio", not okx and "inesistenti" in " ".join(L), str(L))
+    okx, L = esporta(P, fmt="jpg", range="", dest="/System/Library/vietato", res="bozza"); check("cartella non scrivibile rifiutata", not okx and L and L[0], str(L))
+    okx, L = esporta(P, fmt="gif", range="", dest=dj); check("formato sconosciuto rifiutato", not okx, str(L))
+    # foto mancante: il messaggio deve dire quali
+    f0 = os.path.join(proj, "Foto", [x for x in os.listdir(os.path.join(proj, "Foto")) if x.startswith(names[0])][0]); os.rename(f0, f0 + ".spostata")
+    okx, L = esporta(P, fmt="jpg", range="1", dest=dj, res="bozza"); check("foto mancante segnalata prima di esportare", not okx and "non si trovano" in " ".join(L) and names[0] in " ".join(L), str(L))
+    os.rename(f0 + ".spostata", f0)
+    if a.psd:
+        dpsd = os.path.join(TMP, "out_psd"); okx, L = esporta(P, fmt="psd", range="1", dest=dpsd, force=True)
+        check("export PSD riuscito", okx and os.path.exists(os.path.join(dpsd, "Spread_01.psd")) and os.path.getsize(os.path.join(dpsd, "Spread_01.psd")) > 1e5, str(L[-6:]))
 finally:
     for p in procs:
         try: p.terminate()

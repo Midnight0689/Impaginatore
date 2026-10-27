@@ -3,6 +3,14 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 44 — Esportazione più solida (JPG, PDF, PSD)
+- **Correzione importante:** dalla versione 40 l'esportazione PSD si fermava se nello spread c'era un testo (errore interno nel calcolo dell'interlinea). Trovato dalla nuova prova automatica e risolto. — `testo.py`.
+- Controlli prima di esportare, con messaggio chiaro: spread inesistenti, foto non più trovate (dice quali), cartella non scrivibile, spazio sul disco insufficiente, Photoshop non installato (solo PSD). — `editor.py`.
+- I JPG e il PDF si scrivono in un file temporaneo e poi si spostano: un'esportazione interrotta non lascia file a metà né sostituisce quelli buoni.
+- Se un solo spread JPG fallisce gli altri vengono esportati lo stesso e il riepilogo dice quali sono saltati e perché.
+- PSD: dopo Photoshop si controlla che ogni file esista davvero; errori di Photoshop spiegati («aperto? finestre in attesa?») e riepilogo «PSD creati: N su M».
+- `tests/smoke.py` prova anche JPG, PDF, i casi di errore e, con `--psd`, un PSD vero (23 controlli).
+
 ## Versione 43 — Installazione e aggiornamento più robusti
 - `setup.sh`: cerca un Python 3.9+ che funzioni davvero (il «python3» finto di macOS non conta), rifà da solo l'ambiente se è rovinato, usa versioni compatibili delle librerie ed esce con errore chiaro (senza internet, senza Python, librerie che non si caricano). Prima l'errore veniva nascosto. — `motore/scripts/setup.sh`.
 - `Installa.command`: si ferma con un messaggio se qualcosa non va (prima diceva «Fatto» comunque), rifiuta cartelle su dischi esterni, mostra la versione installata.

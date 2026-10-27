@@ -142,6 +142,6 @@ def job_x(it):
     for i, line in enumerate(wrap(it, W)):
         if not line.strip(): continue
         w = _width(line, font, size, tr); x = 0 if al == "left" else (W - w) / 2 if al == "center" else W - w
-        l, t, r, b = font.getbbox(line.strip()); lead = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * lead if lead else 0)
+        l, t, r, b = font.getbbox(line.strip()); sp0 = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * sp0 if sp0 else 0)
         gx = x if gx is None else min(gx, x); gy = i * lh + t if gy is None else min(gy, i * lh + t)
     d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d["tx"] = shown(it); d.update(lh=lead(it), gx=gx or 0, gy=gy or 0); return d

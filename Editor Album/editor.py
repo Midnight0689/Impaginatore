@@ -958,12 +958,49 @@ def write_pdf(path, jpegs, dpi=150):
     out += b"trailer\n<< /Size %d /Root %d 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, cat, x)
     open(path, "wb").write(out)
 
+def _spiega(e):
+    """errore tecnico -> frase che si capisce"""
+    import errno
+    if isinstance(e, PermissionError): return f"non posso scrivere nella cartella di destinazione ({e.filename or ''}): scegline un'altra"
+    if isinstance(e, OSError) and e.errno == errno.ENOSPC: return "il disco è pieno: libera spazio o scegli un altro disco"
+    if isinstance(e, FileNotFoundError): return f"file non trovato: {e.filename or e}"
+    if isinstance(e, MemoryError): return "memoria insufficiente: prova a esportare meno spread alla volta"
+    return f"{type(e).__name__}: {e}"
+
+def _scrivi_img(im, f, **kw):
+    """salva l'immagine in un file temporaneo e poi la sposta: se l'export si interrompe non resta un file a metà né si perde quello vecchio"""
+    tmp = f + ".tmp"; im.save(tmp, "JPEG", **kw); os.replace(tmp, f)
+
+def preflight(o, nums, dest, fmt):
+    """controlli prima di esportare: se qualcosa non va l'utente lo sa subito, non dopo minuti di lavoro"""
+    n = len(SP)
+    if n == 0: raise ValueError("Non c'è nessuno spread da esportare")
+    if not nums: raise ValueError("Nessuno spread nell'intervallo scelto")
+    fuori = [k for k in nums if not 1 <= k <= n]
+    if fuori: raise ValueError(f"Lo spread {fuori[0]} non esiste: gli spread sono {n}")
+    usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
+    manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
+    if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
+    try:
+        t = os.path.join(dest, ".prova_scrittura"); open(t, "w").write("x"); os.remove(t)
+    except OSError as e: raise ValueError(f"Non posso scrivere in «{dest}»: {e.strerror or e}. Scegli un'altra cartella")
+    stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums)}[fmt]
+    libero = shutil.disk_usage(dest).free
+    if libero < stima * 1.2: raise ValueError(f"Spazio insufficiente: servono circa {stima / 1e9:.1f} GB e ne restano {libero / 1e9:.1f} GB. Libera spazio o scegli un altro disco")
+    if fmt == "psd":
+        try: sys.path.insert(0, SCRIPTS); import photoshop as _ps; _ps.app_name()
+        except SystemExit: raise ValueError("Photoshop non è stato trovato in /Applications: serve per creare i PSD (JPG e PDF funzionano anche senza)")
+
 def run_export(o):
     """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente) o PSD (Photoshop)"""
     with LOCK: n = len(SP)
     nums = parse_range(o.get("range", ""), n); fmt = o["fmt"]
     dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", fmt.upper())
-    dest = os.path.expanduser(o.get("dest") or dflt); os.makedirs(dest, exist_ok=True)
+    dest = os.path.expanduser(o.get("dest") or dflt)
+    if fmt not in ("jpg", "pdf", "psd"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    try: os.makedirs(dest, exist_ok=True)
+    except OSError as e: raise ValueError(f"Non riesco a creare la cartella «{dest}»: {e.strerror or e}")
+    preflight(o, nums, dest, fmt)
     nome = CFG.get("nome", "Album")
     with LOCK:
         if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: apply(dict(op="evg", value=o["ev"]))
@@ -974,17 +1011,24 @@ def run_export(o):
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
             if fmt == "jpg":
                 K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = int(o.get("q", 92)); icc = srgb_icc()
+                fatti = []
                 for k in nums:
-                    with LOCK: tup = spread_tuple(k - 1)
-                    im = A.render(tup, K, True); b = round(A.B * K)
-                    if b: im = im.crop((b, b, im.width - b, im.height - b))
-                    f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); im.save(f, "JPEG", quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
-                    LOG.append(f"  spread {k}: {os.path.basename(f)}")
-                LOG.append("RISULTATO:" + dest)
+                    try:
+                        with LOCK: tup = spread_tuple(k - 1)
+                        im = A.render(tup, K, True); b = round(A.B * K)
+                        if b: im = im.crop((b, b, im.width - b, im.height - b))
+                        f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); _scrivi_img(im, f, quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
+                        if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
+                        fatti.append(k); LOG.append(f"  spread {k}: {os.path.basename(f)}")
+                    except Exception as ex: LOG.append(f"SALTATO spread {k} -> {_spiega(ex)}")
+                LOG.append(f"ESPORTATI {len(fatti)} spread su {len(nums)}")
+                if fatti: LOG.append("RISULTATO:" + dest)
+                if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
             elif fmt == "pdf":
                 from PIL import ImageDraw, ImageFont
                 Wp = int(o.get("width", 2000)); K = Wp / VW; pages = []
-                font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", max(14, Wp // 80))
+                try: font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", max(14, Wp // 80))
+                except Exception: font = ImageFont.load_default()
                 for k in nums:
                     with LOCK: tup = spread_tuple(k - 1)
                     im = A.render(tup, K, True); b = round(A.B * K)
@@ -996,15 +1040,23 @@ def run_export(o):
                 f = os.path.join(dest, f"{nome} - bozza.pdf"); jp = []
                 for pg in pages:
                     bio = io.BytesIO(); pg.save(bio, "JPEG", quality=int(o.get("q", 80)), optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
-                write_pdf(f, jp, 150)
+                write_pdf(f + ".tmp", jp, 150); os.replace(f + ".tmp", f)
+                if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
             else:
                 cmd = [sys.executable, os.path.join(HERE, "genera_psd_angolo.py"), "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
                 p = subprocess.Popen(cmd, cwd=SCRIPTS, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=dict(os.environ, ALBUM_PROGETTO=PROJ, ALBUM_SCRIPTS=SCRIPTS))
-                for line in p.stdout: LOG.append(line.rstrip())
-                if p.wait() == 0: LOG.append("RISULTATO:" + dest)
-                else: LOG.append("Photoshop o lo script hanno dato errore (vedi sopra)")
-        except Exception as e: LOG.append(f"ERRORE: {e}")
+                t0 = time.time() - 2; out = []
+                for line in p.stdout: out.append(line.rstrip()); LOG.append(line.rstrip())
+                rc = p.wait(); testo = "\n".join(out)
+                skip = {int(m) for m in re.findall(r"SALTATO spread (\d+)", testo)}
+                nuovi = [k for k in nums if k not in skip and not (os.path.exists(os.path.join(dest, f"Spread_{k:02d}.psd")) and os.path.getmtime(os.path.join(dest, f"Spread_{k:02d}.psd")) >= t0 and os.path.getsize(os.path.join(dest, f"Spread_{k:02d}.psd")) > 1e5)]
+                for k in nuovi: LOG.append(f"SALTATO spread {k} -> il PSD non è stato creato")
+                if re.search(r"errore generale|general error|8800|Photoshop got an error|not running|isn.t running", testo, re.I): LOG.append("ERRORE: Photoshop ha dato un errore. Controlla che sia aperto, senza finestre di dialogo in attesa, e riprova")
+                elif rc != 0 and not nuovi: LOG.append(f"ERRORE: lo script dei PSD si è fermato (codice {rc}): vedi sopra")
+                LOG.append(f"PSD creati: {len(nums) - len(skip) - len(nuovi)} su {len(nums)}" + (f" ({len(skip)} lasciati com'erano perché modificati a mano)" if skip else ""))
+                if len(nums) - len(nuovi) > 0 or skip: LOG.append("RISULTATO:" + dest)
+        except Exception as e: LOG.append(f"ERRORE: {_spiega(e)}")
         LOG.append("[finito]")
     threading.Thread(target=go, daemon=True).start()
     return len(nums)
