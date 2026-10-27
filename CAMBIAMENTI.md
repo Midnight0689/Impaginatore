@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 62 — Comando Taglia
+- Tasto destro → «Taglia» (e ⌘X): copia gli elementi scelti e li toglie dallo spread; si incolla con ⌘V anche in un altro spread. Annulla rimette tutto. — `index.html` (`cutSel`).
+
 ## Versione 61 — Riparata la pagina che non si apriva
 - La versione 60 aveva un errore di sintassi (un commento a metà riga) e l'editor non si apriva. Corretto; il test automatico ora controlla anche la sintassi del codice della pagina, così non può ricapitare. — `index.html`, `tests/smoke.py`.
 

@@ -700,7 +700,11 @@ function renderSbar() {
 }
 async function dupSpread() { await op({ op: "dup", s: cur }); cur = cur + 1; sel = null; msel = []; render(); toast("Spread duplicato"); }
 let clipSrc = null;
-async function copySel() { if (!msel.length) return; try { await api("/api/op", { cid: CID, rev: S.rev, op: "copia", s: cur, ats: mAts() }); clipSrc = cur; toast(msel.length + (msel.length === 1 ? " elemento copiato" : " elementi copiati")); } catch (e) {} }
+async function cutSel() {       // taglia = copia + togli dallo spread (la foto torna libera); un Annulla rimette tutto
+  if (!msel.length) return; const at = mAts(); if (!await copySel()) return;
+  for (const [a, b] of at.sort((x, y) => y[1] - x[1])) await op({ op: "delframe", at: [cur, a, b] }); msel = []; sel = null; render(); toast("Tagliato: incolla dove vuoi (⌘V)");
+}
+async function copySel() { if (!msel.length) return; try { await api("/api/op", { cid: CID, rev: S.rev, op: "copia", s: cur, ats: mAts() }); clipSrc = cur; toast(msel.length + (msel.length === 1 ? " elemento copiato" : " elementi copiati")); return true; } catch (e) { return false; } }
 async function pasteSel() {
   const before = new Set(S.spreads[cur].items.map(kOf)); await op({ op: "incolla", s: cur, scarto: clipSrc === cur });
   const fresh = S.spreads[cur].items.filter(i => !before.has(kOf(i)));
@@ -1336,7 +1340,7 @@ function frameMenu(e, it) {                   // tasto destro su una foto/testo 
       { t: "Sostituisci con un'altra foto…", off: many, f: () => pickPhoto("Sostituisci " + names[0], n => op({ op: "replace", at: [cur, it.side, it.idx], photo: n }), true) });
     list.push(...photoItems(names).slice(1));
   }
-  list.push("-", { t: "Copia", k: "⌘C", f: copySel }, { t: "Incolla", k: "⌘V", f: pasteSel });
+  list.push("-", { t: "Taglia", k: "⌘X", f: cutSel }, { t: "Copia", k: "⌘C", f: copySel }, { t: "Incolla", k: "⌘V", f: pasteSel });
   list.push({ id: "togli", t: photos.length ? "Togli dallo spread (la foto torna libera)" : "Elimina", k: "⌫", f: async () => { for (const [a, b] of at.sort((x, y) => y[1] - x[1])) await op({ op: "delframe", at: [cur, a, b] }); msel = []; sel = null; render(); } });
   if (photos.length === 1) list.push({ t: "Mostra nella galleria Foto", f: () => { SELP = [names[0]]; view = "foto"; render(); } });
   ctxMenu(e, list, "frame");
@@ -1575,6 +1579,7 @@ document.addEventListener("keydown", e => {
   }
   if (view === "album" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && S) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") { e.preventDefault(); msel = S.spreads[cur].items.filter(i => i.k !== "t").map(kOf); if (msel.length) { const [a, b] = msel[msel.length - 1].split(":"); sel = { s: cur, side: a, idx: +b }; } render(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "x" && msel.length) { e.preventDefault(); cutSel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c" && msel.length) { e.preventDefault(); copySel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") { e.preventDefault(); pasteSel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") { e.preventDefault(); dupSpread(); return; }
