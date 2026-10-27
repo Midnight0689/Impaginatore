@@ -1130,7 +1130,7 @@ $("ego").onclick = async () => {
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 document.addEventListener("keydown", e => {
-  if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {       // ⌘A nella galleria: tutte le foto ancora da usare
+  if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !(document.activeElement && (/TEXTAREA|SELECT/.test(document.activeElement.tagName) || (document.activeElement.tagName === "INPUT" && /text|number|search/.test(document.activeElement.type))))) {       // ⌘A nella galleria (le caselle da spuntare non lo bloccano): tutte le foto ancora da usare
     e.preventDefault(); SELP = S.photos.filter(x => x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
   }
   if (view === "album" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && S) {
