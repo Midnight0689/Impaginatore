@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 24 — Ritocco stile Lightroom al posto di livelli e curva
+- Pannello foto: via Neri/Mezzitoni/Bianchi e la curva. Ora «Luce»: Contrasto, Alteluci, Ombre, Bianchi, Neri; «Colore»: Temperatura, Tinta, Vibranza, Saturazione (−100…+100, doppio clic su un cursore lo azzera, «⊗ azzera» toglie tutto). L'Esposizione resta nel blocco Design. Vale per anteprima, JPG/PDF e PSD: nel PSD diventano livelli di regolazione (Bilanciamento bianco per temperatura/tinta, «Ritocco: tono» = Curve con max 11 punti perché Photoshop ne ammette 16, «Vibranza e saturazione»), provato con un PSD vero. Dati in `progetto.json` → `ritocco` (annullabile). I vecchi `tono` già salvati continuano ad essere applicati (nessuna foto di Stefano li usa tranne `_DSC7517` in Serena) e si tolgono con «azzera». Matematica in `album_libere.py` (`rit_lut`, `rit_gains`, `_apply_rit`), PSD in `genera_psd_angolo.py`, UI `wireRit`. — `album_libere.py`, `editor.py`, `genera_psd_angolo.py`, `index.html`.
+
 ## Versione 23 — Fascia strumenti chiudibile, adattamento automatico
 - Pulsante «▾ Strumenti» sopra lo spread: chiude/apre tutta la fascia (scelta ricordata in `localStorage` «tbar»). Alla prima apertura, se la finestra è piccola (meno di 900 px di altezza o 1250 di larghezza) la fascia parte chiusa e l'elenco spread a sinistra è nascosto, senza memorizzarlo. — `index.html` (`setTools`).
 

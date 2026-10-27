@@ -78,7 +78,7 @@ LOCK = threading.RLock()
 CFG = A.CFG
 CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
 CFG.setdefault("centri_volto", {})
-CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
 
 # ------------------------------------------------------------------ stato
 NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3}
@@ -120,7 +120,7 @@ UNDO, REDO = [], []
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "tx": CFG["testo"], "st": CFG["stili"]})
 SAVED = snap()                                       # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -128,7 +128,7 @@ def restore(s):
     CFG["esposizione"].clear(); CFG["esposizione"].update(d["ev"])
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
-    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -323,6 +323,15 @@ def apply(o):
         for n in o.get("photos") or [o["photo"]]:
             if v: CFG["colori"][n] = v
             else: CFG["colori"].pop(n, None)
+    elif t == "rit":                                   # ritocco stile Lightroom: {photo, key, value} oppure {photo, reset:true}; "photos" per più foto
+        for n in o.get("photos") or [o["photo"]]:
+            if o.get("reset"): CFG["ritocco"].pop(n, None); CFG["tono"].pop(n, None); continue
+            if o.get("copia"): CFG["ritocco"][n] = dict(o["copia"]); continue
+            if o["key"] not in FL.RIT_KEYS: raise ValueError("regolazione sconosciuta")
+            r = CFG["ritocco"].setdefault(n, {}); v = round(min(max(float(o["value"]), -100), 100))
+            if v: r[o["key"]] = v
+            else: r.pop(o["key"], None)
+            if not r: CFG["ritocco"].pop(n, None)
     elif t == "tono":
         n = o["photo"]; v = o.get("value")
         if not v: CFG["tono"].pop(n, None)
@@ -566,6 +575,7 @@ def spread_hash(s):
     d = json.dumps([SP[s], CFG["testo"], [CFG["esposizione"]["globale"] if "globale" in CFG["esposizione"] else 0, {A.name(it["i"]): CFG["esposizione"]["per_foto"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): CFG["centri_volto"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): CFG["tono"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
+                    {A.name(it["i"]): CFG["ritocco"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): PV.get(A.name(it["i"]), 0) for pg in SP[s] for it in pg[1] if it["k"] != "t"}]], sort_keys=True)
     return hashlib.md5(d.encode()).hexdigest()[:10]
 
@@ -596,7 +606,7 @@ def spread_view(s):
                 e.update(box=[round(l_, 4), round(t_, 4), round(r_, 4), round(b_, 4)], cm=[round(L["W"] / A.PPI * 2.54, 2), round(L["H"] / A.PPI * 2.54, 2)],
                          ppi=round(m_["w"] * (r_ - l_) / (L["W"] / A.PPI)), dim=[m_["w"], m_["h"]], uses=sum(1 for x in SP for pg_ in x for y in pg_[1] if y["k"] != "t" and y["i"] == it["i"]))
                 n = A.name(it["i"]); e.update(name=n, bw=bool(it.get("bw")), z=it.get("z", 1.0), a=it.get("a") or 0, ar=A.M[it["i"]]["ar"],
-                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), face=list(A._faces_center(it["i"]) or []))
+                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), face=list(A._faces_center(it["i"]) or []))
             out.append(e)
     return dict(h=spread_hash(s), guides=GD[s], L=SP[s][0][0], R=SP[s][1][0], items=out, grid=dict(L=page_grid("L", SP[s][0][0]), R=page_grid("R", SP[s][1][0])))
 
@@ -853,7 +863,7 @@ def save(backup=True):
         lines.append("]")
         open(os.path.join(PROJ, "spec.py"), "w").write("\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)

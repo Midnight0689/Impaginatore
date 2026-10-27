@@ -249,6 +249,8 @@
   .sb button.on { background: var(--blue); color: #fff; }
   #sbarR { flex-direction: column !important; align-items: stretch !important; flex: 0 0 500px !important; width: 500px; margin-left: auto; } #sbarR .box > div > button { flex: 1 1 0; width: auto; min-width: 0; } #sbarR .box > div > button.al2 { flex: 1.5 1 0; } #sbarR .box > div { flex-wrap: wrap; }
   #ttog { align-self: flex-start; margin: 0 0 6px; height: 24px; padding: 0 10px; font-size: 11px; border-radius: 8px; background: rgba(255,255,255,.06); color: var(--dim); } body.notools #tools { display: none; } body.notools #ttog { margin-bottom: 2px; }
+  .sl.rit input[style*="--rb"] { -webkit-appearance: none; appearance: none; background: transparent; height: 18px; } .sl.rit input[style*="--rb"]::-webkit-slider-runnable-track { background: var(--rb); height: 4px; border-radius: 2px; }
+  .sl.rit input[style*="--rb"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; margin-top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
   /* Allinea: una riga compatta, senza titolo */
   #sbarR .box.alb { padding: 6px 8px; } #sbarR .box.alb > i { display: none; } #sbarR .box.alb > div { flex-wrap: nowrap; gap: 4px; } #sbarR .box.alb button { height: 36px; border-radius: 9px; } #sbarR .box.alb button.al2 { flex: 1.7 1 0; font-size: 10px; gap: 3px; } #sbarR .box.alb .ic2 { width: 18px; height: 18px; }
   /* adattamento alla larghezza della finestra */
@@ -641,13 +643,10 @@ function renderSide() {
       <div class="sl"><b>Angolo:</b><input id="ang" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
       <div class="sl"><b>Esposiz.:</b><input id="evp" type="range" min="-1" max="1" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
     </div>
-    <div class="sec">Tono <span class="x" id="tnx" title="Azzera livelli e curva" style="float:right">⊗ azzera</span></div>
-    <div id="tono">
-      <div class="sl"><b>Neri:</b><input id="tb" type="range" min="0" max="100" step="1" value="${(it.tono || {}).b || 0}"><span class="v" id="tbv"></span></div>
-      <div class="sl"><b>Mezzitoni:</b><input id="tm" type="range" min="-100" max="100" step="1" value="${Math.round(Math.log2((it.tono || {}).m || 1) * 100)}"><span class="v" id="tmv"></span></div>
-      <div class="sl"><b>Bianchi:</b><input id="tw" type="range" min="155" max="255" step="1" value="${(it.tono || {}).w || 255}"><span class="v" id="twv"></span></div>
-      <canvas id="cv" width="220" height="220" title="Curva: clic per aggiungere un punto, trascina per spostarlo, doppio clic per toglierlo"></canvas>
-    </div>
+    <div class="sec">Luce <span class="x" id="tnx" title="Azzera tutto il ritocco di questa foto" style="float:right">⊗ azzera</span></div>
+    <div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>
+    <div class="sec">Colore</div>
+    <div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
     <div class="sec">Informazioni immagine</div>
     <div class="kv" id="info"><span>Cornice L×A</span><span>${it.cm[0].toFixed(2)}×${it.cm[1].toFixed(2)} cm</span>
@@ -671,49 +670,20 @@ function renderSide() {
   $("angx").onclick = () => op({ op: "set", at, a: 0 });
   const e = $("evp"); e.oninput = () => $("evv").textContent = fmt1(+e.value); e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
   $("evx").onclick = () => op({ op: "ev", photo: it.name, value: 0 });
-  wireTono(it);
+  wireRit(it);
 }
 
-// ---- livelli (neri / mezzitoni / bianchi) e curva
-function wireTono(it) {
-  const T = Object.assign({ b: 0, w: 255, m: 1, c: [] }, JSON.parse(JSON.stringify(it.tono || {})));
-  const cv = $("cv"), g = cv.getContext("2d"), N = 220, pad = 8, span = N - 2 * pad;
-  const send = () => op({ op: "tono", photo: it.name, value: { b: T.b, w: T.w, m: T.m, c: T.c } });
-  const lab = () => { $("tbv").textContent = T.b; $("twv").textContent = T.w; $("tmv").textContent = T.m.toFixed(2); };
-  const X = v => pad + v / 255 * span, Y = v => N - pad - v / 255 * span;
-  const draw = () => {
-    g.clearRect(0, 0, N, N); g.fillStyle = "#161616"; g.fillRect(0, 0, N, N); g.strokeStyle = "#333"; g.lineWidth = 1;
-    for (let k = 0; k <= 4; k++) { g.beginPath(); g.moveTo(X(k * 63.75), pad); g.lineTo(X(k * 63.75), N - pad); g.moveTo(pad, Y(k * 63.75)); g.lineTo(N - pad, Y(k * 63.75)); g.stroke(); }
-    g.strokeStyle = "#555"; g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(255), Y(255)); g.stroke();
-    const lut = tonoLut(T); g.strokeStyle = "#e0b23c"; g.lineWidth = 2; g.beginPath();
-    for (let v = 0; v < 256; v++) v ? g.lineTo(X(v), Y(lut[v])) : g.moveTo(X(v), Y(lut[v])); g.stroke();
-    g.fillStyle = "#fff"; T.c.forEach(([x, y]) => { g.beginPath(); g.arc(X(x), Y(y), 4, 0, 7); g.fill(); });
-  };
-  lab(); draw();
-  const sl = (id, f) => { const e = $(id); e.oninput = () => { f(+e.value); lab(); draw(); }; e.onchange = send; };
-  sl("tb", v => { T.b = Math.min(v, T.w - 2); }); sl("tw", v => { T.w = Math.max(v, T.b + 2); }); sl("tm", v => { T.m = +(2 ** (v / 100)).toFixed(2); });
-  $("tnx").onclick = () => op({ op: "tono", photo: it.name, value: null });
-  const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * N, (e.clientY - r.top) / r.height * N].map((v, k) => Math.round(Math.min(Math.max(((k ? N - pad - v : v - pad) / span) * 255, 0), 255))); };
-  const near = (x, y) => T.c.findIndex(([a, b]) => Math.hypot(X(a) - X(x), Y(b) - Y(y)) < 9);
-  cv.onpointerdown = e => {
-    const [x, y] = pos(e); let k = near(x, y);
-    if (k < 0) { if (x < 2 || x > 253) return; T.c.push([x, y]); T.c.sort((a, b) => a[0] - b[0]); k = T.c.findIndex(p => p[0] === x && p[1] === y); }
-    cv.setPointerCapture(e.pointerId);
-    cv.onpointermove = ev => { const [nx, ny] = pos(ev); const lo = k ? T.c[k - 1][0] + 2 : 1, hi = k < T.c.length - 1 ? T.c[k + 1][0] - 2 : 254; T.c[k] = [Math.min(Math.max(nx, lo), hi), ny]; draw(); };
-    cv.onpointerup = () => { cv.onpointermove = cv.onpointerup = null; send(); }; draw();
-  };
-  cv.ondblclick = e => { const [x, y] = pos(e), k = near(x, y); if (k >= 0) { T.c.splice(k, 1); send(); } };
-}
-function tonoLut(T) {                                   // stessa matematica del motore (livelli + curva monotona), per disegnare la curva
-  const y = new Array(256), b = T.b / 255, w = T.w / 255, m = T.m;
-  for (let v = 0; v < 256; v++) y[v] = Math.pow(Math.min(Math.max((v / 255 - b) / Math.max(w - b, 1e-3), 0), 1), 1 / Math.max(m, .05));
-  if (!T.c.length) return y.map(v => v * 255);
-  const P = [[0, T.c[0][1] / 255]].concat(T.c.map(([a, c]) => [a / 255, c / 255]), [[1, T.c[T.c.length - 1][1] / 255]]), n = P.length, h = [], d = [], mt = new Array(n).fill(0);
-  for (let k = 0; k < n - 1; k++) { h[k] = P[k + 1][0] - P[k][0]; d[k] = (P[k + 1][1] - P[k][1]) / Math.max(h[k], 1e-9); }
-  mt[0] = d[0]; mt[n - 1] = d[n - 2]; for (let k = 1; k < n - 1; k++) mt[k] = d[k - 1] * d[k] <= 0 ? 0 : (d[k - 1] + d[k]) / 2;
-  for (let k = 0; k < n - 1; k++) { if (Math.abs(d[k]) < 1e-12) { mt[k] = mt[k + 1] = 0; continue; } const a = mt[k] / d[k], c = mt[k + 1] / d[k], r = a * a + c * c; if (r > 9) { const t = 3 / Math.sqrt(r); mt[k] = t * a * d[k]; mt[k + 1] = t * c * d[k]; } }
-  return y.map(v => { let i = 0; while (i < n - 2 && P[i + 1][0] <= v) i++; const u = (v - P[i][0]) / Math.max(h[i], 1e-9);
-    return 255 * Math.min(Math.max((2 * u ** 3 - 3 * u ** 2 + 1) * P[i][1] + (u ** 3 - 2 * u ** 2 + u) * h[i] * mt[i] + (-2 * u ** 3 + 3 * u ** 2) * P[i + 1][1] + (u ** 3 - u ** 2) * h[i] * mt[i + 1], 0), 1); });
+// ---- ritocco stile Lightroom: luce e colore (si applica all'anteprima, ai JPG/PDF e, come livelli di regolazione, ai PSD)
+const RITG = [[["con", "Contrasto"], ["alt", "Alteluci"], ["omb", "Ombre"], ["bia", "Bianchi"], ["ner", "Neri"]], [["tmp", "Temperatura"], ["tnt", "Tinta"], ["vib", "Vibranza"], ["sat", "Saturazione"]]];
+const RITBG = { tmp: "linear-gradient(90deg,#3b82f6,#ddd,#f59e0b)", tnt: "linear-gradient(90deg,#22c55e,#ddd,#d946ef)", sat: "linear-gradient(90deg,#888,#e11d48)", vib: "linear-gradient(90deg,#888,#0ea5e9)" };
+const ritRow = it => ([k, l]) => { const v = Math.round(((it.rit || {})[k]) || 0); return `<div class="sl rit" data-k="${k}"><b>${l}:</b><input type="range" min="-100" max="100" step="1" value="${v}" ${RITBG[k] ? `style="--rb:${RITBG[k]}"` : ""} title="Doppio clic per azzerare"><span class="v">${v}</span></div>`; };
+function wireRit(it) {
+  document.querySelectorAll("#insp .sl.rit").forEach(row => {
+    const k = row.dataset.k, inp = row.querySelector("input"), lab = row.querySelector(".v");
+    inp.oninput = () => { lab.textContent = inp.value; }; inp.onchange = () => op({ op: "rit", photo: it.name, key: k, value: +inp.value });
+    inp.ondblclick = () => { inp.value = 0; lab.textContent = "0"; op({ op: "rit", photo: it.name, key: k, value: 0 }); };
+  });
+  $("tnx").onclick = () => op({ op: "rit", photo: it.name, reset: true });
 }
 
 // ---- sposta l'immagine dentro la cornice (trascinando la foto o l'anteprima nel pannello)

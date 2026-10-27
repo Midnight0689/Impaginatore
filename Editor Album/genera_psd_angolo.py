@@ -18,6 +18,10 @@ function levelsAdj(b,w,g){ var d=new ActionDescriptor(),ref=new ActionReference(
   var list=new ActionList(); list.putObject(cid("LvlA"),ch); var l=new ActionDescriptor(); l.putList(cid("Adjs"),list);
   var u=new ActionDescriptor(); u.putObject(cid("Type"),cid("Lvls"),l); d.putObject(cid("Usng"),cid("AdjL"),u);
   executeAction(cid("Mk  "),d,DialogModes.NO); var L=app.activeDocument.activeLayer; L.name="Livelli"; L.grouped=true; return L; }
+function vibAdj(vib,sat){ var d=new ActionDescriptor(),ref=new ActionReference(); ref.putClass(cid("AdjL")); d.putReference(cid("null"),ref);
+  var v=new ActionDescriptor(); v.putInteger(sid("vibrance"),vib); v.putInteger(cid("Strt"),sat);
+  var u=new ActionDescriptor(); u.putObject(cid("Type"),sid("vibrance"),v); d.putObject(cid("Usng"),cid("AdjL"),u);
+  executeAction(cid("Mk  "),d,DialogModes.NO); var L=app.activeDocument.activeLayer; L.name="Vibranza e saturazione"; L.grouped=true; return L; }
 function curvesAdj(pts){ var d=new ActionDescriptor(),ref=new ActionReference(); ref.putClass(cid("AdjL")); d.putReference(cid("null"),ref);
   var ch=new ActionDescriptor(),cr=new ActionReference(); cr.putEnumerated(cid("Chnl"),cid("Chnl"),cid("Cmps")); ch.putReference(cid("Chnl"),cr);
   var pl=new ActionList(); for (var i=0;i<pts.length;i++){ var p=new ActionDescriptor(); p.putDouble(cid("Hrzn"),pts[i][0]); p.putDouble(cid("Vrtc"),pts[i][1]); pl.putObject(cid("Pnt "),p); }
@@ -33,9 +37,10 @@ TXT_NEW = '''  var s_=it.ts||1;
   var L2 = title ? [TX.sotto,TX.sans,62*s_,355*s_, it.x+it.w/2, it.y+it.h/2+307*s_] : [TX.sotto,TX.sans,62*s_,225*s_, it.x+6*s_, it.y+it.h-124*s_];
   var L3 = title ? [TX.data,TX.sans,62*s_,355*s_, it.x+it.w/2, it.y+it.h/2+417*s_] : [TX.data,TX.sans,62*s_,225*s_, it.x+6*s_, it.y+it.h-34*s_];'''
 reps = [(TXT_OLD, TXT_NEW), ('items.append(dict(txt=it["kind"], x=it["x"],', 'items.append(dict(txt=it["kind"], ts=float(it.get("ts") or 1), X=(__import__("testo").job_x(it) if it["kind"] == "txt" else None), x=it["x"],'), (NEWDOC, 'var doc=app.documents.add(G.CW,G.CH,72,nm,NewDocumentMode.RGB,DocumentFill.WHITE,1,BitsPerChannelType.EIGHT,"sRGB IEC61966-2.1");'),
-        ('bw=bool(it.get("bw")), ev=ev_for(it["i"])', 'bw=bool(it.get("bw")), ang=float(it.get("a") or 0), ev=ev_for(it["i"]), tono=__import__("album_libere").tono_job(it["i"])'),
+        ('bw=bool(it.get("bw")), ev=ev_for(it["i"])', 'bw=bool(it.get("bw")), ang=float(it.get("a") or 0), ev=ev_for(it["i"]), tono=__import__("album_libere").tono_job(it["i"]), rit=__import__("album_libere").rit_job(it["i"])'),
         ('addText(doc,it,ids[it.side]); }', '(it.txt=="txt"?addTextX:addText)(doc,it,ids[it.side]); }'),
-        ('if (it.bw) { doc.activeLayer=top; top=bwAdjustment();', 'if (it.tono) { var T=it.tono; if (T.b>0||T.w<255||Math.abs(T.m-1)>0.001){ doc.activeLayer=top; top=levelsAdj(T.b,T.w,T.m); ids[it.side].push(top.id); } if (T.c && T.c.length){ var pp=[[0,0]].concat(T.c,[[255,255]]); doc.activeLayer=top; top=curvesAdj(pp); ids[it.side].push(top.id); } }\n    if (it.bw) { doc.activeLayer=top; top=bwAdjustment();'),
+        ('if (it.bw) { doc.activeLayer=top; top=bwAdjustment();', 'if (it.tono) { var T=it.tono; if (T.b>0||T.w<255||Math.abs(T.m-1)>0.001){ doc.activeLayer=top; top=levelsAdj(T.b,T.w,T.m); ids[it.side].push(top.id); } if (T.c && T.c.length){ var pp=[[0,0]].concat(T.c,[[255,255]]); doc.activeLayer=top; top=curvesAdj(pp); ids[it.side].push(top.id); } }\n    if (it.rit) { var RT=it.rit; if (RT.c && RT.c.length){ var pq=[[0,0]].concat(RT.c,[[255,255]]); doc.activeLayer=top; top=curvesAdj(pq); top.name="Ritocco: tono"; ids[it.side].push(top.id); } if (RT.vib||RT.sat){ doc.activeLayer=top; top=vibAdj(RT.vib,RT.sat); ids[it.side].push(top.id); } }\n    if (it.bw) { doc.activeLayer=top; top=bwAdjustment();'),
+        ('g = WB.get(name(it["i"]))', 'g = __import__("album_libere").wb_total(it["i"])'),
         ('fitLayer(L,it.left,it.top,it.width); L.name=it.name;', 'fitLayer(L,it.left,it.top,it.width); if (it.ang) rotAround(L,it.ang,it.x+it.w/2,it.y+it.h/2); L.name=it.name;'),
         ('var log=[]; var STEP="start";', ROT_JS)]
 if all(a in src for a, _ in reps):

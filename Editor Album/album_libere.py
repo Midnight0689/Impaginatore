@@ -125,6 +125,73 @@ def tono_job(i):
 
 _CUR = [None]
 
+# ---- ritocco stile Lightroom (per foto): tmp temperatura, tnt tinta, con contrasto, alt alteluci, omb ombre, bia bianchi, ner neri, vib vibranza, sat saturazione (tutti -100..100)
+RIT_KEYS = ("tmp", "tnt", "con", "alt", "omb", "bia", "ner", "vib", "sat")
+
+
+def rit(i):
+    r = _a.CFG.get("ritocco", {}).get(_a.name(i))
+    r = {k: float(v) for k, v in (r or {}).items() if k in RIT_KEYS and abs(float(v)) >= 0.5}
+    return r or None
+
+
+def rit_lut(r):
+    """tabella 0-255 -> 0-255 per contrasto, alteluci, ombre, bianchi e neri (None se non serve); la stessa curva va in Photoshop come livello Curve"""
+    import numpy as np
+    if not r or not any(r.get(k) for k in ("con", "alt", "omb", "bia", "ner")): return None
+    x = np.arange(256, dtype=np.float64) / 255
+    g = lambda c, w: np.exp(-((x - c) / w) ** 2)
+    y = x.copy(); c = r.get("con", 0) / 100
+    y = y + c * (y * y * (3 - 2 * y) - y)
+    y = y + 0.30 * r.get("omb", 0) / 100 * g(.25, .20) + 0.30 * r.get("alt", 0) / 100 * g(.78, .20) + 0.18 * r.get("bia", 0) / 100 * g(.95, .10) + 0.12 * r.get("ner", 0) / 100 * g(.04, .10)
+    y = np.maximum.accumulate(np.clip(y, 0, 1))
+    return (y * 255 + 0.5).astype(np.uint8)
+
+
+def rit_curva(r, n=11):
+    """punti (x, y) 0-255 della curva, per il livello Curve di Photoshop"""
+    L = rit_lut(r)
+    if L is None: return None
+    pts = [[round(k * 255 / (n - 1)), int(L[round(k * 255 / (n - 1))])] for k in range(1, n - 1)]
+    return pts
+
+
+def rit_gains(r):
+    """guadagni lineari (r, g, b) di temperatura e tinta"""
+    if not r or not (r.get("tmp") or r.get("tnt")): return None
+    t, n = r.get("tmp", 0) / 100, r.get("tnt", 0) / 100
+    return (2 ** (0.45 * t + 0.08 * n), 2 ** (-0.30 * n), 2 ** (-0.45 * t + 0.08 * n))
+
+
+def wb_total(i):
+    """bilanciamento del bianco della foto (se c'è) per temperatura e tinta: sono un'unica correzione, anche nel PSD"""
+    g, q = _a.WB.get(_a.name(i)), rit_gains(rit(i))
+    if not q: return g
+    return tuple(a * b for a, b in zip(g or (1, 1, 1), q))
+
+
+def rit_job(i):
+    r = rit(i)
+    if not r: return None
+    return dict(c=rit_curva(r), vib=round(r.get("vib", 0)), sat=round(r.get("sat", 0))) if (rit_lut(r) is not None or r.get("vib") or r.get("sat")) else None
+
+
+def _apply_rit(im, i):
+    r = rit(i)
+    if not r: return im
+    import numpy as np
+    from PIL import Image
+    a = np.asarray(im.convert("RGB"))
+    L = rit_lut(r)
+    if L is not None: a = L[a]
+    v, s = r.get("vib", 0) / 100, r.get("sat", 0) / 100
+    if v or s:
+        f = a.astype(np.float32) / 255; gray = (f * np.array([.299, .587, .114], dtype=np.float32)).sum(2, keepdims=True)
+        sat = (f.max(2, keepdims=True) - f.min(2, keepdims=True))
+        k = (1 + v * (1 - sat) if v > 0 else 1 + v) * (1 + s)
+        a = (np.clip(gray + (f - gray) * k, 0, 1) * 255 + 0.5).astype(np.uint8)
+    return Image.fromarray(a)
+
 
 def _apply_tono(im, i):
     t = _a.CFG.get("tono", {}).get(_a.name(i))
@@ -161,8 +228,11 @@ def _install():
     _ev0 = _a.apply_ev
 
     def apply_ev(im, ev, gains=None):                                   # il tono (livelli/curva) viene dopo l'esposizione e prima del bianco e nero
+        if _CUR[0] is not None:
+            q = rit_gains(rit(_CUR[0]))
+            if q: gains = tuple(a * b for a, b in zip(gains or (1, 1, 1), q))
         out = _ev0(im, ev, gains)
-        return _apply_tono(out, _CUR[0]) if _CUR[0] is not None else out
+        return _apply_rit(_apply_tono(out, _CUR[0]), _CUR[0]) if _CUR[0] is not None else out
     _a.apply_ev = apply_ev
     _a.layout.__code__ = _layout.__code__     # stessa funzione: vale anche per gli script che hanno già importato "layout"
 
