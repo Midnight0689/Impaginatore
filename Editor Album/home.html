@@ -41,6 +41,32 @@
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   .dlg .err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
   .spin { width: 34px; height: 34px; border: 3px solid #555; border-top-color: var(--accent); border-radius: 50%; animation: r 1s linear infinite; margin: 0 auto 12px; } @keyframes r { to { transform: rotate(360deg); } }
+  /* ===== Tema scuro in stile Apple ===== */
+  :root { --bg: #1b1b1d; --panel: #252528; --panel2: #333337; --line: rgba(255,255,255,.1); --text: #f2f2f7; --dim: #98989f; --blue: #0a84ff; --blue2: #409cff; --danger: #ff6961; }
+  html, body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.006em; }
+  button, input { border: 0; border-radius: 8px; padding: 7px 14px; font-weight: 500; transition: background .12s, transform .06s; }
+  input { background: #1b1b1d; border: 1px solid var(--line); font-weight: 400; } input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(10,132,255,.25); }
+  button:hover:not(:disabled) { background: #424247; border-color: transparent; } button:active { transform: scale(.97); }
+  button.primary { background: var(--blue); color: #fff; border: 0; } button.primary:hover { background: var(--blue2); }
+  header { padding: 12px 28px; background: rgba(37,37,40,.88); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  #verb { background: rgba(255,255,255,.08); } #verb.nuova { background: #e0a526; }
+  main { padding: 36px 28px; }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-transform: none; color: var(--text); margin-bottom: 18px; }
+  .grid { gap: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .card:hover { border-color: rgba(255,255,255,.22); transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+  .card .cv { height: 160px; background-color: #151517; }
+  .card .tx { padding: 12px 14px 14px; } .card .nm { font-size: 15px; font-weight: 650; }
+  .card .dot { background: rgba(0,0,0,.55); color: #32d74b; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .card .mn { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .new { border: 1.5px dashed rgba(255,255,255,.2); background: transparent; box-shadow: none; } .new:hover { border-color: var(--blue); background: rgba(10,132,255,.07); transform: none; box-shadow: none; }
+  .new b { color: var(--blue2); font-size: 44px; }
+  #menu { background: rgba(44,44,47,.97); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(0,0,0,.55); padding: 6px; } #menu div { border-radius: 8px; padding: 7px 12px; } #menu div:hover { background: var(--blue); color: #fff; }
+  .veil { background: rgba(0,0,0,.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .dlg { background: rgba(44,44,47,.96); border: 1px solid var(--line); border-radius: 16px; padding: 24px 28px; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+  .dlg h3 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
+  .spin { border-color: rgba(255,255,255,.18); border-top-color: var(--blue); }
 </style>
 </head>
 <body>

@@ -164,26 +164,91 @@
   .slot { cursor: move; touch-action: none; }
   .slot.txt { cursor: default; }
   .guide { position: absolute; background: #ff4fa3; z-index: 5; pointer-events: none; }
+  /* ===== Tema scuro in stile Apple ===== */
+  :root {
+    --bg: #1b1b1d; --panel: #252528; --panel2: #333337; --line: rgba(255,255,255,.1); --text: #f2f2f7; --dim: #98989f;
+    --blue: #0a84ff; --blue2: #409cff; --danger: #ff6961; --ok: #32d74b;
+    --r: 8px;
+  }
+  html, body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.006em; }
+  button { border: 0; border-radius: var(--r); padding: 6px 12px; background: var(--panel2); transition: background .12s, transform .06s; font-weight: 500; }
+  button:hover:not(:disabled) { background: #424247; border-color: transparent; }
+  button:active:not(:disabled) { transform: scale(.97); }
+  button:disabled { opacity: .35; }
+  button.primary, button.on { background: var(--blue); color: #fff; border: 0; font-weight: 600; }
+  button.primary:hover:not(:disabled), button.on:hover:not(:disabled) { background: var(--blue2); }
+  button.danger:hover:not(:disabled) { background: rgba(255,105,97,.18); color: var(--danger); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  input[type=range] { accent-color: var(--blue); }
+  input[type=checkbox], input[type=radio] { accent-color: var(--blue); }
+  input, select, .dlg input, .dlg select { background: #1b1b1d; border: 1px solid var(--line); border-radius: var(--r); padding: 5px 9px; color: var(--text); }
+  input:focus, select:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(10,132,255,.25); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; } ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: padding-box; border: 2px solid transparent; }
+  #app { grid-template-rows: 52px 1fr var(--pr, 150px); }
+  #top { gap: 10px; padding: 0 14px; background: rgba(37,37,40,.88); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); border-bottom: 1px solid var(--line); }
+  #top .title { font-weight: 650; font-size: 14px; margin: 0 6px 0 2px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #home { display: inline-flex !important; align-items: center; gap: 2px; padding: 5px 8px 5px 4px; border-radius: var(--r); color: var(--blue2) !important; font-weight: 500; } #home:hover { background: rgba(10,132,255,.14); }
+  #status { font-size: 12px; } #status.dirty { color: var(--dim); }
+  #status.dirty ~ #save { background: var(--blue); color: #fff; }
+  .ic { width: 16px; height: 16px; vertical-align: -3.5px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  #top button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; }
+  #top button.ico { width: 32px; padding: 0; justify-content: center; }
+  #top .grp { display: inline-flex; gap: 2px; }
+  .tabs, .seg, #sbar .seg2 { display: inline-flex; background: rgba(255,255,255,.08); border-radius: 9px; padding: 2px; gap: 2px; }
+  .tabs button, .seg button, #sbar .seg2 button { background: transparent !important; border-radius: 7px !important; border: 0 !important; height: 26px !important; padding: 0 12px; }
+  .tabs button:hover:not(.on), .seg button:hover:not(.on), #sbar .seg2 button:hover:not(.on) { background: rgba(255,255,255,.08) !important; }
+  .tabs button.on, .seg button.on, #sbar .seg2 button.on { background: #636368 !important; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .tabs { margin: 0 4px; } .seg { display: flex; } .seg button { flex: 1; }
+  #list, #side, #pool, #libtpl, .libbar { background: var(--panel); border-color: var(--line); }
+  .sth { border: 2px solid transparent; border-radius: 8px; padding: 3px; transition: background .12s; } .sth:hover { background: rgba(255,255,255,.06); }
+  .sth.sel { border-color: var(--blue); background: rgba(10,132,255,.12); } .sth img { border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  #wrap { box-shadow: 0 10px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06); border-radius: 2px; }
+  #sbar .box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 10px 8px; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  #sbar .box > i { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--dim); }
+  #sbar button { padding: 0 10px; height: 26px; font-size: 12px; }
+  #rh, #rv, #rc { background: #2b2b2e; }
+  .insp .nm { color: var(--text); font-size: 15px; font-weight: 650; }
+  .insp .sec, #prjd .sec { background: transparent; color: var(--dim); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-align: left; margin: 16px 0 8px; padding: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+  #side h3 { color: var(--dim); font-weight: 600; }
+  .sl .v { color: var(--text); }
+  .ph { border-radius: 8px; background: #151517; border-width: 2px; } .ph.sel { border-color: var(--blue); }
+  .ph .n { background: var(--blue); color: #fff; } .ph .u, .slot .tag { backdrop-filter: blur(6px); }
+  .tp { background: var(--panel); border-radius: 12px; transition: transform .12s, border-color .12s; } .tp:hover { border-color: var(--blue); } .tp.cur { border-color: var(--ok); }
+  .veil { background: rgba(0,0,0,.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .dlg { background: rgba(44,44,47,.96); border: 1px solid var(--line); border-radius: 16px; padding: 22px 26px; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+  .dlg h3 { font-size: 18px; font-weight: 650; letter-spacing: -.02em; }
+  #busy > div { background: rgba(44,44,47,.96); border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+  .spin { border-color: rgba(255,255,255,.18); border-top-color: var(--blue); }
+  #toast { background: rgba(40,40,43,.92); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  #nmenu { background: rgba(44,44,47,.97); border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 16px 50px rgba(0,0,0,.55); padding: 6px; } #nmenu div:hover { background: var(--blue); color: #fff; }
+  #log { border-radius: 12px; background: rgba(28,28,30,.96); }
+  .erow { border-color: var(--line); }
+  .chip { background: var(--blue); color: #fff; }
+  .hd { border-radius: 50%; border: 2px solid #fff; background: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  #hint { color: var(--dim); }
+  button, #status { white-space: nowrap; } #top .title { flex: 0 1 auto; min-width: 60px; }
+  @media (max-width: 1180px) { #top .lbl { display: none; } #top button { padding: 0 9px; } #home { font-size: 0; } #home svg { font-size: 13px; } }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="top">
     <a id="updn" href="#" target="_self" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700;text-decoration:none;border-radius:4px;padding:2px 8px;margin-right:6px;font-size:12px" title="Torna ai progetti per aggiornare">⬆ Aggiornamento</a>
-    <a id="home" href="#" title="Torna ai progetti" style="display:none;color:var(--dim);text-decoration:none;margin-right:4px">◀ Progetti</a>
+    <a id="home" href="#" title="Torna ai progetti" style="display:none;color:var(--dim);text-decoration:none;margin-right:4px"><svg class="ic" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>Progetti</a>
     <span class="title" id="title">Album</span>
     <span class="tabs"><button id="tabF">Foto</button><button id="tabA">Album</button></span>
-    <button id="undo" title="Annulla (⌘Z)">↶ Annulla</button>
-    <button id="redo" title="Ripeti (⇧⌘Z)">↷ Ripeti</button>
-    <button id="tplb" class="primary" title="Scegli un modello di impaginazione per questo spread (M)">▦ Modelli</button>
+    <button id="undo" class="ico" title="Annulla (⌘Z)"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button id="redo" class="ico" title="Ripeti (⇧⌘Z)"><svg class="ic" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    <button id="tplb" title="Scegli un modello di impaginazione per questo spread (M)"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span class="lbl">Modelli</span></button>
     <span class="sp"></span>
     <span id="status"></span>
-    <button id="save" class="primary">Salva</button>
+    <button id="save">Salva</button>
     <button id="missb" class="danger" style="display:none" title="Alcune foto non si trovano più: clicca per ricollegarle"></button>
-    <button id="prjb" title="Ricollega foto, esporta il progetto">📁 Progetto</button>
-    <button id="verb" title="Torna a una versione salvata prima">🕘 Versioni</button>
-    <button id="tlist" title="Mostra/nascondi l'elenco degli spread">▤</button><button id="tside" title="Mostra/nascondi il pannello delle impostazioni">◨</button><button id="tfull" title="Modifica a tutto schermo (Tab)">⤢</button>
-    <button id="expb">Esporta…</button>
+    <button id="prjb" title="Ricollega foto, esporta il progetto"><span style="display:contents"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">Progetto</span></span></button>
+    <button id="verb" title="Torna a una versione salvata prima"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">Versioni</span></button>
+    <button id="tlist" class="ico" title="Mostra/nascondi l'elenco degli spread"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><button id="tside" class="ico" title="Mostra/nascondi il pannello delle impostazioni"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></svg></button><button id="tfull" class="ico" title="Modifica a tutto schermo (Tab)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button id="expb" class="primary"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span class="lbl">Esporta…</span></button>
   </div>
   <div id="list" title="Trascina gli spread per riordinarli"></div>
   <div id="stage">
@@ -385,14 +450,14 @@ function renderSbar() {
   const onlyTxt = msel.length > 0 && msel.every(k => { const i = sp.items.find(x => kOf(x) === k); return i && i.kind === "txt"; });
   const page = side => { const mode = side === "L" ? sp.L : sp.R; return `<div class="box"><i>Pagina ${side === "L" ? "sinistra" : "destra"}</i><div><span class="seg2"><button data-mode="${side}:I" class="${mode === "I" ? "on" : ""}" title="La foto arriva fino al bordo">Immersiva</button><button data-mode="${side}:W" class="${mode === "W" ? "on" : ""}" title="Pagina bianca con margine">Bianca</button></span><button data-add="${side}" title="Aggiunge una foto libera nel più grande spazio vuoto della pagina">+ Foto</button></div></div>`; };
   $("sbar").innerHTML = `<div class="box"><i>Spread</i><div><button id="mvl" ${cur === 0 ? "disabled" : ""} title="Spread precedente (↑)">◀</button><b>${cur + 1} / ${n}</b><button id="mvr" ${cur === n - 1 ? "disabled" : ""} title="Spread successivo (↓)">▶</button>
-      <button id="newsp">+ Nuovo ▾</button><button id="dupsp" title="Duplica questo spread subito dopo (Cmd+D)">⧉ Duplica</button><button id="mvup" ${cur === 0 ? "disabled" : ""} title="Sposta questo spread prima">⇤ Sposta</button><button id="mvdn" ${cur === n - 1 ? "disabled" : ""} title="Sposta questo spread dopo">Sposta ⇥</button><button id="delsp" class="danger" ${n < 2 ? "disabled" : ""} title="Elimina lo spread (le foto tornano libere)">Elimina</button></div></div>`
+      <button id="newsp">+ Nuovo ▾</button><button id="dupsp" title="Duplica questo spread subito dopo (Cmd+D)">Duplica</button><button id="mvup" ${cur === 0 ? "disabled" : ""} title="Sposta questo spread prima">Sposta prima</button><button id="mvdn" ${cur === n - 1 ? "disabled" : ""} title="Sposta questo spread dopo">Sposta dopo</button><button id="delsp" class="danger" ${n < 2 ? "disabled" : ""} title="Elimina lo spread (le foto tornano libere)">Elimina</button></div></div>`
     +
     (msel.length ? `<div class="box"><i>Allinea${msel.length === 1 ? " alla pagina" : ""}</i><div><span class="seg2"><button data-al="l" title="Allinea a sinistra">⇤</button><button data-al="ch" title="Centra in orizzontale">↔</button><button data-al="r" title="Allinea a destra">⇥</button></span><span class="seg2"><button data-al="t" title="Allinea in alto">⤒</button><button data-al="cv" title="Centra in verticale">↕</button><button data-al="b" title="Allinea in basso">⤓</button></span><span class="seg2"><button data-al="dh" ${msel.length < 3 ? "disabled" : ""} title="Distribuisci in orizzontale: spazi uguali (servono 3 elementi)">⇿ Spazi</button><button data-al="dv" ${msel.length < 3 ? "disabled" : ""} title="Distribuisci in verticale: spazi uguali (servono 3 elementi)">⥮ Spazi</button></span></div></div>` : "") +
     (msel.length ? `<div class="box"><i>${msel.length} ${onlyTxt ? (msel.length === 1 ? "testo selezionato" : "testi selezionati") : msel.length === 1 ? "foto selezionata" : "foto selezionate"}</i><div>
-      <button id="zfront" title="Porta in primo piano (Maiusc + ])">⤒ In cima</button><button id="zfw" title="Un livello avanti (])">↑ Avanti</button><button id="zbw" title="Un livello indietro ([)">↓ Indietro</button><button id="zback" title="Manda in fondo (Maiusc + [)">⤓ In fondo</button>
-      ${onlyTxt ? "" : `<button id="msame" ${msel.length < 2 ? "disabled" : ""} title="Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima">▣ Stessa dimensione</button><button id="mar" title="Ridà alla cornice le proporzioni della foto originale">⬚ Proporzioni originali</button><button id="mfull" title="La foto occupa tutta la sua pagina">⛶ A tutta pagina</button><button id="mver" title="Tutte le cornici selezionate in verticale">▯ Tutte verticali</button><button id="mhor" title="Tutte le cornici selezionate in orizzontale">▭ Tutte orizzontali</button>`}</div></div>` : "") +
-    `<div class="box"><i>Strumenti</i><div><button id="ttxt" class="${textTool ? "on" : ""}" title="Strumento Testo (T): clicca o trascina sulla pagina e scrivi">T&nbsp; Testo</button><button id="mcopy" ${msel.length ? "" : "disabled"} title="Copia gli elementi scelti (Cmd+C)">⧉ Copia</button><button id="mpaste" title="Incolla (Cmd+V): in un altro spread nella stessa posizione">⎘ Incolla</button></div></div>` +
-    `<span class="spacer"></span><div class="box"><i>Vista</i><div><button id="tmag" class="${magnet ? "on" : ""}" title="Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)">🧲 Magnetico</button><button id="trul" class="${showRulers ? "on" : ""}" title="Righelli (R)">Righelli</button><button id="tgui" class="${showGuides ? "on" : ""}" title="Guide (G): si creano trascinandole dal righello">Guide</button><button id="cgui" title="Cancella le guide di questo spread" ${sp.guides.v.length + sp.guides.h.length ? "" : "disabled"}>Cancella</button></div></div>`;
+      <button id="zfront" title="Porta in primo piano (Maiusc + ])">In cima</button><button id="zfw" title="Un livello avanti (])">Avanti</button><button id="zbw" title="Un livello indietro ([)">Indietro</button><button id="zback" title="Manda in fondo (Maiusc + [)">In fondo</button>
+      ${onlyTxt ? "" : `<button id="msame" ${msel.length < 2 ? "disabled" : ""} title="Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima">Stessa dimensione</button><button id="mar" title="Ridà alla cornice le proporzioni della foto originale">Proporzioni originali</button><button id="mfull" title="La foto occupa tutta la sua pagina">A tutta pagina</button><button id="mver" title="Tutte le cornici selezionate in verticale">Tutte verticali</button><button id="mhor" title="Tutte le cornici selezionate in orizzontale">Tutte orizzontali</button>`}</div></div>` : "") +
+    `<div class="box"><i>Strumenti</i><div><button id="ttxt" class="${textTool ? "on" : ""}" title="Strumento Testo (T): clicca o trascina sulla pagina e scrivi">Testo</button><button id="mcopy" ${msel.length ? "" : "disabled"} title="Copia gli elementi scelti (Cmd+C)">Copia</button><button id="mpaste" title="Incolla (Cmd+V): in un altro spread nella stessa posizione">⎘ Incolla</button></div></div>` +
+    `<span class="spacer"></span><div class="box"><i>Vista</i><div><button id="tmag" class="${magnet ? "on" : ""}" title="Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)">Magnetico</button><button id="trul" class="${showRulers ? "on" : ""}" title="Righelli (R)">Righelli</button><button id="tgui" class="${showGuides ? "on" : ""}" title="Guide (G): si creano trascinandole dal righello">Guide</button><button id="cgui" title="Cancella le guide di questo spread" ${sp.guides.v.length + sp.guides.h.length ? "" : "disabled"}>Cancella</button></div></div>`;
   $("newsp").onclick = e => { const m = $("nmenu"), r = e.target.getBoundingClientRect(); m.style.display = "block"; m.style.left = r.left + "px"; m.style.top = r.bottom + 4 + "px"; e.stopPropagation(); };
   $("mvup").onclick = () => moveSp(cur, cur - 1); $("mvdn").onclick = () => moveSp(cur, cur + 1);
   $("dupsp").onclick = dupSpread;
@@ -511,7 +576,7 @@ function renderSide() {
       <div class="sl"><b>Bianchi:</b><input id="tw" type="range" min="155" max="255" step="1" value="${(it.tono || {}).w || 255}"><span class="v" id="twv"></span></div>
       <canvas id="cv" width="220" height="220" title="Curva: clic per aggiungere un punto, trascina per spostarlo, doppio clic per toglierlo"></canvas>
     </div>
-    <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">✥ Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
+    <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
     <div class="sec">Informazioni immagine</div>
     <div class="kv" id="info"><span>Cornice L×A</span><span>${it.cm[0].toFixed(2)}×${it.cm[1].toFixed(2)} cm</span>
       <span>PPI effettivi</span><span class="${lowppi ? "bad" : ""}">${it.ppi}${lowppi ? " · bassi" : ""}</span>
