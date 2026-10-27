@@ -9,7 +9,7 @@ ROT_JS = r'''function rotAround(L,deg,fx,fy){ var b=L.bounds, cx=(b[0].as("px")+
   var b2=L.bounds, c2x=(b2[0].as("px")+b2[2].as("px"))/2, c2y=(b2[1].as("px")+b2[3].as("px"))/2; L.translate(px(nx-c2x),px(ny-c2y)); }
 var log=[]; var STEP="start";
 function addTextX(doc,it,ids){ var X=it.X; if(!X||!X.tx) return;
-  var L=doc.artLayers.add(); L.kind=LayerKind.TEXT; var ti=L.textItem; ti.kind=TextType.PARAGRAPHTEXT; ti.contents=X.tx.replace(/\n/g,"\r"); ti.font=X.font; ti.size=new UnitValue(X.size,"pt"); ti.tracking=X.tr||0;
+  var L=doc.artLayers.add(); L.kind=LayerKind.TEXT; var ti=L.textItem; ti.kind=TextType.PARAGRAPHTEXT; ti.contents=X.tx.replace(/\n/g,"\r"); ti.font=X.font; ti.size=new UnitValue(X.size,"pt"); ti.tracking=X.tr||0; if (X.caps) ti.capitalization=TextCase.ALLCAPS;
   ti.useAutoLeading=false; ti.leading=new UnitValue(X.size*(X.lh||1.2),"pt"); var c=new SolidColor(); c.rgb.red=X.col[0]; c.rgb.green=X.col[1]; c.rgb.blue=X.col[2]; ti.color=c;
   ti.width=px(it.w); ti.height=px(it.h); ti.position=[px(it.x),px(it.y)]; L.name="Testo - "+X.tx.split("\n")[0]; if (X.al=="center") ti.justification=Justification.CENTER; else if (X.al=="right") ti.justification=Justification.RIGHT; else ti.justification=Justification.LEFT; var bb=L.bounds; L.translate(px(it.x+X.gx-bb[0].as("px")),px(it.y+X.gy-bb[1].as("px"))); ids.push(L.id); }
 function levelsAdj(b,w,g){ var d=new ActionDescriptor(),ref=new ActionReference(); ref.putClass(cid("AdjL")); d.putReference(cid("null"),ref);

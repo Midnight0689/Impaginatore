@@ -144,4 +144,4 @@ def job_x(it):
         w = _width(line, font, size, tr); x = 0 if al == "left" else (W - w) / 2 if al == "center" else W - w
         l, t, r, b = font.getbbox(line.strip()); sp0 = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * sp0 if sp0 else 0)
         gx = x if gx is None else min(gx, x); gy = i * lh + t if gy is None else min(gy, i * lh + t)
-    d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d["tx"] = shown(it); d.update(lh=lead(it), gx=gx or 0, gy=gy or 0); return d
+    d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d.update(caps=bool(it.get("caps")), lh=lead(it), gx=gx or 0, gy=gy or 0); return d

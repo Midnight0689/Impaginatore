@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 45 — PSD: maiuscolo vero di Photoshop
+- Verificato aprendo il PSD in Photoshop: corpo, interlinea (corpo × valore scelto) e spaziatura corrispondono all'editor. — `testo.py`, `genera_psd_angolo.py`.
+- «TT tutto maiuscolo» ora diventa l'attributo «Tutto maiuscolo» di Photoshop: il testo resta com'è scritto e puoi toglierlo dal pannello Carattere (prima nel PSD finivano lettere maiuscole vere).
+
 ## Versione 44 — Esportazione più solida (JPG, PDF, PSD)
 - **Correzione importante:** dalla versione 40 l'esportazione PSD si fermava se nello spread c'era un testo (errore interno nel calcolo dell'interlinea). Trovato dalla nuova prova automatica e risolto. — `testo.py`.
 - Controlli prima di esportare, con messaggio chiaro: spread inesistenti, foto non più trovate (dice quali), cartella non scrivibile, spazio sul disco insufficiente, Photoshop non installato (solo PSD). — `editor.py`.
