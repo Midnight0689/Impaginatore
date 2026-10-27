@@ -1048,7 +1048,11 @@ function startFree(e, it, kind) {
     const sc = $("wrap").clientWidth / S.W;
     if (!ghost) {
       ghost = document.createElement("div"); ghost.className = "ghost"; DRAG = true; document.body.classList.add("dragging");
-      if (it.name) { ghost.style.backgroundImage = `url(/img/thumb/${it.name}?w=500)`; ghost.style.backgroundSize = "cover"; ghost.style.backgroundPosition = "center"; }
+      if (it.name) {       // la foto com'è inquadrata adesso (nello spostamento il ritaglio non cambia), nitida quanto basta per la sua misura
+        const wpx = Math.min(1600, Math.max(400, Math.ceil(it.w * sc * (window.devicePixelRatio || 1) / 100) * 100)); ghost.style.backgroundImage = `url(/img/thumb/${it.name}?w=${wpx})`;
+        if (kind === "move" && it.box) { const [l, t, r, b] = it.box, W = r - l, H = b - t; ghost.style.backgroundSize = `${100 / W}% ${100 / H}%`; ghost.style.backgroundPosition = `${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`; }
+        else { ghost.style.backgroundSize = "cover"; ghost.style.backgroundPosition = "center"; }
+        if (it.bw) ghost.style.filter = "grayscale(1)"; }
       ghost.style.cssText += `;left:${it.x * sc}px;top:${it.y * sc}px;width:${it.w * sc}px;height:${it.h * sc}px`; $("ghosts").appendChild(ghost);
       srcEl = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (srcEl && kind === "move") srcEl.classList.add("srcdrag");       // dove stava: segnaposto scuro
     }

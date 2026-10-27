@@ -3,7 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
-## Versione 49 — Trascinamento fluido delle foto
+## Versione 51 — Trascinamento: la foto con la sua inquadratura
+- La foto che trascini mostra il ritaglio vero della cornice (non più una versione centrata), è più nitida e resta in bianco e nero se lo è. — `index.html`.
+
+## Versione 50 — Trascinamento fluido delle foto
 (da qui il numero è quello che vedi nell'elenco Versioni del programma; la 46 è il punto sicuro `v45-riferimento`)
 - Mentre trascini, la foto vera segue il mouse (prima si vedeva solo un rettangolo semitrasparente) e il posto di partenza resta come segnaposto scuro tratteggiato. — `index.html`.
 - Il movimento è agganciato alla scheda grafica (un solo aggiornamento per schermata invece di uno per ogni evento del mouse); guide e misure si ridisegnano solo quando cambiano.
