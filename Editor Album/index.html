@@ -313,6 +313,10 @@
   #thot { position: absolute; z-index: 24; top: 0; left: 0; right: 0; height: 14px; } #ttog { position: absolute; z-index: 26; top: 8px; left: 12px; margin: 0; } body.tpin #ttog { background: var(--blue); color: #fff; }
   #sbarR { flex: 0 1 auto !important; width: auto !important; } #sbarL { flex-wrap: nowrap; } #tools .box > i { display: none; } #tools .box > div { flex-wrap: nowrap; } #tools { flex-wrap: wrap; } .sb { flex-wrap: nowrap; }
   .stgl #tools { background: rgba(245,245,247,.94); border-color: rgba(0,0,0,.15); } .stgl .sb .box { background: rgba(0,0,0,.04); }
+  /* tasto Strumenti al centro in alto, sempre visibile; fascia fissa = nel flusso, a scomparsa = sopra lo spread */
+  #ttog { left: 50%; transform: translateX(-50%); top: 6px; height: 24px; padding: 0 14px; background: rgba(255,255,255,.1); color: var(--text); } body.tpin #ttog { background: rgba(255,255,255,.1); color: var(--text); }
+  body.tpin #tools { position: relative; top: 0; left: 0; transform: none; margin: 30px auto 18px; width: max-content; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; padding: 0; }
+  #thot { height: 40px; } .stgl #ttog { background: rgba(0,0,0,.1); color: #222; }
 </style>
 </head>
 <body>
@@ -1040,12 +1044,12 @@ const panels = () => [!document.body.classList.contains("nolist"), !document.bod
 $("tlist").onclick = () => { const [l, s_, p_] = panels(); setPanels(!l, s_, p_); };
 $("tside").onclick = () => { const [l, s_, p_] = panels(); setPanels(l, !s_, p_); };
 $("tfull").onclick = () => { const [l, s_, p_] = panels(); const all = l || s_ || p_; setPanels(!all, !all, !all); };
-function setTools(on, save = true) { document.body.classList.toggle("tpin", on); $("ttog").classList.toggle("on", on); $("ttog").title = on ? "Fascia fissa: clicca per farla comparire solo col mouse" : "Fascia a scomparsa: clicca per tenerla sempre visibile"; try { if (save) localStorage.setItem("tbar2", on ? "1" : "0"); } catch (e) {} }
+function setTools(on, save = true) { document.body.classList.toggle("tpin", on); $("ttog").classList.toggle("on", on); $("ttog").textContent = (on ? "▾" : "▸") + " Strumenti"; $("ttog").title = on ? "Clicca per nascondere la fascia (si riapre passando qui sopra)" : "Clicca per tenere la fascia sempre visibile"; setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); try { if (save) localStorage.setItem("tbar2", on ? "1" : "0"); } catch (e) {} }
 let tHide = null;
-function showTools(v) { clearTimeout(tHide); if (v) $("stage").classList.add("tshow"); else tHide = setTimeout(() => $("stage").classList.remove("tshow"), 900); }
+function showTools(v) { clearTimeout(tHide); if (v) $("stage").classList.add("tshow"); else tHide = setTimeout(() => $("stage").classList.remove("tshow"), 1800); }
 ["ttog", "tools", "thot"].forEach(i => { $(i).addEventListener("mouseenter", () => showTools(true)); $(i).addEventListener("mouseleave", () => showTools(false)); });
 $("ttog").onclick = () => setTools(!document.body.classList.contains("tpin"));
-try { setTools(localStorage.getItem("tbar2") === "1", false); const pn0 = localStorage.getItem("pan"); if (pn0 === null && innerWidth < 1250) { setPanels(false, true, true); localStorage.removeItem("pan"); } } catch (e) { setTools(false, false); }
+try { setTools(localStorage.getItem("tbar2") !== "0", false); const pn0 = localStorage.getItem("pan"); if (pn0 === null && innerWidth < 1250) { setPanels(false, true, true); localStorage.removeItem("pan"); } } catch (e) { setTools(false, false); }
 try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPanels(pn[0] === "1", pn[1] === "1", pn[2] === "1"); } catch (e) {}
 
 // ---- libreria foto: seleziona le foto e compaiono i modelli per quel numero di foto

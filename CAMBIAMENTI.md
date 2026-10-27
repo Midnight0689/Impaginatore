@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 35 — Fascia strumenti: tasto al centro, di default visibile
+- La fascia parte visibile; il tasto «▾ Strumenti» (al centro in alto, sempre visibile) la nasconde, e passandoci sopra si riapre. — `index.html`.
+
 ## Versione 34 — Fascia strumenti a scomparsa
 - La fascia strumenti ora galleggia sopra lo spread e compare passando il mouse in alto (o sul tasto «Strumenti»); non sposta più lo spread, che diventa più grande. — `index.html`.
 - Il tasto «Strumenti» la fissa sempre visibile (azzurro = fissa).
