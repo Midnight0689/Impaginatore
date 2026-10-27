@@ -192,7 +192,7 @@
   .fbar .gQ { width: 100px; } .fbar select { height: 28px; padding: 0 6px; } .fbar .dots { display: inline-flex; gap: 5px; align-items: center; } .fbar .dots i { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background: var(--c); } .fbar .dots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .fbar .dots i.nc { background: transparent; border: 2px dashed #777; } .fbar .dots i.nc.on { border-color: #fff; } .fbar .dots .lb { color: var(--dim); font-size: 11px; } .fbar .dots.as i { width: 18px; height: 18px; }
   .ph .cl { position: absolute; bottom: 24px; left: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.6); } #pool { display: flex; flex-direction: column; overflow: hidden !important; } #pool .fbar { padding-bottom: 4px; font-size: 12px; flex: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; } #pool .fbar > * { flex: none; } #pool .fbar::-webkit-scrollbar { display: none; } #pool .fbar button { height: 24px !important; } #pool { position: relative; } #poolrow { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; } #poolrow img { height: var(--ph, 100px); margin: 0; flex: none; } #poolrow .cap { flex: 0 0 100%; margin: 0 0 2px; } #poolrow .empty { flex: 0 0 100%; }
   #poolgrip { position: absolute; left: 0; right: 0; top: -4px; height: 9px; cursor: ns-resize; z-index: 6; } #poolgrip::after { content: ''; position: absolute; left: 50%; top: 3px; width: 44px; height: 4px; margin-left: -22px; border-radius: 2px; background: rgba(255,255,255,.22); } #poolgrip:hover::after { background: var(--blue); }
-  #cmenu { position: fixed; z-index: 90; background: #2a2a2d; border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); min-width: 150px; } #cmenu div { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; } #cmenu div:hover { background: var(--blue); } #cmenu i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255,255,255,.25); box-sizing: border-box; } #cmenu i.nc { background: transparent; border: 2px dashed #888; }
+  #cmenu { position: fixed; z-index: 90; background: #2a2a2d; border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); min-width: 150px; } #cmenu .mi { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; white-space: nowrap; } #cmenu .mi:hover { background: var(--blue); } #cmenu .mi.off { opacity: .35; pointer-events: none; } #cmenu kbd { font: inherit; font-size: 11px; color: var(--dim); } #cmenu .mi:hover kbd { color: #fff; } #cmenu hr { border: 0; border-top: 1px solid var(--line); margin: 5px 4px; } #cmenu .crow { display: flex; gap: 7px; padding: 6px 8px 4px; } #cmenu .crow i { width: 20px; height: 20px; cursor: pointer; } #cmenu .crow i:hover { border-color: #fff; } #cmenu i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255,255,255,.25); box-sizing: border-box; } #cmenu i.nc { background: transparent; border: 2px dashed #888; }
   #tip { position: fixed; z-index: 95; pointer-events: none; background: #000; color: #fff; font-size: 12px; font-weight: 500; padding: 5px 9px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); box-shadow: 0 4px 14px rgba(0,0,0,.5); max-width: 280px; display: none; }
   .cdots { display: flex; gap: 8px; margin: 2px 0 6px; } .cdots i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); cursor: pointer; border: 2px solid transparent; box-sizing: border-box; } .cdots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .cdots i.nc { background: transparent; border: 2px dashed #777; } .fbar .seg button { padding: 0 8px; } .fbar .zoom input[type=range] { width: 90px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: transparent; }
@@ -440,6 +440,7 @@ function renderStage() {
       const lay = it.kind === "txt";
       d.innerHTML = `<span class="tag">${lay ? "Testo" : "Testo (titolo)"}</span>`; d.title = lay ? "Trascina per spostare · doppio clic per scrivere" : "Doppio clic: lo rendo modificabile come livelli di testo"; d.dataset.at = JSON.stringify([cur, it.side, it.idx]);
       d.onpointerdown = e => { if (e.button !== 0) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } startFree(e, it, "move"); };
+      d.oncontextmenu = e => frameMenu(e, it);
       d.ondblclick = async () => { if (lay) { sel = { s: cur, side: it.side, idx: it.idx }; msel = [kOf(it)]; render(); enterEdit(it); } else { await op({ op: "t2x", at: [cur, it.side, it.idx] }); sel = null; msel = []; render(); toast("Ora ogni riga è un livello di testo: clic per selezionarla, doppio clic per scrivere"); } };
       if (isSel && msel.length < 2) ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(k => { const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k; hd.onpointerdown = e => { if (e.button === 0) startFree(e, it, k); }; d.appendChild(hd); });
     }
@@ -449,6 +450,7 @@ function renderStage() {
       d.dataset.at = JSON.stringify(to);
       d.onpointerdown = e => { if (e.button !== 0 || e.target.closest(".chip")) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } if (cropMode && isSel) startPan(e, it, d); else startFree(e, it, "move"); };
       d.ondblclick = () => { sel = { s: cur, side: it.side, idx: it.idx }; setCrop(true); };
+      d.oncontextmenu = e => frameMenu(e, it);
       if (cropMode && isSel) d.classList.add("cropping");
       d.ondragover = e => { e.preventDefault(); d.classList.add("over"); };
       d.ondragleave = () => d.classList.remove("over");
@@ -806,7 +808,7 @@ function renderPool() {
   if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);
   free.forEach(f => {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
-    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => colorMenu(e, [n]);
+    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
     if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
     if (S.tolte.includes(n)) { im.className = "tolta"; im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
@@ -1016,12 +1018,57 @@ function mkBar(el, st, cfg) {
 }
 let HOV = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
 function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
-function colorMenu(e, names) {                    // tasto destro su una foto: scegli il colore
-  e.preventDefault(); const old = $("cmenu"); if (old) old.remove();
-  const m = document.createElement("div"); m.id = "cmenu"; m.innerHTML = COLS.map(([k, c]) => `<div data-k="${k}"><i style="--c:${c}"></i>${k[0].toUpperCase() + k.slice(1)}</div>`).join("") + '<div data-k=""><i class="nc"></i>Nessun colore</div>' + `<div style="color:var(--dim);font-size:11px;cursor:default;pointer-events:none">${names.length} ${names.length === 1 ? "foto" : "foto"}</div>`;
-  document.body.appendChild(m); m.style.left = Math.min(e.clientX, innerWidth - 170) + "px"; m.style.top = Math.min(e.clientY, innerHeight - m.offsetHeight - 10) + "px";
-  m.onclick = ev => { const d = ev.target.closest("div[data-k]"); if (d) assignColor(d.dataset.k || null, names); m.remove(); };
-  setTimeout(() => { const off = ev => { if (!m.contains(ev.target)) { m.remove(); } document.removeEventListener("pointerdown", off, true); }; document.addEventListener("pointerdown", off, true); }, 0);
+// ---- menu del tasto destro (foto della galleria, della striscia e dello spread)
+let RITCLIP = null;
+function ctxMenu(e, items) {
+  e.preventDefault(); e.stopPropagation(); const old = $("cmenu"); if (old) old.remove();
+  const m = document.createElement("div"); m.id = "cmenu";
+  items.filter(Boolean).forEach(it => {
+    if (it === "-") { m.insertAdjacentHTML("beforeend", '<hr>'); return; }
+    if (it.colors) { const r = document.createElement("div"); r.className = "crow"; r.innerHTML = COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}"></i>`).join("") + '<i class="nc" data-k="" title="Nessun colore"></i>'; r.onclick = ev => { const d = ev.target.closest("i"); if (d) { assignColor(d.dataset.k || null, it.colors); m.remove(); } }; m.appendChild(r); return; }
+    const d = document.createElement("div"); d.className = "mi" + (it.off ? " off" : ""); d.innerHTML = `<span>${it.t}</span>${it.k ? `<kbd>${it.k}</kbd>` : ""}`;
+    if (!it.off) d.onclick = () => { m.remove(); it.f(); }; m.appendChild(d);
+  });
+  document.body.appendChild(m); m.style.left = Math.max(6, Math.min(e.clientX, innerWidth - m.offsetWidth - 8)) + "px"; m.style.top = Math.max(6, Math.min(e.clientY, innerHeight - m.offsetHeight - 8)) + "px";
+  setTimeout(() => { const off = ev => { if (!m.contains(ev.target)) m.remove(); document.removeEventListener("pointerdown", off, true); }; document.addEventListener("pointerdown", off, true); }, 0);
+}
+function photoItems(names, where) {          // voci comuni a ogni foto, ovunque sia
+  const one = names.length === 1, n0 = names[0], P = S.photos.find(x => x.n === n0) || {};
+  return [{ colors: names }, "-",
+    { t: "Copia il ritocco", off: !one || !RITCLIPOK(n0), f: () => { RITCLIP = Object.assign({}, RITCLIPSRC(n0)); toast("Ritocco copiato: incollalo su altre foto"); } },
+    { t: "Incolla il ritocco" + (names.length > 1 ? " su " + names.length + " foto" : ""), off: !RITCLIP, f: () => op({ op: "rit", photos: names, copia: RITCLIP }).then(() => toast("Ritocco incollato")) },
+    { t: "Azzera il ritocco", f: () => op({ op: "rit", photos: names, reset: true }) }, "-",
+    { t: "Mostra nel Finder", off: !one, f: () => api("/api/reveal", { foto: n0 }) },
+    { t: "Copia il nome", off: !one, f: () => { try { navigator.clipboard.writeText(n0); toast("Nome copiato: " + n0); } catch (x) {} } }];
+}
+const RITCLIPSRC = n => (S.photos.find(x => x.n === n) || {}).rit || {}; const RITCLIPOK = n => Object.keys(RITCLIPSRC(n)).length > 0;
+function libMenu(e, p, names, inPool) {       // galleria o striscia
+  const free = p.sp == null, one = names.length === 1;
+  ctxMenu(e, [{ colors: names }, "-",
+    free && !p.tolta ? { t: "Usa in un nuovo spread…", f: () => { SELP = names.filter(n => { const q = S.photos.find(x => x.n === n); return q && q.sp == null && !q.tolta; }); lastClick = SELP[SELP.length - 1]; view = "foto"; render(); toast("Scegli un modello a destra per creare lo spread"); } } : null,
+    !free ? { t: "Vai allo spread " + (p.sp + 1), f: () => { cur = p.sp; view = "album"; render(); } } : null,
+    free ? { t: p.tolta ? "Ripristina (torna tra quelle da usare)" : "Togli dalle foto da usare", f: () => op({ op: "tolta", photo: p.n, value: !p.tolta }) } : null,
+    p.col && !inPool ? { t: "Seleziona tutte le " + p.col + "", f: () => { SELP = S.photos.filter(x => x.col === p.col && x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; view = "foto"; render(); } } : null,
+    ...photoItems(names).slice(1)]);
+}
+function frameMenu(e, it) {                   // tasto destro su una foto/testo dello spread
+  const k = kOf(it); if (!msel.includes(k)) { sel = { s: cur, side: it.side, idx: it.idx }; msel = [k]; render(); }
+  const items = msel.map(x => S.spreads[cur].items.find(i => kOf(i) === x)).filter(Boolean), photos = items.filter(i => i.k !== "t"), names = photos.map(i => i.name), at = mAts(), many = msel.length > 1;
+  const z = d => () => op({ op: "zorder", s: cur, ats: at, dir: d });
+  const list = [];
+  if (photos.length) list.push({ colors: names }, "-");
+  list.push({ t: "Porta avanti", k: "+", f: z("forward") }, { t: "Porta indietro", k: "−", f: z("backward") }, { t: "In cima", k: "⇧ ]", f: z("front") }, { t: "In fondo", k: "⇧ [", f: z("back") }, "-");
+  list.push({ t: "Centra in orizzontale", f: () => op({ op: "align", s: cur, ats: at, mode: "ch" }) }, { t: "Centra in verticale", f: () => op({ op: "align", s: cur, ats: at, mode: "cv" }) });
+  if (photos.length) {
+    list.push("-", { t: "Tutta pagina", f: () => op({ op: "fullpage", s: cur, ats: at }) }, { t: "Proporzioni originali", f: () => op({ op: "origar", s: cur, ats: at }) }, { t: "Stessa misura (come l'ultima toccata)", off: !many, f: () => op({ op: "equalize", s: cur, ...selOrder() }) },
+      { t: photos.every(i => i.bw) ? "Togli il bianco e nero" : "Bianco e nero", f: async () => { const v = !photos.every(i => i.bw); for (const i of photos) await op({ op: "set", at: [cur, i.side, i.idx], bw: v }); } },
+      { t: "Sposta l'immagine nella cornice", off: many, f: () => { sel = { s: cur, side: it.side, idx: it.idx }; setCrop(true); } });
+    list.push(...photoItems(names).slice(1));
+  }
+  list.push("-", { t: "Copia", k: "⌘C", f: copySel }, { t: "Incolla", k: "⌘V", f: pasteSel });
+  list.push({ t: photos.length ? "Togli dallo spread (la foto torna libera)" : "Elimina", k: "⌫", f: async () => { for (const [a, b] of at.sort((x, y) => y[1] - x[1])) await op({ op: "delframe", at: [cur, a, b] }); msel = []; sel = null; render(); } });
+  if (photos.length === 1) list.push({ t: "Mostra nella galleria Foto", f: () => { SELP = [names[0]]; view = "foto"; render(); } });
+  ctxMenu(e, list);
 }
 const visPhotos = () => filterList(S.photos, GF);
 const selectable = () => visPhotos().filter(x => x.sp == null && !x.tolta).map(x => x.n);
@@ -1041,7 +1088,7 @@ function renderLib() {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
     d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${p.col ? `<span class="cl" style="background:${COLC[p.col]}" title="${p.col}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
-    d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; }; d.oncontextmenu = e => colorMenu(e, SELP.includes(p.n) ? SELP : [p.n]);
+    d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; }; d.oncontextmenu = e => libMenu(e, p, SELP.includes(p.n) ? SELP : [p.n], false);
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
       if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast("Foto ripristinata: torna tra quelle da usare")); return; }

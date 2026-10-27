@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 26 — Menu del tasto destro completo
+- Tasto destro su una foto o un testo dello spread: colori, avanti/indietro/cima/fondo, centra, tutta pagina, proporzioni, stessa misura, bianco e nero, sposta nella cornice, copia/incolla/azzera ritocco, Finder, copia nome, copia/incolla, «togli dallo spread», «mostra nella galleria». Tasto destro nella galleria/striscia: colori, «usa in un nuovo spread», vai allo spread, togli/ripristina, «seleziona tutte del colore», ritocco, Finder. Menu unico `ctxMenu` (voci con scorciatoie). `/api/reveal` accetta anche `{foto}`. Le foto ora hanno `rit` nello stato. — `index.html`, `editor.py`.
+
 ## Versione 25 — Galleria ridimensionabile, colori col tasto destro, titoli subito, + e − per i livelli
 - Striscia «foto libere» dell'album: ora le foto vanno a capo su più file e si alza/abbassa trascinando la maniglia sul bordo alto (doppio clic = altezza automatica, ricordata in `localStorage` «poolH»). Prima era una sola fila orizzontale.
 - Colori: tasto destro su una foto (galleria o striscia) apre il menu dei colori; nel pannello della foto c'è «Etichetta colore»; restano i tasti 1–7/0 e i pallini «Colora:».

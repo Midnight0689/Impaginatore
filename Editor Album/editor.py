@@ -726,7 +726,7 @@ def photo_list():
             for it in pg[1]:
                 if it["k"] != "t": where.setdefault(it["i"], k)
     tolte = set(CFG.get("tolte", [])); col = CFG.get("colori", {})
-    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i))) for i in range(len(A.M))]
+    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i)), rit=CFG.get("ritocco", {}).get(A.name(i))) for i in range(len(A.M))]
 
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
@@ -1212,7 +1212,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
             elif u.path == "/api/export": LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": subprocess.run(["open", "-R", body["path"]]); self.send({"ok": True})
+            elif u.path == "/api/reveal": subprocess.run(["open", "-R", body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]]); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
