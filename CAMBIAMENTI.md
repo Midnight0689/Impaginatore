@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 20 — Rotella del mouse sulla striscia foto libere
+- Nella striscia «foto libere» dell'album la rotella (e il trackpad in verticale) ora scorre in orizzontale; prima non faceva nulla. — `index.html`.
+
 ## Versione 19 — Filtri, colori e ordinamento anche in Album; colori stile Lightroom
 - La striscia «foto libere» dell'album ha la stessa barra della galleria Foto: filtri, Verticali/Orizzontali, colori, ordinamento, ricerca e zoom (la striscia si alza/abbassa con lo zoom). Etichette colore (rosso, arancio, giallo, verde, azzurro, viola, rosa): si assegnano con i pallini «Colora:» alle foto selezionate, o coi tasti 1–7 (0 toglie) sulla selezione, o sulla foto sotto il mouse (anche nella striscia dell'album). Pallino sulla miniatura e filtro per colore (anche «senza colore»). Ordinamento: import, nome A→Z/Z→A, data di scatto ↑/↓, colore. Server: `CFG["colori"]` (progetto.json, annullabile), op `colore`, campo `col` nelle foto. — `editor.py`, `index.html` (`mkBar`, `filterList`, `renderPool`).
 

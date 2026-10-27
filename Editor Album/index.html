@@ -804,6 +804,7 @@ $("rv").onpointerdown = e => { if (e.button === 0) { if (!showGuides) setGuides(
 new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
 let pBar = null;
+$("poolrow").addEventListener("wheel", e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); $("poolrow").scrollLeft += e.deltaY; } }, { passive: false });   // la rotella scorre la striscia in orizzontale
 function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${PF.sz + 78}px; } #poolrow { --ph: ${PF.sz}px; }`; }
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
