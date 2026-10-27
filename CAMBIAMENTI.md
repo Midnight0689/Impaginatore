@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 22 — Allinea compatto e strumenti che si adattano alla larghezza
+- «Allinea alla pagina» è una sola riga bassa, senza titolo. La fascia strumenti reagisce alla larghezza dello spazio dello spread (container query `stg` su `#stage`, non della finestra): sotto 1250 px pulsanti più piccoli, sotto 980 ancora di più. Con finestre piccole la fascia resta alta: si guadagna spazio chiudendo i pannelli laterali. — `index.html`.
+
 ## Versione 21 — Pannelli a destra incolonnati
 - «Allinea alla pagina» e «Foto selezionata» ora sono uno sopra l'altro, stessa larghezza e stesso bordo, con i pulsanti che riempiono la riga (prima erano sfalsati e di larghezze diverse). — `index.html` (`#sbarR`).
 

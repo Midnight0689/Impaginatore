@@ -78,7 +78,7 @@
   #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111; color: #fff; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); display: none; z-index: 6; }
   #toast.err { border-color: var(--danger); }
   .empty { color: var(--dim); font-size: 12px; }
-  #stage { position: relative; }
+  #stage { position: relative; container: stg / inline-size; }
   #sbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; width: 100%; max-width: 1522px; margin-bottom: 8px; font-size: 12px; }
   #sbar .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px 6px; display: flex; flex-direction: column; gap: 3px; }
   #sbar .box > i { font-style: normal; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--dim); }
@@ -248,6 +248,11 @@
   .sb button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
   .sb button.on { background: var(--blue); color: #fff; }
   #sbarR { flex-direction: column !important; align-items: stretch !important; flex: 0 0 500px !important; width: 500px; margin-left: auto; } #sbarR .box > div > button { flex: 1 1 0; width: auto; min-width: 0; } #sbarR .box > div > button.al2 { flex: 1.5 1 0; } #sbarR .box > div { flex-wrap: wrap; }
+  /* Allinea: una riga compatta, senza titolo */
+  #sbarR .box.alb { padding: 6px 8px; } #sbarR .box.alb > i { display: none; } #sbarR .box.alb > div { flex-wrap: nowrap; gap: 4px; } #sbarR .box.alb button { height: 36px; border-radius: 9px; } #sbarR .box.alb button.al2 { flex: 1.7 1 0; font-size: 10px; gap: 3px; } #sbarR .box.alb .ic2 { width: 18px; height: 18px; }
+  /* adattamento alla larghezza della finestra */
+  @container stg (max-width: 1250px) { #tools { gap: 8px; } #sbarL { flex: 1 1 auto !important; } .sb { gap: 6px; } .sb .box { padding: 6px 7px 8px; } #sbarR { flex: 1 1 360px !important; width: auto; max-width: 500px; } .sb button { width: 58px; height: 50px; } .sb .box > i { font-size: 9.5px; } }
+  @container stg (max-width: 980px) { .sb button { width: 52px; height: 42px; font-size: 9.5px; } #sbarR .box > div > button { height: 40px; } #sbarR .box.alb button { height: 34px; } .sb .navrow button { width: 34px; height: 40px; } .sb .cnt b { font-size: 20px; } .sb .box { padding: 6px 7px 7px; gap: 5px; } }
   .sb button.al { width: 50px; height: 50px; } .sb button.al2 { width: 82px; height: 50px; flex-direction: row; gap: 5px; }
   .ic2 { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
   .sb .navrow { display: flex; align-items: center; gap: 3px; margin-right: 6px; }
@@ -515,7 +520,7 @@ function renderSbar() {
       ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>` +
     `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}</div></div>` +
     `<div class="box"><i>Vista</i><div class="g4">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length ? "" : "disabled")}</div></div>`;
-  $("sbarR").innerHTML = (msel.length ? `<div class="box"><i>Allinea${msel.length === 1 ? " alla pagina" : ""}</i><div class="g3">
+  $("sbarR").innerHTML = (msel.length ? `<div class="box alb"><i>Allinea${msel.length === 1 ? " alla pagina" : ""}</i><div class="g3">
       ${AL("l", "al-l", "Allinea a sinistra")}${AL("ch", "al-ch", "Centra in orizzontale")}${AL("r", "al-r", "Allinea a destra")}
       ${AL("t", "al-t", "Allinea in alto")}${AL("cv", "al-cv", "Centra in verticale")}${AL("b", "al-b", "Allinea in basso")}
       <button data-al="dh" class="al2" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in orizzontale (servono 3 elementi)">${IC("dist-h")}<span>Spazi ↔</span></button>
