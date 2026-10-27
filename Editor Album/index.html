@@ -190,7 +190,11 @@
   .fbar .seg { background: #1b1b1d; border-radius: 8px; padding: 2px; } .fbar .seg button .c { opacity: .6; margin-left: 4px; font-size: 11px; }
   .fbar .zoom { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; } .fbar .zoom button { width: 28px; height: 28px; padding: 0; font-size: 17px; line-height: 1; } .fbar .zoom input[type=range] { width: 130px; padding: 0; accent-color: var(--blue); }
   .fbar .gQ { width: 100px; } .fbar select { height: 28px; padding: 0 6px; } .fbar .dots { display: inline-flex; gap: 5px; align-items: center; } .fbar .dots i { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background: var(--c); } .fbar .dots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .fbar .dots i.nc { background: transparent; border: 2px dashed #777; } .fbar .dots i.nc.on { border-color: #fff; } .fbar .dots .lb { color: var(--dim); font-size: 11px; } .fbar .dots.as i { width: 18px; height: 18px; }
-  .ph .cl { position: absolute; bottom: 24px; left: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.6); } #pool { display: flex; flex-direction: column; overflow: hidden !important; } #pool .fbar { padding-bottom: 4px; font-size: 12px; flex: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; } #pool .fbar > * { flex: none; } #pool .fbar::-webkit-scrollbar { display: none; } #pool .fbar button { height: 24px !important; } #poolrow { flex: 1; overflow-x: auto; overflow-y: hidden; white-space: nowrap; } #poolrow img { height: var(--ph, 100px); } .fbar .seg button { padding: 0 8px; } .fbar .zoom input[type=range] { width: 90px; }
+  .ph .cl { position: absolute; bottom: 24px; left: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.6); } #pool { display: flex; flex-direction: column; overflow: hidden !important; } #pool .fbar { padding-bottom: 4px; font-size: 12px; flex: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; } #pool .fbar > * { flex: none; } #pool .fbar::-webkit-scrollbar { display: none; } #pool .fbar button { height: 24px !important; } #pool { position: relative; } #poolrow { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; } #poolrow img { height: var(--ph, 100px); margin: 0; flex: none; } #poolrow .cap { flex: 0 0 100%; margin: 0 0 2px; } #poolrow .empty { flex: 0 0 100%; }
+  #poolgrip { position: absolute; left: 0; right: 0; top: -4px; height: 9px; cursor: ns-resize; z-index: 6; } #poolgrip::after { content: ''; position: absolute; left: 50%; top: 3px; width: 44px; height: 4px; margin-left: -22px; border-radius: 2px; background: rgba(255,255,255,.22); } #poolgrip:hover::after { background: var(--blue); }
+  #cmenu { position: fixed; z-index: 90; background: #2a2a2d; border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); min-width: 150px; } #cmenu div { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; } #cmenu div:hover { background: var(--blue); } #cmenu i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255,255,255,.25); box-sizing: border-box; } #cmenu i.nc { background: transparent; border: 2px dashed #888; }
+  #tip { position: fixed; z-index: 95; pointer-events: none; background: #000; color: #fff; font-size: 12px; font-weight: 500; padding: 5px 9px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); box-shadow: 0 4px 14px rgba(0,0,0,.5); max-width: 280px; display: none; }
+  .cdots { display: flex; gap: 8px; margin: 2px 0 6px; } .cdots i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); cursor: pointer; border: 2px solid transparent; box-sizing: border-box; } .cdots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .cdots i.nc { background: transparent; border: 2px dashed #777; } .fbar .seg button { padding: 0 8px; } .fbar .zoom input[type=range] { width: 90px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; } ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: padding-box; border: 2px solid transparent; }
   #app { grid-template-rows: 52px 1fr var(--pr, 150px); }
@@ -530,7 +534,7 @@ function renderSbar() {
       <button data-al="dh" class="al2" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in orizzontale (servono 3 elementi)">${IC("dist-h")}<span>Spazi ↔</span></button>
       <button data-al="dv" class="al2" ${msel.length < 3 ? "disabled" : ""} title="Spazi uguali in verticale (servono 3 elementi)">${IC("dist-v")}<span>Spazi ↕</span></button></div></div>` : "") +
     (msel.length ? `<div class="box"><i>${sel_lbl}</i><div class="g4">
-      ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (])")}${B("zbw", "down", "Indietro", "Un livello indietro ([)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
+      ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (] oppure +)")}${B("zbw", "down", "Indietro", "Un livello indietro ([ oppure −)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
       ${onlyTxt ? "" : `<div class="g3" style="margin-top:6px">${B("msame", "same", "Stessa misura", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Proporzioni", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Tutta pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Verticali", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizzontali", "Tutte le cornici selezionate in orizzontale")}</div>`}</div>` : "");
   $("newsp").onclick = e => { const m = $("nmenu"), r = e.currentTarget.getBoundingClientRect(); m.style.display = "block"; m.style.left = Math.max(8, Math.min(r.left, innerWidth - 270)) + "px"; m.style.top = r.bottom + 4 + "px"; e.stopPropagation(); };
   $("mvup").onclick = () => moveSp(cur, cur - 1); $("mvdn").onclick = () => moveSp(cur, cur + 1);
@@ -647,6 +651,8 @@ function renderSide() {
     <div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>
     <div class="sec">Colore</div>
     <div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>
+    <div class="sec">Etichetta colore</div>
+    <div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}" class="${((S.photos.find(x => x.n === it.name) || {}).col) === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" title="Nessun colore"></i></div>
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
     <div class="sec">Informazioni immagine</div>
     <div class="kv" id="info"><span>Cornice L×A</span><span>${it.cm[0].toFixed(2)}×${it.cm[1].toFixed(2)} cm</span>
@@ -671,6 +677,7 @@ function renderSide() {
   const e = $("evp"); e.oninput = () => $("evv").textContent = fmt1(+e.value); e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
   $("evx").onclick = () => op({ op: "ev", photo: it.name, value: 0 });
   wireRit(it);
+  document.querySelectorAll("#cdots i").forEach(d => d.onclick = () => { const cur0 = (S.photos.find(x => x.n === it.name) || {}).col; op({ op: "colore", photos: [it.name], value: d.dataset.k && d.dataset.k !== cur0 ? d.dataset.k : null }); });
 }
 
 // ---- ritocco stile Lightroom: luce e colore (si applica all'anteprima, ai JPG/PDF e, come livelli di regolazione, ai PSD)
@@ -782,24 +789,30 @@ $("rv").onpointerdown = e => { if (e.button === 0) { if (!showGuides) setGuides(
 new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
 let pBar = null;
-$("poolrow").addEventListener("wheel", e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); $("poolrow").scrollLeft += e.deltaY; } }, { passive: false });   // la rotella scorre la striscia in orizzontale
-function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${PF.sz + 78}px; } #poolrow { --ph: ${PF.sz}px; }`; }
+let PH = (() => { try { return +localStorage.getItem("poolH") || 0; } catch (e) { return 0; } })();
+function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${PH || PF.sz + 78}px; } #poolrow { --ph: ${PF.sz}px; }`; }
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
   if (!pBar) pBar = mkBar($("poolbar"), PF, { filters: PFILT, zmin: 50, zmax: 220, onChange: renderPool, onZoom: setPoolH });
+  if (!$("poolgrip")) { const gr = document.createElement("div"); gr.id = "poolgrip"; gr.title = "Trascina per alzare o abbassare la galleria (doppio clic: altezza automatica)"; $("pool").prepend(gr);
+    gr.ondblclick = () => { PH = 0; try { localStorage.removeItem("poolH"); } catch (e) {} setPoolH(); after(); };
+    const after = () => setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30);
+    gr.onpointerdown = e => { e.preventDefault(); const y0 = e.clientY, h0 = $("pool").getBoundingClientRect().height; gr.setPointerCapture(e.pointerId);
+      gr.onpointermove = ev => { PH = Math.round(Math.min(Math.max(h0 + (y0 - ev.clientY), 90), innerHeight * 0.7)); setPoolH(); };
+      gr.onpointerup = () => { gr.onpointermove = gr.onpointerup = null; try { localStorage.setItem("poolH", PH); } catch (e) {} after(); }; }; }
   setPoolH(); pBar(freeAll);
-  const free = filterList(freeAll, PF), keep = P.scrollLeft; P.innerHTML = "";
+  const free = filterList(freeAll, PF), keep = P.scrollTop; P.innerHTML = "";
   const info = document.createElement("div"); info.className = "cap"; info.textContent = `Foto libere: ${free.length}${free.length !== freeAll.length ? " di " + freeAll.length : ""} — non sono in nessuno spread${S.tolte.length ? " · in grigio: tolte apposta" : ""} · passa sopra una foto e premi 1-7 per il colore (0 lo toglie)`; P.appendChild(info);
   if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);
   free.forEach(f => {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
-    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; };
+    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => colorMenu(e, [n]);
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
     if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
     if (S.tolte.includes(n)) { im.className = "tolta"; im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
     P.appendChild(im);
   });
-  P.scrollLeft = keep;
+  P.scrollTop = keep;
 }
 
 // ---- cornici: si spostano e si ridimensionano liberamente; si agganciano ai bordi della pagina e delle altre foto (anche col giusto spazio)
@@ -1003,6 +1016,13 @@ function mkBar(el, st, cfg) {
 }
 let HOV = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
 function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
+function colorMenu(e, names) {                    // tasto destro su una foto: scegli il colore
+  e.preventDefault(); const old = $("cmenu"); if (old) old.remove();
+  const m = document.createElement("div"); m.id = "cmenu"; m.innerHTML = COLS.map(([k, c]) => `<div data-k="${k}"><i style="--c:${c}"></i>${k[0].toUpperCase() + k.slice(1)}</div>`).join("") + '<div data-k=""><i class="nc"></i>Nessun colore</div>' + `<div style="color:var(--dim);font-size:11px;cursor:default;pointer-events:none">${names.length} ${names.length === 1 ? "foto" : "foto"}</div>`;
+  document.body.appendChild(m); m.style.left = Math.min(e.clientX, innerWidth - 170) + "px"; m.style.top = Math.min(e.clientY, innerHeight - m.offsetHeight - 10) + "px";
+  m.onclick = ev => { const d = ev.target.closest("div[data-k]"); if (d) assignColor(d.dataset.k || null, names); m.remove(); };
+  setTimeout(() => { const off = ev => { if (!m.contains(ev.target)) { m.remove(); } document.removeEventListener("pointerdown", off, true); }; document.addEventListener("pointerdown", off, true); }, 0);
+}
 const visPhotos = () => filterList(S.photos, GF);
 const selectable = () => visPhotos().filter(x => x.sp == null && !x.tolta).map(x => x.n);
 let gBar = null;
@@ -1021,7 +1041,7 @@ function renderLib() {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
     d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${p.col ? `<span class="cl" style="background:${COLC[p.col]}" title="${p.col}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
-    d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; };
+    d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; }; d.oncontextmenu = e => colorMenu(e, SELP.includes(p.n) ? SELP : [p.n]);
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
       if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast("Foto ripristinata: torna tra quelle da usare")); return; }
@@ -1055,6 +1075,19 @@ async function loadProposals() {
     await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast("Spread " + (pos + 1) + " aggiunto"); render();
   })));
 }
+// ---- titoli dei pulsanti subito (senza attendere quelli lenti del sistema)
+(function () {
+  const tip = document.createElement("div"); tip.id = "tip"; document.body.appendChild(tip); let t = null, cur1 = null;
+  const hide = () => { clearTimeout(t); tip.style.display = "none"; cur1 = null; };
+  document.addEventListener("pointerover", e => {
+    const el = e.target.closest && e.target.closest("[title],[data-tip]"); if (!el || el === cur1) { if (!el) hide(); return; }
+    if (!/^(BUTTON|I|SPAN|LABEL|DIV|CANVAS|INPUT|SELECT)$/.test(el.tagName) || el.closest("#libgrid,#poolrow,#thumbs")) return;
+    if (el.title) { el.dataset.tip = el.title; el.removeAttribute("title"); }
+    const txt = el.dataset.tip; if (!txt) return;
+    cur1 = el; clearTimeout(t); t = setTimeout(() => { tip.textContent = txt; tip.style.display = "block"; const r = el.getBoundingClientRect(); tip.style.left = Math.max(6, Math.min(innerWidth - tip.offsetWidth - 6, r.left + r.width / 2 - tip.offsetWidth / 2)) + "px"; tip.style.top = (r.bottom + 8 + tip.offsetHeight > innerHeight ? r.top - tip.offsetHeight - 8 : r.bottom + 8) + "px"; }, 120);
+  });
+  document.addEventListener("pointerdown", hide, true); document.addEventListener("pointerleave", hide); document.addEventListener("scroll", hide, true);
+})();
 // ---- selettore di foto del programma (⌘A, ⌘-clic e Maiusc-clic funzionano sempre)
 let FB = { mode: "files", path: "", data: null, sel: [], last: null };
 async function fbLoad(p) {
@@ -1227,6 +1260,7 @@ document.addEventListener("keydown", e => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") { e.preventDefault(); pasteSel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") { e.preventDefault(); dupSpread(); return; }
     if (e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setTextTool(!textTool); return; }
+    if ((e.key === "+" || e.key === "=" || e.key === "-" || e.key === "_") && !e.metaKey && !e.ctrlKey && !e.altKey && msel.length) { e.preventDefault(); op({ op: "zorder", s: cur, ats: mAts(), dir: e.key === "+" || e.key === "=" ? "forward" : "backward" }); return; }
     if ((e.key === "]" || e.key === "[" || e.key === "}" || e.key === "{") && msel.length) { e.preventDefault(); op({ op: "zorder", s: cur, ats: mAts(), dir: e.key === "]" ? "forward" : e.key === "[" ? "backward" : e.key === "}" ? "front" : "back" }); return; }
   }
   if (e.key === "Tab" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); $("tfull").onclick(); return; }
