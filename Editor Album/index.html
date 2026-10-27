@@ -147,7 +147,7 @@
   #elog { background: #1d1d1d; border-radius: 6px; padding: 8px 10px; font: 11px/1.5 ui-monospace, Menlo, monospace; max-height: 150px; overflow: auto; display: none; white-space: pre-wrap; margin: 10px 0 0; }
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
   .tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  #tpl { display: none; position: absolute; inset: 0; background: var(--bg); overflow-y: auto; padding: 14px; z-index: 4; }
+  #tpl { display: none; position: absolute; inset: 0; background: var(--bg); overflow-y: auto; padding: 14px; z-index: 20; }
   #tpl .bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; position: sticky; top: -14px; background: var(--bg); padding: 4px 0 8px; }
   #tpl .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
   .tp { cursor: pointer; border: 2px solid transparent; border-radius: 6px; padding: 4px; background: var(--panel); }
@@ -227,6 +227,9 @@
   .chip { background: var(--blue); color: #fff; }
   .hd { border-radius: 50%; border: 2px solid #fff; background: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.5); }
   #hint { color: var(--dim); }
+  #toast { z-index: 60; }
+  #stage:has(#tpl[style*="display: block"]) { overflow: hidden; }
+  #tpl .bar { flex-wrap: wrap; row-gap: 6px; } #tpl .bar b { white-space: nowrap; } #tpl .bar .empty { flex: 1 1 280px; }
   button, #status { white-space: nowrap; } #top .title { flex: 0 1 auto; min-width: 60px; }
   @media (max-width: 1180px) { #top .lbl { display: none; } #top button { padding: 0 9px; } #home { font-size: 0; } #home svg { font-size: 13px; } }
 </style>
@@ -355,6 +358,7 @@ function render() {
   renderList(); renderPool();
   if (empty) { sel = null; $("side").innerHTML = ""; return; }
   updMiss(); renderSbar(); renderStage(); renderSide(); drawRulers(); renderGuides();
+  if ($("tpl").style.display === "block" && tplFor !== cur) openTpl();                    // pannello Modelli aperto e spread cambiato: ricarica i modelli giusti
 }
 
 function renderList() {
@@ -971,9 +975,11 @@ $("selclear").onclick = () => { SELP = []; renderLib(); }; $("hideUsed").onchang
 $("tabF").onclick = () => { view = "foto"; render(); }; $("tabA").onclick = () => { view = "album"; render(); }; $("gofoto").onclick = () => { view = "foto"; render(); };
 
 // ---- galleria modelli (come la scelta dei template di Smart Albums)
+let tplFor = -1;
 async function openTpl() {
-  const T = $("tpl"); T.style.display = "block"; T.innerHTML = '<div class="empty">Carico i modelli…</div>';
-  const d = await api("/api/templates?s=" + cur), ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
+  const T = $("tpl"), mine = tplFor = cur; T.style.display = "block"; T.innerHTML = '<div class="empty">Carico i modelli…</div>';
+  const d = await api("/api/templates?s=" + mine); if (tplFor !== mine) return;                       // nel frattempo hai cambiato spread: vale l'ultima richiesta
+  const ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
   const apply = t => async () => { closeTpl(); sel = null; await op({ op: "template", s: cur, L: t.L, R: t.R }); };
   const mod = async (body, msg) => { try { await api("/api/modelli", body); toast(msg); openTpl(); } catch (e) {} };
   T.innerHTML = `<div class="bar"><button id="tclose">✕ Chiudi</button><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : "")}</span></div>
@@ -993,7 +999,7 @@ async function openTpl() {
   $("tut").style.display = ut.length ? "" : "none"; $("tstd").style.display = d.items.length ? "" : "none"; if (!d.items.length && !ut.length) $("tnone").style.display = "";
   if (!ut.length) T.querySelector("#tstd .sec").style.display = "none";
 }
-function closeTpl() { $("tpl").style.display = "none"; }
+function closeTpl() { $("tpl").style.display = "none"; tplFor = -1; }
 $("tplb").onclick = () => openTpl();
 
 $("undo").onclick = () => op({ op: "undo" });

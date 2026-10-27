@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 10 — Correzioni pannello Modelli
+- Con il pannello Modelli aperto, cambiando spread i modelli si ricaricano per lo spread nuovo (prima restavano quelli del precedente). `tplFor` + controllo in fondo a `render()`; le richieste in ritardo vengono scartate. — `index.html`.
+- Sparita la striscia verticale sopra i modelli: le guide dello spread stavano SOPRA il pannello (z-index). `#tpl` ora z-index 20, `#toast` 60; il pannello nasconde le barre di scorrimento dello stage. — `index.html`.
+
 ## Versione 9 — Nuova interfaccia in stile Apple (solo scuro)
 - Tema scuro neutro (`--bg #1b1b1d`, blu di sistema `--blue` per i comandi; il GIALLO resta solo per la selezione delle cornici sulla pagina). Font di sistema, pulsanti arrotondati senza bordo, controlli segmentati, finestre sfocate, scrollbar sottili.
 - Barra in alto con icone SVG (annulla/ripeti, modelli, progetto, versioni, pannelli, esporta); sotto 1180 px di larghezza restano solo le icone. «Salva» diventa blu quando c'è qualcosa da salvare. Tolte le emoji dai pulsanti dello spread.
