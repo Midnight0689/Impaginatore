@@ -358,6 +358,7 @@
   .slot.srcdrag { background: rgba(0,0,0,.4); outline: 2px dashed rgba(255,255,255,.6); outline-offset: -2px; }
   body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
   body.tplopen #tools, body.tplopen .sb { visibility: hidden; }
+  #poolrow img { object-fit: cover; min-width: 0; }
 </style>
 </head>
 <body>
@@ -960,6 +961,7 @@ function renderPool() {
   free.forEach(f => {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
+    { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
     if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
