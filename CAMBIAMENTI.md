@@ -3,6 +3,11 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 32 — Sfondo dello spread e grafica più pulita
+- Quattro pallini in alto (nero, grigio scuro, grigio chiaro, bianco) cambiano lo sfondo dietro lo spread; si ricorda la scelta. — `index.html`.
+- Fascia strumenti più piccola (frecce avanti/indietro compatte) e più staccata dallo spread.
+- Miniature degli spread e gallerie foto più calme: una sola tinta (blu) per le selezioni, niente giallo, bordi tolti, etichette discrete.
+
 ## Versione 31 — Zoom con il pizzico del trackpad
 - Il pizzico a due dita sul trackpad (Mac) ingrandisce lo spread come Alt + rotella (Chrome lo manda come Ctrl + rotella, Safari come eventi di gesto). — `index.html`.
 

@@ -278,6 +278,28 @@
   #tpl .bar { flex-wrap: wrap; row-gap: 6px; } #tpl .bar b { white-space: nowrap; } #tpl .bar .empty { flex: 1 1 280px; }
   button, #status { white-space: nowrap; } #top .title { flex: 0 1 auto; min-width: 60px; }
   @media (max-width: 1180px) { #top .lbl { display: none; } #top button { padding: 0 9px; } #home { font-size: 0; } #home svg { font-size: 13px; } }
+  /* ===== Pulizia grafica: una sola tinta (blu) per le selezioni, miniature calme, fascia strumenti più piccola e staccata ===== */
+  #stage { background: var(--stg, var(--bg)); padding-top: 10px; transition: background .15s; }
+  #tools { margin-bottom: 26px; }
+  .sb { gap: 6px; } #sbarL { flex: 0 1 auto; } .sb .box { padding: 6px 7px 7px; gap: 5px; border-radius: 12px; }
+  .sb .box > i { font-size: 9.5px; } .sb button { width: 54px; height: 44px; gap: 3px; font-size: 10px; border-radius: 10px; } .ic2 { width: 18px; height: 18px; }
+  .sb .navrow { gap: 2px; margin-right: 4px; } .sb .navrow button { width: 28px; height: 34px; border-radius: 9px; } .sb .cnt { min-width: 40px; } .sb .cnt b { font-size: 19px; } .sb .cnt span { font-size: 10px; }
+  #sbarR .box > div > button { height: 40px; } #sbarR .box.alb button { height: 32px; } #sbarR { flex: 0 0 440px !important; width: 440px; }
+  @container stg (max-width: 1250px) { .sb button { width: 50px; height: 40px; } #sbarR { flex: 1 1 340px !important; width: auto; max-width: 440px; } }
+  .stgsw { display: inline-flex; gap: 5px; align-items: center; padding: 0 4px; } .stgsw i { width: 16px; height: 16px; border-radius: 50%; background: var(--c); cursor: pointer; border: 1px solid rgba(255,255,255,.28); box-sizing: border-box; } .stgsw i:hover { transform: scale(1.12); } .stgsw i.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blue); }
+  /* miniature spread */
+  #thumbs { padding: 10px 10px 14px; } .sth { margin-bottom: 6px; padding: 5px 5px 4px; border: 0; border-radius: 10px; } .sth:hover { background: rgba(255,255,255,.05); }
+  .sth.sel { background: rgba(10,132,255,.16); box-shadow: inset 0 0 0 1.5px var(--blue); } .sth img { border-radius: 3px; box-shadow: 0 2px 6px rgba(0,0,0,.45); background: #2a2a2d; }
+  .sth span { display: block; margin-top: 4px; font-size: 10.5px; color: var(--dim); text-align: center; } .sth.sel span { color: var(--text); }
+  /* galleria foto + striscia */
+  #libgrid { gap: 8px; padding: 14px; background: #161618; }
+  .ph { border: 0; border-radius: 6px; background: #1f1f22; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: transform .1s, box-shadow .12s; } .ph:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+  .ph.sel { box-shadow: 0 0 0 2.5px var(--blue); } .ph.used img { opacity: .38; }
+  .ph .n { background: var(--blue); color: #fff; top: 6px; left: 6px; min-width: 18px; font-size: 11px; padding: 0 5px; line-height: 18px; }
+  .ph .u { background: rgba(0,0,0,.55); color: rgba(255,255,255,.85); font-size: 10px; bottom: 0; left: 0; right: 0; border-radius: 0; padding: 2px 6px; backdrop-filter: blur(6px); }
+  .ph .rm { top: 6px; right: 6px; }
+  #pool { background: #161618; } #pool img { border: 0; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.4); } #poolrow img:hover { box-shadow: 0 0 0 2px var(--blue); } #poolrow img.star { outline-width: 1.5px; }
+  #poolrow .cap, #pool .cap { color: var(--dim); font-size: 11px; }
 </style>
 </head>
 <body>
@@ -296,6 +318,7 @@
     <button id="missb" class="danger" style="display:none" title="Alcune foto non si trovano più: clicca per ricollegarle"></button>
     <button id="prjb" title="Ricollega foto, esporta il progetto"><span style="display:contents"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">Progetto</span></span></button>
     <button id="verb" title="Torna a una versione salvata prima"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">Versioni</span></button>
+    <span class="stgsw" id="stgsw" title="Colore dello sfondo dietro lo spread"></span>
     <button id="tlist" class="ico" title="Mostra/nascondi l'elenco degli spread"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><button id="tside" class="ico" title="Mostra/nascondi il pannello delle impostazioni"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></svg></button><button id="tfull" class="ico" title="Modifica a tutto schermo (Tab)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     <button id="expb" class="primary"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span class="lbl">Esporta…</span></button>
   </div>
@@ -1420,6 +1443,11 @@ document.addEventListener("keydown", e => {
 });
 
 
+
+const STG = [["#000000", "Nero"], ["#1b1b1d", "Grigio scuro"], ["#6b6b70", "Grigio chiaro"], ["#ffffff", "Bianco"]];
+function setStg(c) { document.documentElement.style.setProperty("--stg", c); try { localStorage.stgBg = c; } catch (_) {} $("stgsw").innerHTML = STG.map(([k, n]) => `<i style="--c:${k}" data-c="${k}" title="Sfondo ${n.toLowerCase()}" class="${k === c ? "on" : ""}"></i>`).join(""); }
+$("stgsw").addEventListener("click", e => { const c = e.target.dataset && e.target.dataset.c; if (c) setStg(c); });
+setStg((() => { try { return localStorage.stgBg || "#1b1b1d"; } catch (_) { return "#1b1b1d"; } })());
 api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = S.spreads.length ? "album" : "foto"; render(); });
 </script>
 </body>
