@@ -248,6 +248,7 @@
   .sb button:hover:not(:disabled) { background: rgba(255,255,255,.14); }
   .sb button.on { background: var(--blue); color: #fff; }
   #sbarR { flex-direction: column !important; align-items: stretch !important; flex: 0 0 500px !important; width: 500px; margin-left: auto; } #sbarR .box > div > button { flex: 1 1 0; width: auto; min-width: 0; } #sbarR .box > div > button.al2 { flex: 1.5 1 0; } #sbarR .box > div { flex-wrap: wrap; }
+  #ttog { align-self: flex-start; margin: 0 0 6px; height: 24px; padding: 0 10px; font-size: 11px; border-radius: 8px; background: rgba(255,255,255,.06); color: var(--dim); } body.notools #tools { display: none; } body.notools #ttog { margin-bottom: 2px; }
   /* Allinea: una riga compatta, senza titolo */
   #sbarR .box.alb { padding: 6px 8px; } #sbarR .box.alb > i { display: none; } #sbarR .box.alb > div { flex-wrap: nowrap; gap: 4px; } #sbarR .box.alb button { height: 36px; border-radius: 9px; } #sbarR .box.alb button.al2 { flex: 1.7 1 0; font-size: 10px; gap: 3px; } #sbarR .box.alb .ic2 { width: 18px; height: 18px; }
   /* adattamento alla larghezza della finestra */
@@ -290,6 +291,7 @@
   <div id="list"><div id="thumbs" title="Trascina gli spread per riordinarli"></div></div>
   <div id="stage">
     <div id="nospread"><b>Nessuno spread</b><br>Vai su <u id="gofoto" style="cursor:pointer">Foto</u>, seleziona le foto e scegli un modello.</div>
+    <button id="ttog" title="Mostra/nascondi la fascia degli strumenti">▾ Strumenti</button>
     <div id="tools"><div id="sbarL" class="sb"></div><div id="sbarR" class="sb"></div></div>
     <div id="rwrap"><canvas id="rh"></canvas><canvas id="rv"></canvas><div id="rc"></div>
       <div id="wrap"><img id="main" alt=""><div id="slots"></div><div id="guides"></div></div></div>
@@ -983,6 +985,9 @@ const panels = () => [!document.body.classList.contains("nolist"), !document.bod
 $("tlist").onclick = () => { const [l, s_, p_] = panels(); setPanels(!l, s_, p_); };
 $("tside").onclick = () => { const [l, s_, p_] = panels(); setPanels(l, !s_, p_); };
 $("tfull").onclick = () => { const [l, s_, p_] = panels(); const all = l || s_ || p_; setPanels(!all, !all, !all); };
+function setTools(on, save = true) { document.body.classList.toggle("notools", !on); $("ttog").textContent = (on ? "▾" : "▸") + " Strumenti"; try { if (save) localStorage.setItem("tbar", on ? "1" : "0"); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
+$("ttog").onclick = () => setTools(document.body.classList.contains("notools"));
+try { const tb = localStorage.getItem("tbar"); setTools(tb === null ? innerHeight >= 900 && innerWidth >= 1250 : tb === "1", false); const pn0 = localStorage.getItem("pan"); if (pn0 === null && innerWidth < 1250) { setPanels(false, true, true); localStorage.removeItem("pan"); } } catch (e) { setTools(true, false); }
 try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPanels(pn[0] === "1", pn[1] === "1", pn[2] === "1"); } catch (e) {}
 
 // ---- libreria foto: seleziona le foto e compaiono i modelli per quel numero di foto

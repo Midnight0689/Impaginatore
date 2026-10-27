@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 23 — Fascia strumenti chiudibile, adattamento automatico
+- Pulsante «▾ Strumenti» sopra lo spread: chiude/apre tutta la fascia (scelta ricordata in `localStorage` «tbar»). Alla prima apertura, se la finestra è piccola (meno di 900 px di altezza o 1250 di larghezza) la fascia parte chiusa e l'elenco spread a sinistra è nascosto, senza memorizzarlo. — `index.html` (`setTools`).
+
 ## Versione 22 — Allinea compatto e strumenti che si adattano alla larghezza
 - «Allinea alla pagina» è una sola riga bassa, senza titolo. La fascia strumenti reagisce alla larghezza dello spazio dello spread (container query `stg` su `#stage`, non della finestra): sotto 1250 px pulsanti più piccoli, sotto 980 ancora di più. Con finestre piccole la fascia resta alta: si guadagna spazio chiudendo i pannelli laterali. — `index.html`.
 
