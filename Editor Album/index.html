@@ -977,7 +977,8 @@ function renderLib() {
       if (e.shiftKey && lastClick) {                                  // intervallo dalla foto cliccata prima
         const vis = S.photos.filter(x => x.sp == null && !x.tolta).map(x => x.n), a = vis.indexOf(lastClick), b = vis.indexOf(p.n);
         if (a >= 0 && b >= 0) vis.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(n => { if (!SELP.includes(n)) SELP.push(n); });
-      } else if (k >= 0) SELP.splice(k, 1); else SELP.push(p.n);
+      } else if (e.metaKey || e.ctrlKey) { if (k >= 0) SELP.splice(k, 1); else SELP.push(p.n); }          // ⌘-clic: aggiunge/toglie questa foto
+      else if (k >= 0 && SELP.length === 1) SELP = []; else SELP = [p.n];                                   // clic semplice: solo questa foto
       lastClick = p.n; renderLib();
     };
     G.appendChild(d);
@@ -1129,6 +1130,9 @@ $("ego").onclick = async () => {
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 document.addEventListener("keydown", e => {
+  if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {       // ⌘A nella galleria: tutte le foto ancora da usare
+    e.preventDefault(); SELP = S.photos.filter(x => x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
+  }
   if (view === "album" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && S) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") { e.preventDefault(); msel = S.spreads[cur].items.filter(i => i.k !== "t").map(kOf); if (msel.length) { const [a, b] = msel[msel.length - 1].split(":"); sel = { s: cur, side: a, idx: +b }; } render(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c" && msel.length) { e.preventDefault(); copySel(); return; }

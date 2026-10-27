@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 16 — Selezione foto nella galleria
+- ⌘A nella galleria Foto seleziona tutte le foto ancora da usare. Clic semplice = solo quella foto; ⌘-clic (o Ctrl) aggiunge/toglie; Maiusc-clic = intervallo. Prima il clic semplice aggiungeva sempre e ⌘A non faceva nulla. Non riguarda la finestra di scelta file di macOS (`pick()` in `editor.py`, che ha già la selezione multipla). — `index.html`.
+
 ## Versione 15 — Strumenti nella fascia sopra la pagina, divisi a sinistra e a destra
 - Come da disegno di Stefano: nella fascia sopra lo spread (`#tools`), a SINISTRA Spread + Strumenti + Vista (`#sbarL`), a DESTRA Allinea alla pagina + Foto selezionata (`#sbarR`, allineata a destra). Pulsanti grandi (66×58 px). Colonne laterali di nuovo strette (230 / 310 px), elenco spread a tutta altezza. — `index.html`. Sostituisce il posizionamento della v14.
 
