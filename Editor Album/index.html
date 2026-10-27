@@ -824,6 +824,7 @@ function renderSide() {
       <div class="sl"><b>Scala:</b><input id="z" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
       <div class="sl"><b>Angolo:</b><input id="ang" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
       <div class="sl"><b>Esposiz.:</b><input id="evp" type="range" min="-1" max="1" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
+      <div class="sl"><b>Opacità:</b><input id="ocw" type="range" min="0" max="100" step="1" value="${it.oc ?? 100}"><span class="v" id="ocv">${it.oc ?? 100}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
     </div>
     <div class="sec">Luce <span class="x" id="tnx" title="Azzera tutto il ritocco di questa foto" style="float:right">⊗ azzera</span></div>
     <div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>
@@ -858,6 +859,7 @@ function renderSide() {
   $("angx").onclick = () => op({ op: "set", at, a: 0 });
   const e = $("evp"); e.oninput = () => $("evv").textContent = fmt1(+e.value); e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
   $("evx").onclick = () => op({ op: "ev", photo: it.name, value: 0 });
+  const oc = $("ocw"); oc.oninput = () => $("ocv").textContent = oc.value + "%"; oc.onchange = () => op({ op: "set", at, oc: +oc.value }); $("ocx").onclick = () => op({ op: "set", at, oc: 100 });
   wireRit(it);
   const bcol = () => (it.bd && it.bd[1]) || "#ffffff", bset = (mm, c) => op({ op: "set", at, bd: mm > 0 ? [mm, c] : null });
   $("bdw").oninput = () => $("bdv").textContent = +$("bdw").value ? $("bdw").value + " mm" : "no"; $("bdw").onchange = () => bset(+$("bdw").value, bcol());

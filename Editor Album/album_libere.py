@@ -57,20 +57,21 @@ def ROT(it, deg):
     return dict(it, a=round(float(deg), 1))
 
 
-def STY(it, bd=None, sh=0):
+def STY(it, bd=None, sh=0, oc=100):
     """bordo (millimetri, colore) e ombra (0-100) di una cornice"""
     d = dict(it)
     if bd: d["bd"] = [float(bd[0]), str(bd[1])]
     if sh: d["sh"] = int(sh)
+    if oc is not None and int(oc) < 100: d["oc"] = int(oc)
     return d
 
 
 def sty_job(it):
     """per genera_psd: bordo in pixel del documento e ombra, o None"""
-    if not (it.get("bd") or it.get("sh")): return None
+    if not (it.get("bd") or it.get("sh") or it.get("oc", 100) < 100): return None
     bd = it.get("bd"); px = round(float(bd[0]) / 25.4 * _a.PPI, 1) if bd else 0
     col = [int(bd[1][k:k + 2], 16) for k in (1, 3, 5)] if bd else [255, 255, 255]
-    return dict(bd=px, col=col, sh=int(it.get("sh") or 0), ppi=_a.PPI)
+    return dict(bd=px, col=col, sh=int(it.get("sh") or 0), oc=int(it.get("oc", 100)), ppi=_a.PPI)
 
 
 def _zcrop(it):                                # attenzione: il codice gira nel modulo album (crop e M sono suoi)
@@ -132,7 +133,9 @@ def _render_ombre(spread, K, corrected=True):
             mask = Image.new("L", (ph.width + 2 * m, ph.height + 2 * m), 0); mask.paste(255, (m, m, m + ph.width, m + ph.height))
             mask = mask.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: int(v * (0.15 + 0.5 * sh / 100)))
             S.paste(Image.new("RGB", mask.size, (0, 0, 0)), (pos[0] - m, pos[1] - m + dy), mask)
-        S.paste(ph, pos)
+        oc = it.get("oc", 100)
+        if oc < 100: S.paste(ph, pos, Image.new("L", ph.size, round(255 * oc / 100)))
+        else: S.paste(ph, pos)
     return S
 
 

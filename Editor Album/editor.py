@@ -149,7 +149,7 @@ def restore(s):
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
 
-def keep(it): return {k: it[k] for k in ("a", "zo", "ts", "stile", "bd", "sh") if it.get(k) is not None}
+def keep(it): return {k: it[k] for k in ("a", "zo", "ts", "stile", "bd", "sh", "oc") if it.get(k) is not None}
 
 def mkfree(it, x, y, w, h):
     """cornice libera (foto) o blocco di testo libero (stessa posizione in frazioni della pagina)"""
@@ -262,6 +262,10 @@ def apply(o):
             v = o["bd"]
             if v and float(v[0]) > 0 and re.fullmatch(r"#[0-9a-fA-F]{6}", str(v[1])): a["bd"] = [round(min(float(v[0]), 40.0), 1), str(v[1]).lower()]
             else: a.pop("bd", None)
+        if "oc" in o:
+            v = int(round(min(max(float(o["oc"]), 0), 100)))
+            if v < 100: a["oc"] = v
+            else: a.pop("oc", None)
         if "sh" in o:
             v = int(round(min(max(float(o["sh"] or 0), 0), 100)))
             if v: a["sh"] = v
@@ -651,7 +655,7 @@ def spread_view(s):
                 e.update(box=[round(l_, 4), round(t_, 4), round(r_, 4), round(b_, 4)], cm=[round(L["W"] / A.PPI * 2.54, 2), round(L["H"] / A.PPI * 2.54, 2)],
                          ppi=round(m_["w"] * (r_ - l_) / (L["W"] / A.PPI)), dim=[m_["w"], m_["h"]], uses=sum(1 for x in SP for pg_ in x for y in pg_[1] if y["k"] != "t" and y["i"] == it["i"]))
                 n = A.name(it["i"]); e.update(name=n, bw=bool(it.get("bw")), z=it.get("z", 1.0), a=it.get("a") or 0, ar=A.M[it["i"]]["ar"],
-                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), bd=it.get("bd"), sh=it.get("sh") or 0, face=list(A._faces_center(it["i"]) or []))
+                                              ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), bd=it.get("bd"), sh=it.get("sh") or 0, oc=it.get("oc", 100), face=list(A._faces_center(it["i"]) or []))
             out.append(e)
     return dict(h=spread_hash(s), guides=GD[s], L=SP[s][0][0], R=SP[s][1][0], items=out, grid=dict(L=page_grid("L", SP[s][0][0]), R=page_grid("R", SP[s][1][0])))
 
@@ -881,7 +885,7 @@ def photo_info(n):
 # ------------------------------------------------------------------ salvataggio
 def fmt(it):
     x = fmt0(it)
-    if it["k"] != "t" and (it.get("bd") or it.get("sh")): x = f'STY({x}, bd={tuple(it["bd"]) if it.get("bd") else None!r}, sh={int(it.get("sh") or 0)})'
+    if it["k"] != "t" and (it.get("bd") or it.get("sh") or it.get("oc", 100) < 100): x = f'STY({x}, bd={tuple(it["bd"]) if it.get("bd") else None!r}, sh={int(it.get("sh") or 0)}, oc={int(it.get("oc", 100))})'
     return f'ROT({x}, {it["a"]})' if it["k"] != "t" and it.get("a") else x
 def fmt0(it):
     if is_txt(it):
@@ -921,7 +925,7 @@ def save(backup=True):
             for f in ("spec.py", "progetto.json"):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): shutil.copy2(p, os.path.join(bk, f"{ts}_{f}"))
-        has_free = any(it["k"] == "f" or it.get("a") or it.get("bd") or it.get("sh") or "fx" in it for sp in SP for pg in sp for it in pg[1])
+        has_free = any(it["k"] == "f" or it.get("a") or it.get("bd") or it.get("sh") or it.get("oc", 100) < 100 or "fx" in it for sp in SP for pg in sp for it in pg[1])
         if has_free: shutil.copy2(os.path.join(HERE, "album_libere.py"), os.path.join(PROJ, "album_libere.py")); shutil.copy2(os.path.join(HERE, "testo.py"), os.path.join(PROJ, "testo.py"))
         lines = [f'"""{CFG.get("nome", "Album")}: {len(SP)} spread. Salvato dall\'editor il {time.strftime("%d/%m/%Y %H:%M")}."""', "from album import *"]
         if has_free: lines.append("from album_libere import *     # cornici libere FREE(...) e angoli ROT(...): serve questo file, sta nella cartella del progetto")
