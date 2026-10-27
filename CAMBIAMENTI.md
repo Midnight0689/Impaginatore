@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 41 — Testo: doppio clic per modificare
+- Doppio clic su un testo lo riapre per scrivere, con il cursore in fondo (prima il doppio clic poteva perdersi perché il primo clic ricostruiva gli elementi). Il testo appena creato resta tutto selezionato, così scrivi sopra. — `index.html`.
+
 ## Versione 40 — Testo: barra del carattere stile Photoshop
 - Selezionando un testo compare sopra di lui una barra con: elenco dei caratteri con anteprima e ricerca, stile (Regular/Bold/Italic…), corpo con corpi comuni, interlinea, spaziatura, allineamento, TT tutto maiuscolo, colore. — `index.html`.
 - Nuovi: interlinea e maiuscolo, salvati nel progetto, nell'anteprima e nei PSD. — `testo.py`, `editor.py`, `album_libere.py`, `genera_psd_angolo.py`.

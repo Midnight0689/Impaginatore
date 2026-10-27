@@ -448,7 +448,7 @@
 <div id="toast"></div>
 
 <script>
-let textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
+let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
 
 function toast(msg, err) { const t = $("toast"); t.textContent = msg; t.className = err ? "err" : ""; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", err ? 4500 : 1800); }
@@ -540,7 +540,9 @@ function renderStage() {
     if (it.k === "t") {
       const lay = it.kind === "txt";
       d.innerHTML = `<span class="tag">${lay ? "Testo" : "Testo (titolo)"}</span>`; d.title = lay ? "Trascina per spostare · doppio clic per scrivere" : "Doppio clic: lo rendo modificabile come livelli di testo"; d.dataset.at = JSON.stringify([cur, it.side, it.idx]);
-      d.onpointerdown = e => { if (e.button !== 0) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } startFree(e, it, "move"); };
+      d.onpointerdown = e => { if (e.button !== 0) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; }
+        if (lay) { const now = Date.now(), k = kOf(it); if (lastTxDown.k === k && now - lastTxDown.t < 450) { lastTxDown = { k: null, t: 0 }; e.preventDefault(); e.stopPropagation(); setTimeout(() => { sel = { s: cur, side: it.side, idx: it.idx }; msel = [k]; const cur_ = selItem(); if (cur_) enterEdit(cur_); }, 30); return; } lastTxDown = { k, t: now }; }       // doppio clic riconosciuto qui: il primo clic ricostruisce gli elementi e il dblclick del browser andrebbe perso
+        startFree(e, it, "move"); };
       d.oncontextmenu = e => frameMenu(e, it);
       d.ondblclick = async () => { if (lay) { sel = { s: cur, side: it.side, idx: it.idx }; msel = [kOf(it)]; render(); enterEdit(it); } else { await op({ op: "t2x", at: [cur, it.side, it.idx] }); sel = null; msel = []; render(); toast("Ora ogni riga è un livello di testo: clic per selezionarla, doppio clic per scrivere"); } };
       if (isSel && msel.length < 2) ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(k => { const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k; hd.onpointerdown = e => { if (e.button === 0) startFree(e, it, k); }; d.appendChild(hd); });
@@ -744,11 +746,11 @@ function renderTextBar(it) {
   B.querySelectorAll("input").forEach(i => i.onkeydown = e => { e.stopPropagation(); if (e.key === "Enter") i.blur(); });
 }
 function setTextTool(on) { textTool = on; $("wrap").style.cursor = on ? "text" : ""; if ($("ttxt")) $("ttxt").classList.toggle("on", on); if (on) toast("Strumento Testo: clicca o trascina sulla pagina, poi scrivi"); }
-function enterEdit(it) {
+function enterEdit(it, selAll = false) {
   const slot = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (!slot) return;
   const sc = $("wrap").clientWidth / S.W, ta = document.createElement("textarea"); ta.className = "tedit"; ta.value = it.tx;
   ta.style.cssText = `position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;padding:0;margin:0;resize:none;overflow:hidden;z-index:40;border:1px dashed var(--accent);background:rgba(255,255,255,.9);outline:none;${cssFont(it.font)};font-size:${it.size * sc}px;line-height:${it.lh || 1.2};${it.caps ? 'text-transform:uppercase;' : ''}color:${hex(it.col)};text-align:${it.al};letter-spacing:${it.tr / 1000}em`;
-  slot.appendChild(ta); ta.focus(); ta.select(); let done = false;
+  slot.appendChild(ta); ta.focus(); if (selAll) ta.select(); else ta.setSelectionRange(ta.value.length, ta.value.length); let done = false;
   const commit = () => { if (done) return; done = true; const v = ta.value; ta.remove(); const at = [cur, it.side, it.idx]; if (!v.trim()) op({ op: "delframe", at }).then(() => { sel = null; msel = []; render(); }); else if (v !== it.tx) op({ op: "settext", at, tx: v }); };
   ta.onblur = commit; ta.onkeydown = e => { e.stopPropagation(); if (e.key === "Escape") { e.preventDefault(); commit(); } }; ta.onpointerdown = e => e.stopPropagation(); ta.ondblclick = e => e.stopPropagation();
 }
@@ -761,7 +763,7 @@ $("wrap").addEventListener("pointerdown", e => {          // strumento Testo: cl
     window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); if (box) box.remove(); setTextTool(false);
     const L = Math.min(x0, ev.clientX), T = Math.min(y0, ev.clientY), before = new Set(S.spreads[cur].items.map(kOf));
     await op({ op: "addtext", s: cur, fx: (L - r.left) / r.width, fy: (T - r.top) / r.height, fw: moved ? Math.abs(ev.clientX - x0) / r.width : 0, fh: moved ? Math.abs(ev.clientY - y0) / r.height : 0 });
-    const n = S.spreads[cur].items.find(i => !before.has(kOf(i)) && i.kind === "txt"); if (!n) return; sel = { s: cur, side: n.side, idx: n.idx }; msel = [kOf(n)]; render(); enterEdit(n);
+    const n = S.spreads[cur].items.find(i => !before.has(kOf(i)) && i.kind === "txt"); if (!n) return; sel = { s: cur, side: n.side, idx: n.idx }; msel = [kOf(n)]; render(); enterEdit(n, true);
   };
   window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
 }, true);
@@ -1237,7 +1239,7 @@ function libMenu(e, p, names, inPool) {       // galleria o striscia
 function bgMenu(e) {                          // tasto destro su un punto vuoto dello spread
   const r = $("main").getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
   ctxMenu(e, [{ t: "Aggiungi una foto qui…", f: () => pickPhoto("Aggiungi una foto libera", n => op({ op: "putfree", s: cur, photo: n, fx, fy })) },
-    { t: "Aggiungi testo qui", f: async () => { await op({ op: "addtext", s: cur, fx, fy, fw: 0, tx: "Testo" }); const last = S.spreads[cur].items.filter(i => i.k === "t" && i.kind === "txt").pop(); if (last) { sel = { s: cur, side: last.side, idx: last.idx }; msel = [kOf(last)]; render(); enterEdit(last); } } },
+    { t: "Aggiungi testo qui", f: async () => { await op({ op: "addtext", s: cur, fx, fy, fw: 0, tx: "Testo" }); const last = S.spreads[cur].items.filter(i => i.k === "t" && i.kind === "txt").pop(); if (last) { sel = { s: cur, side: last.side, idx: last.idx }; msel = [kOf(last)]; render(); enterEdit(last, true); } } },
     { t: "Incolla", k: "⌘V", off: clipSrc === null, f: pasteSel }, "-",
     { id: "righelli", t: showRulers ? "Nascondi i righelli" : "Mostra i righelli", k: "R", f: () => setRulers(!showRulers) },
     { id: "guide", t: showGuides ? "Nascondi le guide" : "Mostra le guide", k: "G", f: () => setGuides(!showGuides) }, "-",
