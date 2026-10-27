@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 39 — Nomi dei comandi nella fascia, più grande e più in alto
+- I comandi della fascia hanno di nuovo il nome sotto l'icona, pulsanti più grandi (66×58). — `index.html`.
+- La fascia sta più in alto e c'è più spazio tra la fascia e lo spread.
+
 ## Versione 38 — Tolto il pannello Allinea
 - Il pannello Allinea è stato tolto dalla fascia strumenti (per ora). Il codice dei comandi di allineamento resta nel programma. — `index.html`.
 
