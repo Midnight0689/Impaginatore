@@ -166,7 +166,9 @@ def ripristina_versione(codice):
     _git("-c", "user.name=Impaginatore", "-c", "user.email=impaginatore@local", "commit", "-q", "--allow-empty", "-m", f"Ripristino alla versione {n} ({codice})")
     p = _git("push", "-q", t=60)
     setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
-    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+    if os.path.exists(setup):
+        r = subprocess.run(["zsh", setup], capture_output=True, text=True, timeout=900)
+        if r.returncode != 0: raise ValueError("Novità scaricate, ma l'ambiente Python non è pronto (" + ((r.stderr or r.stdout).strip().splitlines() or ["errore"])[-1][:200] + "). Il programma resta com'è: lancia Installa.command per sistemarlo.")
     riavvia_programma()
     return dict(n=n, caricato=p.returncode == 0)
 

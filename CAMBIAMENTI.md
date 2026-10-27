@@ -3,6 +3,13 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 43 — Installazione e aggiornamento più robusti
+- `setup.sh`: cerca un Python 3.9+ che funzioni davvero (il «python3» finto di macOS non conta), rifà da solo l'ambiente se è rovinato, usa versioni compatibili delle librerie ed esce con errore chiaro (senza internet, senza Python, librerie che non si caricano). Prima l'errore veniva nascosto. — `motore/scripts/setup.sh`.
+- `Installa.command`: si ferma con un messaggio se qualcosa non va (prima diceva «Fatto» comunque), rifiuta cartelle su dischi esterni, mostra la versione installata.
+- `Aggiorna.command`: salva i progetti aperti prima di riavviare, avvisa se la cartella non è collegata a GitHub, non dice «Aggiornato» se l'ambiente non è pronto.
+- Aggiornamento dentro il programma: se l'ambiente non è pronto non riavvia e spiega perché. — `home.py`.
+- `Impaginatore.app`: se il programma non è installato mostra un avviso invece di un errore incomprensibile. — `Impaginatore.app`.
+
 ## Versione 42 — Più solidità: salvataggio sicuro e prova automatica
 - Il salvataggio scrive prima in un file temporaneo e poi lo sostituisce: un blocco del Mac a metà scrittura non rovina più `spec.py` e `progetto.json`. — `editor.py`.
 - Le copie di sicurezza (`_backup_editor`) si limitano alle ultime 200, senza crescere all'infinito. — `editor.py`.
