@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 17 — Selettore di foto tutto nostro
+- «Importa foto…» e «Importa cartella…» non aprono più la finestra di macOS (osascript, dove ⌘A e ⌘-clic non andavano) ma un selettore dentro il programma: miniature, sidebar (Scrivania, Documenti, Immagini, Download, Home, dischi), ⌘A, ⌘-clic, Maiusc-clic, Invio/Esc. Server: `ls_dir` e `file_thumb` in `editor.py` (`/api/ls`, `/api/fthumb`, solo lettura, solo JPEG e cartelle); interfaccia: blocco «selettore di foto» e `doImport` in `index.html`. `pick()` e `/api/pick` restano nel codice ma non sono più usati dai pulsanti. — `editor.py`, `index.html`.
+
 ## Versione 16 — Selezione foto nella galleria
 - ⌘A nella galleria Foto seleziona tutte le foto ancora da usare. Clic semplice = solo quella foto; ⌘-clic (o Ctrl) aggiunge/toglie; Maiusc-clic = intervallo. Prima il clic semplice aggiungeva sempre e ⌘A non faceva nulla. Non riguarda la finestra di scelta file di macOS (`pick()` in `editor.py`, che ha già la selezione multipla). — `index.html`.
 

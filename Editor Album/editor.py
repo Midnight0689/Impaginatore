@@ -965,6 +965,38 @@ def pick(kind):
     r = subprocess.run(["osascript", "-e", sc], capture_output=True, text=True)
     return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
+LASTDIR = [None]
+def ls_dir(path):
+    """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e JPEG)"""
+    home = os.path.expanduser("~")
+    path = os.path.abspath(os.path.expanduser(path or LASTDIR[0] or os.path.dirname(CFG.get("foto", "")) or home + "/Desktop"))
+    if not os.path.isdir(path): path = home
+    LASTDIR[0] = path; dirs, files = [], []
+    for n in sorted(os.listdir(path), key=str.lower):
+        if n.startswith("."): continue
+        p = os.path.join(path, n)
+        try:
+            if os.path.isdir(p): dirs.append(n)
+            elif n.lower().endswith((".jpg", ".jpeg")): files.append(dict(n=n, s=os.path.getsize(p)))
+        except OSError: pass
+    places = [dict(n=n, p=p) for n, p in (("Scrivania", home + "/Desktop"), ("Documenti", home + "/Documents"), ("Immagini", home + "/Pictures"), ("Download", home + "/Downloads"), ("Home", home)) if os.path.isdir(p)]
+    try: places += [dict(n=v, p="/Volumes/" + v) for v in sorted(os.listdir("/Volumes")) if not v.startswith(".") and os.path.isdir("/Volumes/" + v) and not os.path.islink("/Volumes/" + v)]
+    except OSError: pass
+    return dict(path=path, parent=os.path.dirname(path) if path != "/" else None, dirs=dirs, files=files, places=places)
+
+FT = {}
+def file_thumb(path, w):
+    path = os.path.abspath(path)
+    if not path.lower().endswith((".jpg", ".jpeg")) or not os.path.isfile(path): raise ValueError("non è una foto JPEG")
+    k = (path, w, os.path.getmtime(path))
+    if k not in FT:
+        from PIL import Image, ImageOps
+        im = Image.open(path); im.draft("RGB", (w * 2, w * 2)); im = ImageOps.exif_transpose(im).convert("RGB"); im.thumbnail((w, w))
+        b = io.BytesIO(); im.save(b, "JPEG", quality=80)
+        if len(FT) > 600: FT.clear()
+        FT[k] = b.getvalue()
+    return FT[k]
+
 def do_import(paths):
     """aggiunge le foto al progetto SENZA copiarle: il progetto punta ai file originali (foto_extra)"""
     files = []
@@ -1129,6 +1161,8 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"]})
             elif u.path == "/api/log": self.send(LOG[-200:])
+            elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
+            elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0])), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
