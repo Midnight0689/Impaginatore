@@ -1,0 +1,46 @@
+{
+  "nome": "Battesimo Anita",
+  "foto": "/Users/stefano/Desktop/Battesimo Anita/ANITA/Selezione Alta",
+  "foto_extra": [
+    "/Users/stefano/Desktop/Battesimo Anita/ANITA/ANITA BATTESIMO/_DSC4137.jpg"
+  ],
+  "tolte": ["_DSC3658", "_DSC0995"],
+
+  "formato_cm": [60, 22.5],
+  "dimensioni_esatte": true,
+  "ppi": 300,
+  "abbondanza_mm": 0,
+  "spazio_mm": 2.5,
+  "margine_mm": 10,
+
+  "uscita_psd": "/Users/stefano/Desktop/Battesimo Anita/ANITA/Impaginazione/PSD",
+
+  "testo": {
+    "nome": "Anita",
+    "sottotitolo": "SANTO BATTESIMO",
+    "data": "23 · 05 · 2026",
+    "font_titolo_ps": "BodoniModa18pt-Italic",
+    "file_font_titolo": "/Users/stefano/Library/Fonts/BodoniModa_18pt-Italic.ttf",
+    "font_testo_ps": "AvenirNext-Regular",
+    "file_font_testo": "/System/Library/Fonts/Avenir Next.ttc",
+    "indice_font_testo": 7,
+    "colore": [58, 54, 51]
+  },
+
+  "esposizione": {
+    "globale": 0.25,
+    "per_cartella": {
+      "/Users/stefano/Desktop/Battesimo Anita/ANITA/ANITA PORTICCIOLO": 0.4
+    },
+    "per_foto": {
+      "_DSC3674": 0.3,
+      "_DSC0063": 0.4
+    }
+  },
+  "bilanciamento_bianco": {
+    "_DSC1406": [1.135, 1.0, 0.921]
+  },
+  "centri_volto": {
+    "_DSC3885": [0.55, 0.48]
+  }
+}
