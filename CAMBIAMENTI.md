@@ -3,6 +3,12 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 49 — Trascinamento fluido delle foto
+(da qui il numero è quello che vedi nell'elenco Versioni del programma; la 46 è il punto sicuro `v45-riferimento`)
+- Mentre trascini, la foto vera segue il mouse (prima si vedeva solo un rettangolo semitrasparente) e il posto di partenza resta come segnaposto scuro tratteggiato. — `index.html`.
+- Il movimento è agganciato alla scheda grafica (un solo aggiornamento per schermata invece di uno per ogni evento del mouse); guide e misure si ridisegnano solo quando cambiano.
+- Al rilascio la foto resta dove l'hai lasciata finché l'immagine nuova non è pronta: non torna più per un attimo al posto vecchio.
+
 ## Versione 45 — PSD: maiuscolo vero di Photoshop
 - Verificato aprendo il PSD in Photoshop: corpo, interlinea (corpo × valore scelto) e spaziatura corrispondono all'editor. — `testo.py`, `genera_psd_angolo.py`.
 - «TT tutto maiuscolo» ora diventa l'attributo «Tutto maiuscolo» di Photoshop: il testo resta com'è scritto e puoi toglierlo dal pannello Carattere (prima nel PSD finivano lettere maiuscole vere).

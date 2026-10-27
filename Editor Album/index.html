@@ -353,6 +353,10 @@
   #txbar input[type=color] { width: 30px; height: 28px; padding: 0; border: 0; background: none; border-radius: 8px; cursor: pointer; } #txbar .seg2 { display: inline-flex; gap: 1px; } #txbar #tb-caps { font-weight: 700; width: 34px; padding: 0; }
   #fpop { position: fixed; z-index: 99; width: 290px; max-height: 370px; display: flex; flex-direction: column; background: rgba(36,36,39,.98); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(0,0,0,.6); padding: 8px; gap: 6px; }
   #fpop input { width: 100%; height: 30px; } #fl { overflow-y: auto; flex: 1; } #fl > div { padding: 5px 10px; border-radius: 7px; cursor: pointer; font-size: 17px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #fl > div:hover { background: var(--blue); color: #fff; } #fl > div.on { background: rgba(10,132,255,.25); } #fl .nof { color: var(--dim); font-size: 12px; cursor: default; }
+  /* trascinamento fluido: la foto segue il mouse, il posto di partenza resta come segnaposto */
+  #ghosts { position: absolute; inset: 0; pointer-events: none; z-index: 35; } #ghosts .ghost { position: absolute; border: 2px solid var(--blue); background-color: rgba(10,132,255,.15); opacity: .94; box-shadow: 0 10px 30px rgba(0,0,0,.5); will-change: transform; border-radius: 2px; }
+  .slot.srcdrag { background: rgba(0,0,0,.4); outline: 2px dashed rgba(255,255,255,.6); outline-offset: -2px; }
+  body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
 </style>
 </head>
 <body>
@@ -381,7 +385,7 @@
     <div id="thot"></div><button id="ttog">Strumenti</button>
     <div id="tools"><div id="sbarL" class="sb"></div><div id="sbarR" class="sb"></div></div>
     <div id="rwrap"><canvas id="rh"></canvas><canvas id="rv"></canvas><div id="rc"></div>
-      <div id="wrap"><img id="main" alt=""><div id="slots"></div><div id="guides"></div><div id="txbar"></div></div></div>
+      <div id="wrap"><img id="main" alt=""><div id="slots"></div><div id="ghosts"></div><div id="guides"></div><div id="txbar"></div></div></div>
     <div id="hint"></div>
     <div id="tpl"></div>
   </div>
@@ -526,10 +530,12 @@ $("stage").addEventListener("gesturestart", e => { if (view !== "album") return;
 $("stage").addEventListener("gesturechange", e => { if (view !== "album" || !S || !S.spreads.length) return; e.preventDefault(); ZM = Math.min(5, Math.max(1, gz0 * e.scale)); applyZoom({ x: e.clientX, y: e.clientY }); });
 window.addEventListener("resize", () => { if (ZM > 1.001) applyZoom(); });
 function stageK() { const w = $("wrap").clientWidth || 800, k = Math.ceil(Math.min(ZM > 1.001 ? 1 : 0.7, Math.max(0.15, w * (window.devicePixelRatio || 1) / S.W)) * 20) / 20; return +k.toFixed(2); }
+let DRAG = false;
+function clearGhosts() { if (!DRAG) $("ghosts").innerHTML = ""; }
 function renderStage() {
   const sp = S.spreads[cur]; const m = $("main");
   const src = `/img/spread/${cur}?k=${stageK()}&h=${sp.h}`;
-  if (m.getAttribute("src") !== src) { const im = new Image(); im.onload = () => { if (m.dataset.want === src) m.src = src; }; m.dataset.want = src; im.src = src; }   // cambia solo quando la nuova è pronta: niente lampi
+  if (m.getAttribute("src") !== src) { const im = new Image(); im.onload = () => { if (m.dataset.want === src) { m.src = src; requestAnimationFrame(clearGhosts); } }; m.dataset.want = src; im.src = src; } else setTimeout(clearGhosts, 120);   // cambia solo quando la nuova è pronta: niente lampi
   const box = $("slots"); box.innerHTML = "";
   sp.items.forEach(it => {
     const isSel = sel && sel.s === cur && sel.side === it.side && sel.idx === it.idx;
@@ -1037,23 +1043,34 @@ function startFree(e, it, kind) {
     if (magnet && !free) { const es = eqSpace(it, out, kind === "move", guides.some(g => g[0] === "v"), guides.some(g => g[0] === "h")); if (kind === "move") { out.x = clamp(out.x + es.dx, c.bx0, c.bx1 - out.w); out.y = clamp(out.y + es.dy, c.by0, c.by1 - out.h); } eqm = eqSpace(it, out, false, true, true).marks; } else eqm = [];
     return out;
   };
+  let raf = 0, lastEv = null, gkey = "", srcEl = null;
   const draw = () => {
-    if (!ghost) { ghost = document.createElement("div"); ghost.className = "ghost"; if (it.name) { ghost.style.backgroundImage = `url(/img/thumb/${it.name}?w=500)`; ghost.style.backgroundSize = "cover"; ghost.style.backgroundPosition = "center"; ghost.style.opacity = ".88"; } $("slots").appendChild(ghost); }
-    ghost.style.left = rect.x / S.W * 100 + "%"; ghost.style.top = rect.y / S.H * 100 + "%"; ghost.style.width = rect.w / S.W * 100 + "%"; ghost.style.height = rect.h / S.H * 100 + "%";
+    const sc = $("wrap").clientWidth / S.W;
+    if (!ghost) {
+      ghost = document.createElement("div"); ghost.className = "ghost"; DRAG = true; document.body.classList.add("dragging");
+      if (it.name) { ghost.style.backgroundImage = `url(/img/thumb/${it.name}?w=500)`; ghost.style.backgroundSize = "cover"; ghost.style.backgroundPosition = "center"; }
+      ghost.style.cssText += `;left:${it.x * sc}px;top:${it.y * sc}px;width:${it.w * sc}px;height:${it.h * sc}px`; $("ghosts").appendChild(ghost);
+      srcEl = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (srcEl && kind === "move") srcEl.classList.add("srcdrag");       // dove stava: segnaposto scuro
+    }
+    if (kind === "move") ghost.style.transform = `translate(${(rect.x - it.x) * sc}px,${(rect.y - it.y) * sc}px)`;
+    else { ghost.style.left = rect.x * sc + "px"; ghost.style.top = rect.y * sc + "px"; ghost.style.width = rect.w * sc + "px"; ghost.style.height = rect.h * sc + "px"; }
+    const key = JSON.stringify([guides, eqm]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
     drawEq(eqm);
     document.querySelectorAll(".guide").forEach(x => x.remove());
     guides.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
       if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
       $("slots").appendChild(d); });
   };
-  const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; rect = compute(ev); draw(); };
+  const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; lastEv = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; rect = compute(lastEv); draw(); }); };       // una volta per schermata, non a ogni evento del mouse
   const onUp = async ev => {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
+    if (raf) { cancelAnimationFrame(raf); raf = 0; if (moved) { rect = compute(ev); draw(); } }
+    document.body.classList.remove("dragging"); DRAG = false; if (srcEl) srcEl.classList.remove("srcdrag");
     document.querySelectorAll(".guide, .eqm").forEach(x => x.remove());
     const grp = msel.length > 1 && inM(it);
     sel = { s: cur, side: it.side, idx: it.idx }; if (!grp) msel = [kOf(it)];
     if (!moved) { if (wasOnly && kind === "move") { msel = []; sel = null; } else if (grp) msel = [kOf(it)]; render(); return; }
-    if (ghost) ghost.remove();
+    if (ghost) { ghost.classList.add("settle"); setTimeout(clearGhosts, 2500); }          // resta dov'è stata lasciata finché non arriva l'immagine nuova: niente salto indietro
     const f = { x: (rect.x - c.pb0) / (c.pb1 - c.pb0), y: (rect.y - c.by0) / (c.by1 - c.by0), w: rect.w / (c.pb1 - c.pb0), h: rect.h / (c.by1 - c.by0) };
     if (it.k === "t" && it.kind !== "txt") f.ts = kind === "move" ? (it.ts || 1) : (it.ts || 1) * rect.w / it.w;
     if (it.kind === "txt" && kind !== "move" && (kind.includes("n") || kind.includes("s"))) f.autoh = false;
