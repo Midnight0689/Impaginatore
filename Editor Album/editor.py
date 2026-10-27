@@ -1266,10 +1266,6 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
             if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
-            elif u.path.startswith("/web/"):                                   # file dell'interfaccia (stili e script), solo da questa cartella
-                nm = os.path.basename(u.path); fp = os.path.join(HERE, "web", nm)
-                if not os.path.isfile(fp) or not nm.endswith((".js", ".css")): self.send({"errore": "file non trovato"}, code=404)
-                else: self.send(open(fp, "rb").read(), "text/css; charset=utf-8" if nm.endswith(".css") else "application/javascript; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))

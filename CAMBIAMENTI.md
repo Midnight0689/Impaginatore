@@ -3,9 +3,6 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
-## Versione 46 — Codice in più file (stesso comportamento)
-- L'interfaccia non è più un unico file da 1500 righe: `index.html` ora contiene solo la struttura; stili in `Editor Album/web/app.css`, script in 6 file numerati (`01-base.js` … `06-esporta-avvio.js`) per argomento: base e testo, ritocco/righelli/cornici, trascinamento e pannelli, galleria/filtri/menu, modelli e selettore, esportazione. Nessun cambiamento visibile. — `index.html`, `web/`, `editor.py` (serve i file della cartella `web/`).
-
 ## Versione 45 — PSD: maiuscolo vero di Photoshop
 - Verificato aprendo il PSD in Photoshop: corpo, interlinea (corpo × valore scelto) e spaziatura corrispondono all'editor. — `testo.py`, `genera_psd_angolo.py`.
 - «TT tutto maiuscolo» ora diventa l'attributo «Tutto maiuscolo» di Photoshop: il testo resta com'è scritto e puoi toglierlo dal pannello Carattere (prima nel PSD finivano lettere maiuscole vere).

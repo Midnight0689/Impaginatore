@@ -16,6 +16,6 @@ I progetti, le foto e i PSD (stanno nella cartella `Progetti/` o dove li tieni t
 nell'editor e poi **Importa ZIP** nella schermata dei progetti.
 
 ## Cartelle
-- `Editor Album/` programma (schermata progetti + editor); l'interfaccia dell'editor sta in `Editor Album/web/` (stili e script divisi per argomento)
+- `Editor Album/` programma (schermata progetti + editor)
 - `motore/` script di impaginazione e Photoshop (copia della skill di impaginazione)
 - `skill/impaginatore-stefano/` istruzioni per Claude
