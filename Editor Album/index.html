@@ -441,10 +441,13 @@ function applyZoom(keepPoint) {
   clearTimeout(zmT); zmT = setTimeout(() => { if (S && view === "album") renderStage(); drawRulers(); }, 160);
 }
 $("stage").addEventListener("wheel", e => {
-  if (!e.altKey || view !== "album" || !S || !S.spreads.length) return; e.preventDefault();
-  const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX; ZM = Math.min(5, Math.max(1, ZM * Math.exp(-d * 0.0025)));
+  if (!(e.altKey || e.ctrlKey) || view !== "album" || !S || !S.spreads.length) return; e.preventDefault();       // Alt + rotella, oppure pizzico sul trackpad (arriva come Ctrl + rotella)
+  const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX; ZM = Math.min(5, Math.max(1, ZM * Math.exp(-d * (e.ctrlKey ? 0.012 : 0.0025))));
   applyZoom({ x: e.clientX, y: e.clientY });
 }, { passive: false });
+let gz0 = 1;                                                                                                     // Safari: eventi di gesto
+$("stage").addEventListener("gesturestart", e => { if (view !== "album") return; e.preventDefault(); gz0 = ZM; });
+$("stage").addEventListener("gesturechange", e => { if (view !== "album" || !S || !S.spreads.length) return; e.preventDefault(); ZM = Math.min(5, Math.max(1, gz0 * e.scale)); applyZoom({ x: e.clientX, y: e.clientY }); });
 window.addEventListener("resize", () => { if (ZM > 1.001) applyZoom(); });
 function stageK() { const w = $("wrap").clientWidth || 800, k = Math.ceil(Math.min(ZM > 1.001 ? 1 : 0.7, Math.max(0.15, w * (window.devicePixelRatio || 1) / S.W)) * 20) / 20; return +k.toFixed(2); }
 function renderStage() {

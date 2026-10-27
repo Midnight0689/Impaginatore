@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 31 — Zoom con il pizzico del trackpad
+- Il pizzico a due dita sul trackpad (Mac) ingrandisce lo spread come Alt + rotella (Chrome lo manda come Ctrl + rotella, Safari come eventi di gesto). — `index.html`.
+
 ## Versione 30 — Zoom dello spread con Alt + rotella
 - Alt + rotella (o trackpad) ingrandisce lo spread fino al 500%, centrato sul puntatore; si scorre con rotella/trackpad normali; il pulsante «NNN% · Adatta» in basso a destra torna alla vista intera. A zoom alto l'anteprima viene richiesta più nitida (fino a k=1). Righelli, cornici e guide seguono lo zoom. — `index.html` (`applyZoom`, `ZM`).
 
