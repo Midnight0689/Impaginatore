@@ -602,9 +602,10 @@ function startGroup(e, its, bb, kind) {
   const draw = () => { const sc = $("wrap").clientWidth / S.W;
     if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
     its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; }); };
-  const calc = ev => { const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k, fx = kind.includes("e") ? 1 : -1, fy = kind.includes("s") ? 1 : -1;
+  const calc = ev => {       // angoli liberi; con Maiusc in proporzione (come Photoshop)
+    const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k, fx = kind.includes("e") ? 1 : -1, fy = kind.includes("s") ? 1 : -1;
     sx = kind.includes("e") || kind.includes("w") ? (bw + fx * dx) / bw : 1; sy = kind.includes("n") || kind.includes("s") ? (bh + fy * dy) / bh : 1;
-    if (corner && ev.shiftKey) sx = sy = Math.max(sx, sy);       // libero; con Maiusc in proporzione (come Photoshop) sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1); };
+    if (corner && ev.shiftKey) sx = sy = Math.max(sx, sy); sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1); };
   const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; last = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; calc(last); draw(); }); };
   const onUp = async ev => {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);

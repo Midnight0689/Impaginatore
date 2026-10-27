@@ -45,6 +45,12 @@ try:
     for f in sorted(x for x in os.listdir(a.foto) if x.lower().endswith(".jpg"))[: a.n]: shutil.copy(os.path.join(a.foto, f), os.path.join(proj, "Foto", f))
     ed = start([os.path.join(ED, "editor.py"), "--progetto", proj, "--porta", "8892"], 8892); P = 8892
     st = call(P, "/api/state"); names = [p["n"] for p in st["photos"]]
+    import re, shutil, tempfile    # il codice della pagina deve almeno essere sintatticamente corretto (se manca node il controllo si salta)
+    if shutil.which("node"):
+        js = "\n".join(re.findall(r"<script>(.*?)</script>", open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "index.html")).read(), re.S))
+        tf = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False); tf.write(js); tf.close()
+        r = subprocess.run(["node", "--check", tf.name], capture_output=True, text=True); os.unlink(tf.name)
+        check("codice della pagina senza errori di sintassi", r.returncode == 0, r.stderr[:300])
     check("foto lette", len(names) == a.n, str(len(names)))
     def op(o):
         global st
