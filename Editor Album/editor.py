@@ -81,12 +81,25 @@ CFG.setdefault("centri_volto", {})
 CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
 
 # ------------------------------------------------------------------ stato
-NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3}
+NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3,
+       "PANO": 1, "ANG": 1, "D2H": 2, "D2B": 2, "T1_2": 3, "T3B": 3, "T3C": 3, "Q4C": 4, "Q1_3": 4, "F5": 5, "S6": 6}
 BUILD = {
     "BLANK": lambda p, m: [],
     "FULL": lambda p, m: [A.FULL(p[0])], "DUO": lambda p, m: A.DUO(*p), "VLL": lambda p, m: A.VLL(*p, mirror=m),
     "V4": lambda p, m: A.V4(*p, mirror=m), "G4": lambda p, m: A.G4(*p), "CV": lambda p, m: A.CV(*p), "SV": lambda p, m: A.SV(*p),
     "PP": lambda p, m: A.PP(*p), "COL2": lambda p, m: A.COL2(*p), "BAND2": lambda p, m: A.BAND2(*p), "STRIP3": lambda p, m: A.STRIP3(*p),
+    # ---- varianti in più (griglia 12x8 per pagina; colonna, riga, larghezza, altezza)
+    "PANO": lambda p, m: [A.P(p[0], 0, 2, 12, 4)],                                          # 1 foto: fascia panoramica a tutta larghezza
+    "ANG": lambda p, m: [A.P(p[0], 1, 1, 6, 6)] if m else [A.P(p[0], 5, 1, 6, 6)],           # 1 foto: quadrata spostata su un lato
+    "D2H": lambda p, m: [A.P(p[0], 0, 0, 12, 4), A.P(p[1], 0, 4, 12, 4)],                    # 2 foto: una sopra l'altra, a tutta larghezza
+    "D2B": lambda p, m: [A.P(p[0], 4, 0, 8, 8), A.P(p[1], 0, 0, 4, 8)] if m else [A.P(p[0], 0, 0, 8, 8), A.P(p[1], 8, 0, 4, 8)],   # 2 foto: una grande e una stretta
+    "T1_2": lambda p, m: [A.P(p[0], 0, 4, 12, 4), A.P(p[1], 0, 0, 6, 4), A.P(p[2], 6, 0, 6, 4)] if m else [A.P(p[0], 0, 0, 12, 4), A.P(p[1], 0, 4, 6, 4), A.P(p[2], 6, 4, 6, 4)],   # 3 foto: una larga + due
+    "T3B": lambda p, m: [A.P(p[0], 4, 0, 8, 8), A.P(p[1], 0, 0, 4, 4), A.P(p[2], 0, 4, 4, 4)] if m else [A.P(p[0], 0, 0, 8, 8), A.P(p[1], 8, 0, 4, 4), A.P(p[2], 8, 4, 4, 4)],   # 3 foto: una grande + due piccole
+    "T3C": lambda p, m: [A.P(p[0], 0, 0, 6, 8), A.P(p[1], 6, 0, 3, 8), A.P(p[2], 9, 0, 3, 8)] if not m else [A.P(p[0], 6, 0, 6, 8), A.P(p[1], 0, 0, 3, 8), A.P(p[2], 3, 0, 3, 8)],   # 3 foto: tre colonne
+    "Q4C": lambda p, m: [A.P(p[j], 3 * j, 0, 3, 8) for j in range(4)],                       # 4 foto: quattro colonne
+    "Q1_3": lambda p, m: [A.P(p[0], 0, 3, 12, 5), A.P(p[1], 0, 0, 4, 3), A.P(p[2], 4, 0, 4, 3), A.P(p[3], 8, 0, 4, 3)] if m else [A.P(p[0], 0, 0, 12, 5), A.P(p[1], 0, 5, 4, 3), A.P(p[2], 4, 5, 4, 3), A.P(p[3], 8, 5, 4, 3)],   # 4 foto: una larga + tre
+    "F5": lambda p, m: [A.P(p[0], 4, 0, 8, 5), A.P(p[1], 0, 0, 4, 5), A.P(p[2], 0, 5, 4, 3), A.P(p[3], 4, 5, 4, 3), A.P(p[4], 8, 5, 4, 3)] if m else [A.P(p[0], 0, 0, 8, 5), A.P(p[1], 8, 0, 4, 5), A.P(p[2], 0, 5, 4, 3), A.P(p[3], 4, 5, 4, 3), A.P(p[4], 8, 5, 4, 3)],   # 5 foto
+    "S6": lambda p, m: [A.P(p[j], 4 * (j % 3), 4 * (j // 3), 4, 4) for j in range(6)],       # 6 foto: griglia 3x2
 }
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
 UT_FILE = os.path.expanduser("~/.album-tools/modelli_utente.json")
@@ -112,7 +125,10 @@ BUILD = _Build(BUILD)
 
 # modelli di pagina (modulo, modo, specchiato) usati dalla galleria "Modelli"
 LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", "I", True), ("V4", "I", False), ("V4", "I", True), ("G4", "I", False),
-        ("STRIP3", "W", False), ("BLANK", "W", False), ("CV", "W", False), ("SV", "W", False), ("PP", "W", False), ("COL2", "W", False), ("BAND2", "W", False)]
+        ("STRIP3", "W", False), ("BLANK", "W", False), ("CV", "W", False), ("SV", "W", False), ("PP", "W", False), ("COL2", "W", False), ("BAND2", "W", False),
+        ("PANO", "W", False), ("ANG", "W", False), ("ANG", "W", True), ("D2H", "I", False), ("D2H", "W", False), ("D2B", "I", False), ("D2B", "I", True), ("D2B", "W", False),
+        ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
+        ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
 SP = [[[mode, [dict(it) for it in items]] for (mode, items) in sp] for sp in A.load_spec()]
 GD = [dict(v=list(g.get("v", [])), h=list(g.get("h", []))) for g in CFG.get("guide", [])][:len(SP)]       # linee guida di ogni spread (px della vista)
 GD += [dict(v=[], h=[]) for _ in range(len(SP) - len(GD))]
@@ -687,7 +703,7 @@ def tpl_options(photos, cur=None, side=None, s=None):
             else: d = build(("U:%s:%s" % (t["id"], side), t["pages"][0 if side == "L" else 1]["mode"], False))
             d.update(id=t["id"], nome=t["nome"]); ut.append(d)
         except Exception as ex: LOG.append(f"modello «{t.get('nome')}» non applicabile: {ex}")
-    return dict(items=out[:60], n=N, tot=len(out), utente=ut, lato=side)
+    return dict(items=out[:90], n=N, tot=len(out), utente=ut, lato=side)
 
 def tpl_from_spread(s):
     """(pagine, n, lato): se una pagina è di solo testo si salva solo l'altra (lato = quella), altrimenti tutto lo spread (lato = None)"""

@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 56 — Più modelli di impaginazione
+- 11 nuove disposizioni (con versioni specchiate e a margine bianco): fascia panoramica, foto spostata di lato, due foto una sopra l'altra, una grande + una stretta, una larga + due, una grande + due piccole, tre colonne, quattro colonne, una larga + tre, cinque foto, griglia da sei. Nell'elenco Modelli si vedono fino a 90 proposte. — `editor.py` (`NPH`, `BUILD`, `LAYS`).
+
 ## Versione 55 — Galleria foto con righe allineate
 - Le foto libere in basso riempiono ogni riga fino al bordo destro (prima restava uno spazio diverso a ogni riga); le foto si adattano di pochissimo. — `index.html` (`renderPool`).
 
