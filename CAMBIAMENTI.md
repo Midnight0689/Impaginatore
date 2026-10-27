@@ -3,6 +3,12 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 42 — Più solidità: salvataggio sicuro e prova automatica
+- Il salvataggio scrive prima in un file temporaneo e poi lo sostituisce: un blocco del Mac a metà scrittura non rovina più `spec.py` e `progetto.json`. — `editor.py`.
+- Le copie di sicurezza (`_backup_editor`) si limitano alle ultime 200, senza crescere all'infinito. — `editor.py`.
+- Se l'autosalvataggio non riesce compare in alto «⚠ SALVATAGGIO NON RIUSCITO» (prima lo sapeva solo il registro). — `editor.py`, `index.html`.
+- Nuova prova automatica `tests/smoke.py`: crea un progetto temporaneo, fa le operazioni principali, salva, riapre e confronta (14 controlli). Si lancia prima di ogni rilascio. — `tests/smoke.py`.
+
 ## Versione 41 — Testo: doppio clic per modificare
 - Doppio clic su un testo lo riapre per scrivere, con il cursore in fondo (prima il doppio clic poteva perdersi perché il primo clic ricostruiva gli elementi). Il testo appena creato resta tutto selezionato, così scrivi sopra. — `index.html`.
 

@@ -755,7 +755,7 @@ def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("sr
 
 def state():
     with LOCK:
-        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
+        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG))
@@ -867,6 +867,23 @@ def fmt0(it):
     return f'P({n!r}, {it["c"]}, {it["r"]}, {it["w"]}, {it["h"]}{ex})'
 
 LAST = dict(op=0.0, backup=0.0)
+SAVE_ERR = [""]                                       # ultimo errore di salvataggio (vuoto = tutto a posto): lo mostra la barra in alto
+
+def _scrivi(path, testo):
+    """scrive il file in modo sicuro: prima in un file temporaneo, poi lo sostituisce, così un blocco a metà non lo rovina"""
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f: f.write(testo); f.flush(); os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+def _pota_backup(bk, tieni=200):
+    """tiene le ultime `tieni` copie di sicurezza e toglie le più vecchie"""
+    try:
+        ts = sorted({f.split("_", 1)[0] for f in os.listdir(bk) if re.match(r"^\d{8}-\d{6}_(spec\.py|progetto\.json)$", f)})
+        for t in ts[:-tieni]:
+            for f in ("spec.py", "progetto.json"):
+                try: os.remove(os.path.join(bk, f"{t}_{f}"))
+                except OSError: pass
+    except Exception as e: LOG.append(f"pulizia copie non riuscita: {e}")
 def save(backup=True):
     global SAVED
     with LOCK:
@@ -885,14 +902,15 @@ def save(backup=True):
             pages = [f'{pg[0]}(' + ", ".join(fmt(it) for it in pg[1]) + ")" for pg in sp]
             lines.append(f"    # {k}\n    ({pages[0]},\n     {pages[1]}),")
         lines.append("]")
-        open(os.path.join(PROJ, "spec.py"), "w").write("\n".join(lines) + "\n")
+        _scrivi(os.path.join(PROJ, "spec.py"), "\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
         out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)
-        json.dump(out, open(os.path.join(PROJ, "progetto.json"), "w"), indent=2, ensure_ascii=False)
-        SAVED = snap()
+        _scrivi(os.path.join(PROJ, "progetto.json"), json.dumps(out, indent=2, ensure_ascii=False))
+        SAVED = snap(); SAVE_ERR[0] = ""
+        if backup: _pota_backup(bk)
         return ts
 
 def parse_range(txt, n):
@@ -997,7 +1015,7 @@ def autosave_loop():
         time.sleep(1)
         try:
             if time.time() - LAST["op"] > 2 and snap() != SAVED: save(backup=time.time() - LAST["backup"] > 600)
-        except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}")
+        except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}"); SAVE_ERR[0] = str(e)[:160]
 
 def pick(kind):
     if kind == "folder": sc = 'POSIX path of (choose folder with prompt "Scegli la cartella")'
