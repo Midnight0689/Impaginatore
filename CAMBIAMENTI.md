@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.4.9 — Numero semplice sotto lo spread 1
+- Tolta la scritta «Copertina 1» dalla fila degli spread (andava scritta sul foglio, non sotto la miniatura). — `index.html`.
+
 ## Versione 1.4.8 — «Copertina 1» sotto lo spread 1
 - Nella fila degli spread, sotto la miniatura del primo c'è scritto «Copertina 1» invece di «1». — `index.html`.
 
