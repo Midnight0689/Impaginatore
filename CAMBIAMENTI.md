@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 103 — Maiusc proporzionale anche dai pallini sui lati
+Tenendo premuto Maiusc, anche i pallini al centro dei lati (alto, basso, sinistra, destra) ridimensionano la foto in proporzione: la misura che trascini guida, l'altra cresce dal suo centro e il lato opposto resta fermo. Senza Maiusc il ridimensionamento resta libero. — `index.html` (`startFree`).
+
 ## Versione 102 — Anteprima di una foto dello spread, senza frecce
 Selezionando una foto nello spread e premendo la barra spaziatrice si apre la sua anteprima grande (se l'ultima cosa toccata è una foto dello spread, ha la precedenza su una foto selezionata in galleria). Da qui le frecce non fanno niente, per non confondere la numerazione dello spread; dalla galleria e dalla vista Foto restano le frecce avanti/indietro. — `index.html` (`qlook`, `qlSrc`).
 

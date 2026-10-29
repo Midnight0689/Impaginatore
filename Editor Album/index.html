@@ -1270,6 +1270,13 @@ function startFree(e, it, kind) {
       if (kind.includes("e") || kind.includes("w")) { const o = pick(R - L, "w"); if (o) { const nl = kind.includes("w") ? R - o.w : L, nr = kind.includes("w") ? R : L + o.w; if (nl >= c.bx0 && nr <= c.bx1) { L = nl; R = nr; szm.push({ o, d: "w" }); guides = guides.filter(g => g[0] !== "v"); } } }
       if (kind.includes("n") || kind.includes("s")) { const o = pick(B - T, "h"); if (o) { const nt = kind.includes("n") ? B - o.h : T, nb = kind.includes("n") ? B : T + o.h; if (nt >= c.fy0 && nb <= c.fy1) { T = nt; B = nb; szm.push({ o, d: "h" }); guides = guides.filter(g => g[0] !== "h"); } } }
     }
+    if (kind !== "move" && kind.length === 1 && ev.shiftKey) {       // Maiusc su un lato: stesse proporzioni, l'altra misura cresce dal suo centro
+      const horiz = kind === "e" || kind === "w"; let s = horiz ? (R - L) / it.w : (B - T) / it.h;
+      s = Math.max(0.03, Math.min(s, horiz ? (c.fy1 - c.fy0) / it.h : (c.bx1 - c.bx0) / it.w));
+      if (horiz) { const w2 = it.w * s, h2 = it.h * s; if (kind === "w") L = R - w2; else R = L + w2; T = Math.min(Math.max(it.y + it.h / 2 - h2 / 2, c.fy0), c.fy1 - h2); B = T + h2; L = Math.max(L, c.bx0); R = Math.min(R, c.bx1); }
+      else { const w2 = it.w * s, h2 = it.h * s; if (kind === "n") T = B - h2; else B = T + h2; L = Math.min(Math.max(it.x + it.w / 2 - w2 / 2, c.bx0), c.bx1 - w2); R = L + w2; T = Math.max(T, c.fy0); B = Math.min(B, c.fy1); }
+      guides = [];
+    }
     if (kind !== "move" && kind.length === 2 && ev.shiftKey) {       // Maiusc su un angolo: stesse proporzioni di prima (come Photoshop), l'angolo opposto resta fermo
       const ax = kind.includes("w") ? it.x + it.w : it.x, ay = kind.includes("n") ? it.y + it.h : it.y;
       let s = Math.max((R - L) / it.w, (B - T) / it.h);
