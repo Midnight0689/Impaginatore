@@ -2029,7 +2029,7 @@ function keysOpen() {
   const d = document.createElement("div"); d.id = "keys";
   const close = () => { d.remove(); document.removeEventListener("keydown", esc, true); }, esc = e => { if (e.key === "Escape" || e.key === "?") { e.preventDefault(); e.stopPropagation(); close(); } };
   const kb = t => t.split(/( · |  oppure  | \+ )/).map(x => /^( · |  oppure  | \+ )$/.test(x) ? `<i style="opacity:.5;font-style:normal"> ${x.trim() === "oppure" ? "oppure" : x.trim()} </i>` : x.split(" ").map(k => /^(⌘|⇧|⌥|⌫|Tab|Esc|Spazio|[A-Z0-9?+−\]\[{}↑↓←→…])$/.test(k) ? `<kbd>${k}</kbd>` : k).join(" ")).join("");
-  d.innerHTML = `<div class="kc"><div class="kh"><b>Scorciatoie da tastiera</b><button class="kx" title="Chiudi (Esc)">✕</button></div><div class="kb">` + KEYS.map(([t, r]) => `<div><h4>${t}</h4>${r.map(([a, b]) => `<div class="kr"><span>${a}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + `</div></div>`;
+  d.innerHTML = `<div class="kc"><div class="kh"><div><b>Scorciatoie da tastiera</b><span style="opacity:.55;font-size:12px;margin-left:10px">Impaginatore ${S && S.ver ? S.ver : ""}</span></div><button class="kx" title="Chiudi (Esc)">✕</button></div><div class="kb">` + KEYS.map(([t, r]) => `<div><h4>${t}</h4>${r.map(([a, b]) => `<div class="kr"><span>${a}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + `</div></div>`;
   d.querySelector(".kx").onclick = close; d.onclick = e => { if (e.target === d) close(); };
   document.body.appendChild(d); document.addEventListener("keydown", esc, true);
 }

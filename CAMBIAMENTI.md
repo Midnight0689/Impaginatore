@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.2 — La versione in uso si vede nell'editor
+- Nella finestra delle scorciatoie (pulsante tastiera o tasto ?) compare «Impaginatore 1.3.2»: serve a capire quale versione sta girando davvero su quel Mac dopo un aggiornamento. — `editor.py` (`_ver_programma`, campo `ver` nello stato), `index.html` (`keysOpen`).
+
 ## Versione 1.3.1 — Modelli: niente misure sopra la galleria
 - Aprendo i Modelli le misure blu (distanze dai lati) e le guide della foto selezionata restavano visibili sopra le miniature; ora si nascondono finché la galleria è aperta. — `index.html` (`body.tplopen .eqm`).
 
