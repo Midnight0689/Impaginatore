@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.8 — Bordo di selezione 12 px
+- Foto selezionata 12 px, più foto selezionate 9 px. — `index.html` (`.slot.sel`, `.slot.msel`).
+
 ## Versione 1.3.7 — Bordo di selezione ancora più spesso
 - Foto selezionata 9 px (era 5), più foto selezionate 7 px (era 4). — `index.html` (`.slot.sel`, `.slot.msel`).
 
