@@ -1216,8 +1216,14 @@ function renderPool() {
   free.forEach(f => {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
     im.ondblclick = () => { if (used) { cur = f.sp; view = "album"; render(); return; } if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
-    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
-    if (POOLSEL === n) im.classList.add("psel"); im.onclick = () => { qlPref = "pool"; POOLSEL = POOLSEL === n ? null : n; P.querySelectorAll("img.psel").forEach(x => x.classList.remove("psel")); if (POOLSEL) im.classList.add("psel"); };       // clic: seleziona la foto (spazio = anteprima grande)
+    im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, POOLSELS.length > 1 && POOLSELS.includes(n) ? POOLSELS.slice() : [n], true);
+    im.dataset.n = n; if (POOLSELS.includes(n)) im.classList.add("psel");
+    im.onclick = e => { qlPref = "pool"; const vis = free.map(x => x.n);       // clic: sceglie · Maiusc: da qui all'ultima scelta · ⌘/Ctrl: aggiunge o toglie
+      if (e.shiftKey && POOLSEL && vis.includes(POOLSEL)) { const a = vis.indexOf(POOLSEL), b = vis.indexOf(n); vis.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(x => { if (!POOLSELS.includes(x)) POOLSELS.push(x); }); POOLSEL = n; }
+      else if (e.metaKey || e.ctrlKey) { if (POOLSELS.includes(n)) { POOLSELS = POOLSELS.filter(x => x !== n); POOLSEL = POOLSELS[POOLSELS.length - 1] || null; } else { POOLSELS.push(n); POOLSEL = n; } }
+      else if (POOLSELS.length === 1 && POOLSELS[0] === n) { POOLSELS = []; POOLSEL = null; }
+      else { POOLSELS = [n]; POOLSEL = n; }
+      P.querySelectorAll("img").forEach(x => x.classList.toggle("psel", POOLSELS.includes(x.dataset.n))); };
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
@@ -1500,11 +1506,11 @@ function mkBar(el, st, cfg) {
     $q(".gst").classList.toggle("on", st.star); $q(".gS").value = st.s; rg.value = st.sz;
   };
 }
-const markTargets = () => view === "foto" ? (HOV && !SELP.includes(HOV) ? [HOV] : SELP.length ? SELP.slice() : HOV ? [HOV] : []) : (HOV ? [HOV] : POOLSEL && S.photos.some(p => p.n === POOLSEL) ? [POOLSEL] : []);       // col mouse sopra una foto vale quella; altrimenti la selezione
+const markTargets = () => view === "foto" ? (HOV && !SELP.includes(HOV) ? [HOV] : SELP.length ? SELP.slice() : HOV ? [HOV] : []) : (HOV && !POOLSELS.includes(HOV) ? [HOV] : POOLSELS.length ? POOLSELS.filter(n => S.photos.some(p => p.n === n)) : HOV ? [HOV] : []);       // col mouse sopra una foto vale quella; altrimenti la selezione
 function markStar() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); toast(v ? "★ Preferita" : "Preferita tolta"); }
 function markTolta() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => S.tolte.includes(n)); if (v && nn.some(n => (S.photos.find(x => x.n === n) || {}).sp != null)) { toast("Una foto già in uno spread non si può togliere: prima toglila dallo spread", true); return; } if (v) SELP = SELP.filter(n => !nn.includes(n)); op({ op: "tolta", photo: nn[0], photos: nn, value: v }); }
-let HOV = null, POOLSEL = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
-function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
+let HOV = null, POOLSEL = null, POOLSELS = [];                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
+function assignColor(v, names) { names = names || markTargets(); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
 // ---- scelta di una foto libera (sostituisci / aggiungi qui)
 function pickPhoto(titolo, onPick, withUsed) {
   let d = $("pickd"); if (d) d.remove(); d = document.createElement("div"); d.id = "pickd"; d.className = "veil"; d.style.display = "flex";
@@ -1570,7 +1576,7 @@ function libMenu(e, p, names, inPool) {       // galleria o striscia
   ctxMenu(e, [{ colors: names }, "-",
     free && !p.tolta ? { t: "Usa in un nuovo spread…", f: () => { SELP = names.filter(n => { const q = S.photos.find(x => x.n === n); return q && q.sp == null && !q.tolta; }); lastClick = SELP[SELP.length - 1]; view = "foto"; render(); toast("Scegli un modello a destra per creare lo spread"); } } : null,
     !free ? { t: "Vai allo spread " + (p.sp + 1), f: () => { cur = p.sp; view = "album"; render(); } } : null,
-    free ? { id: "tolta", t: p.tolta ? "Ripristina (torna tra quelle da usare)" : "Togli dalle foto da usare", f: () => op({ op: "tolta", photo: p.n, value: !p.tolta }) } : null,
+    free ? { id: "tolta", t: p.tolta ? "Ripristina (torna tra quelle da usare)" : "Togli dalle foto da usare", f: () => op({ op: "tolta", photo: p.n, photos: names, value: !p.tolta }) } : null,
     p.col && !inPool ? { t: "Seleziona tutte le " + p.col + "", f: () => { SELP = S.photos.filter(x => x.col === p.col && x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; view = "foto"; render(); } } : null,
     ...photoItems(names).slice(1)], "lib");
 }
@@ -1858,7 +1864,7 @@ function qlStep(d) {
   if (qlSrc === "spread") return; const L = qlList(), i = L.indexOf(qlName); if (i < 0) return; const j = Math.min(Math.max(i + d, 0), L.length - 1); if (j === i) return; const n = L[j];
   qlook(n); [L[j + d], L[j - d]].forEach(x => { if (x) new Image().src = `/img/thumb/${x}?w=1800`; });
   if (view === "foto") { SELP = [n]; lastClick = n; render(); }
-  else { POOLSEL = n; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
+  else { POOLSEL = n; POOLSELS = [n]; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
 }
 // ---- barra spaziatrice tenuta premuta senza foto selezionata: manina, trascini lo spread (utile con lo zoom)
 let PAN = false, panD = null;
@@ -1885,7 +1891,7 @@ document.addEventListener("keydown", e => {
   if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV || POOLSEL)) { e.preventDefault(); markStar(); return; }
   if (S && e.key.toLowerCase() === "x" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV || POOLSEL)) { e.preventDefault(); markTolta(); return; }
-  if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
+  if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV || POOLSELS.length)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
   if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !(document.activeElement && (/TEXTAREA|SELECT/.test(document.activeElement.tagName) || (document.activeElement.tagName === "INPUT" && /text|number|search/.test(document.activeElement.type))))) {       // ⌘A nella galleria (le caselle da spuntare non lo bloccano): tutte le foto ancora da usare
     e.preventDefault(); SELP = selectable(); lastClick = SELP[SELP.length - 1] || null; renderLib(); return;
   }
