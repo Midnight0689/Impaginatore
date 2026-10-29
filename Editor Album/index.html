@@ -72,7 +72,8 @@
   #pool { grid-column: 2; grid-row: 3; background: var(--panel); border-top: 1px solid var(--line); padding: 6px 10px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   #pool .cap { color: var(--dim); font-size: 11px; margin-bottom: 4px; }
   #pool img { height: 100px; box-sizing: content-box; margin-right: 6px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
-  #pool img:hover { border-color: var(--accent); }
+  #pool img:hover { border-color: var(--accent); } #pool img.psel { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue); }
+  #qlook { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; cursor: zoom-out; } #qlook img { max-width: 94vw; max-height: 90vh; object-fit: contain; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,.6); } #qlook span { color: #cfcfd4; font-size: 13px; }
   #pool img.tolta { opacity: .4; }
   #log { position: fixed; right: 12px; bottom: 12px; width: 460px; max-height: 260px; overflow: auto; background: #1d1d1d; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 11px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; display: none; z-index: 5; }
   #log .x { position: sticky; top: 0; float: right; cursor: pointer; color: var(--dim); }
@@ -486,6 +487,7 @@
   <div class="btns"><button id="ecancel">Chiudi</button><button id="ereveal" style="display:none">Mostra nel Finder</button><button class="primary" id="ego">Esporta</button></div>
 </div></div>
 <div id="nmenu"><div data-n="blank">Spread vuoto<small>due pagine bianche, dopo questo</small></div><div data-n="photos">Spread con le prossime 2 foto libere<small>pagina centrata + pagina intera</small></div><div data-n="pick">Scegli le foto…<small>vai alla scheda Foto: compaiono i modelli</small></div></div>
+<div id="qlook"><img alt=""><span></span></div>
 <div id="busy"><div><div class="spin"></div><div id="busymsg"></div></div></div>
 <div id="log"><span class="x" onclick="document.getElementById('log').style.display='none'">✕</span><div id="logbody"></div></div>
 <div id="toast"></div>
@@ -1173,6 +1175,7 @@ function renderPool() {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
     im.ondblclick = () => { if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
+    if (POOLSEL === n) im.classList.add("psel"); im.onclick = () => { POOLSEL = POOLSEL === n ? null : n; P.querySelectorAll("img.psel").forEach(x => x.classList.remove("psel")); if (POOLSEL) im.classList.add("psel"); };       // clic: seleziona la foto (spazio = anteprima grande)
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
@@ -1434,7 +1437,7 @@ function mkBar(el, st, cfg) {
     $q(".gst").classList.toggle("on", st.star); $q(".gS").value = st.s; rg.value = st.sz;
   };
 }
-let HOV = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
+let HOV = null, POOLSEL = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
 function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
 // ---- scelta di una foto libera (sostituisci / aggiungi qui)
 function pickPhoto(titolo, onPick, withUsed) {
@@ -1773,7 +1776,17 @@ $("ego").onclick = async () => {
 $("wrap").addEventListener("contextmenu", e => { if (!S || e.target.closest(".slot") || textTool) return; bgMenu(e); });
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
+let qlName = null;
+function qlook(n) {       // anteprima grande di una foto (barra spaziatrice); stessa tasto o Esc o clic la chiude
+  const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
+  qlName = n; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + " · spazio o Esc per chiudere"; q.style.display = "flex";
+}
+$("qlook").onclick = () => qlook(null);
 document.addEventListener("keydown", e => {
+  if (qlName && (e.key === " " || e.key === "Escape")) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
+  if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") {
+    const si = typeof selItem === "function" ? selItem() : null, n = view === "foto" ? (SELP.length ? SELP[SELP.length - 1] : HOV) : (POOLSEL && S.photos.some(p => p.n === POOLSEL) ? POOLSEL : HOV || (si && si.name) || null);
+    e.preventDefault(); if (n) qlook(n); return; }
   if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); const nn = view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []; if (nn.length) { const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); } return; }
   if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }

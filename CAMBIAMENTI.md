@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 100 — Barra spaziatrice: anteprima grande della foto
+Nella galleria le foto si selezionano con un clic (bordo blu; un secondo clic le deseleziona). La barra spaziatrice apre un'anteprima grande della foto selezionata (o, se non ce n'è, di quella sotto il mouse, o della foto selezionata sullo spread; nella vista Foto, dell'ultima selezionata); spazio, Esc o un clic la chiudono. La barra non fa più scorrere la galleria; dentro i campi di testo funziona come sempre. — `index.html` (`qlook`).
+
 ## Versione 99 — ⌘S salva il progetto
 ⌘S (o Ctrl+S) ora salva il progetto, come il pulsante «Salva», e non apre più il salvataggio della pagina web del browser. — `index.html`.
 
