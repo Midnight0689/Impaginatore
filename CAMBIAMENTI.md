@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 141 — Distanze dai lati: dalla foto vicina, non dal bordo dello spread
+- Le misure di una foto selezionata (e durante lo spostamento/ridimensionamento) su ogni lato partono dalla foto più vicina su quel lato (che si sovrappone nell'altra misura); solo se non c'è nessuna foto si misura dal bordo della pagina. — `index.html` (`edgeMarks`).
+
 ## Versione 140 — «Correggi spazi» apre un mini menu
 - Tolto il menu a tendina sempre visibile sotto i pulsanti. Premendo «Correggi spazi» compare un mini menu con la misura di riferimento (standard, il più frequente, valore in cm) e due pulsanti: «Correggi questo spread» e «Tutto l'album». Si chiude con Esc o un clic fuori. — `index.html` (`gapMenu`).
 

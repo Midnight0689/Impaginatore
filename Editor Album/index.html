@@ -736,7 +736,7 @@ function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina
   const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t"), GM = GAPCHK ? gapMarks() : [];
   if (!its.length) { if (GM.length) drawEq(GM); else document.querySelectorAll(".eqm").forEach(x => x.remove()); return; }
   const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
-  drawEq(GM.concat(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 })));
+  drawEq(GM.concat(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, its)));
 }
 let nudgeP = null;       // frecce della tastiera: 0,1 cm (con Maiusc 1 cm); i colpi ravvicinati diventano un solo spostamento
 function nudgeKey(e) {
@@ -769,7 +769,7 @@ function startGroup(e, its, bb, kind) {
   const draw = () => { const sc = $("wrap").clientWidth / S.W;
     if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
     its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; });
-    { const l = ax + (bb.L - ax) * sx, r = ax + (bb.R - ax) * sx, t = ay + (bb.T - ay) * sy, b = ay + (bb.B - ay) * sy; drawEq(edgeMarks({ x: Math.min(l, r), y: Math.min(t, b), w: Math.abs(r - l), h: Math.abs(b - t) })); }       // distanze dai bordi, live
+    { const l = ax + (bb.L - ax) * sx, r = ax + (bb.R - ax) * sx, t = ay + (bb.T - ay) * sy, b = ay + (bb.B - ay) * sy; drawEq(edgeMarks({ x: Math.min(l, r), y: Math.min(t, b), w: Math.abs(r - l), h: Math.abs(b - t) }, its)); }       // distanze dai bordi, live
     document.querySelectorAll(".guide").forEach(x => x.remove());
     gd.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
       if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
@@ -1374,11 +1374,25 @@ function eqSpace(self, r, snap, doneX, doneY) {            // spaziatura uguale 
   }
   return out;
 }
-function edgeMarks(r) {       // distanze dai bordi della pagina (sinistra, destra, sopra, sotto): servono a capire se la foto è centrata
-  const G = S.spreads[cur].grid, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (G.L.full || G.L).by, cx = r.x + r.w / 2;
+function edgeMarks(r, ex = []) {       // distanze di ogni lato: dalla foto vicina su quel lato, se c'è, altrimenti dal bordo della pagina
+  const G = S.spreads[cur].grid, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (G.L.full || G.L).by, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
   const span = r.x < fd - 1 && r.x + r.w > fd + 1, x0 = span || cx < fd ? FL : fd, x1 = span || cx >= fd ? FR : fd, M = [];
   const add = (ax, from, to, at) => { if (to - from > 0.5) M.push({ ax, from, to, at, g: to - from, e: 1 }); };
-  add("x", x0, r.x, r.y + r.h / 2); add("x", r.x + r.w, x1, r.y + r.h / 2); add("y", fy0, r.y, cx); add("y", r.y + r.h, fy1, cx);
+  const oth = S.spreads[cur].items.filter(o => o.k !== "t" && !ex.some(e => e.side === o.side && e.idx === o.idx)), ov = (a0, a1, b0, b1) => [Math.max(a0, b0), Math.min(a1, b1)];
+  const side = (dir) => {       // la foto più vicina davanti a questo lato, che si sovrappone nell'altra misura
+    let best = null;
+    oth.forEach(o => {
+      const [p0, p1] = dir === "l" || dir === "r" ? ov(r.y, r.y + r.h, o.y, o.y + o.h) : ov(r.x, r.x + r.w, o.x, o.x + o.w); if (p1 - p0 <= 0) return;
+      const d = dir === "l" ? r.x - (o.x + o.w) : dir === "r" ? o.x - (r.x + r.w) : dir === "u" ? r.y - (o.y + o.h) : o.y - (r.y + r.h);
+      if (d >= -0.5 && (!best || d < best.d)) best = { d, o, at: (p0 + p1) / 2 };
+    });
+    return best;
+  };
+  const L = side("l"), Rr = side("r"), U = side("u"), D = side("d");
+  if (L) add("x", r.x - L.d, r.x, L.at); else add("x", x0, r.x, cy);
+  if (Rr) add("x", r.x + r.w, r.x + r.w + Rr.d, Rr.at); else add("x", r.x + r.w, x1, cy);
+  if (U) add("y", r.y - U.d, r.y, U.at); else add("y", fy0, r.y, cx);
+  if (D) add("y", r.y + r.h, r.y + r.h + D.d, D.at); else add("y", r.y + r.h, fy1, cx);
   return M;
 }
 function drawEq(marks) {
@@ -1485,7 +1499,7 @@ function startFree(e, it, kind) {
     document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
     szm.forEach(m => { const el = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, m.o.side, m.o.idx])); if (el) el.classList.add("samesz"); });
     ghost.innerHTML = szm.length ? `<b class="szl">stessa ${szm.map(m => m.d === "w" ? "larghezza" : "altezza").join(" e ")}</b>` : "";
-    const edges = edgeMarks(rect), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
+    const edges = edgeMarks(rect, grpI.length > 1 ? grpI : [it]), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
     drawEq(eqm.concat(edges));
     document.querySelectorAll(".guide").forEach(x => x.remove());
     guides.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
