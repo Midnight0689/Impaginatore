@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.0.2 — Modelli: «Mostra altri» con più taglio
+- Resta il filtro sulle proporzioni (scarto fino al 28%), ma sotto la lista compare «Mostra altri N modelli (tagliano di più le foto)»: fino a 36 modelli con scarto fino al 55%, in ordine dal meno al più tagliato, etichettati «taglio maggiore». Vale sia nel pannello Modelli sia nella vista Foto. Con foto di orientamento misto prima restavano 3 modelli, ora fino a una quarantina. — `editor.py` (`tpl_options` → `piu`), `index.html` (`.tmore`).
+
 ## Versione 1.0.1 — Pulsante delle scorciatoie
 - Nella barra in alto un pulsante con la tastiera (o il tasto ?) apre una finestra centrale con tutte le scorciatoie, divise per argomento; si chiude con Esc, ? o un clic fuori. — `index.html` (`KEYS`, `keysOpen`, `#keysb`). Quando si aggiungono scorciatoie nuove, aggiornare `KEYS`.
 
