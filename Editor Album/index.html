@@ -743,9 +743,10 @@ async function pasteSel() {
 async function moveSp(a, b) { if (b < 0 || b >= S.spreads.length || a === b) return; await op({ op: "move", s: a, to: b }); cur = b; sel = null; render(); }
 function go(k) { if (k >= 0 && k < S.spreads.length) { cur = k; sel = null; msel = []; render(); } }
 const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
+const corrUrl = (it, w, over) => `/img/corr?n=${it.name}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
 function cropStyle(it) {
   const [l, t, r, b] = it.box, W = r - l, H = b - t, ratio = it.w / it.h;
-  return `width:min(100%,${Math.round(300 * ratio)}px);aspect-ratio:${it.w}/${it.h};background-image:url(/img/thumb/${it.name}?w=500);background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
+  return `width:min(100%,${Math.round(300 * ratio)}px);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
 }
 const fams = () => [...new Set(FONTS.map(f => f.fam))];
 const cssFont = ps => { const f = FONTS.find(x => x.ps === ps); if (!f) return `font-family:${ps}`; const st = f.sty.toLowerCase(); return `font-family:"${f.fam}";font-weight:${/black|heavy/.test(st) ? 900 : /extra ?bold|ultra/.test(st) ? 800 : /semi ?bold|demi/.test(st) ? 600 : /bold/.test(st) ? 700 : /medium/.test(st) ? 500 : /light|thin/.test(st) ? 300 : 400};font-style:${/italic|oblique/.test(st) ? "italic" : "normal"}`; };
@@ -926,6 +927,7 @@ async function livePump() {
       const K = Math.min(0.45, stageK()), o = encodeURIComponent(JSON.stringify(job.over));
       await Promise.all(liveFrames(job.name).map(f => new Promise(res => { const im = new Image(); im.onload = () => { if (job.s === cur) putLive(f, im.src); res(); }; im.onerror = res;
         im.src = `/img/live?s=${cur}&side=${f.side}&idx=${f.idx}&k=${K}&o=${o}&t=${++LIVE.seq}`; })));
+      const pvEl = document.querySelector("#side .pv"), its = selItem(); if (pvEl && its && its.name === job.name && !pvEl.classList.contains("pandrag")) { const im2 = new Image(); im2.onload = () => { pvEl.style.backgroundImage = `url(${im2.src})`; }; im2.src = corrUrl(its, 500, job.over); }
       if (poolTab === "tono") { const ov = {}; ov[job.name] = {}; if ("ev" in job.over) ov[job.name].ev = job.over.ev; if ("rit" in job.over) ov[job.name].rit = job.over.rit;
         const d = await api(`/api/tono?s=${cur}&o=${encodeURIComponent(JSON.stringify(ov))}`); if (d.s === cur) { TONO = d; TONOK = "live"; drawTono(); updPills(); } }
     }
@@ -950,7 +952,7 @@ function wireRit(it) {
 // ---- sposta l'immagine dentro la cornice (trascinando la foto o l'anteprima nel pannello)
 function setBg(el, it, l, t) {
   const W = it.box[2] - it.box[0], H = it.box[3] - it.box[1];
-  el.style.backgroundImage = `url(/img/thumb/${it.name}?w=900)`; el.style.backgroundSize = `${100 / W}% ${100 / H}%`;
+  el.style.backgroundImage = `url(${corrUrl(it, 900)})`; el.style.backgroundSize = `${100 / W}% ${100 / H}%`;
   el.style.backgroundPosition = `${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`; if (it.bw) el.style.filter = "grayscale(1)";
 }
 function startPan(e, it, slotEl) {

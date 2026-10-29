@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 79 — Il riquadro «Design» mostra le correzioni
+Il riquadro a destra (la foto con il ritaglio) mostrava sempre l'originale: ora mostra la foto con esposizione e ritocchi, e si aggiorna in tempo reale mentre trascini i cursori. — `editor.py` (`corr_thumb`, `/img/corr`), `index.html` (`corrUrl`).
+
 ## Versione 78 — Anteprima live mentre si trascinano i cursori
 - Trascinando Esposizione, Contrasto, Alteluci, Ombre, Bianchi, Neri, Temperatura, Tinta, Vibranza, Saturazione, Angolo o Bordo, la foto nella cornice (anche se la stessa foto è usata più volte nello spread) si aggiorna subito, con lo stesso calcolo dell'anteprima e del PSD (≈40 ms a foto). Al rilascio il valore si salva e l'immagine definitiva sostituisce quella veloce senza lampeggi.
 - Con la scheda «Tono» aperta, anche colonne, numeri, colori e pillole sulle cornici si muovono in tempo reale.

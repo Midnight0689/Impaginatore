@@ -952,6 +952,26 @@ def live_photo(q):
                 else: D[n] = v
         b = _io.BytesIO(); im.convert("RGB").save(b, "JPEG", quality=82); return b.getvalue()
 
+def corr_thumb(n, w, over):
+    """la foto intera (non ritagliata) con esposizione e ritocchi: serve al riquadro Design; over = valori di prova dei cursori"""
+    i = A.IDX[n] - 1; R, E = CFG["ritocco"], CFG["esposizione"]["per_foto"]
+    with LOCK:
+        old = (R.get(n), E.get(n))
+        try:
+            if "rit" in over:
+                if over["rit"]: R[n] = {k: float(v) for k, v in over["rit"].items() if k in FL.RIT_KEYS and abs(float(v)) >= 0.5}
+                else: R.pop(n, None)
+            if "ev" in over:
+                if abs(float(over["ev"])) >= 0.005: E[n] = float(over["ev"])
+                else: E.pop(n, None)
+            im = Image.open(os.path.join(A.THUMBS, A.M[i]["n"])).convert("RGB"); im.thumbnail((w, w)); FL._CUR[0] = i
+            im = A.apply_ev(im, A.ev_for(i), A.WB.get(n))
+        finally:
+            for D, v in ((R, old[0]), (E, old[1])):
+                if v is None: D.pop(n, None)
+                else: D[n] = v
+    b = io.BytesIO(); im.convert("RGB").save(b, "JPEG", quality=82); return b.getvalue()
+
 CACHE = {}
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
 AGG = dict(n=0, t=0, nomi=[], ar=[])               # ultimo aggiornamento automatico delle foto modificate
@@ -1466,6 +1486,7 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
+            elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], min(int(q.get("w", ["500"])[0]), 1200), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
