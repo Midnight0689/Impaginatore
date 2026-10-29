@@ -1438,11 +1438,15 @@ $("wrap").ondrop = e => {
 };
 
 // ---- pannelli comprimibili e tutto schermo
-function setPanels(list, side, pool) { document.body.classList.toggle("nolist", !list); document.body.classList.toggle("noside", !side); document.body.classList.toggle("nopool", !pool); try { localStorage.setItem("pan", [list, side, pool].map(x => +x).join("")); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
+function setPanels(list, side, pool) { document.body.classList.toggle("nolist", !list); document.body.classList.toggle("noside", !side); document.body.classList.remove("nopool");       // Galleria/Tono non spariscono mai: al massimo restano chiuse in basso
+   try { localStorage.setItem("pan", [list, side, pool].map(x => +x).join("")); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
 const panels = () => [!document.body.classList.contains("nolist"), !document.body.classList.contains("noside"), !document.body.classList.contains("nopool")];
 $("tlist").onclick = () => { const [l, s_, p_] = panels(); setPanels(!l, s_, p_); };
 $("tside").onclick = () => { const [l, s_, p_] = panels(); setPanels(l, !s_, p_); };
-$("tfull").onclick = () => { const [l, s_, p_] = panels(); const all = l || s_ || p_; setPanels(!all, !all, !all); };
+let foldPrima = null;
+$("tfull").onclick = () => { const [l, s_] = panels(), all = l || s_ || !poolFold; setPanels(!all, !all, true);
+  if (all) { foldPrima = poolFold; poolFold = true; } else { poolFold = foldPrima === null ? false : foldPrima; foldPrima = null; }       // a tutto schermo la galleria resta come linguette chiuse; all'uscita torna com'era
+  document.body.classList.toggle("pfold", poolFold); try { localStorage.setItem("poolFold", poolFold ? "1" : "0"); } catch (e) {} };
 function setTools(on, save = true) { document.body.classList.toggle("tpin", on); $("ttog").classList.toggle("on", on); $("ttog").textContent = (on ? "▾" : "▸") + " Strumenti"; $("ttog").title = on ? "Clicca per nascondere la fascia (si riapre passando qui sopra)" : "Clicca per tenere la fascia sempre visibile"; setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); try { if (save) localStorage.setItem("tbar2", on ? "1" : "0"); } catch (e) {} }
 let tHide = null;
 function showTools(v) { clearTimeout(tHide); if (v) $("stage").classList.add("tshow"); else tHide = setTimeout(() => $("stage").classList.remove("tshow"), 1800); }
