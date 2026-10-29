@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 135 — Controllo e correzione delle spaziature
+- Nuovi pulsanti negli Strumenti: **Spaziature** (mostra lo stacco di ogni coppia di foto vicine: verde ≤0,2 mm dallo standard, giallo ≤0,5 mm, rosso oltre; ignora stacchi sotto 1 mm o molto grandi), **Correggi spazi** (porta tutti gli stacchi dello spread allo standard muovendo il bordo davanti della foto; un solo annulla), **Controlla album** (elenca gli spread con stacchi da correggere). — `index.html` (`gapPairs`, `gapFix`, `gapAll`, `GAPCHK`), `editor.py` (op `setrects`).
+
 ## Versione 134 — Resize di gruppo: distanze dai bordi live
 - Mentre allarghi il riquadro di gruppo i valori in cm dai bordi della pagina si aggiornano in tempo reale (prima restavano fermi fino al rilascio). — `index.html` (`startGroup` → `draw`).
 

@@ -35,6 +35,9 @@
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
+  .eqm.ok { border-color: #2fbf71; } .eqm.ok b { background: #2fbf71; } .eqm.x.ok::before, .eqm.x.ok::after, .eqm.y.ok::before, .eqm.y.ok::after { border-color: #2fbf71; }
+  .eqm.warn { border-color: #f0a020; } .eqm.warn b { background: #f0a020; } .eqm.x.warn::before, .eqm.x.warn::after, .eqm.y.warn::before, .eqm.y.warn::after { border-color: #f0a020; }
+  .eqm.bad { border-color: #ff3d3d; border-width: 2px; } .eqm.bad b { background: #ff3d3d; } .eqm.x.bad::before, .eqm.x.bad::after, .eqm.y.bad::before, .eqm.y.bad::after { border-color: #ff3d3d; }
   .eqm.e { border-color: #4aa3ff; } .eqm.e b { background: #4aa3ff; } .eqm.x.e::before, .eqm.x.e::after { border-color: #4aa3ff; } .eqm.y.e { border-color: #4aa3ff; } .eqm.y.e::before, .eqm.y.e::after { border-color: #4aa3ff; }
   .eqm b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #ff3d7f; color: #fff; font-size: 10px; font-weight: 600; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
   .gl.snap { filter: drop-shadow(0 0 3px #ff3d7f); }
@@ -646,12 +649,50 @@ function renderStage() {
   });
   reapplyLive(); groupBox(); selMarks();
 }
+let GAPCHK = false;       // tasto Spaziature: misure di tutti gli stacchi tra le foto dello spread
+const GTOL = { ok: 0.02, warn: 0.05 };       // cm: fino a 0,2 mm giusto, fino a 0,5 mm quasi, oltre da correggere
+function gapPairs(si) {       // coppie di foto vicine (affiancate o sovrapposte in altezza/larghezza) con lo stacco voluto
+  const its = S.spreads[si].items.filter(i => i.k !== "t"), G = S.gap, out = [], max = Math.max(G * 4, S.ppi / 2.54), min = S.ppi / 2.54 * 0.1;
+  const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0);
+  its.forEach(a => its.forEach(b => {
+    if (a === b) return;
+    let g = b.x - (a.x + a.w);
+    if (g >= min && g <= max && ov(a.y, a.y + a.h, b.y, b.y + b.h) > Math.min(a.h, b.h) * 0.1 && !its.some(c => c !== a && c !== b && c.x < b.x && c.x + c.w > a.x + a.w && ov(c.y, c.y + c.h, Math.max(a.y, b.y), Math.min(a.y + a.h, b.y + b.h)) > 0)) { const y0 = Math.max(a.y, b.y), y1 = Math.min(a.y + a.h, b.y + b.h); out.push({ ax: "x", a, b, g, from: a.x + a.w, to: b.x, at: (y0 + y1) / 2 }); }
+    g = b.y - (a.y + a.h);
+    if (g >= min && g <= max && ov(a.x, a.x + a.w, b.x, b.x + b.w) > Math.min(a.w, b.w) * 0.1 && !its.some(c => c !== a && c !== b && c.y < b.y && c.y + c.h > a.y + a.h && ov(c.x, c.x + c.w, Math.max(a.x, b.x), Math.min(a.x + a.w, b.x + b.w)) > 0)) { const x0 = Math.max(a.x, b.x), x1 = Math.min(a.x + a.w, b.x + b.w); out.push({ ax: "y", a, b, g, from: a.y + a.h, to: b.y, at: (x0 + x1) / 2 }); }
+  }));
+  out.forEach(p => { const d = cmOf(Math.abs(p.g - G)); p.c = d <= GTOL.ok ? "ok" : d <= GTOL.warn ? "warn" : "bad"; });
+  return out;
+}
+function gapStat(si) { const P = gapPairs(si); return { n: P.length, ok: P.filter(p => p.c === "ok").length, bad: P.filter(p => p.c !== "ok").length }; }
+function gapMarks() { return gapPairs(cur).map(p => ({ ax: p.ax, from: p.from, to: p.to, at: p.at, g: p.g, c: p.c })); }
+async function gapFix() {
+  if (!S.spreads.length) return;
+  const G = S.gap, R = new Map(); let ch = 0;
+  S.spreads[cur].items.forEach(i => R.set(i, { x: i.x, y: i.y, w: i.w, h: i.h }));
+  for (let pass = 0; pass < 3; pass++) {
+    S.spreads[cur].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });       // lavora sulle misure aggiornate
+    const P = gapPairs(cur).filter(p => p.c !== "ok"); if (!P.length) break;
+    const need = new Map();       // per ogni foto e asse: il bordo davanti si porta a stacco standard dal vicino più vicino
+    P.forEach(p => { const k = p.b, key = p.ax; const t = p.from + G; const m = need.get(k) || {}; if (m[key] === undefined || t > m[key]) m[key] = t; need.set(k, m); });
+    need.forEach((m, b) => { const r = R.get(b);
+      if (m.x !== undefined && b.x + b.w - m.x > r.w * 0.03) { r.w = b.x + b.w - m.x; r.x = m.x; ch++; }
+      if (m.y !== undefined && b.y + b.h - m.y > r.h * 0.03) { r.h = b.y + b.h - m.y; r.y = m.y; ch++; } });
+  }
+  S.spreads[cur].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });
+  if (!ch) { toast("Gli stacchi sono già giusti"); return; }
+  const rects = S.spreads[cur].items.filter(i => i.k !== "t").map(i => { const r = R.get(i); return [i.side, i.idx, r.x, r.y, r.w, r.h]; });
+  await op({ op: "setrects", s: cur, rects });
+  const r = gapStat(cur); toast(r.bad ? `Corretti, restano ${r.bad} stacchi da guardare a mano` : "Tutti gli stacchi sono uguali"); }
+async function gapAll() {
+  const bad = []; S.spreads.forEach((sp, i) => { const r = gapStat(i); if (r.bad) bad.push((i + 1) + " (" + r.bad + ")"); });
+  toast(bad.length ? "Stacchi da correggere negli spread: " + bad.join(", ") : "Tutti gli stacchi dell'album sono giusti", false); }
 function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina restano visibili finché non la deseleziono
   if (DRAG || !S || view !== "album" || !S.spreads.length) return;
-  const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
-  if (!its.length) { document.querySelectorAll(".eqm").forEach(x => x.remove()); return; }
+  const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t"), GM = GAPCHK ? gapMarks() : [];
+  if (!its.length) { if (GM.length) drawEq(GM); else document.querySelectorAll(".eqm").forEach(x => x.remove()); return; }
   const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
-  drawEq(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }));
+  drawEq(GM.concat(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 })));
 }
 let nudgeP = null;       // frecce della tastiera: 0,1 cm (con Maiusc 1 cm); i colpi ravvicinati diventano un solo spostamento
 function nudgeKey(e) {
@@ -780,7 +821,7 @@ function renderSbar() {
       ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>`;
     $("vistabox").innerHTML = `<div class="box"><div class="grp">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("tlock", "lock", "Blocca guide", "Blocca le guide: non si spostano né si tolgono per sbaglio (restano come aggancio)", lockGuides ? 'class="on"' : "")}${B("twarn", "warn", "Avviso ritaglio", "Mostra o nascondi l'avviso rosso con «ritaglio ×» sulle foto ingrandite troppo (spento di solito)", showCropWarn ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length && !lockGuides ? "" : "disabled")}</div></div>`;
     $("side").style.setProperty("--vbh", ($("vistabox").offsetHeight || 104) + "px");
-    $("sbarL").innerHTML = `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}</div></div>`;
+    $("sbarL").innerHTML = `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}${B("mgap", "dist-h", "Spaziature", "Controlla che tutti gli stacchi tra le foto siano uguali (verde giusto, giallo quasi, rosso sbagliato). Un secondo clic toglie le misure", GAPCHK ? 'class="on"' : "")}${B("mgapfix", "same", "Correggi spazi", "Porta tutti gli stacchi tra le foto di questo spread alla distanza standard (un solo annulla)")}${B("mgapall", "photo", "Controlla album", "Elenca gli spread con stacchi sbagliati")}</div></div>`;
   $("sbarR").innerHTML = (`<div class="box"><i>${msel.length ? sel_lbl : "Selezione"}</i><div class="g4">
       ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (] oppure +)")}${B("zbw", "down", "Indietro", "Un livello indietro ([ oppure −)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
       ${onlyTxt ? "" : `<div class="g3" style="margin-top:6px">${B("msame", "same", "Stessa misura", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Proporzioni", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Tutta pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Verticali", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizzontali", "Tutte le cornici selezionate in orizzontale")}</div>`}</div>`);
@@ -799,7 +840,7 @@ function renderSbar() {
     $("mfull").onclick = () => op({ op: "fullpage", s: cur, ats: mAts() }); $("mver").onclick = () => op({ op: "orient", s: cur, dir: "v", ats: mAts() }); $("mhor").onclick = () => op({ op: "orient", s: cur, dir: "h", ats: mAts() }); }
   }
   document.querySelectorAll(".sb [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
-  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
+  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mgap").onclick = () => { GAPCHK = !GAPCHK; if (GAPCHK) { const r = gapStat(cur); toast(r.n ? `Spaziature: ${r.ok} giuste su ${r.n}` + (r.bad ? `, ${r.bad} da correggere` : "") : "Nessuna coppia di foto vicine da controllare"); } render(); }; $("mgapfix").onclick = gapFix; $("mgapall").onclick = gapAll; $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
   $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides); $("tlock").onclick = () => setLock(!lockGuides); $("twarn").onclick = () => setCropWarn(!showCropWarn);
@@ -1298,7 +1339,7 @@ function edgeMarks(r) {       // distanze dai bordi della pagina (sinistra, dest
 }
 function drawEq(marks) {
   document.querySelectorAll(".eqm").forEach(x => x.remove());
-  marks.forEach(m => { const d = document.createElement("div"); d.className = "eqm " + m.ax + (m.e ? " e" : "");
+  marks.forEach(m => { const d = document.createElement("div"); d.className = "eqm " + m.ax + (m.e ? " e" : "") + (m.c ? " " + m.c : "");
     if (m.ax === "x") { d.style.left = m.from / S.W * 100 + "%"; d.style.width = (m.to - m.from) / S.W * 100 + "%"; d.style.top = m.at / S.H * 100 + "%"; } else { d.style.top = m.from / S.H * 100 + "%"; d.style.height = (m.to - m.from) / S.H * 100 + "%"; d.style.left = m.at / S.W * 100 + "%"; }
     d.innerHTML = `<b>${cmOf(m.g).toFixed(2)}</b>`; $("slots").appendChild(d); });
 }

@@ -549,6 +549,12 @@ def apply(o):
             if L is None or key[1] >= len(pg) or pg[key[1]]["k"] == "t": continue
             mv.append((pg[key[1]], L))
         for it, L in mv: _put_obj(s_, it, L["x"] + float(o["dx"]), L["y"] + float(o["dy"]), L["W"], L["H"])         # ognuna passa all'altra pagina se il suo centro ci arriva
+    elif t == "setrects":                                 # più foto: nuova posizione e misura (px della vista), un solo annulla — usato dalla correzione delle spaziature
+        s_ = o["s"]
+        for side, idx, x, y, w, h in o["rects"]:
+            if side not in ("L", "R") or not 0 <= int(idx) < len(SP[s_][0 if side == "L" else 1][1]): continue
+            if SP[s_][0 if side == "L" else 1][1][int(idx)]["k"] == "t": continue
+            _put_px(s_, side, int(idx), float(x) + BL, float(y) + BL, float(w), float(h))
     elif t == "gscale":                                   # allargamento di gruppo: le foto scelte si ingrandiscono/rimpiccioliscono insieme attorno a un punto fisso (px della vista)
         s_ = o["s"]; R = _rects(s_); sx, sy = min(max(float(o["sx"]), 0.1), 10.0), min(max(float(o["sy"]), 0.1), 10.0); ax, ay = float(o["ax"]) + BL, float(o["ay"]) + BL
         for a in o["ats"]:
