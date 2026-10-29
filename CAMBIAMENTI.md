@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 91 — Maiusc = proporzionale anche su una foto sola
+Trascinando una maniglia d'angolo di una cornice, tenendo premuto Maiusc la foto si ridimensiona mantenendo le proporzioni (l'angolo opposto resta fermo), come già facevano i gruppi. Senza Maiusc il ridimensionamento resta libero. — `index.html` (`startFree`).
+
 ## Versione 90 — Trascinare più foto insieme
 Con due o più foto selezionate, trascinandone una si muovono tutte: ognuna ha la sua fantasma blu durante il trascinamento e il suo posto di partenza segnato, e al rilascio vanno tutte nella nuova posizione. Prima si vedeva muovere solo una e le altre saltavano al rilascio. — `index.html` (`startFree`).
 

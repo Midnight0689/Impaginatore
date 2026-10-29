@@ -1249,6 +1249,12 @@ function startFree(e, it, kind) {
       if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
       if (kind.includes("s")) B = clamp(sy(B + dy, "hi"), T + minh, c.fy1);
     }
+    if (kind !== "move" && kind.length === 2 && ev.shiftKey) {       // Maiusc su un angolo: stesse proporzioni di prima (come Photoshop), l'angolo opposto resta fermo
+      const ax = kind.includes("w") ? it.x + it.w : it.x, ay = kind.includes("n") ? it.y + it.h : it.y;
+      let s = Math.max((R - L) / it.w, (B - T) / it.h);
+      s = Math.max(0.03, Math.min(s, (kind.includes("w") ? ax - c.bx0 : c.bx1 - ax) / it.w, (kind.includes("n") ? ay - c.fy0 : c.fy1 - ay) / it.h));
+      const w2 = it.w * s, h2 = it.h * s; L = kind.includes("w") ? ax - w2 : ax; R = L + w2; T = kind.includes("n") ? ay - h2 : ay; B = T + h2; guides = [];
+    }
     let out = { x: L, y: T, w: R - L, h: B - T };
     if (magnet && !free) { const es = eqSpace(it, out, kind === "move", guides.some(g => g[0] === "v"), guides.some(g => g[0] === "h")); if (kind === "move") { out.x = clamp(out.x + es.dx, c.bx0, c.bx1 - out.w); out.y = clamp(out.y + es.dy, c.fy0, c.fy1 - out.h); } eqm = eqSpace(it, out, false, true, true).marks; } else eqm = [];
     return out;
