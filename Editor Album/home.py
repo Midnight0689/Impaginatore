@@ -85,11 +85,30 @@ def nuovo(d):
     return p
 
 
-def porta_libera():
-    for pt in range(8801, 8900):
+def porta_libera(pref=None):
+    for pt in ([pref] if pref else []) + list(range(8801, 8900)):
         with socket.socket() as s:
             if s.connect_ex(("127.0.0.1", pt)) != 0: return pt
     raise RuntimeError("nessuna porta libera")
+
+
+def porta_stabile(path):
+    """ogni progetto ha SEMPRE la stessa porta (così l'indirizzo non cambia e ricaricare la pagina funziona dopo un riavvio)"""
+    import zlib
+    return 8801 + zlib.crc32(path.encode()) % 99
+
+
+def gia_attivo(path):
+    """porta di un editor di questo progetto già in funzione (anche se non lanciato da qui), altrimenti None"""
+    for pt in [porta_stabile(path)] + list(range(8801, 8900)):
+        try:
+            with socket.socket() as s:
+                s.settimeout(.2)
+                if s.connect_ex(("127.0.0.1", pt)) != 0: continue
+            d = json.load(urllib.request.urlopen(f"http://127.0.0.1:{pt}/api/ping", timeout=1))
+            if d.get("path") == path: return pt
+        except Exception: pass
+    return None
 
 
 def pronto(pt):
@@ -103,7 +122,9 @@ def apri(path):
     with LOCK:
         e = EDITORS.get(path)
         if e and e[0].poll() is None: return e[1]
-        pt = porta_libera()
+        pt = gia_attivo(path)
+        if pt: return pt
+        pt = porta_libera(porta_stabile(path))
         log = open(os.path.join(PROGETTI, "editor.log"), "a")
         proc = subprocess.Popen([PY, os.path.join(HERE, "editor.py"), "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{ARGS.porta}"],
                                 stdout=log, stderr=subprocess.STDOUT, cwd=HERE)

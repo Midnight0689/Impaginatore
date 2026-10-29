@@ -1554,7 +1554,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"]})
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": os.path.abspath(ARGS.progetto)})
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
