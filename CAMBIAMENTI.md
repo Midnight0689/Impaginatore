@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 119 — Anteprima Design più grande, anteprima grande col tasto Z
+- Anteprima «Design» più grande (pannello destro 350 px invece di 310, altezza massima 440 px) e senza le linee dei terzi.
+- L'anteprima grande della foto si apre/chiude col tasto Z (prima barra spaziatrice); la barra tenuta premuta ora fa sempre la manina nell'Album, anche con una foto selezionata. — `index.html`.
+
 ## Versione 118 — Frecce della tastiera spostano la foto; distanze sempre visibili
 - Con una o più foto selezionate le frecce le spostano di 0,1 cm (Maiusc: 1 cm), restando dentro lo spread; i colpi ravvicinati sono un solo passo di annulla. Senza selezione ↑/↓ cambiano spread come prima.
 - Le distanze azzurre dai bordi della pagina restano visibili finché la foto è selezionata (spariscono con Esc o deselezionando). — `index.html` (`nudgeKey`, `selMarks`).

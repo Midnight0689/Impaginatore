@@ -114,8 +114,8 @@
   .insp { padding: 12px 14px 20px; }
   .insp .nm { font-size: 17px; font-weight: 600; color: var(--dim); margin-bottom: 8px; }
   .insp .sec { background: var(--panel2); text-align: center; color: var(--dim); font-size: 11px; padding: 3px 0; margin: 12px -14px 10px; }
-  .insp .pv { position: relative; margin: 0 auto; border: 3px solid var(--accent); background-color: #555; }
-  .insp .pv::before { content: ""; position: absolute; inset: 0; background:
+  .insp .pv { position: relative; margin: 0 auto 0; border: 3px solid var(--accent); background-color: #555; }
+  .insp .pv::before { content: none; background:
       linear-gradient(to right, transparent 33.1%, rgba(255,255,255,.5) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.5) 66.6%, transparent 66.9%),
       linear-gradient(to bottom, transparent 33.1%, rgba(255,255,255,.5) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.5) 66.6%, transparent 66.9%); }
   .sl { display: grid; grid-template-columns: 58px 1fr 44px 18px; align-items: center; gap: 6px; margin: 7px 0; color: var(--dim); }
@@ -255,7 +255,7 @@
   .hd { border-radius: 50%; border: 2px solid #fff; background: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.5); }
   #hint { color: var(--dim); } #hint:empty { display: none; }
   /* ===== Barra strumenti sopra la pagina, divisa: spread/strumenti/vista a sinistra, allinea/selezione a destra ===== */
-  :root { --lc: 230px; --rc: 310px; }
+  :root { --lc: 230px; --rc: 350px; }
   #list { display: flex; flex-direction: column; overflow: hidden; padding: 0; } #thumbs { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
   #side { overflow-y: auto; padding: 0 !important; } #insp { padding: 0; }
   #tools { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; width: 100%; max-width: 1522px; margin: 0 0 12px; }
@@ -797,7 +797,7 @@ const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
 const corrUrl = (it, w, over) => `/img/corr?n=${it.name}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
 function cropStyle(it) {
   const [l, t, r, b] = it.box, W = r - l, H = b - t, ratio = it.w / it.h;
-  return `width:min(100%,${Math.round(300 * ratio)}px);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
+  return `width:min(100%,${Math.round(440 * ratio)}px);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
 }
 const fams = () => [...new Set(FONTS.map(f => f.fam))];
 const cssFont = ps => { const f = FONTS.find(x => x.ps === ps); if (!f) return `font-family:${ps}`; const st = f.sty.toLowerCase(); return `font-family:"${f.fam}";font-weight:${/black|heavy/.test(st) ? 900 : /extra ?bold|ultra/.test(st) ? 800 : /semi ?bold|demi/.test(st) ? 600 : /bold/.test(st) ? 700 : /medium/.test(st) ? 500 : /light|thin/.test(st) ? 300 : 400};font-style:${/italic|oblique/.test(st) ? "italic" : "normal"}`; };
@@ -1836,7 +1836,7 @@ $("wrap").addEventListener("contextmenu", e => { if (!S || e.target.closest(".sl
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 let qlName = null, qlSrc = "", qlPref = "";
-function qlook(n, src) {       // anteprima grande di una foto (barra spaziatrice); stessa tasto o Esc o clic la chiude
+function qlook(n, src) {       // anteprima grande di una foto (tasto Z); stesso tasto o Esc o clic la chiude
   const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
   qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + (qlSrc === "spread" ? " · spazio o Esc per chiudere" : " · ← → per scorrere · spazio o Esc per chiudere"); q.style.display = "flex";
 }
@@ -1866,14 +1866,15 @@ $("stage").addEventListener("pointermove", e => { if (!panD) return; const st = 
 $("stage").addEventListener("pointerup", () => { panD = null; document.body.classList.remove("panning"); });
 document.addEventListener("keydown", e => {
   if (qlName && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); qlStep(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1); return; }
-  if (qlName && (e.key === " " || e.key === "Escape")) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
-  if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") {
+  if (qlName && (e.key.toLowerCase() === "z" || e.key === " " || e.key === "Escape") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
+  if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") { e.preventDefault(); if (view === "album") setPan(true); return; }       // barra spaziatrice tenuta premuta = manina
+  if (S && e.key.toLowerCase() === "z" && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") {
     const si = typeof selItem === "function" ? selItem() : null, sn = si && si.name, pn = POOLSEL && S.photos.some(p => p.n === POOLSEL) ? POOLSEL : null;
     let n, src;
     if (view === "foto") { n = SELP.length ? SELP[SELP.length - 1] : HOV; src = "foto"; }
     else if (qlPref === "spread" && sn) { n = sn; src = "spread"; }       // l'ultima cosa toccata è una foto dello spread
     else if (pn) { n = pn; src = "pool"; } else if (HOV) { n = HOV; src = "pool"; } else if (sn) { n = sn; src = "spread"; }
-    e.preventDefault(); if (n) qlook(n, src); else if (view === "album") setPan(true); return; }
+    e.preventDefault(); if (n) qlook(n, src); return; }
   if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV || POOLSEL)) { e.preventDefault(); markStar(); return; }
   if (S && e.key.toLowerCase() === "x" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV || POOLSEL)) { e.preventDefault(); markTolta(); return; }
