@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.0 — Cinque modelli in più: Trittico, Provino, Onda, Principale e tre, Piramide
+- Aggiunti ai modelli d'autore (anche specchiati): Trittico (3 foto, la centrale sulla piega), Provino (12 foto piccole), Onda (6 verticali sfalsate), Principale e tre (4 foto, la grande sulla piega), Piramide (6 foto su bianco). Provati applicandoli a uno spread di prova. — `editor.py` (`_sp_models`, `SPM_KEYS`).
+
 ## Versione 1.2.0 — Quattro modelli in più: Pellicola, Tre quarti e tre, Finestra a tre, Fascia centrale
 - Aggiunti ai modelli d'autore (anche specchiati). Corretto anche il caso di una cornice centrata esattamente sulla piega: conta sempre per la pagina destra, così il numero di foto per pagina è lo stesso nelle versioni normale e specchiata. Provati tutti e 36 i moduli applicandoli a uno spread di prova. — `editor.py` (`_sp_models`, `_sp_isL`).
 

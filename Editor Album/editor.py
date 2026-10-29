@@ -127,6 +127,11 @@ def _sp_models(CW, CH, G):
     M["X17"] = [(0, 0, .75 * CW, CH)] + _sp_stack(.75 * CW + G, CW, 3, 0, CH, G)
     M["X20"] = [(0, 0, PL, CH)] + _sp_stack(.56 * CW, .94 * CW, 3, .2 * CH, .8 * CH, G)
     M["X21"] = [(0, .32 * CH, CW, .68 * CH)] + [r for a, b in _sp_split(0, CW, 2, G) for r in ((a, 0, b, .32 * CH - G), (a, .68 * CH + G, b, CH))]
+    M["X23"] = [(0, 0, .25 * CW, CH), (.25 * CW + G, 0, .75 * CW - G, CH), (.75 * CW, 0, CW, CH)]
+    M["X25"] = [r for a, b in _sp_split(0, CW, 6, G) for r in _sp_stack(a, b, 2, 0, CH, G)]
+    M["X27"] = [(a, (.12 if i % 2 else .04) * CH, b, (.96 if i % 2 else .88) * CH) for i, (a, b) in enumerate(_sp_split(.04 * CW, .96 * CW, 6, G))]
+    M["X28"] = [(0, 0, .6 * CW, CH), (.6 * CW + G, 0, CW, .5 * CH - G / 2)] + [(a, .5 * CH + G / 2, b, CH) for a, b in _sp_split(.6 * CW + G, CW, 2, G)]
+    M["X29"] = [(.3 * CW, .04 * CH, .7 * CW, .34 * CH), (.12 * CW, .38 * CH, .48 * CW, .66 * CH), (.52 * CW, .38 * CH, .88 * CW, .66 * CH)] + [(a, .7 * CH, b, .96 * CH) for a, b in _sp_split(.06 * CW, .94 * CW, 3, G)]
     return M
 def _sp_isL(c, CW): return c < CW / 2 - 0.5       # una cornice centrata sulla piega (entro mezzo pixel) conta per la pagina destra, sempre
 def _sp_build(key, side, m):
@@ -137,7 +142,7 @@ def _sp_build(key, side, m):
         mine = sorted((r for r in R if _sp_isL((r[0] + r[2]) / 2, CW) == (side == "L")), key=lambda r: (round(r[0] / 50), round(r[1] / 50)))
         return [dict(k="f", i=p[j] - 1, x=round((r[0] - x0) / (x1 - x0), 4), y=round(r[1] / CH, 4), w=round((r[2] - r[0]) / (x1 - x0), 4), h=round((r[3] - r[1]) / CH, 4), bw=False, z=1.0) for j, r in enumerate(mine)]
     return build
-SPM_KEYS = ["X%d" % k for k in range(1, 15)] + ["X16", "X17", "X20", "X21"]
+SPM_KEYS = ["X%d" % k for k in range(1, 15)] + ["X16", "X17", "X20", "X21", "X23", "X25", "X27", "X28", "X29"]
 for _k in SPM_KEYS:
     for _m in (False, True):
         for _sd in "LR":
