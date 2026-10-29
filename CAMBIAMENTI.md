@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 114 — Barra galleria in 3 sezioni
+- Spazio tra «Tolta» e i pallini, e una linea sottile che separa i filtri dall'assegnazione (Preferita, Tolta, colori, Solo ★); a destra ordine, cerca e zoom. — `index.html` (`.fbar .mk`).
+
 ## Versione 113 — Barra galleria riordinata
 - Ordine: filtri, orientamento, ★ Preferita / ✕ Tolta, pallini colore con «Solo ★» subito dopo l'ultimo pallino vuoto; a destra ordine, cerca nome e zoom vicini. — `index.html` (`mkBar`, `.fbar .rt`).
 
