@@ -134,6 +134,7 @@ def _render_ombre(spread, K, corrected=True):
             mask = mask.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: int(v * (0.15 + 0.5 * sh / 100)))
             S.paste(Image.new("RGB", mask.size, (0, 0, 0)), (pos[0] - m, pos[1] - m + dy), mask)
         oc = it.get("oc", 100)
+        if sh and oc < 100: S.paste((255, 255, 255), (pos[0], pos[1], pos[0] + ph.width, pos[1] + ph.height))    # nel PSD l'ombra sta dietro un rettangolo bianco opaco: attraverso la foto trasparente non si vede
         if oc < 100: S.paste(ph, pos, Image.new("L", ph.size, round(255 * oc / 100)))
         else: S.paste(ph, pos)
     return S

@@ -3,6 +3,14 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 73 — Geometria, bordo, ombra e testi coincidono con Photoshop
+Nuovo test `tests/fedelta_geometria.py` (15 cornici + 9 testi, PSD appiattito in Photoshop vs anteprima).
+- **Ritaglio, zoom, angolo, bordo, ombra, bianco e nero:** già coincidenti (scarto medio ≤ 1.2/255, nessuno spostamento, bordi nello stesso punto). Nessuna modifica.
+- **Opacità + ombra:** nel PSD l'ombra sta dietro un rettangolo bianco, quindi attraverso una foto semitrasparente non si vede; l'anteprima la mostrava (scarto 6.7, 12% di pixel). Ora coincide (0.6). — `album_libere.py` (`_render_ombre`).
+- **Testi, posizione:** il testo nel PSD partiva 9–20 px (a 8268 px di pagina) più a sinistra dell'anteprima, perché Pillow non conta lo spazio a sinistra della lettera e Photoshop dà come ingombro il riquadro. Ora il margine si misura sull'inchiostro vero e il livello si allinea sull'inchiostro rasterizzato di una copia temporanea. — `testo.py` (`_ink_left`), `genera_psd_angolo.py`.
+- **Testi, larghezza:** il PSD era più stretto dell'1.7% per la crenatura (kerning) automatica di Photoshop che l'anteprima non ha; ora il PSD usa crenatura manuale e lo scarto scende a 0.1–0.3% (≤ 7 px su 8268). Se vuoi la crenatura di Photoshop nei PSD, va tolta questa riga e il test mostrerà di nuovo la differenza.
+- I PSD già esportati con testi vanno rifatti.
+
 ## Versione 72 — Curva e bianco e nero coincidono con Photoshop
 Test completo `tests/fedelta_psd.py` (51 casi, PSD appiattito in Photoshop vs anteprima): scarto medio ≤ 1.4/255 su tutti i parametri, max pixel ≤ 9/255 solo agli estremi ±100.
 - **Curva (panello Tono):** Photoshop usa una spline cubica naturale; l'anteprima usava un'interpolazione monotona diversa (scarto fino a 50/255). Ora è la stessa (scarto 0.7). La curva parte sempre da (0,0) e arriva a (255,255) come nel PSD. — `album_libere.py` (`tono_lut`).

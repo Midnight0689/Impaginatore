@@ -134,6 +134,13 @@ def render(it, K):
     return im
 
 
+def _ink_left(font, ch, size):
+    """scostamento del primo pixel d'inchiostro dall'origine (getbbox non conta lo spazio a sinistra della lettera)"""
+    from PIL import Image, ImageDraw
+    o = int(size) + 4; im = Image.new("L", (o * 3, int(size * 2) + 8), 0); ImageDraw.Draw(im).text((o, 0), ch, font=font, fill=255); b = im.getbbox()
+    return (b[0] - o) if b else 0
+
+
 def job_x(it):
     """campi del testo per il PSD + posizione (gx, gy) del primo pixel d'inchiostro rispetto all'angolo del riquadro, come lo disegna l'anteprima:
     Photoshop e Pillow impostano la prima riga in modo diverso, così in Photoshop si allinea il livello a questo punto"""
@@ -142,6 +149,6 @@ def job_x(it):
     for i, line in enumerate(wrap(it, W)):
         if not line.strip(): continue
         w = _width(line, font, size, tr); x = 0 if al == "left" else (W - w) / 2 if al == "center" else W - w
-        l, t, r, b = font.getbbox(line.strip()); sp0 = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * sp0 if sp0 else 0)
+        l, t, r, b = font.getbbox(line.strip()); l = _ink_left(font, line.strip()[:1], size); sp0 = len(line) - len(line.lstrip()); x += l + (font.getlength(" ") * sp0 if sp0 else 0)
         gx = x if gx is None else min(gx, x); gy = i * lh + t if gy is None else min(gy, i * lh + t)
     d = {k: it[k] for k in ("tx", "font", "size", "col", "al", "tr")}; d.update(caps=bool(it.get("caps")), lh=lead(it), gx=gx or 0, gy=gy or 0); return d
