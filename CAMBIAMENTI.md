@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 116 — Modelli al centro della barra
+- Su finestre larghe (≥ 1560 px) il pulsante «Modelli» sta al centro della barra in alto; sotto resta accanto ad Annulla/Ripeti per non sovrapporsi. — `index.html` (`#tplb`).
+
 ## Versione 115 — P/X agiscono sulla foto sotto il mouse
 - P (preferita) e X (tolta) valgono per la foto sotto il mouse, altrimenti per la selezione; sono interruttori (attivano e tolgono) e la preferita mostra «★ Preferita» / «Preferita tolta». — `index.html` (`markTargets`, `markStar`).
 
