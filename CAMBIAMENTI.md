@@ -3,6 +3,13 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 82 — Tono più intelligente: scene volute, centro e pelle, correzione leggera, vista album
+- **Scene chiare o scure di proposito** (abito bianco, interno con luci accese): la tolleranza per quella foto sale di 1,5 volte e sotto la miniatura compare «ok · scena chiara/scura». Nella vista album sono segnate con un contorno blu.
+- **Misura dove conta**: nella luce media il centro pesa più dei bordi e la pelle il doppio, quindi uno sfondo scuro non fa sembrare sottoesposto un viso giusto.
+- **Correzione più leggera**: Semplice e Completa portano la foto solo dentro il bordo della zona (non fino al centro), con il cursore **Intensità** (0–100%) per dosarla.
+- **Vista album**: tasto «Vista album» nella scheda Tono, con tutti gli spread, punteggio e un quadratino per foto; «Peggiori prima» li ordina, clic per andare allo spread.
+— `editor.py` (`_tono_pesi`, `_tono_scena`, `tono_all`, `/api/tono_all`), `index.html` (`albumHtml`, `tonoF`).
+
 ## Versione 81 — Tono: riferimento standard fisso (L* 52 ±12), uguale per tutto l'album
 Il Tono non dipende più dalle altre foto né dallo spread: ogni foto è confrontata con un **valore standard** di luce media (L* 52, regolabile nella scheda Tono insieme all'ampiezza della zona, ±12). Oltre ±12 la foto è «da guardare», oltre ±18 «da correggere». Alte luci (p95 tra 82 e 97) e ombre (solo informative) hanno zone fisse. Semplice e Completa portano la foto verso lo standard senza bruciare le alte luci. Sull'album di Serena segnala 24 foto su 92 (con ±8 erano 40, troppe: scene chiare e interni sono naturalmente diversi). Valori salvati nel progetto: `tono_L`, `tono_Z` (solo se cambiati). — `editor.py` (`_tono_L0`, `_tono_Z`, `_tono_sim`, op `tono_L`), `index.html` (`drawTono`).
 

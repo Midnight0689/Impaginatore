@@ -859,9 +859,24 @@ def _tono_sim(i, im, evp, rit, bw=False):
     c = np.asarray(out.convert("RGB"), dtype=np.float32) / 255
     lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4); Y = lin[..., 0] * .2126 + lin[..., 1] * .7152 + lin[..., 2] * .0722
     return np.where(Y > 0.008856, 116 * np.cbrt(Y) - 16, 903.3 * Y)
-def _tono_stat(Lm):
+def _tono_pesi(im):
+    """peso di ogni pixel nella luce media: il centro conta di più dei bordi, la pelle il doppio (in un ritratto conta il viso, non lo sfondo)"""
     import numpy as np
-    p = np.percentile(Lm, (5, 95)); return dict(M=float(Lm.mean()), H=float(p[1]), S=float(p[0]), B=float((Lm > 96).mean()))
+    a = np.asarray(im.convert("YCbCr"), dtype=np.float32); h, w = a.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]; r2 = ((xx + .5) / w - .5) ** 2 + ((yy + .5) / h - .5) ** 2
+    W = 0.4 + 0.6 * np.exp(-r2 / (2 * 0.3 ** 2))
+    skin = (a[..., 1] >= 77) & (a[..., 1] <= 127) & (a[..., 2] >= 135) & (a[..., 2] <= 173) & (a[..., 0] >= 50)
+    return W * np.where(skin, 2.0, 1.0)
+def _tono_stat(Lm, W=None):
+    import numpy as np
+    p = np.percentile(Lm, (5, 95)); M = float(Lm.mean()) if W is None or W.shape != Lm.shape else float((Lm * W).sum() / W.sum())
+    return dict(M=M, H=float(p[1]), S=float(p[0]), B=float((Lm > 96).mean()), U=float(Lm.mean()))
+def _tono_st(m, e, rit): return _tono_stat(_tono_sim(m["i"], m["im"], e, rit, m["bw"]), m["w"])
+def _tono_scena(st):
+    """scena chiara o scura di proposito (abito bianco, luce alta; interno con luci accese): il tono medio è lontano dallo standard ma la foto è giusta"""
+    if st["U"] > _tono_L0() + 4 and st["H"] >= 88 and st["S"] >= 26 and st["B"] < 0.04: return "hk"
+    if st["U"] < _tono_L0() - 6 and st["H"] >= 78 and st["S"] <= 12: return "lk"
+    return None
 def _tono_misure(s):
     key = spread_hash(s)
     if key in TONO_C: return TONO_C[key]
@@ -871,28 +886,29 @@ def _tono_misure(s):
             L = lay[k]; k += 1
             if it["k"] == "t": continue
             n = A.name(it["i"]); evp = CFG["esposizione"]["per_foto"].get(n, 0.0); rit = dict(CFG["ritocco"].get(n) or {}); im = _tono_img(L)
-            bw = bool(it.get("bw")); out.append(dict(side=side, idx=idx, name=n, i=it["i"], im=im, evp=evp, rit=rit, bw=bw, st=_tono_stat(_tono_sim(it["i"], im, evp, rit, bw))))
-    if len(TONO_C) > 120: TONO_C.clear()
+            bw = bool(it.get("bw")); w = _tono_pesi(im); st = _tono_stat(_tono_sim(it["i"], im, evp, rit, bw), w); sc = _tono_scena(st)
+            out.append(dict(side=side, idx=idx, name=n, i=it["i"], im=im, w=w, evp=evp, rit=rit, bw=bw, st=st, sc=sc, ze=_tono_Z() * (1.5 if sc else 1.0)))
+    if len(TONO_C) > 600: TONO_C.clear()
     TONO_C[key] = out; return out
 
 def _tono_stato(d, z, g): return "ok" if abs(d) <= z else "att" if abs(d) <= g else "no"
 def _tono_fuori(v, lo, hi): return max(0.0, lo - v, v - hi)                 # quanto un valore esce dalla zona [lo, hi]
 
 def _tono_solo_ev(m):
-    """Semplice: l'esposizione che porta la luce media più vicino al riferimento (±1 EV al massimo) senza bruciare altre luci"""
-    st0 = m["st"]; L0 = _tono_L0(); best = (abs(st0["M"] - L0), 0.0); q = 0.0
+    """Semplice: la correzione più piccola di esposizione (±1 EV al massimo) che riporta la luce media dentro la zona giusta, senza bruciare altre luci"""
+    st0 = m["st"]; L0 = _tono_L0(); zin = max(0.0, m["ze"] - 3); best = (max(0.0, abs(st0["M"] - L0) - zin), 0.0); q = 0.0
     for sgn in (1, -1):
         v = sgn * 0.05
         while abs(v) <= TONO_MAX + 1e-9:
-            e = min(max(m["evp"] + v, -2.0), 2.0); st = _tono_stat(_tono_sim(m["i"], m["im"], e, m["rit"], m["bw"]))
-            j = abs(st["M"] - L0) + 100 * max(0.0, st["B"] - st0["B"] - 0.02)
+            e = min(max(m["evp"] + v, -2.0), 2.0); st = _tono_st(m, e, m["rit"])
+            j = max(0.0, abs(st["M"] - L0) - zin) + 100 * max(0.0, st["B"] - st0["B"] - 0.02)
             if j < best[0] - 1e-9: best = (j, round(v, 2))
             v += sgn * 0.05
     return round(min(max(m["evp"] + best[1], -2.0), 2.0) * 20) / 20
 
 def _tono_ottimizza(m):
     """Completa: prova esposizione, alteluci, ombre e bianchi e sceglie i valori che portano luce media, alte luci e ombre nelle zone giuste (tetti prudenti, penalità sulle correzioni grandi, mai più luci bruciate)"""
-    st0 = m["st"]; L0 = _tono_L0(); base = m["rit"]
+    st0 = m["st"]; L0 = _tono_L0(); base = m["rit"]; zin = max(0.0, m["ze"] - 3)
     lim = dict(ev=(-TONO_MAX, TONO_MAX, .05), alt=(-20, 20, 5), omb=(-20, 20, 5), bia=(-15, 15, 5)); p = dict(ev=0.0, alt=0, omb=0, bia=0)
     def rit_of(q):
         r = dict(base)
@@ -902,8 +918,8 @@ def _tono_ottimizza(m):
             else: r.pop(k, None)
         return r
     def J(q):
-        e = min(max(m["evp"] + q["ev"], -2.0), 2.0); st = _tono_stat(_tono_sim(m["i"], m["im"], e, rit_of(q), m["bw"]))
-        dm = max(0.0, abs(st["M"] - L0) - 4) / 8; dh = _tono_fuori(st["H"], *TONO_HZ) / 10; ds = _tono_fuori(st["S"], 0, TONO_SZ[0]) / 10
+        e = min(max(m["evp"] + q["ev"], -2.0), 2.0); st = _tono_st(m, e, rit_of(q))
+        dm = max(0.0, abs(st["M"] - L0) - zin) / 8; dh = _tono_fuori(st["H"], *TONO_HZ) / 10; ds = _tono_fuori(st["S"], 0, TONO_SZ[0]) / 10
         j = 3 * dm * dm + dh * dh + .5 * ds * ds + 0.05 * (q["ev"] ** 2 + (q["alt"] / 20) ** 2 + (q["omb"] / 20) ** 2 + (q["bia"] / 15) ** 2)
         return j + 4000 * max(0.0, st["B"] - st0["B"] - 0.02) ** 2, st
     best, _ = J(p)
@@ -917,25 +933,25 @@ def _tono_ottimizza(m):
     j, st = J(p); e = round(min(max(m["evp"] + p["ev"], -2.0), 2.0) * 20) / 20
     return dict(ev=e, rit={k: round(min(max(base.get(k, 0) + p[k], -100), 100)) for k in ("alt", "omb", "bia") if p[k]}, dopo=st, bruc=bool(st["B"] > st0["B"] + 0.02))
 
-def tono_spread(s, over=None):
+def tono_spread(s, over=None, light=False):
     """misura il tono delle foto dello spread s rispetto a un riferimento STANDARD (L* medio, uguale per tutto l'album) e propone le correzioni:
     solo esposizione («semplice») o anche alteluci/ombre/bianchi («completa»). over = {foto: {ev, rit}}: valori di prova (cursore in movimento)"""
     with LOCK:
         ms = _tono_misure(s); items = []; pen = []; L0 = _tono_L0()
-        if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_stat(_tono_sim(m["i"], m["im"], over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]), m["bw"]))) if m["name"] in over else m for m in ms]
+        if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_st(m, over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]))) if m["name"] in over else m for m in ms]
         if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d = st["M"] - L0
-            stato = "escl" if esc else _tono_stato(d, _tono_Z(), _tono_Z() + 6)
+            ze = m["ze"]; stato = "escl" if esc else _tono_stato(d, ze, ze + 6)
             fh = _tono_fuori(st["H"], *TONO_HZ); sh = "ok" if fh == 0 else "att" if fh <= 8 else "no"; ss = "ok" if st["S"] <= TONO_SZ[0] else "att" if st["S"] <= TONO_SZ[1] else "no"
             sc_ = "escl" if esc else max((stato, "att" if sh != "ok" else "ok"), key=("ok", "att", "no").index)    # le alte luci fuori zona al massimo «da guardare»; le ombre solo informative
-            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 1), H=round(st["H"], 1), S=round(st["S"], 1), sh=sh, ss=ss, stato=stato, stato_c=sc_, evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]})
-            if not esc and stato != "ok" and not over:
-                ck = (spread_hash(s), m["name"], L0, tuple(CFG["tono_escl"]))
+            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 1), H=round(st["H"], 1), S=round(st["S"], 1), sh=sh, ss=ss, stato=stato, stato_c=sc_, scena=m["sc"], ze=round(ze, 1), evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]})
+            if not esc and stato != "ok" and not over and not light:
+                ck = (spread_hash(s), m["name"], L0, _tono_Z(), tuple(CFG["tono_escl"]))
                 if ck not in TONO_C: TONO_C[ck] = (_tono_solo_ev(m), _tono_ottimizza(m))
                 ev1, c = TONO_C[ck]; e["nuova"] = ev1; e["compl"] = dict(ev=c["ev"], rit=c["rit"], bruc=c["bruc"], d=round(c["dopo"]["M"] - L0, 1))
-                e["bruc"] = bool(ev1 > m["evp"] and _tono_stat(_tono_sim(m["i"], m["im"], ev1, m["rit"], m["bw"]))["B"] > st["B"] + 0.02)
-            if not esc: pen.append(min(max(0.0, abs(d) - _tono_Z()) / 12, 1.0))
+                e["bruc"] = bool(ev1 > m["evp"] and _tono_st(m, ev1, m["rit"])["B"] > st["B"] + 0.02)
+            if not esc: pen.append(min(max(0.0, abs(d) - ze) / 12, 1.0))
             items.append(e)
         def vic(t):
             if not (0 <= t < len(SP)): return None
@@ -944,6 +960,14 @@ def tono_spread(s, over=None):
             import statistics
             return round(statistics.median(mm) - statistics.median([m["st"]["M"] for m in ms if m["name"] not in CFG["tono_escl"]] or [L0]), 1)
         return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), rif=L0, zona=_tono_Z(), giallo=_tono_Z() + 6, hz=TONO_HZ, sz=TONO_SZ)
+
+def tono_all():
+    """vista d'insieme: per ogni spread punteggio e stato di ogni foto (senza calcolare le correzioni)"""
+    out = []
+    for s in range(len(SP)):
+        d = tono_spread(s, light=True)
+        out.append(dict(s=s, score=d["score"], n=len(d["items"]), a=[x["stato"] for x in d["items"]], c=[x["stato_c"] for x in d["items"]], sc=[x["scena"] for x in d["items"]]))
+    return out
 
 def live_photo(q):
     """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
@@ -1510,6 +1534,7 @@ class H(BaseHTTPRequestHandler):
         try:
             if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
+            elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
             elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], min(int(q.get("w", ["500"])[0]), 1200), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
