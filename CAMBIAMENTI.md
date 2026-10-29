@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 84 — Pannello Tono: schede con verdetto a parole
+Tolta la scala con i pallini. Ogni foto ha una scheda con miniatura, cinque segmenti (troppo scura · un po' scura · giusta · un po' chiara · troppo chiara, si illumina quello della foto), il verdetto a parole e il consiglio («Esposizione +0,5»). I numeri L* restano nel suggerimento al passaggio del mouse. — `index.html`.
+
 ## Versione 83 — Pannello Tono ridisegnato: una riga per foto con scala
 Le barre verticali si schiacciavano con il pannello basso. Ora ogni foto ha una riga: numero, miniatura, scala della luce (L* 20–90) con la fascia verde della zona giusta e il pallino della foto, valore, e un consiglio scritto («Esposizione +0,5 · Ombre +20»). In Completa un pallino tratteggiato mostra dove arriva la foto dopo la correzione. La colonna dei comandi scorre se il pannello è basso. — `index.html`.
 
