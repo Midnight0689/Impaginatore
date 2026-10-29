@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 97 — Magnete di misura: stessa larghezza o altezza di un'altra foto
+Ridimensionando una foto dai lati o dagli angoli, quando la sua larghezza (o altezza) si avvicina a quella di un'altra foto dello spread, si aggancia alla stessa misura: compare l'etichetta rosa «stessa larghezza» (o «altezza») e l'altra foto si evidenzia con un contorno tratteggiato. Segue il Magnete (si spegne con il tasto Magnete o tenendo Alt) e non agisce con Maiusc (proporzioni). — `index.html` (`startFree`).
+
 ## Versione 96 — Tono: foto selezionata evidenziata, pulsanti riordinati, test
 - Selezionando una foto (sullo spread o nella scheda) la sua scheda nel pannello Tono si evidenzia in blu, e se serve il pannello scorre fino a lei.
 - Pulsanti: restano Semplice/Completa, «Correggi…», «Vista album» e «Impostazioni»; Intensità, «Numeri sulle foto» e Standard/zona sono dentro «Impostazioni».

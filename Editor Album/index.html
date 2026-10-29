@@ -28,6 +28,7 @@
   #list { grid-column: 1; grid-row: 2 / 4; overflow-y: auto; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); padding: 8px; }
   .sth { margin-bottom: 8px; cursor: pointer; border: 2px solid transparent; border-radius: 4px; padding: 2px; }
   .slot.msel { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .slot.samesz { outline: 2px dashed #ff3d7f; outline-offset: -2px; z-index: 6; } #ghosts .ghost .szl { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: #ff3d7f; color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
   .eqm { position: absolute; z-index: 30; pointer-events: none; color: #ff3d7f; }
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
@@ -1231,7 +1232,7 @@ function startFree(e, it, kind) {
   };
   const best = (v, ts) => { let b = null; for (const t of ts) if (Math.abs(v - t) < sd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
   const grpI = msel.length > 1 && inM(it) ? S.spreads[cur].items.filter(o => inM(o) && o.k !== "t") : [];
-  let eqm = [], side = it.side, c = ctx(side), rect = { x: it.x, y: it.y, w: it.w, h: it.h }, moved = false, ghost = null, guides = [];
+  let eqm = [], szm = [], side = it.side, c = ctx(side), rect = { x: it.x, y: it.y, w: it.w, h: it.h }, moved = false, ghost = null, guides = [];
   const compute = ev => {
     const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k; let L = it.x, T = it.y, R = it.x + it.w, B = it.y + it.h; guides = [];
     if (kind === "move") {
@@ -1259,6 +1260,13 @@ function startFree(e, it, kind) {
       if (kind.includes("e")) R = clamp(sx(R + dx, "hi"), L + minw, c.bx1);
       if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
       if (kind.includes("s")) B = clamp(sy(B + dy, "hi"), T + minh, c.fy1);
+    }
+    szm = [];
+    if (kind !== "move" && magnet && !free && !ev.shiftKey) {       // magnete di misura: stessa larghezza o altezza di un'altra foto dello spread
+      const oth = S.spreads[cur].items.filter(o => !(o.side === it.side && o.idx === it.idx) && o.k !== "t");
+      const pick = (v, key) => { let b = null; for (const o of oth) if (Math.abs(o[key] - v) < sd && (b === null || Math.abs(o[key] - v) < Math.abs(b[key] - v))) b = o; return b; };
+      if (kind.includes("e") || kind.includes("w")) { const o = pick(R - L, "w"); if (o) { const nl = kind.includes("w") ? R - o.w : L, nr = kind.includes("w") ? R : L + o.w; if (nl >= c.bx0 && nr <= c.bx1) { L = nl; R = nr; szm.push({ o, d: "w" }); guides = guides.filter(g => g[0] !== "v"); } } }
+      if (kind.includes("n") || kind.includes("s")) { const o = pick(B - T, "h"); if (o) { const nt = kind.includes("n") ? B - o.h : T, nb = kind.includes("n") ? B : T + o.h; if (nt >= c.fy0 && nb <= c.fy1) { T = nt; B = nb; szm.push({ o, d: "h" }); guides = guides.filter(g => g[0] !== "h"); } } }
     }
     if (kind !== "move" && kind.length === 2 && ev.shiftKey) {       // Maiusc su un angolo: stesse proporzioni di prima (come Photoshop), l'angolo opposto resta fermo
       const ax = kind.includes("w") ? it.x + it.w : it.x, ay = kind.includes("n") ? it.y + it.h : it.y;
@@ -1295,6 +1303,9 @@ function startFree(e, it, kind) {
     }
     if (kind === "move") { const tr = `translate(${(rect.x - it.x) * sc}px,${(rect.y - it.y) * sc}px)`; ghost.style.transform = tr; extra.forEach(g => g.style.transform = tr); }
     else { ghost.style.left = rect.x * sc + "px"; ghost.style.top = rect.y * sc + "px"; ghost.style.width = rect.w * sc + "px"; ghost.style.height = rect.h * sc + "px"; }
+    document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
+    szm.forEach(m => { const el = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, m.o.side, m.o.idx])); if (el) el.classList.add("samesz"); });
+    ghost.innerHTML = szm.length ? `<b class="szl">stessa ${szm.map(m => m.d === "w" ? "larghezza" : "altezza").join(" e ")}</b>` : "";
     const key = JSON.stringify([guides, eqm]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
     drawEq(eqm);
     document.querySelectorAll(".guide").forEach(x => x.remove());
@@ -1307,7 +1318,7 @@ function startFree(e, it, kind) {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
     if (raf) { cancelAnimationFrame(raf); raf = 0; if (moved) { rect = compute(ev); draw(); } }
     document.body.classList.remove("dragging"); DRAG = false; if (srcEl) srcEl.classList.remove("srcdrag"); srcExtra.forEach(el => el.classList.remove("srcdrag"));
-    document.querySelectorAll(".guide, .eqm").forEach(x => x.remove());
+    document.querySelectorAll(".guide, .eqm").forEach(x => x.remove()); document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
     const grp = msel.length > 1 && inM(it);
     sel = { s: cur, side: it.side, idx: it.idx }; if (!grp) msel = [kOf(it)];
     if (!moved) { if (wasOnly && kind === "move") { msel = []; sel = null; } else if (grp) msel = [kOf(it)]; render(); return; }
