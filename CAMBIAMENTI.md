@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 123 — Tono: «Scarto» al posto di «Media»
+- Nelle schede del Tono il numero «Media 64» è sostituito da «Scarto +9»: di quanto la luce media si discosta dallo standard (tolleranza ±10, più larga nelle scene chiare/scure). Colore come il giudizio; il valore assoluto resta nel suggerimento al passaggio del mouse. — `index.html` (`drawTono`).
+
 ## Versione 122 — Tab non fa mai sparire Galleria/Tono
 - Con Tab (o il pulsante a tutto schermo) spariscono elenco spread e pannello destro, ma Galleria e Tono restano in basso come sole linguette; all'uscita tornano com'erano (aperte o chiuse). — `index.html` (`$("tfull").onclick`, `setPanels`).
 
