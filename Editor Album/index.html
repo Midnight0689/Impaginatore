@@ -591,7 +591,7 @@ function renderStage() {
       if (isSel && msel.length < 2) ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(k => { const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k; hd.onpointerdown = e => { if (e.button === 0) startFree(e, it, k); }; d.appendChild(hd); });
     }
     if (it.k !== "t") {
-      const warn = it.crop > 1.25, to = [cur, it.side, it.idx];
+      const warn = showCropWarn && it.crop > 1.25, to = [cur, it.side, it.idx];
       d.innerHTML = `<span class="tag${warn ? " warn" : ""}">${it.name}${it.bw ? " · BN" : ""}${it.z !== 1 ? " · ×" + it.z : ""}${warn ? " · ritaglio ×" + it.crop.toFixed(2) : ""}</span>`;
       d.dataset.at = JSON.stringify(to);
       d.onpointerdown = e => { if (e.button !== 0 || e.target.closest(".chip")) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } if (cropMode && isSel) startPan(e, it, d); else startFree(e, it, "move"); };
@@ -696,6 +696,7 @@ const ICP = {
   full: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', vert: '<rect x="8" y="3" width="8" height="18" rx="2"/>', horiz: '<rect x="3" y="8" width="18" height="8" rx="2"/>',
   text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>', paste: '<path d="M9 4h6v3H9zM7 5H5v16h14V5h-2"/>',
   magnet: '<path d="M5 20v-9a7 7 0 0 1 14 0v9h-4v-9a3 3 0 0 0-6 0v9z"/>',
+  warn: '<path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17v.5"/>',
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   ruler: '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/>', guide: '<path d="M9 3v18M3 15h18"/>', clear: '<path d="M18 6 6 18M6 6l12 12"/>' };
 const IC = k => `<svg class="ic2" viewBox="0 0 24 24">${ICP[k] || ""}</svg>`;
@@ -710,7 +711,7 @@ function renderSbar() {
       ${B("newsp", "plus", "Nuovo", "Aggiungi uno spread")}${B("dupsp", "dup", "Duplica", "Duplica questo spread subito dopo (Cmd+D)")}${B("delsp", "trash", "Elimina", "Elimina lo spread (le foto tornano libere)", (n < 2 ? "disabled " : "") + 'class="danger"')}
       ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}</div></div>` +
     `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}</div></div>` +
-    `<div class="box"><i>Vista</i><div class="g4">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("tlock", "lock", "Blocca", "Blocca le guide: non si spostano né si tolgono per sbaglio (restano come aggancio)", lockGuides ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length && !lockGuides ? "" : "disabled")}</div></div>`;
+    `<div class="box"><i>Vista</i><div class="g4">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("tlock", "lock", "Blocca guide", "Blocca le guide: non si spostano né si tolgono per sbaglio (restano come aggancio)", lockGuides ? 'class="on"' : "")}${B("twarn", "warn", "Avviso ritaglio", "Mostra o nascondi l'avviso rosso con «ritaglio ×» sulle foto ingrandite troppo (spento di solito)", showCropWarn ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length && !lockGuides ? "" : "disabled")}</div></div>`;
   $("sbarR").innerHTML = (`<div class="box"><i>${msel.length ? sel_lbl : "Selezione"}</i><div class="g4">
       ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (] oppure +)")}${B("zbw", "down", "Indietro", "Un livello indietro ([ oppure −)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
       ${onlyTxt ? "" : `<div class="g3" style="margin-top:6px">${B("msame", "same", "Stessa misura", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Proporzioni", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Tutta pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Verticali", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizzontali", "Tutte le cornici selezionate in orizzontale")}</div>`}</div>`);
@@ -732,7 +733,7 @@ function renderSbar() {
   $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
-  $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides); $("tlock").onclick = () => setLock(!lockGuides);
+  $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides); $("tlock").onclick = () => setLock(!lockGuides); $("twarn").onclick = () => setCropWarn(!showCropWarn);
   $("cgui").onclick = () => op({ op: "guides", s: cur, v: [], h: [] });
 }
 async function dupSpread() { await op({ op: "dup", s: cur }); cur = cur + 1; sel = null; msel = []; render(); toast("Spread duplicato"); }
@@ -983,10 +984,11 @@ function setCrop(on) { cropMode = on; $("hint").textContent = on ? "Ritaglio: tr
 
 // ---- righelli (in cm, come in Photoshop) e linee guida
 const HINT = $("hint").textContent;
-let showRulers = true, showGuides = true, magnet = true, lockGuides = false;
-try { magnet = localStorage.getItem("mag") !== "0"; showRulers = localStorage.getItem("rul") !== "0"; showGuides = localStorage.getItem("gui") !== "0"; lockGuides = localStorage.getItem("glk") === "1"; } catch (e) {}
+let showRulers = true, showGuides = true, magnet = true, lockGuides = false, showCropWarn = false;
+try { magnet = localStorage.getItem("mag") !== "0"; showRulers = localStorage.getItem("rul") !== "0"; showGuides = localStorage.getItem("gui") !== "0"; showCropWarn = localStorage.getItem("crw") === "1"; lockGuides = localStorage.getItem("glk") === "1"; } catch (e) {}
 function setRulers(on) { showRulers = on; try { localStorage.setItem("rul", on ? "1" : "0"); } catch (e) {} render(); }
 function setLock(on) { lockGuides = on; try { localStorage.setItem("glk", on ? "1" : "0"); } catch (e) {} render(); toast(on ? "Guide bloccate: non si spostano più" : "Guide sbloccate"); }
+function setCropWarn(on) { showCropWarn = on; try { localStorage.setItem("crw", on ? "1" : "0"); } catch (e) {} render(); }
 function setGuides(on) { showGuides = on; try { localStorage.setItem("gui", on ? "1" : "0"); } catch (e) {} render(); }
 const cmOf = px => px / S.ppi * 2.54;
 function drawRulers() {
