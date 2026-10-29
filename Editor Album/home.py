@@ -168,7 +168,8 @@ def info_versione(rif):
     try:
         n = _git("rev-list", "--count", rif).stdout.strip()
         h, d, t = (_git("log", "-1", "--pretty=%h|%cd|%s", "--date=format:%d/%m/%Y %H:%M", rif).stdout.strip().split("|", 2) + ["", ""])[:3]
-        return dict(n=int(n), codice=h, data=d, titolo=t)
+        rel = _git("show", f"{rif}:VERSION").stdout.strip()       # numero di rilascio (maggiore.minore.correzione), file VERSION nella radice
+        return dict(n=int(n), codice=h, data=d, titolo=t, rel=rel)
     except Exception: return None
 
 
