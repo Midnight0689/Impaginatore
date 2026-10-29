@@ -897,10 +897,12 @@ def _tono_ottimizza(m, tgt):
     j, st = J(p); e = round(min(max(m["evp"] + p["ev"], -2.0), 2.0) * 20) / 20
     return dict(ev=e, rit={k: round(min(max(base.get(k, 0) + p[k], -100), 100)) for k in ("alt", "omb", "bia") if p[k]}, dopo=dict(d=st["T"], dh=st["H"], ds=st["S"]), bruc=bool(st["B"] > st0["B"] + 0.02))
 
-def tono_spread(s):
-    """misura il tono delle foto dello spread s (luce media, alte luci, ombre) rispetto alla loro mediana e propone le correzioni: solo esposizione («semplice») o anche alteluci/ombre/bianchi («completa»)"""
+def tono_spread(s, over=None):
+    """over = {foto: {ev, rit}}: valori di prova (cursore in movimento) al posto di quelli salvati.
+    misura il tono delle foto dello spread s (luce media, alte luci, ombre) rispetto alla loro mediana e propone le correzioni: solo esposizione («semplice») o anche alteluci/ombre/bianchi («completa»)"""
     with LOCK:
         ms = _tono_misure(s); items = []; pen = []
+        if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_stat(_tono_sim(m["i"], m["im"], over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]), m["bw"]))) if m["name"] in over else m for m in ms]
         if not ms: return dict(s=s, items=[], score=100, prev=None, next=None)
         tg = {k: _tono_med(ms, k) for k in "MHST"}; ck = (spread_hash(s), tuple(CFG["tono_escl"]))
         for j, m in enumerate(ms):
@@ -910,7 +912,7 @@ def tono_spread(s):
             ev1 = round(min(max(m["evp"] - max(min(d, TONO_MAX), -TONO_MAX), -2.0), 2.0) * 20) / 20
             e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 2), dh=round(dh, 2), ds=round(ds, 2), stato=stato, stato_c=sc_, nuova=ev1, evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]},
                      bruc=bool(not esc and ev1 > m["evp"] and _tono_stat(_tono_sim(m["i"], m["im"], ev1, m["rit"], m["bw"]))["B"] > st["B"] + 0.02))
-            if not esc and sc_ != "ok":
+            if not esc and sc_ != "ok" and not over:
                 ck2 = ck + (m["name"],)
                 if ck2 not in TONO_C:
                     TONO_C[ck2] = _tono_ottimizza(m, tg)
@@ -921,6 +923,34 @@ def tono_spread(s):
             if not (0 <= t < len(SP)): return None
             mm = _tono_misure(t); v = _tono_med(mm, "T") if mm else None; return None if v is None else round(v - tg["T"], 2)
         return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), verde=TONO_VERDE, giallo=TONO_GIALLO, sh=TONO_H, ss=TONO_S)
+
+def live_photo(q):
+    """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
+    import io as _io
+    s = int(q["s"]); side, idx, K = q["side"], int(q["idx"]), min(max(float(q.get("k", "0.3")), 0.05), 0.8); over = json.loads(q.get("o", "{}"))
+    with LOCK:
+        lay = sorted(A.layout(spread_tuple(s)), key=lambda L: L.get("_o", 0)); k = 0; L = it = None
+        for sd, pg in zip("LR", SP[s]):
+            for j, x in enumerate(pg[1]):
+                if sd == side and j == idx: L, it = dict(lay[k]), x
+                k += 1
+        if L is None or it["k"] == "t": raise ValueError("cornice non trovata")
+        n = A.name(it["i"]); R, E = CFG["ritocco"], CFG["esposizione"]["per_foto"]; old = (R.get(n), E.get(n))
+        try:
+            if "rit" in over:
+                if over["rit"]: R[n] = {kk: float(v) for kk, v in over["rit"].items() if kk in FL.RIT_KEYS and abs(float(v)) >= 0.5}
+                else: R.pop(n, None)
+            if "ev" in over:
+                if abs(float(over["ev"])) >= 0.005: E[n] = float(over["ev"])
+                else: E.pop(n, None)
+            if "a" in over: L["a"] = float(over["a"])
+            if "bd" in over: L["bd"] = [float(over["bd"][0]), str(over["bd"][1])] if over["bd"] else None
+            im = A._photo(L, K, True)
+        finally:
+            for D, v in ((R, old[0]), (E, old[1])):
+                if v is None: D.pop(n, None)
+                else: D[n] = v
+        b = _io.BytesIO(); im.convert("RGB").save(b, "JPEG", quality=82); return b.getvalue()
 
 CACHE = {}
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
@@ -1435,7 +1465,8 @@ class H(BaseHTTPRequestHandler):
         try:
             if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
-            elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0])))
+            elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
+            elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))

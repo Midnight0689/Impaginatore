@@ -3,6 +3,12 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 78 — Anteprima live mentre si trascinano i cursori
+- Trascinando Esposizione, Contrasto, Alteluci, Ombre, Bianchi, Neri, Temperatura, Tinta, Vibranza, Saturazione, Angolo o Bordo, la foto nella cornice (anche se la stessa foto è usata più volte nello spread) si aggiorna subito, con lo stesso calcolo dell'anteprima e del PSD (≈40 ms a foto). Al rilascio il valore si salva e l'immagine definitiva sostituisce quella veloce senza lampeggi.
+- Con la scheda «Tono» aperta, anche colonne, numeri, colori e pillole sulle cornici si muovono in tempo reale.
+- — `editor.py` (`live_photo`, `/img/live`, `tono_spread(over=…)`), `index.html` (`liveSend`, `livePump`, `updPills`).
+- Non è live (si aggiornano al rilascio): Ombra, Opacità, Scala, Livelli/Curva e gli ingrandimenti della galleria.
+
 ## Versione 77 — Correzione Completa più prudente
 Sullo spread 3 la Completa aveva corretto una foto già a posto (esposizione −0,6 e alteluci +40) perché le sue ombre erano diverse dalle altre: troppo aggressiva. Ora:
 - Le **ombre** non fanno più scattare nessuna correzione (restano solo il puntino informativo): dipendono troppo dalla scena. Le alte luci diverse al massimo mettono «da guardare».

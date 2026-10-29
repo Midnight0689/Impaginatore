@@ -386,6 +386,7 @@
   .tdots { font-size: 10.5px; color: var(--dim); display: flex; gap: 3px; align-items: center; justify-content: center; margin-top: 2px; white-space: nowrap; } .tdots i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-left: 3px; } .tdots i.ok { background: #32d74b; } .tdots i.att { background: #e0b23c; } .tdots i.no { background: #ff6961; }
   .tpill { position: absolute; right: 4px; top: 4px; padding: 1px 9px; border-radius: 11px; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 3; white-space: nowrap; }
   .slot.t-no:not(.sel) { outline: 3px solid #ff6961; } .slot.t-att:not(.sel) { outline: 3px solid #e0b23c; }
+  .slot .live { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; object-fit: fill; z-index: 0; }
 </style>
 </head>
 <body>
@@ -560,7 +561,7 @@ $("stage").addEventListener("gesturechange", e => { if (view !== "album" || !S |
 window.addEventListener("resize", () => { if (ZM > 1.001) applyZoom(); });
 function stageK() { const w = $("wrap").clientWidth || 800, k = Math.ceil(Math.min(ZM > 1.001 ? 1 : 0.7, Math.max(0.15, w * (window.devicePixelRatio || 1) / S.W)) * 20) / 20; return +k.toFixed(2); }
 let DRAG = false;
-function clearGhosts() { if (!DRAG) $("ghosts").innerHTML = ""; }
+function clearGhosts() { if (!DRAG) { $("ghosts").innerHTML = ""; clearLive(); } }
 function renderStage() {
   const sp = S.spreads[cur]; const m = $("main");
   const src = `/img/spread/${cur}?k=${stageK()}&h=${sp.h}`;
@@ -611,7 +612,7 @@ function renderStage() {
     if (it.k !== "t" && poolTab === "tono" && tonoPills && TONO && TONO.s === cur && TONOK === tkey()) { const ti = TONO.items.find(x => x.side === it.side && x.idx === it.idx); if (ti) { d.classList.add("t-" + tst(ti)); d.insertAdjacentHTML("beforeend", `<span class="tpill ${tst(ti)}">${ti.n}${tst(ti) === "escl" ? "" : " · " + fdv(ti.d)}</span>`); } }
     box.appendChild(d);
   });
-  groupBox();
+  reapplyLive(); groupBox();
 }
 function groupBox() {       // due o più foto selezionate: riquadro unico con le maniglie, si allargano tutte insieme
   const sp = S.spreads[cur], its = msel.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
@@ -890,14 +891,14 @@ function renderSide() {
   $("togrid").onclick = () => op({ op: "snap", at });
   const z = $("z"); z.oninput = () => $("zv").textContent = Math.round(z.value * 100) + "%"; z.onchange = () => op({ op: "set", at, z: +z.value });
   $("zx").onclick = () => op({ op: "set", at, z: 1 });
-  const an = $("ang"); an.oninput = () => $("angv").textContent = (+an.value).toFixed(1) + "°"; an.onchange = () => op({ op: "set", at, a: +an.value });
+  const an = $("ang"); an.oninput = () => { $("angv").textContent = (+an.value).toFixed(1) + "°"; liveSend({ a: +an.value }); }; an.onchange = () => op({ op: "set", at, a: +an.value });
   $("angx").onclick = () => op({ op: "set", at, a: 0 });
-  const e = $("evp"); e.oninput = () => $("evv").textContent = fmt1(+e.value); e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
+  const e = $("evp"); e.oninput = () => { $("evv").textContent = fmt1(+e.value); liveSend({ ev: +e.value }); }; e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
   $("evx").onclick = () => op({ op: "ev", photo: it.name, value: 0 });
   const oc = $("ocw"); oc.oninput = () => $("ocv").textContent = oc.value + "%"; oc.onchange = () => op({ op: "set", at, oc: +oc.value }); $("ocx").onclick = () => op({ op: "set", at, oc: 100 });
   wireRit(it);
   const bcol = () => (it.bd && it.bd[1]) || "#ffffff", bset = (mm, c) => op({ op: "set", at, bd: mm > 0 ? [mm, c] : null });
-  $("bdw").oninput = () => $("bdv").textContent = +$("bdw").value ? $("bdw").value + " mm" : "no"; $("bdw").onchange = () => bset(+$("bdw").value, bcol());
+  $("bdw").oninput = () => { $("bdv").textContent = +$("bdw").value ? $("bdw").value + " mm" : "no"; liveSend({ bd: +$("bdw").value > 0 ? [+$("bdw").value, bcol()] : null }); }; $("bdw").onchange = () => bset(+$("bdw").value, bcol());
   document.querySelectorAll("#bdc i").forEach(d => d.onclick = () => bset(it.bd ? it.bd[0] : 3, d.dataset.c));
   $("shw").oninput = () => $("shv").textContent = +$("shw").value || "no"; $("shw").onchange = () => op({ op: "set", at, sh: +$("shw").value });
   document.querySelectorAll("#cdots i").forEach(d => d.onclick = () => { const cur0 = (S.photos.find(x => x.n === it.name) || {}).col; op({ op: "colore", photos: [it.name], value: d.dataset.k && d.dataset.k !== cur0 ? d.dataset.k : null }); });
@@ -907,10 +908,40 @@ function renderSide() {
 const RITG = [[["con", "Contrasto"], ["alt", "Alteluci"], ["omb", "Ombre"], ["bia", "Bianchi"], ["ner", "Neri"]], [["tmp", "Temperatura"], ["tnt", "Tinta"], ["vib", "Vibranza"], ["sat", "Saturazione"]]];
 const RITBG = { con: "linear-gradient(90deg,#8a8a8a,#5a5a5a 50%,#111)", alt: "linear-gradient(90deg,#4a4a4a,#f2f2f2)", omb: "linear-gradient(90deg,#0c0c0c,#8a8a8a)", bia: "linear-gradient(90deg,#6a6a6a,#fff)", ner: "linear-gradient(90deg,#000,#6a6a6a)", tmp: "linear-gradient(90deg,#3b82f6,#ddd,#f59e0b)", tnt: "linear-gradient(90deg,#22c55e,#ddd,#d946ef)", sat: "linear-gradient(90deg,#888,#e11d48)", vib: "linear-gradient(90deg,#888,#0ea5e9)" };
 const ritRow = it => ([k, l]) => { const v = Math.round(((it.rit || {})[k]) || 0); return `<div class="sl rit" data-k="${k}"><b>${l}:</b><input type="range" min="-100" max="100" step="1" value="${v}" ${RITBG[k] ? `style="--rb:${RITBG[k]}"` : ""} title="Doppio clic per azzerare"><span class="v">${v}</span></div>`; };
+// ---- anteprima live: mentre si trascina un cursore la foto nella cornice (e il pannello Tono) si aggiornano subito; al rilascio il valore viene salvato
+const LIVE = { busy: false, next: null, seq: 0, keep: {} };
+function liveFrames(name) { return S.spreads[cur].items.filter(i => i.k !== "t" && i.name === name); }
+function slotOf(f) { const k = JSON.stringify([cur, f.side, f.idx]); return [...document.querySelectorAll("#slots .slot")].find(d => d.dataset.at === k); }
+function putLive(f, src) { LIVE.keep[f.side + ":" + f.idx] = src; const d = slotOf(f); if (!d) return; let o = d.querySelector(".live"); if (!o) { o = document.createElement("img"); o.className = "live"; d.prepend(o); } o.src = src; }
+function reapplyLive() { if (!S || !S.spreads[cur]) return; for (const key in LIVE.keep) { const [side, idx] = key.split(":"), f = S.spreads[cur].items.find(i => i.side === side && i.idx === +idx); if (f) putLive(f, LIVE.keep[key]); } }
+function clearLive() { LIVE.keep = {}; document.querySelectorAll("#slots .live").forEach(o => o.remove()); }
+function liveSend(over) {
+  const it = selItem(); if (!it || it.k === "t" || !S) return; LIVE.next = { over, name: it.name, s: cur }; if (!LIVE.busy) livePump();
+  clearTimeout(LIVE.t); LIVE.t = setTimeout(clearLive, 6000);
+}
+async function livePump() {
+  const job = LIVE.next; LIVE.next = null; if (!job) return; LIVE.busy = true;
+  try {
+    if (job.s === cur && S.spreads[cur]) {
+      const K = Math.min(0.45, stageK()), o = encodeURIComponent(JSON.stringify(job.over));
+      await Promise.all(liveFrames(job.name).map(f => new Promise(res => { const im = new Image(); im.onload = () => { if (job.s === cur) putLive(f, im.src); res(); }; im.onerror = res;
+        im.src = `/img/live?s=${cur}&side=${f.side}&idx=${f.idx}&k=${K}&o=${o}&t=${++LIVE.seq}`; })));
+      if (poolTab === "tono") { const ov = {}; ov[job.name] = {}; if ("ev" in job.over) ov[job.name].ev = job.over.ev; if ("rit" in job.over) ov[job.name].rit = job.over.rit;
+        const d = await api(`/api/tono?s=${cur}&o=${encodeURIComponent(JSON.stringify(ov))}`); if (d.s === cur) { TONO = d; TONOK = "live"; drawTono(); updPills(); } }
+    }
+  } catch (e) {}
+  LIVE.busy = false; if (LIVE.next) livePump();
+}
+function updPills() {
+  if (!TONO) return;
+  document.querySelectorAll("#slots .slot").forEach(d => { const at = d.dataset.at && JSON.parse(d.dataset.at); if (!at) return; const ti = TONO.items.find(x => x.side === at[1] && x.idx === at[2]); const p = d.querySelector(".tpill"); if (!ti || !p) return;
+    d.classList.remove("t-no", "t-att", "t-ok", "t-escl"); d.classList.add("t-" + tst(ti)); p.className = "tpill " + tst(ti); p.textContent = `${ti.n}${tst(ti) === "escl" ? "" : " · " + fdv(ti.d)}`; });
+}
+function ritNow() { const r = {}; document.querySelectorAll("#insp .sl.rit").forEach(row => { const v = +row.querySelector("input").value; if (v) r[row.dataset.k] = v; }); return r; }
 function wireRit(it) {
   document.querySelectorAll("#insp .sl.rit").forEach(row => {
     const k = row.dataset.k, inp = row.querySelector("input"), lab = row.querySelector(".v");
-    inp.oninput = () => { lab.textContent = inp.value; }; inp.onchange = () => op({ op: "rit", photo: it.name, key: k, value: +inp.value });
+    inp.oninput = () => { lab.textContent = inp.value; liveSend({ rit: ritNow() }); }; inp.onchange = () => op({ op: "rit", photo: it.name, key: k, value: +inp.value });
     inp.ondblclick = () => { inp.value = 0; lab.textContent = "0"; op({ op: "rit", photo: it.name, key: k, value: 0 }); };
   });
   $("tnx").onclick = () => op({ op: "rit", photo: it.name, reset: true });
