@@ -383,10 +383,10 @@ def apply(o):
         if abs(ts - 1) < 1e-6: it.pop("ts", None)
         else: it["ts"] = ts
     elif t == "tolta":
-        n = o["photo"]
-        if o.get("value", True):
-            if n not in CFG["tolte"]: CFG["tolte"].append(n)
-        elif n in CFG["tolte"]: CFG["tolte"].remove(n)
+        for n in o.get("photos") or [o["photo"]]:
+            if o.get("value", True):
+                if n not in CFG["tolte"]: CFG["tolte"].append(n)
+            elif n in CFG["tolte"]: CFG["tolte"].remove(n)
     elif t == "colore":                                # etichetta colore (come Lightroom) su una o più foto
         v = o.get("value")
         if v is not None and v not in COLORI: raise ValueError("colore sconosciuto")

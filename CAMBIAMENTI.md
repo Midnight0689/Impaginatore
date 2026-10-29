@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 110 — Pulsanti ★ Preferita e ✕ Tolta
+- Nelle barre della galleria (Foto e sotto lo spread) due pulsanti visibili: «★ Preferita» e «✕ Tolta», sulle foto scelte (o sotto il mouse). Scorciatoie P e X. Il filtro stella ora si chiama «Solo ★». «Tolta» non vale per foto già in uno spread. — `index.html` (`markStar`, `markTolta`, `mkBar`), `editor.py` (op `tolta` accetta `photos`).
+
 ## Versione 109 — Galleria: «Tutte» mostra tutte le foto
 - Nella galleria sotto lo spread «Tutte» ora mostra tutte le foto del progetto: quelle già usate sono scure con la scritta «spread N» (doppio clic: ci porta allo spread, non si trascinano). «Da usare» mostra solo le libere. L'anteprima grande con la barra scorre sulle foto visibili.
 - Casella «Cerca nome…» più larga (150 px), non si schiaccia più. — `index.html` (`renderPool`, `poolVis`, `.gQ`, `#poolrow .pw`).
