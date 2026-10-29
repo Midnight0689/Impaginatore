@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 104 — Comandi riorganizzati per recuperare spazio
+- Pannello destro: in alto fissi Magnete, Righelli, Guide, Blocca guide, Avviso ritaglio, Cancella (griglia 3×2); sotto Design e il resto. Tolto il nome della foto.
+- Lista spread a sinistra: in alto frecce prev/next, Nuovo, Duplica, Elimina, Sposta prima/dopo. «Inverti pagine» resta nel blocco Strumenti (Testo, Copia, Incolla). Stessi id dei pulsanti, quindi scorciatoie e menu invariati. — `index.html` (`renderSbar`, `#spnav`, `#vistabox`).
+
 ## Versione 103 — Maiusc proporzionale anche dai pallini sui lati
 Tenendo premuto Maiusc, anche i pallini al centro dei lati (alto, basso, sinistra, destra) ridimensionano la foto in proporzione: la misura che trascini guida, l'altra cresce dal suo centro e il lato opposto resta fermo. Senza Maiusc il ridimensionamento resta libero. — `index.html` (`startFree`).
 
