@@ -258,8 +258,8 @@
   .sb button.on { background: var(--blue); color: #fff; }
   #sbarR { flex-direction: column !important; align-items: stretch !important; flex: 0 0 500px !important; width: 500px; margin-left: auto; } #sbarR .box > div > button { flex: 1 1 0; width: auto; min-width: 0; } #sbarR .box > div > button.al2 { flex: 1.5 1 0; } #sbarR .box > div { flex-wrap: wrap; }
   #ttog { align-self: flex-start; margin: 0 0 6px; height: 24px; padding: 0 10px; font-size: 11px; border-radius: 8px; background: rgba(255,255,255,.06); color: var(--dim); } body.notools #tools { display: none; } body.notools #ttog { margin-bottom: 2px; }
-  .sl.rit input[style*="--rb"] { -webkit-appearance: none; appearance: none; background: transparent; height: 18px; } .sl.rit input[style*="--rb"]::-webkit-slider-runnable-track { background: var(--rb); height: 4px; border-radius: 2px; }
-  .sl.rit input[style*="--rb"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; margin-top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .sl input[style*="--rb"] { -webkit-appearance: none; appearance: none; background: transparent; height: 18px; } .sl input[style*="--rb"]::-webkit-slider-runnable-track { background: var(--rb); height: 4px; border-radius: 2px; }
+  .sl input[style*="--rb"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; margin-top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
   /* Allinea: una riga compatta, senza titolo */
   #sbarR .box.alb { padding: 6px 8px; } #sbarR .box.alb > i { display: none; } #sbarR .box.alb > div { flex-wrap: nowrap; gap: 4px; } #sbarR .box.alb button { height: 36px; border-radius: 9px; } #sbarR .box.alb button.al2 { flex: 1.7 1 0; font-size: 10px; gap: 3px; } #sbarR .box.alb .ic2 { width: 18px; height: 18px; }
   /* adattamento alla larghezza della finestra */
@@ -366,6 +366,7 @@
   .sl.rit b { grid-column: 1; grid-row: 1; font-weight: 500; color: var(--text); opacity: .85; }
   .sl.rit .v { grid-column: 2; grid-row: 1; min-width: 34px; font-size: 12px; }
   .sl.rit input { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
+  .sl input[style*="--rb"]::-webkit-slider-runnable-track { box-shadow: 0 0 0 1px rgba(255,255,255,.22); }
 </style>
 </head>
 <body>
@@ -833,19 +834,19 @@ function renderSide() {
     <div class="sec">Design</div>
     <div class="pv" style="${cropStyle(it)}"></div>
     <div style="margin-top:12px">
-      <div class="sl"><b>Scala:</b><input id="z" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
-      <div class="sl"><b>Angolo:</b><input id="ang" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
-      <div class="sl"><b>Esposiz.:</b><input id="evp" type="range" min="-1" max="1" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
-      <div class="sl"><b>Opacità:</b><input id="ocw" type="range" min="0" max="100" step="1" value="${it.oc ?? 100}"><span class="v" id="ocv">${it.oc ?? 100}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
+      <div class="sl"><b>Scala:</b><input id="z" style="--rb:linear-gradient(90deg,#555,#bbb)" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
+      <div class="sl"><b>Angolo:</b><input id="ang" style="--rb:linear-gradient(90deg,#555,#999 50%,#555)" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
+      <div class="sl"><b>Esposiz.:</b><input id="evp" style="--rb:linear-gradient(90deg,#111,#f2f2f2)" type="range" min="-1" max="1" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
+      <div class="sl"><b>Opacità:</b><input id="ocw" style="--rb:linear-gradient(90deg,#333,#ddd)" type="range" min="0" max="100" step="1" value="${it.oc ?? 100}"><span class="v" id="ocv">${it.oc ?? 100}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
     </div>
     <div class="sec">Luce <span class="x" id="tnx" title="Azzera tutto il ritocco di questa foto" style="float:right">⊗ azzera</span></div>
     <div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>
     <div class="sec">Colore</div>
     <div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>
     <div class="sec">Cornice</div>
-    <div class="sl"><b>Bordo:</b><input id="bdw" type="range" min="0" max="20" step="0.5" value="${it.bd ? it.bd[0] : 0}"><span class="v" id="bdv">${it.bd ? it.bd[0] + " mm" : "no"}</span></div>
+    <div class="sl"><b>Bordo:</b><input id="bdw" style="--rb:linear-gradient(90deg,#555,#fff)" type="range" min="0" max="20" step="0.5" value="${it.bd ? it.bd[0] : 0}"><span class="v" id="bdv">${it.bd ? it.bd[0] + " mm" : "no"}</span></div>
     <div class="cdots" id="bdc">${[["#ffffff", "bianco"], ["#f3ead8", "crema"], ["#9a9a9a", "grigio"], ["#000000", "nero"]].map(([c, n]) => `<i data-c="${c}" style="--c:${c}" title="Bordo ${n}" class="${it.bd && it.bd[1] === c ? "on" : ""}"></i>`).join("")}</div>
-    <div class="sl"><b>Ombra:</b><input id="shw" type="range" min="0" max="100" step="1" value="${it.sh || 0}"><span class="v" id="shv">${it.sh || "no"}</span></div>
+    <div class="sl"><b>Ombra:</b><input id="shw" style="--rb:linear-gradient(90deg,#aaa,#000)" type="range" min="0" max="100" step="1" value="${it.sh || 0}"><span class="v" id="shv">${it.sh || "no"}</span></div>
     <div class="sec">Etichetta colore</div>
     <div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}" class="${((S.photos.find(x => x.n === it.name) || {}).col) === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" title="Nessun colore"></i></div>
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
@@ -882,7 +883,7 @@ function renderSide() {
 
 // ---- ritocco stile Lightroom: luce e colore (si applica all'anteprima, ai JPG/PDF e, come livelli di regolazione, ai PSD)
 const RITG = [[["con", "Contrasto"], ["alt", "Alteluci"], ["omb", "Ombre"], ["bia", "Bianchi"], ["ner", "Neri"]], [["tmp", "Temperatura"], ["tnt", "Tinta"], ["vib", "Vibranza"], ["sat", "Saturazione"]]];
-const RITBG = { tmp: "linear-gradient(90deg,#3b82f6,#ddd,#f59e0b)", tnt: "linear-gradient(90deg,#22c55e,#ddd,#d946ef)", sat: "linear-gradient(90deg,#888,#e11d48)", vib: "linear-gradient(90deg,#888,#0ea5e9)" };
+const RITBG = { con: "linear-gradient(90deg,#8a8a8a,#5a5a5a 50%,#111)", alt: "linear-gradient(90deg,#4a4a4a,#f2f2f2)", omb: "linear-gradient(90deg,#0c0c0c,#8a8a8a)", bia: "linear-gradient(90deg,#6a6a6a,#fff)", ner: "linear-gradient(90deg,#000,#6a6a6a)", tmp: "linear-gradient(90deg,#3b82f6,#ddd,#f59e0b)", tnt: "linear-gradient(90deg,#22c55e,#ddd,#d946ef)", sat: "linear-gradient(90deg,#888,#e11d48)", vib: "linear-gradient(90deg,#888,#0ea5e9)" };
 const ritRow = it => ([k, l]) => { const v = Math.round(((it.rit || {})[k]) || 0); return `<div class="sl rit" data-k="${k}"><b>${l}:</b><input type="range" min="-100" max="100" step="1" value="${v}" ${RITBG[k] ? `style="--rb:${RITBG[k]}"` : ""} title="Doppio clic per azzerare"><span class="v">${v}</span></div>`; };
 function wireRit(it) {
   document.querySelectorAll("#insp .sl.rit").forEach(row => {

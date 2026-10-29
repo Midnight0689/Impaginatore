@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 67 — Cursori colorati come Temperatura/Tinta
+- Tutti i cursori del pannello foto hanno la barra con sfumatura (Contrasto, Alteluci, Ombre, Bianchi, Neri in toni di grigio; Scala, Angolo, Esposizione, Opacità, Bordo, Ombra con la loro sfumatura) e un sottile contorno per vederli sul fondo scuro. — `index.html`.
+
 ## Versione 66 — Le foto arrivano fino al bordo della pagina anche con il margine bianco
 - Nelle pagine con margine bianco la foto non poteva superare il margine: ora si può allargare/spostare fino al bordo vero della pagina (il margine resta come punto di aggancio). «Tutta pagina» ora riempie davvero la pagina, bordo compreso. — `editor.py` (`fullpage`, limiti verticali, `grid.full`), `index.html` (`startFree`).
 
