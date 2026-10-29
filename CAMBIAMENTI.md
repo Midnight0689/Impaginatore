@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 87 — Tono: dove sono i bianchi bruciati
+Passando il mouse su una miniatura della scheda Tono, la foto diventa scura con i bianchi bruciati (L* oltre 96, con le correzioni attuali) in rosso. — `editor.py` (`bruc_img`, `/img/bruc`), `index.html`.
+
 ## Versione 86 — Tono: ombre giuste fino a L* 26
 La soglia delle ombre passa da 14 a 26 (giallo fino a 34): ombre aperte come piacciono a Stefano non vengono più segnalate. — `editor.py` (`TONO_SZ`).
 

@@ -969,6 +969,18 @@ def tono_all():
         out.append(dict(s=s, score=d["score"], n=len(d["items"]), a=[x["stato"] for x in d["items"]], c=[x["stato_c"] for x in d["items"]], sc=[x["scena"] for x in d["items"]]))
     return out
 
+def bruc_img(s, side, idx):
+    """la foto (la parte visibile, in piccolo) con i bianchi bruciati (L* oltre 96) in rosso: serve a vedere DOVE sono; con le correzioni attuali"""
+    import io as _io, numpy as np
+    with LOCK:
+        m = next((x for x in _tono_misure(s) if x["side"] == side and x["idx"] == idx), None)
+        if m is None: raise ValueError("foto non trovata")
+        Lm = _tono_sim(m["i"], m["im"], m["evp"], m["rit"], m["bw"]); base = np.asarray(m["im"].convert("L"), dtype=np.float32)
+    if base.shape != Lm.shape: base = np.asarray(m["im"].convert("L").resize((Lm.shape[1], Lm.shape[0])), dtype=np.float32)
+    rgb = np.stack([base * .45] * 3, axis=-1); msk = (Lm > 96)[..., None]
+    out = np.where(msk, np.array([255, 69, 58], dtype=np.float32), rgb).astype(np.uint8)
+    im = Image.fromarray(out); im = im.resize((im.width * 3, im.height * 3), Image.NEAREST); b = _io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+
 def live_photo(q):
     """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
     import io as _io
@@ -1537,6 +1549,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
             elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], min(int(q.get("w", ["500"])[0]), 1200), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
+            elif u.path == "/img/bruc": self.send(bruc_img(int(q["s"][0]), q["side"][0], int(q["idx"][0])), "image/png")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
