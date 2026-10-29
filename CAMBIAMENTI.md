@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 126 — Galleria: filtro colori e assegnazione separati
+- I pallini del filtro ora hanno l'etichetta «Mostra:» (nessun colore scelto = tutte le foto; più colori = quelle colori). Per assegnare c'è un gruppo a parte «Colora:» con ★ Preferita e ✕ Tolta, nella riga delle linguette Galleria/Tono (a destra). Nella vista Foto il gruppo di assegnazione resta nella barra. — `index.html` (`mkBar`, `tabsUI`, `#ptabs .mk`).
+
 ## Versione 125 — Selezione multipla nella galleria sotto lo spread
 - Clic = sceglie una foto, Maiusc+clic = intervallo, ⌘/Ctrl+clic = aggiunge o toglie. Preferita (★/P), Tolta (✕/X), colori (1-7, 0) e menu col tasto destro agiscono su tutte le foto scelte. — `index.html` (`POOLSELS`, `markTargets`, `assignColor`).
 
