@@ -1774,6 +1774,7 @@ $("wrap").addEventListener("contextmenu", e => { if (!S || e.target.closest(".sl
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
 document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); const nn = view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []; if (nn.length) { const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); } return; }
   if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
   if (view === "foto" && S && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && !(document.activeElement && (/TEXTAREA|SELECT/.test(document.activeElement.tagName) || (document.activeElement.tagName === "INPUT" && /text|number|search/.test(document.activeElement.type))))) {       // ⌘A nella galleria (le caselle da spuntare non lo bloccano): tutte le foto ancora da usare

@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 99 — ⌘S salva il progetto
+⌘S (o Ctrl+S) ora salva il progetto, come il pulsante «Salva», e non apre più il salvataggio della pagina web del browser. — `index.html`.
+
 ## Versione 98 — Tono: anteprime più grandi e scorrevoli, meno pulsanti
 Le schede delle foto sono più grandi (176 px) e, se sono tante, scorrono di lato (anche con la rotellina) come la galleria. Tolti Semplice/Completa e i pulsanti «Correggi…»: la correzione si fa a mano, il pannello suggerisce solo l'esposizione. Restano «Vista album» e «Impostazioni» (numeri sulle foto, standard e zona). — `index.html`.
 
