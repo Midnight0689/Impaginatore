@@ -1779,10 +1779,23 @@ $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 let qlName = null;
 function qlook(n) {       // anteprima grande di una foto (barra spaziatrice); stessa tasto o Esc o clic la chiude
   const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
-  qlName = n; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + " · spazio o Esc per chiudere"; q.style.display = "flex";
+  qlName = n; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + " · ← → per scorrere · spazio o Esc per chiudere"; q.style.display = "flex";
 }
 $("qlook").onclick = () => qlook(null);
+const poolVis = () => filterList(S.unused.map(n => S.photos.find(p => p.n === n)).filter(Boolean), PF).map(p => p.n);
+function qlList() {       // le foto tra cui scorrere con le frecce: quelle che si vedono dove l'anteprima è stata aperta
+  if (view === "foto") return visPhotos().map(p => p.n);
+  const pv = poolVis(); if (pv.includes(qlName)) return pv;
+  return S.spreads[cur] ? [...new Set(S.spreads[cur].items.filter(i => i.name).map(i => i.name))] : [];
+}
+function qlStep(d) {
+  const L = qlList(), i = L.indexOf(qlName); if (i < 0) return; const j = Math.min(Math.max(i + d, 0), L.length - 1); if (j === i) return; const n = L[j];
+  qlook(n); [L[j + d], L[j - d]].forEach(x => { if (x) new Image().src = `/img/thumb/${x}?w=1800`; });
+  if (view === "foto") { SELP = [n]; lastClick = n; render(); }
+  else { POOLSEL = n; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
+}
 document.addEventListener("keydown", e => {
+  if (qlName && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); qlStep(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1); return; }
   if (qlName && (e.key === " " || e.key === "Escape")) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
   if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") {
     const si = typeof selItem === "function" ? selItem() : null, n = view === "foto" ? (SELP.length ? SELP[SELP.length - 1] : HOV) : (POOLSEL && S.photos.some(p => p.n === POOLSEL) ? POOLSEL : HOV || (si && si.name) || null);

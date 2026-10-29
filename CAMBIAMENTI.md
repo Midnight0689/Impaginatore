@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 101 — Anteprima grande: frecce per la foto precedente e successiva
+Con l'anteprima aperta (barra spaziatrice), le frecce ← → (e ↑ ↓) passano alla foto precedente o successiva tra quelle che si vedono nella galleria (con i filtri attivi), nella vista Foto o nello spread; la selezione segue e le foto vicine vengono caricate in anticipo. Si ferma alla prima e all'ultima. — `index.html` (`qlStep`).
+
 ## Versione 100 — Barra spaziatrice: anteprima grande della foto
 Nella galleria le foto si selezionano con un clic (bordo blu; un secondo clic le deseleziona). La barra spaziatrice apre un'anteprima grande della foto selezionata (o, se non ce n'è, di quella sotto il mouse, o della foto selezionata sullo spread; nella vista Foto, dell'ultima selezionata); spazio, Esc o un clic la chiudono. La barra non fa più scorrere la galleria; dentro i campi di testo funziona come sempre. — `index.html` (`qlook`).
 
