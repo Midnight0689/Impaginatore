@@ -114,6 +114,7 @@
   .insp { padding: 12px 14px 20px; }
   .insp .nm { font-size: 17px; font-weight: 600; color: var(--dim); margin-bottom: 8px; }
   .insp .sec { background: var(--panel2); text-align: center; color: var(--dim); font-size: 11px; padding: 3px 0; margin: 12px -14px 10px; }
+  .insp .pvw { position: sticky; top: var(--vbh, 104px); z-index: 4; background: var(--panel); padding: 6px 0 10px; margin-bottom: -2px; }       /* l'anteprima Design resta ferma, il resto scorre sotto */
   .insp > .sec:first-child { border-top: 0 !important; padding-top: 0 !important; margin-top: 6px !important; }
   .insp .pv { position: relative; margin: 0 auto 0; border: 3px solid var(--accent); background-color: #555; }
   .insp .pv::before { content: ""; position: absolute; inset: 0; background:
@@ -755,6 +756,7 @@ function renderSbar() {
       <div class="grp">${B("newsp", "plus", "Nuovo", "Aggiungi uno spread")}${B("dupsp", "dup", "Duplica", "Duplica questo spread subito dopo (Cmd+D)")}${B("delsp", "trash", "Elimina", "Elimina lo spread (le foto tornano libere)", (n < 2 ? "disabled " : "") + 'class="danger"')}
       ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>`;
     $("vistabox").innerHTML = `<div class="box"><div class="grp">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("tlock", "lock", "Blocca guide", "Blocca le guide: non si spostano né si tolgono per sbaglio (restano come aggancio)", lockGuides ? 'class="on"' : "")}${B("twarn", "warn", "Avviso ritaglio", "Mostra o nascondi l'avviso rosso con «ritaglio ×» sulle foto ingrandite troppo (spento di solito)", showCropWarn ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length && !lockGuides ? "" : "disabled")}</div></div>`;
+    $("side").style.setProperty("--vbh", ($("vistabox").offsetHeight || 104) + "px");
     $("sbarL").innerHTML = `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}</div></div>`;
   $("sbarR").innerHTML = (`<div class="box"><i>${msel.length ? sel_lbl : "Selezione"}</i><div class="g4">
       ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (] oppure +)")}${B("zbw", "down", "Indietro", "Un livello indietro ([ oppure −)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
@@ -798,7 +800,7 @@ const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
 const corrUrl = (it, w, over) => `/img/corr?n=${it.name}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
 function cropStyle(it) {
   const [l, t, r, b] = it.box, W = r - l, H = b - t, ratio = it.w / it.h;
-  return `width:min(100%,${Math.round(440 * ratio)}px);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
+  return `width:min(100%,${Math.round(440 * ratio)}px,${(36 * ratio).toFixed(2)}vh);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
 }
 const fams = () => [...new Set(FONTS.map(f => f.fam))];
 const cssFont = ps => { const f = FONTS.find(x => x.ps === ps); if (!f) return `font-family:${ps}`; const st = f.sty.toLowerCase(); return `font-family:"${f.fam}";font-weight:${/black|heavy/.test(st) ? 900 : /extra ?bold|ultra/.test(st) ? 800 : /semi ?bold|demi/.test(st) ? 600 : /bold/.test(st) ? 700 : /medium/.test(st) ? 500 : /light|thin/.test(st) ? 300 : 400};font-style:${/italic|oblique/.test(st) ? "italic" : "normal"}`; };
@@ -907,7 +909,7 @@ function renderSide() {
   const at = [sel.s, sel.side, sel.idx], lowppi = it.ppi < 200;
   P.innerHTML = `<div class="insp">
     <div class="sec">Design</div>
-    <div class="pv" style="${cropStyle(it)}"></div>
+    <div class="pvw"><div class="pv" style="${cropStyle(it)}"></div></div>
     <div style="margin-top:12px">
       <div class="sl st"><b>Scala</b><input id="z" style="--rb:linear-gradient(90deg,#555,#bbb)" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
       <div class="sl st"><b>Angolo</b><input id="ang" style="--rb:linear-gradient(90deg,#555,#999 50%,#555)" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
