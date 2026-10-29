@@ -35,11 +35,13 @@
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
-  #gapall { position: fixed; right: 16px; top: 64px; width: 330px; max-height: 70vh; overflow: auto; z-index: 70; background: rgba(40,40,43,.96); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.45); color: var(--fg, #eee); font-size: 12px; }
-  #gapall .gh { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); } #gapall .gx { background: none; border: 0; color: inherit; cursor: pointer; font-size: 14px; }
-  #gapall .gl { padding: 6px; } #gapall .gl p { margin: 8px; opacity: .8; }
-  #gapall .gr { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: 8px; border-radius: 8px; cursor: pointer; } #gapall .gr:hover { background: rgba(255,255,255,.08); } #gapall .gr em { font-style: normal; opacity: .7; }
-  #gapall .gf { padding: 8px 12px 12px; } #gapall .gfix { width: 100%; padding: 8px; border-radius: 8px; border: 0; background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
+  #gapall { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; }
+  #gapall .gc { width: min(1100px, 92vw); max-height: 88vh; display: flex; flex-direction: column; background: rgba(40,40,43,.96); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.6); color: #eee; font-size: 13px; overflow: hidden; }
+  #gapall .gh { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 15px; } #gapall .gh span { opacity: .65; font-size: 12px; margin-left: 10px; } #gapall .gx { background: none; border: 0; color: inherit; cursor: pointer; font-size: 16px; }
+  #gapall .gl { padding: 16px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; } #gapall .gl p { margin: 8px; opacity: .8; grid-column: 1 / -1; text-align: center; padding: 30px 0; }
+  #gapall .gr { display: flex; flex-direction: column; gap: 6px; text-align: left; background: rgba(255,255,255,.04); border: 1px solid var(--line); color: inherit; padding: 8px; border-radius: 10px; cursor: pointer; } #gapall .gr:hover { border-color: var(--accent); } #gapall .gr img { width: 100%; border-radius: 6px; background: #000; display: block; }
+  #gapall .gr span { display: flex; justify-content: space-between; } #gapall .gr em { font-style: normal; color: #ff7a7a; }
+  #gapall .gf { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; } #gapall .gfix { padding: 9px 16px; border-radius: 9px; border: 0; background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
   .eqm.ok { border-color: #2fbf71; } .eqm.ok b { background: #2fbf71; } .eqm.x.ok::before, .eqm.x.ok::after, .eqm.y.ok::before, .eqm.y.ok::after { border-color: #2fbf71; }
   .eqm.warn { border-color: #f0a020; } .eqm.warn b { background: #f0a020; } .eqm.x.warn::before, .eqm.x.warn::after, .eqm.y.warn::before, .eqm.y.warn::after { border-color: #f0a020; }
   .eqm.bad { border-color: #ff3d3d; border-width: 2px; } .eqm.bad b { background: #ff3d3d; } .eqm.x.bad::before, .eqm.x.bad::after, .eqm.y.bad::before, .eqm.y.bad::after { border-color: #ff3d3d; }
@@ -693,19 +695,20 @@ async function gapFix(si = cur, quiet = false) {
   await op({ op: "setrects", s: si, rects });
   if (!quiet) { const r = gapStat(si); toast(r.bad ? `Corretti, restano ${r.bad} stacchi da guardare a mano` : "Tutti gli stacchi sono uguali"); }
   return ch; }
-function gapAll() {       // pannello con gli spread che hanno stacchi diversi: resta aperto finché non lo chiudi
-  const old = $("gapall"); if (old) { old.remove(); return; }
-  const d = document.createElement("div"); d.id = "gapall";
+function gapAll() {       // anteprima centrale con gli spread che hanno stacchi diversi, come le slide: resta aperta finché non la chiudi
+  if ($("gapall")) { $("gapall").remove(); return; }
+  const d = document.createElement("div"); d.id = "gapall"; const close = () => { d.remove(); document.removeEventListener("keydown", esc, true); };
+  const esc = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
   const fill = () => {
-    const rows = []; S.spreads.forEach((sp, i) => { const r = gapStat(i); if (r.bad) rows.push({ i, r }); });
-    d.innerHTML = `<div class="gh"><b>Spaziature dell'album</b><button class="gx" title="Chiudi">✕</button></div>` + (rows.length
-      ? `<div class="gl">${rows.map(({ i, r }) => `<button class="gr" data-s="${i}"><span>Spread ${i + 1}</span><em>${r.bad} su ${r.n} diversi · riferimento ${cmOf(r.ref).toFixed(2)} cm</em></button>`).join("")}</div><div class="gf"><button class="gfix">Correggi tutto l'album</button></div>`
-      : `<div class="gl"><p>Tutti gli stacchi dell'album sono uguali al riferimento scelto.</p></div>`);
-    d.querySelector(".gx").onclick = () => d.remove();
-    d.querySelectorAll(".gr").forEach(b => b.onclick = () => { GAPCHK = true; go(+b.dataset.s); });
+    const rows = []; S.spreads.forEach((sp, i) => { const r = gapStat(i); if (r.bad) rows.push({ i, r, h: sp.h }); });
+    d.innerHTML = `<div class="gc"><div class="gh"><div><b>Controllo spaziature</b><span>${rows.length ? rows.length + " spread con stacchi diversi su " + S.spreads.length : "album di " + S.spreads.length + " spread"}</span></div><button class="gx" title="Chiudi (Esc)">✕</button></div>` + (rows.length
+      ? `<div class="gl">${rows.map(({ i, r, h }) => `<button class="gr" data-s="${i}"><img src="/img/spread/${i}?k=0.12&h=${h}"><span><b>Spread ${i + 1}</b><em>${r.bad} su ${r.n} diversi</em></span><span style="opacity:.65"><i>riferimento ${cmOf(r.ref).toFixed(2)} cm</i></span></button>`).join("")}</div><div class="gf"><button class="gfix">Correggi tutto l'album</button></div>`
+      : `<div class="gl"><p>Tutti gli stacchi dell'album sono uguali al riferimento scelto.</p></div>`) + `</div>`;
+    d.querySelector(".gx").onclick = close; d.onclick = e => { if (e.target === d) close(); };
+    d.querySelectorAll(".gr").forEach(b => b.onclick = () => { GAPCHK = true; close(); go(+b.dataset.s); });
     const f = d.querySelector(".gfix"); if (f) f.onclick = async () => { f.disabled = true; f.textContent = "Correggo…"; let n = 0; for (const { i } of rows) n += (await gapFix(i, true)) ? 1 : 0; toast(`Corretti ${n} spread`); fill(); };
   };
-  fill(); document.body.appendChild(d); }
+  fill(); document.body.appendChild(d); document.addEventListener("keydown", esc, true); }
 function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina restano visibili finché non la deseleziono
   if (DRAG || !S || view !== "album" || !S.spreads.length) return;
   const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t"), GM = GAPCHK ? gapMarks() : [];

@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 138 — «Controlla album» come anteprima al centro
+- Il pannello è ora una finestra centrale su fondo scuro (come l'anteprima grande): miniature degli spread con stacchi diversi, clic su una per andarci, «Correggi tutto l'album», si chiude con ✕, Esc o clic fuori. — `index.html` (`gapAll`, `#gapall`).
+
 ## Versione 137 — «Controlla album» diventa un pannello
 - Prima mostrava un messaggio che spariva: ora apre un pannello con l'elenco degli spread con stacchi diversi (quanti, e il riferimento); un clic su una riga porta allo spread con le misure accese; «Correggi tutto l'album» corregge tutti (un annulla per spread); si chiude con ✕ o riclicando il pulsante. — `index.html` (`gapAll`, `gapFix(si)`, `#gapall`).
 
