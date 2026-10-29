@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 115 — P/X agiscono sulla foto sotto il mouse
+- P (preferita) e X (tolta) valgono per la foto sotto il mouse, altrimenti per la selezione; sono interruttori (attivano e tolgono) e la preferita mostra «★ Preferita» / «Preferita tolta». — `index.html` (`markTargets`, `markStar`).
+
 ## Versione 114 — Barra galleria in 3 sezioni
 - Spazio tra «Tolta» e i pallini, e una linea sottile che separa i filtri dall'assegnazione (Preferita, Tolta, colori, Solo ★); a destra ordine, cerca e zoom. — `index.html` (`.fbar .mk`).
 

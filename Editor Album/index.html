@@ -1462,8 +1462,8 @@ function mkBar(el, st, cfg) {
     $q(".gst").classList.toggle("on", st.star); $q(".gS").value = st.s; rg.value = st.sz;
   };
 }
-const markTargets = () => view === "foto" ? (SELP.length ? SELP.slice() : HOV ? [HOV] : []) : (POOLSEL && S.photos.some(p => p.n === POOLSEL) ? [POOLSEL] : HOV ? [HOV] : []);
-function markStar() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "stella", photos: nn, value: !nn.every(n => (S.photos.find(x => x.n === n) || {}).star) }); }
+const markTargets = () => view === "foto" ? (HOV && !SELP.includes(HOV) ? [HOV] : SELP.length ? SELP.slice() : HOV ? [HOV] : []) : (HOV ? [HOV] : POOLSEL && S.photos.some(p => p.n === POOLSEL) ? [POOLSEL] : []);       // col mouse sopra una foto vale quella; altrimenti la selezione
+function markStar() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); toast(v ? "★ Preferita" : "Preferita tolta"); }
 function markTolta() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => S.tolte.includes(n)); if (v && nn.some(n => (S.photos.find(x => x.n === n) || {}).sp != null)) { toast("Una foto già in uno spread non si può togliere: prima toglila dallo spread", true); return; } if (v) SELP = SELP.filter(n => !nn.includes(n)); op({ op: "tolta", photo: nn[0], photos: nn, value: v }); }
 let HOV = null, POOLSEL = null;                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
 function assignColor(v, names) { names = names || (view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
