@@ -818,7 +818,7 @@ def tpl_options(photos, cur=None, side=None, s=None):
     TOLL = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
     buoni = [t for t in out if t["cur"] or t["worst"] <= TOLL]
     if not any(not t["cur"] for t in buoni): buoni = buoni + sorted((t for t in out if not t["cur"]), key=lambda t: (t["worst"], t["cost"]))[:3]       # nessuna alternativa rispetta le foto: solo i meno peggio
-    piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))[:36]       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
+    piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
     out = buoni
     ut = []
     for t in ut_load():
