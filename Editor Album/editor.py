@@ -78,7 +78,7 @@ LOCK = threading.RLock()
 CFG = A.CFG
 CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
 CFG.setdefault("centri_volto", {})
-CFG.setdefault("tono", {}); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+CFG.setdefault("tono", {}); CFG.setdefault("tono_escl", []); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
 
 # ------------------------------------------------------------------ stato
 NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3,
@@ -136,7 +136,7 @@ UNDO, REDO = [], []
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"]})
 SAVED = snap()                                       # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -144,7 +144,7 @@ def restore(s):
     CFG["esposizione"].clear(); CFG["esposizione"].update(d["ev"])
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
-    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["stelle"][:] = d.get("sr", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["stelle"][:] = d.get("sr", []); CFG["tono_escl"][:] = d.get("te", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -270,6 +270,11 @@ def apply(o):
             v = int(round(min(max(float(o["sh"] or 0), 0), 100)))
             if v: a["sh"] = v
             else: a.pop("sh", None)
+    elif t == "tono_escl":                               # foto escluse dalla misura del tono (scure o chiare di proposito)
+        for n in o.get("photos") or [o["photo"]]:
+            if o.get("value", True):
+                if n not in CFG["tono_escl"]: CFG["tono_escl"].append(n)
+            elif n in CFG["tono_escl"]: CFG["tono_escl"].remove(n)
     elif t == "stella":                                  # foto preferite
         for n in o.get("photos") or [o["photo"]]:
             if o.get("value", True):
@@ -787,8 +792,47 @@ def state():
     with LOCK:
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
-                    photos=photo_list(), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
+                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG))
+
+TONO_C = {}
+TONO_VERDE, TONO_GIALLO = 0.3, 0.6                    # scarto (EV) dalla mediana dello spread: entro VERDE ok, entro GIALLO da guardare, oltre da correggere
+def _tono_misure(s):
+    """per ogni foto dello spread s, come appare adesso: log2 della luminanza mediana (luce lineare, gamma 2.2 come l'esposizione di Photoshop) e dell'98° percentile"""
+    import numpy as np, math
+    key = spread_hash(s)
+    if key in TONO_C: return TONO_C[key]
+    lay = sorted(A.layout(spread_tuple(s)), key=lambda L: L.get("_o", 0)); out = []; k = 0
+    for side, pg in zip("LR", SP[s]):
+        for idx, it in enumerate(pg[1]):
+            L = lay[k]; k += 1
+            if it["k"] == "t": continue
+            a = (np.asarray(A._photo(L, 0.08, True).convert("RGB"), dtype=np.float32) / 255) ** 2.2
+            Y = a[..., 0] * .2126 + a[..., 1] * .7152 + a[..., 2] * .0722
+            n = A.name(it["i"]); out.append(dict(side=side, idx=idx, name=n, ly=math.log2(max(float(np.median(Y)), 1e-4)), lp=math.log2(max(float(np.percentile(Y, 98)), 1e-4)), evp=CFG["esposizione"]["per_foto"].get(n, 0.0)))
+    if len(TONO_C) > 200: TONO_C.clear()
+    TONO_C[key] = out; return out
+
+def _tono_mediana(ms):
+    import statistics
+    v = [m["ly"] for m in ms if m["name"] not in CFG["tono_escl"]]
+    return statistics.median(v) if v else None
+
+def tono_spread(s):
+    """misura il tono delle foto dello spread s rispetto alla loro mediana e propone la correzione di esposizione"""
+    with LOCK:
+        ms = _tono_misure(s); med = _tono_mediana(ms); items = []; pen = []
+        for j, m in enumerate(ms):
+            esc = m["name"] in CFG["tono_escl"]; d = 0.0 if med is None else m["ly"] - med
+            stato = "escl" if esc else "ok" if abs(d) <= TONO_VERDE else "att" if abs(d) <= TONO_GIALLO else "no"
+            ev_new = round(min(max(m["evp"] - d, -2.0), 2.0) * 20) / 20
+            dd = m["evp"] - ev_new                                        # quanto cambia davvero (può fermarsi a ±2)
+            items.append(dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 2), stato=stato, nuova=ev_new, bruc=bool(not esc and ev_new > m["evp"] and m["lp"] + (ev_new - m["evp"]) > 0.0)))
+            if not esc: pen.append(min(abs(d), 1.0))
+        def vic(t):
+            if not (0 <= t < len(SP)) or med is None: return None
+            mm = _tono_mediana(_tono_misure(t)); return None if mm is None else round(mm - med, 2)
+        return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), verde=TONO_VERDE, giallo=TONO_GIALLO)
 
 CACHE = {}
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
@@ -940,7 +984,7 @@ def save(backup=True):
         lines.append("]")
         _scrivi(os.path.join(PROJ, "spec.py"), "\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)
@@ -1303,6 +1347,7 @@ class H(BaseHTTPRequestHandler):
         try:
             if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
+            elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0])))
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))

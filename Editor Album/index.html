@@ -371,6 +371,19 @@
   .sl.st { row-gap: 5px; margin: 12px 0; } .sl.st b { font-weight: 500; color: var(--text); opacity: .85; }
   .cl { color: var(--dim); font-size: 11px; margin: 2px 0 6px; } .cdots.bdc { gap: 10px; margin-bottom: 12px; } .cdots.bdc.off { opacity: .45; } .cdots.bdc i { width: 26px; height: 26px; box-shadow: 0 0 0 1px rgba(255,255,255,.3); } .cdots.bdc i.on { box-shadow: 0 0 0 2px var(--c), 0 0 0 4px #fff; border-color: #1b1b1b; }
   #guides.locked .gl { pointer-events: none; opacity: .7; }
+
+  #ptabs { display: flex; align-items: center; gap: 10px; flex: none; padding-bottom: 6px; } #ptabs .seg { margin: 0; background: #1b1b1d; border-radius: 8px; padding: 2px; display: inline-flex; } #ptabs .seg button { height: 24px; padding: 0 12px; background: transparent; } #ptabs .seg button.on { background: var(--blue); color: #fff; }
+  #tonopanel { display: none; flex: 1; min-height: 0; gap: 14px; overflow: hidden; } #tonopanel .tl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; } #tonopanel .tr { flex: none; width: 190px; display: flex; flex-direction: column; gap: 6px; justify-content: flex-start; }
+  #tonopanel .th { display: flex; align-items: baseline; gap: 12px; flex-wrap: nowrap; } #tonopanel .tt { flex: none; white-space: nowrap; } #tonopanel .tt { font-size: 17px; font-weight: 600; } #tonopanel .ts { font-size: 12.5px; color: var(--dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #tonopanel .tsc { flex: none; } #tonopanel .tsc { padding: 1px 10px; border-radius: 11px; font-size: 12px; font-weight: 600; margin-left: auto; }
+  .tsc.ok, .tpill.ok { background: #32d74b; color: #06240f; } .tsc.att, .tpill.att { background: #e0b23c; color: #231a00; } .tsc.no, .tpill.no { background: #ff6961; color: #3a0a07; } .tpill.escl { background: #555; color: #ddd; }
+  #tchart { flex: 1; min-height: 0; display: flex; gap: 8px; align-items: stretch; position: relative; } .tcol { flex: 1 1 0; min-width: 0; max-width: 96px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border-radius: 8px; padding: 2px; } .tcol:hover { background: rgba(255,255,255,.05); }
+  .tcol .tbarbox { position: relative; width: 100%; flex: 1; min-height: 40px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; } .tcol .tv { font-size: 12px; font-weight: 600; margin-bottom: 2px; position: relative; z-index: 1; } .tcol .tb { width: 60%; max-width: 44px; border-radius: 4px 4px 0 0; position: relative; z-index: 1; } .tcol .tb.ok { background: #32d74b; } .tcol .tb.att { background: #e0b23c; } .tcol .tb.no { background: #ff6961; } .tcol .tb.escl { background: #555; }
+  .tcol img { width: 100%; height: 30px; object-fit: cover; border-radius: 5px; margin-top: 3px; border: 2px solid transparent; } .tcol img.ok { border-color: #32d74b; } .tcol img.att { border-color: #e0b23c; } .tcol img.no { border-color: #ff6961; } .tcol img.escl { border-color: #555; opacity: .6; }
+  .tcol .ta { font-size: 11.5px; text-align: center; line-height: 1.25; min-height: 28px; margin-top: 2px; } .tcol .ta.ok { color: #6bbf7a; } .tcol .ta.att { color: #e0b23c; } .tcol .ta.no { color: #ff6961; } .tcol .ta.escl { color: var(--dim); }
+  #tband { position: absolute; left: 0; right: 0; background: rgba(50,215,75,.16); pointer-events: none; border-top: 1px dashed rgba(50,215,75,.35); border-bottom: 1px dashed rgba(50,215,75,.35); } #tband span { position: absolute; right: 4px; top: -15px; font-size: 11px; color: #6bbf7a; }
+  #tonopanel .tn { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; gap: 10px; } #tonopanel .tr button { height: 30px; } #tonopanel .tr .hlp { font-size: 11.5px; color: var(--dim); line-height: 1.35; margin-top: 2px; }
+  .tpill { position: absolute; right: 4px; top: 4px; padding: 1px 9px; border-radius: 11px; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 3; white-space: nowrap; }
+  .slot.t-no:not(.sel) { outline: 3px solid #ff6961; } .slot.t-att:not(.sel) { outline: 3px solid #e0b23c; }
 </style>
 </head>
 <body>
@@ -404,7 +417,7 @@
     <div id="tpl"></div>
   </div>
   <div id="side"><div id="insp"></div></div>
-  <div id="pool"><div class="fbar" id="poolbar"></div><div id="poolrow"></div></div>
+  <div id="pool"><div id="ptabs"></div><div class="fbar" id="poolbar"></div><div id="poolrow"></div><div id="tonopanel"></div></div>
   <div id="libview">
     <div id="libmain">
       <div class="libbar"><button id="impF">+ Importa cartella…</button><button id="impP">+ Importa foto…</button><span id="libinfo"></span><span class="sp"></span>
@@ -593,6 +606,7 @@ function renderStage() {
         d.appendChild(ch);
       }
     }
+    if (it.k !== "t" && poolTab === "tono" && tonoPills && TONO && TONO.s === cur && TONOK === tkey()) { const ti = TONO.items.find(x => x.side === it.side && x.idx === it.idx); if (ti) { d.classList.add("t-" + ti.stato); d.insertAdjacentHTML("beforeend", `<span class="tpill ${ti.stato}">${ti.n}${ti.stato === "escl" ? "" : " · " + fdv(ti.d)}</span>`); } }
     box.appendChild(d);
   });
   groupBox();
@@ -841,7 +855,7 @@ function renderSide() {
     <div style="margin-top:12px">
       <div class="sl st"><b>Scala</b><input id="z" style="--rb:linear-gradient(90deg,#555,#bbb)" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
       <div class="sl st"><b>Angolo</b><input id="ang" style="--rb:linear-gradient(90deg,#555,#999 50%,#555)" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
-      <div class="sl st"><b>Esposizione</b><input id="evp" style="--rb:linear-gradient(90deg,#111,#f2f2f2)" type="range" min="-1" max="1" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
+      <div class="sl st"><b>Esposizione</b><input id="evp" style="--rb:linear-gradient(90deg,#111,#f2f2f2)" type="range" min="-2" max="2" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
       <div class="sl st"><b>Opacità</b><input id="ocw" style="--rb:linear-gradient(90deg,#333,#ddd)" type="range" min="0" max="100" step="1" value="${it.oc ?? 100}"><span class="v" id="ocv">${it.oc ?? 100}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
     </div>
     <div class="sec">Luce <span class="x" id="tnx" title="Azzera tutto il ritocco di questa foto" style="float:right">⊗ azzera</span></div>
@@ -998,17 +1012,69 @@ new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
 let pBar = null;
 let PH = (() => { try { return +localStorage.getItem("poolH") || 0; } catch (e) { return 0; } })();
-function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${PH || PF.sz + 78}px; } #poolrow { --ph: ${PF.sz}px; }`; }
+let poolTab = (() => { try { return localStorage.getItem("poolTab") === "tono" ? "tono" : "gal"; } catch (e) { return "gal"; } })(), PHT = (() => { try { return +localStorage.getItem("poolHT") || 0; } catch (e) { return 0; } })();
+let TONO = null, TONOK = "", tonoPills = true;
+function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${poolTab === "tono" ? (PHT || 320) : (PH || PF.sz + 78)}px; } #poolrow { --ph: ${PF.sz}px; }`; }
+
+// ---- scheda «Tono»: misura se le foto dello spread hanno la stessa luminosità e propone la correzione di esposizione
+function tabsUI() {
+  const T = $("ptabs"); if (T.dataset.t === poolTab) return; T.dataset.t = poolTab;
+  T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}">Galleria</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="Misura se le foto dello spread hanno lo stesso tono">Tono</button></div>`;
+  T.querySelectorAll("button").forEach(b => b.onclick = () => { poolTab = b.dataset.t; try { localStorage.setItem("poolTab", poolTab); } catch (e) {} renderPool(); setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); });
+}
+const tkey = () => S && S.spreads.length ? [cur, ...[-1, 0, 1].map(d => (S.spreads[cur + d] || {}).h), (S.tono_escl || []).join("|")].join("~") : "";
+const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + Math.abs(v).toFixed(1).replace(".", ",");
+async function loadTono() {
+  if (!S || !S.spreads.length) return; const k = tkey();
+  if (k === TONOK && TONO) { drawTono(); return; }
+  TONOK = k; if (!TONO || TONO.s !== cur) $("tonopanel").innerHTML = '<span class="empty">Misuro il tono…</span>';
+  try { const d = await api("/api/tono?s=" + cur); if (TONOK !== k) return; TONO = d; } catch (e) { return; }
+  drawTono(); renderStage();
+}
+async function tonoFix(list) {
+  for (const x of list) await op({ op: "ev", photo: x.name, value: x.nuova });
+  toast(list.length === 1 ? "Esposizione corretta" : list.length + " foto corrette");
+}
+function drawTono() {
+  const P = $("tonopanel"); if (!TONO || TONO.s !== cur) return; const T = TONO, its = T.items;
+  if (!its.length) { P.innerHTML = '<span class="empty">Nessuna foto in questo spread.</span>'; return; }
+  const no = its.filter(x => x.stato === "no"), at = its.filter(x => x.stato === "att"), okn = its.filter(x => x.stato === "ok").length;
+  const word = (x, g) => `la ${x.n} è ${g ? "troppo" : "un po'"} ${x.d < 0 ? "scura" : "chiara"}`;
+  const parts = no.map(x => word(x, 1)).concat(at.map(x => word(x, 0)));
+  const title = no.length ? `${no.length} ${no.length === 1 ? "foto da sistemare" : "foto da sistemare"}` : at.length ? `${at.length} ${at.length === 1 ? "foto da guardare" : "foto da guardare"}` : "Tono uniforme";
+  let sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " Le altre sono in linea." : "") : `Le ${its.filter(x => x.stato !== "escl").length} foto hanno lo stesso tono.`;
+  const sc = T.score >= 85 ? "ok" : T.score >= 60 ? "att" : "no", H = 110, lo = Math.round((50 - T.verde * 30) / 100 * H), hi = Math.round((50 + T.verde * 30) / 100 * H);
+  const cols = its.map(x => {
+    const pct = Math.min(100, Math.max(8, 50 + x.d * 30)), bh = Math.round(pct / 100 * H), esc = x.stato === "escl";
+    const act = esc ? "esclusa" : x.stato === "ok" ? "ok" : `${x.d < 0 ? "schiarisci" : "scurisci"} di ${Math.abs(x.d).toFixed(1).replace(".", ",")}${x.stato === "att" ? "?" : ""}${x.bruc ? "<br>⚠ luci" : ""}`;
+    return `<div class="tcol" data-at="${x.side}:${x.idx}" title="${x.name} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tbarbox"><div class="tv" style="color:${esc ? "#98989f" : "#f2f2f7"}">${esc ? "–" : fdv(x.d)}</div><div class="tb ${x.stato}" style="height:${bh}px"></div></div><img class="${x.stato}" src="/img/thumb/${x.name}?w=120"><div class="ta ${x.stato}">${x.n} · ${act}</div></div>`;
+  }).join("");
+  const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 0.05 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + Math.abs(v).toFixed(1).replace(".", ",")}</span>`;
+  P.innerHTML = `<div class="tl"><div class="th"><span class="tt">${title}</span><span class="ts">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto allo stesso tono">Uniformità ${T.score} / 100</span></div>
+    <div id="tchart">${cols}<div id="tband"><span>zona giusta</span></div></div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>
+    <div class="tr"><button class="primary" id="tfix" ${no.length ? "" : "disabled"}>${no.length ? `Correggi le ${no.length} ${no.length === 1 ? "foto" : "foto"}` : "Niente da correggere"}</button>
+      ${at.length ? `<button id="tfixall">Correggi anche le ${at.length} da guardare</button>` : ""}
+      <button id="tpl2" class="${tonoPills ? "on" : ""}" title="Mostra o nascondi i numeri sulle cornici">Numeri sulle foto</button>
+      <div class="hlp">Barra alta = foto chiara. Cambia solo l&#39;Esposizione (⌘Z annulla).</div></div>`;
+  const ch = $("tchart"), box = ch.querySelector(".tbarbox"); if (box) { const cb = ch.getBoundingClientRect(), bb = box.getBoundingClientRect(), bar = box.querySelector(".tb"); const base = bb.bottom - cb.top; const sc2 = (bb.height - 18) / H; const band = $("tband"); band.style.bottom = (cb.bottom - bb.bottom + lo * sc2) + "px"; band.style.height = ((hi - lo) * sc2) + "px"; ch.querySelectorAll(".tb").forEach(b => b.style.height = Math.round(parseFloat(b.style.height) * sc2) + "px"); }
+  P.querySelectorAll(".tcol").forEach(c => { const [side, idx] = c.dataset.at.split(":"), x = its.find(y => y.side === side && y.idx === +idx);
+    c.onclick = () => { sel = { s: cur, side, idx: +idx }; msel = [side + ":" + idx]; render(); };
+    c.oncontextmenu = e => { e.preventDefault(); op({ op: "tono_escl", photo: x.name, value: x.stato !== "escl" }); }; });
+  if ($("tfix")) $("tfix").onclick = () => tonoFix(no); if ($("tfixall")) $("tfixall").onclick = () => tonoFix(no.concat(at));
+  $("tpl2").onclick = () => { tonoPills = !tonoPills; drawTono(); renderStage(); };
+}
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
   if (!pBar) pBar = mkBar($("poolbar"), PF, { filters: PFILT, zmin: 50, zmax: 220, onChange: renderPool, onZoom: setPoolH });
   if (!$("poolgrip")) { const gr = document.createElement("div"); gr.id = "poolgrip"; gr.title = "Trascina per alzare o abbassare la galleria (doppio clic: altezza automatica)"; $("pool").prepend(gr);
-    gr.ondblclick = () => { PH = 0; try { localStorage.removeItem("poolH"); } catch (e) {} setPoolH(); after(); };
+    gr.ondblclick = () => { if (poolTab === "tono") PHT = 0; else PH = 0; try { localStorage.removeItem(poolTab === "tono" ? "poolHT" : "poolH"); } catch (e) {} setPoolH(); after(); };
     const after = () => setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30);
     gr.onpointerdown = e => { e.preventDefault(); const y0 = e.clientY, h0 = $("pool").getBoundingClientRect().height; gr.setPointerCapture(e.pointerId);
-      gr.onpointermove = ev => { PH = Math.round(Math.min(Math.max(h0 + (y0 - ev.clientY), 90), innerHeight * 0.7)); setPoolH(); };
-      gr.onpointerup = () => { gr.onpointermove = gr.onpointerup = null; try { localStorage.setItem("poolH", PH); } catch (e) {} after(); }; }; }
-  setPoolH(); pBar(freeAll);
+      gr.onpointermove = ev => { const v = Math.round(Math.min(Math.max(h0 + (y0 - ev.clientY), 90), innerHeight * 0.7)); if (poolTab === "tono") PHT = v; else PH = v; setPoolH(); };
+      gr.onpointerup = () => { gr.onpointermove = gr.onpointerup = null; try { localStorage.setItem(poolTab === "tono" ? "poolHT" : "poolH", poolTab === "tono" ? PHT : PH); } catch (e) {} after(); }; }; }
+  setPoolH(); tabsUI(); $("poolbar").style.display = $("poolrow").style.display = poolTab === "tono" ? "none" : ""; $("tonopanel").style.display = poolTab === "tono" ? "flex" : "none";
+  if (poolTab === "tono") { loadTono(); return; }
+  pBar(freeAll);
   const free = filterList(freeAll, PF), keep = P.scrollTop; P.innerHTML = "";
   const info = document.createElement("div"); info.className = "cap"; info.textContent = `Foto libere: ${free.length}${free.length !== freeAll.length ? " di " + freeAll.length : ""} — non sono in nessuno spread${S.tolte.length ? " · in grigio: tolte apposta" : ""} · passa sopra una foto e premi 1-7 per il colore (0 lo toglie)`; P.appendChild(info);
   if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);

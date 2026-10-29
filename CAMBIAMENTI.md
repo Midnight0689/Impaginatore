@@ -3,6 +3,14 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 74 — Scheda «Tono»: misura se le foto di uno spread hanno la stessa luminosità
+- **Pannello in basso a due schede:** «Galleria» e «Tono» (la scelta si ricorda; ognuna ha la sua altezza regolabile). — `index.html`.
+- **Scheda Tono:** frase di sintesi («2 foto da sistemare: la 2 è troppo scura…»), voto di uniformità su 100, una colonna per foto (più alta = più chiara) con la fascia verde «zona giusta» (±0,3 EV dalla mediana dello spread), miniatura e istruzione («schiarisci di 0,8», «ok»); riga con il tono degli spread vicini; «⚠ luci» se schiarire farebbe bruciare le alte luci.
+- **Sulle cornici:** pillole con numero e scarto in EV (verde, giallo ≤ ±0,6, rosso oltre) e contorno colorato per le foto fuori; interruttore «Numeri sulle foto».
+- **«Correggi le N foto»:** porta l'Esposizione di ogni foto rossa alla mediana (un solo annulla per foto con ⌘Z); «Correggi anche le da guardare» include le gialle. Clic su una colonna: seleziona la foto; clic destro: la esclude dal calcolo (scura o chiara di proposito), salvato nel progetto.
+- Misura: luminanza mediana della foto come appare (ritocchi compresi), in luce lineare gamma 2.2 come il livello Esposizione di Photoshop. — `editor.py` (`tono_spread`, op `tono_escl`, `/api/tono`).
+- Il cursore Esposizione per foto ora va da −2 a +2 EV (prima ±1).
+
 ## Versione 73 — Geometria, bordo, ombra e testi coincidono con Photoshop
 Nuovo test `tests/fedelta_geometria.py` (15 cornici + 9 testi, PSD appiattito in Photoshop vs anteprima).
 - **Ritaglio, zoom, angolo, bordo, ombra, bianco e nero:** già coincidenti (scarto medio ≤ 1.2/255, nessuno spostamento, bordi nello stesso punto). Nessuna modifica.
