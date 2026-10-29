@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.2.0 — Quattro modelli in più: Pellicola, Tre quarti e tre, Finestra a tre, Fascia centrale
+- Aggiunti ai modelli d'autore (anche specchiati). Corretto anche il caso di una cornice centrata esattamente sulla piega: conta sempre per la pagina destra, così il numero di foto per pagina è lo stesso nelle versioni normale e specchiata. Provati tutti e 36 i moduli applicandoli a uno spread di prova. — `editor.py` (`_sp_models`, `_sp_isL`).
+
 ## Versione 1.1.0 — Quattordici modelli d'autore
 - Nuovi modelli pensati sullo spread intero (cornici libere): Larga e due, Colonna e due, Quattro piccole, Sette foto, Respiro, Dettagli, Panorama, Panorama e quattro, Galleria con cornice, Due terzi e due, Mosaico, Editoriale, Scalini, Cornice; ognuno anche specchiato. Alcuni attraversano la piega o hanno margini bianchi. Compaiono insieme agli altri secondo le proporzioni delle foto; gli schemi identici a uno già esistente si mostrano una volta sola. — `editor.py` (`_sp_models`, `_sp_build`, `COUPLED`, dedupe in `tpl_options`).
 

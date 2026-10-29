@@ -123,21 +123,26 @@ def _sp_models(CW, CH, G):
     M["X12"] = [(0, 0, PL, CH), (.76 * CW, .3 * CH, .9 * CW, .93 * CH)]
     M["X13"] = [(.1 * CW, .05 * CH, .27 * CW, .75 * CH), (.29 * CW, .2 * CH, .46 * CW, .9 * CH), (.54 * CW, .1 * CH, .71 * CW, .8 * CH), (.73 * CW, .25 * CH, .9 * CW, .95 * CH)]
     M["X14"] = [(.25 * CW, .18 * CH, .75 * CW, .82 * CH), (.03 * CW, .07 * CH, .2 * CW, .45 * CH), (.8 * CW, .07 * CH, .97 * CW, .45 * CH), (.03 * CW, .55 * CH, .2 * CW, .93 * CH), (.8 * CW, .55 * CH, .97 * CW, .93 * CH)]
+    M["X16"] = [(a, 0, b, CH) for a, b in _sp_split(0, CW, 5, G)]
+    M["X17"] = [(0, 0, .75 * CW, CH)] + _sp_stack(.75 * CW + G, CW, 3, 0, CH, G)
+    M["X20"] = [(0, 0, PL, CH)] + _sp_stack(.56 * CW, .94 * CW, 3, .2 * CH, .8 * CH, G)
+    M["X21"] = [(0, .32 * CH, CW, .68 * CH)] + [r for a, b in _sp_split(0, CW, 2, G) for r in ((a, 0, b, .32 * CH - G), (a, .68 * CH + G, b, CH))]
     return M
+def _sp_isL(c, CW): return c < CW / 2 - 0.5       # una cornice centrata sulla piega (entro mezzo pixel) conta per la pagina destra, sempre
 def _sp_build(key, side, m):
     def build(p, _m=False):
         CW, CH, G = A.CW, A.CH, A.G; F = CW / 2; R = _sp_models(CW, CH, G)[key]
         if m: R = [(CW - xb, ya, CW - xa, yb) for xa, ya, xb, yb in R]
         x0, x1 = (0, F - G / 2) if side == "L" else (F + G / 2, CW)
-        mine = sorted((r for r in R if ((r[0] + r[2]) / 2 < F) == (side == "L")), key=lambda r: (round(r[0] / 50), round(r[1] / 50)))
+        mine = sorted((r for r in R if _sp_isL((r[0] + r[2]) / 2, CW) == (side == "L")), key=lambda r: (round(r[0] / 50), round(r[1] / 50)))
         return [dict(k="f", i=p[j] - 1, x=round((r[0] - x0) / (x1 - x0), 4), y=round(r[1] / CH, 4), w=round((r[2] - r[0]) / (x1 - x0), 4), h=round((r[3] - r[1]) / CH, 4), bw=False, z=1.0) for j, r in enumerate(mine)]
     return build
-SPM_KEYS = ["X%d" % k for k in range(1, 15)]
+SPM_KEYS = ["X%d" % k for k in range(1, 15)] + ["X16", "X17", "X20", "X21"]
 for _k in SPM_KEYS:
     for _m in (False, True):
         for _sd in "LR":
             _n = _k + ("M" if _m else "") + _sd; BUILD[_n] = _sp_build(_k, _sd, _m)       # la versione specchiata ha un altro numero di foto per pagina: modulo a parte
-            NPH[_n] = sum(1 for r in _sp_models(A.CW, A.CH, A.G)[_k] if (((A.CW - r[2] + A.CW - r[0]) if _m else (r[0] + r[2])) / 2 < A.CW / 2) == (_sd == "L"))
+            NPH[_n] = sum(1 for r in _sp_models(A.CW, A.CH, A.G)[_k] if _sp_isL(((A.CW - r[2] + A.CW - r[0]) if _m else (r[0] + r[2])) / 2, A.CW) == (_sd == "L"))
 COUPLED = [((k + ("M" if m else "") + "L", "I", False), (k + ("M" if m else "") + "R", "I", False)) for k in SPM_KEYS for m in (False, True)]
 
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
