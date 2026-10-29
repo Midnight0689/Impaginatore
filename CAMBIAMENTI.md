@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 121 — Rimesse le linee dei terzi nell'anteprima Design
+- Le linee dei terzi nell'anteprima Design tornano (le aveva volute Stefano); resta tolta solo la riga sopra «Design». — `index.html` (`.insp .pv::before`).
+
 ## Versione 120 — Tolta la riga sopra «Design»
 - Nel pannello destro la prima intestazione (Design) non ha più la riga sottile sopra. — `index.html` (`.insp > .sec:first-child`).
 
