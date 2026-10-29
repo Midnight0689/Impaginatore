@@ -715,16 +715,27 @@ def tpl_options(photos, cur=None, side=None, s=None):
             tup = (new, (fixed[0], fixed[1])) if side == "L" else ((fixed[0], fixed[1]), new)
         lay = sorted((L for L in A.layout(tup) if L["k"] != "t" and L["side"] in sides), key=lambda L: L.get("_o", 0))
         fr = [dict(x=L["x"] - BL, y=L["y"] - BL, w=L["W"], h=L["H"]) for L in lay]
-        left = list(range(N)); asg = [None] * N; cost = 0.0
-        for j in sorted(range(N), key=lambda j: -fr[j]["w"] * fr[j]["h"]):
-            far = fr[j]["w"] / fr[j]["h"]
-            c, p = min(((abs(math.log(far / A.M[photos[q]]["ar"])) + 0.02 * abs(q - j), q) for q in left))
-            asg[j] = p; left.remove(p); cost += c
+        far = [f["w"] / f["h"] for f in fr]; mis = [[abs(math.log(far[j] / A.M[photos[q]]["ar"])) for q in range(N)] for j in range(N)]
+        dp = {0: (0.0, [])}                      # abbinamento ottimo foto-cornici (programmazione dinamica sulle foto già usate)
+        if N > 9:                                 # tantissime foto: abbinamento veloce (la cornice più grande sceglie per prima)
+            left = list(range(N)); asg = [None] * N; cost = 0.0
+            for j in sorted(range(N), key=lambda j: -fr[j]["w"] * fr[j]["h"]):
+                c, p = min((mis[j][q] + 0.02 * abs(q - j), q) for q in left); asg[j] = p; left.remove(p); cost += c
+            dp = {(1 << N) - 1: (cost, asg)}
+        for j in range(N if N <= 9 else 0):
+            nx = {}
+            for mask, (c0, ch) in dp.items():
+                for q in range(N):
+                    if mask >> q & 1: continue
+                    c1 = c0 + mis[j][q] + 0.02 * abs(q - j); m1 = mask | 1 << q
+                    if m1 not in nx or c1 < nx[m1][0]: nx[m1] = (c1, ch + [q])
+            dp = nx
+        cost, asg = dp[(1 << N) - 1]; worst = max((mis[j][asg[j]] for j in range(N)), default=0.0)
         for j, f in enumerate(fr): f["n"] = A.name(photos[asg[j]])
         okc = cur is not None and sorted((round(f["x"]), round(f["y"]), f["w"], f["h"]) for f in fr) == cur
-        if side is not None: return dict(cost=round(cost, 3), frames=fr, cur=okc, **{side: dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg])})
+        if side is not None: return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, **{side: dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg])})
         na = NPH_(a[0])
-        return dict(cost=round(cost, 3), frames=fr, cur=okc, L=dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg[:na]]),
+        return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, L=dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg[:na]]),
                     R=dict(mode=b[1], module=b[0], mirror=b[2], photos=[photos[q] for q in asg[na:]]))
 
     out = []
@@ -737,6 +748,10 @@ def tpl_options(photos, cur=None, side=None, s=None):
         for a in LAYS:
             if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a))
     out.sort(key=lambda t: (not t["cur"], t["cost"]))
+    TOLL = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
+    buoni = [t for t in out if t["cur"] or t["worst"] <= TOLL]
+    if not any(not t["cur"] for t in buoni): buoni = buoni + sorted((t for t in out if not t["cur"]), key=lambda t: (t["worst"], t["cost"]))[:3]       # nessuna alternativa rispetta le foto: solo i meno peggio
+    out = buoni
     ut = []
     for t in ut_load():
         if t["n"] != N or t.get("lato") != side: continue

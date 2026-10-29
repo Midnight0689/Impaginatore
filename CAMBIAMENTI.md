@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 127 — Modelli: proporzioni delle foto prima di tutto
+- Abbinamento foto-cornici ora ottimo (programmazione dinamica) invece che goloso; ogni modello ha `worst` = quanto la cornice peggiore si discosta dalla proporzione della sua foto.
+- Si propongono solo i modelli con `worst` ≤ 0,28 (più il modello attuale); se nessuna alternativa rispetta le foto si mostrano le 3 meno peggio. Prima comparivano anche modelli che tagliavano una foto orizzontale in verticale. — `editor.py` (`tpl_options`). Serve riavviare l'editor.
+
 ## Versione 126 — Galleria: filtro colori e assegnazione separati
 - I pallini del filtro ora hanno l'etichetta «Mostra:» (nessun colore scelto = tutte le foto; più colori = quelle colori). Per assegnare c'è un gruppo a parte «Colora:» con ★ Preferita e ✕ Tolta, nella riga delle linguette Galleria/Tono (a destra). Nella vista Foto il gruppo di assegnazione resta nella barra. — `index.html` (`mkBar`, `tabsUI`, `#ptabs .mk`).
 
