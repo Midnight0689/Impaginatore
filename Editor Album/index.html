@@ -684,6 +684,7 @@ function startGroup(e, its, bb, kind) {
   const draw = () => { const sc = $("wrap").clientWidth / S.W;
     if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
     its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; });
+    { const l = ax + (bb.L - ax) * sx, r = ax + (bb.R - ax) * sx, t = ay + (bb.T - ay) * sy, b = ay + (bb.B - ay) * sy; drawEq(edgeMarks({ x: Math.min(l, r), y: Math.min(t, b), w: Math.abs(r - l), h: Math.abs(b - t) })); }       // distanze dai bordi, live
     document.querySelectorAll(".guide").forEach(x => x.remove());
     gd.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
       if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
