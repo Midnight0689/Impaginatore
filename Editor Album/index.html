@@ -98,6 +98,7 @@
   #rh { left: 22px; top: 0; height: 22px; cursor: row-resize; } #rv { left: 0; top: 22px; width: 22px; cursor: col-resize; }
   #rc { left: 0; top: 0; width: 22px; height: 22px; }
   #wrap { max-width: none; }
+  #stage.zoomed #tools, body.tpin #stage.zoomed #tools { position: sticky !important; top: 0; left: 16px; z-index: 28; align-self: flex-start; width: calc(100cqw - 32px) !important; max-width: none !important; box-sizing: border-box; padding: 6px 0 !important; background: var(--stg, var(--bg)) !important; box-shadow: 0 8px 14px -8px rgba(0,0,0,.5) !important; justify-content: safe center; }
   #stage.zoomed { align-items: safe center; justify-content: safe center; } #zpill { position: fixed; right: calc(var(--rc, 290px) + 16px); bottom: calc(var(--pr, 150px) + 14px); z-index: 30; height: 28px; padding: 0 12px; border-radius: 14px; background: rgba(20,20,22,.85); border: 1px solid var(--line); color: var(--text); font-size: 12px; backdrop-filter: blur(8px); }
   #guides { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: visible; }
   .gl { position: absolute; background: #2ec4ff; pointer-events: auto; }
