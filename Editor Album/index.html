@@ -1327,7 +1327,7 @@ function startFree(e, it, kind) {
       if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
       if (kind.includes("s")) B = clamp(sy(B + dy, "hi"), T + minh, c.fy1);
     }
-    szm = [];
+    szm = []; const g0 = guides.slice();       // guide di aggancio prima del ridimensionamento proporzionale
     if (kind !== "move" && magnet && !free && !ev.shiftKey) {       // magnete di misura: stessa larghezza o altezza di un'altra foto dello spread
       const oth = S.spreads[cur].items.filter(o => !(o.side === it.side && o.idx === it.idx) && o.k !== "t");
       const pick = (v, key) => { let b = null; for (const o of oth) if (Math.abs(o[key] - v) < sd && (b === null || Math.abs(o[key] - v) < Math.abs(b[key] - v))) b = o; return b; };
@@ -1339,13 +1339,13 @@ function startFree(e, it, kind) {
       s = Math.max(0.03, Math.min(s, horiz ? (c.fy1 - c.fy0) / it.h : (c.bx1 - c.bx0) / it.w));
       if (horiz) { const w2 = it.w * s, h2 = it.h * s; if (kind === "w") L = R - w2; else R = L + w2; T = Math.min(Math.max(it.y + it.h / 2 - h2 / 2, c.fy0), c.fy1 - h2); B = T + h2; L = Math.max(L, c.bx0); R = Math.min(R, c.bx1); }
       else { const w2 = it.w * s, h2 = it.h * s; if (kind === "n") T = B - h2; else B = T + h2; L = Math.min(Math.max(it.x + it.w / 2 - w2 / 2, c.bx0), c.bx1 - w2); R = L + w2; T = Math.max(T, c.fy0); B = Math.min(B, c.fy1); }
-      guides = [];
+      guides = g0.filter(g => g[0] === (horiz ? "v" : "h") && Math.abs(g[1] - (g[0] === "v" ? (kind === "w" ? L : R) : (kind === "n" ? T : B))) < 1.5);       // resta la guida dell'asse che guida il ridimensionamento
     }
     if (kind !== "move" && kind.length === 2 && ev.shiftKey) {       // Maiusc su un angolo: stesse proporzioni di prima (come Photoshop), l'angolo opposto resta fermo
       const ax = kind.includes("w") ? it.x + it.w : it.x, ay = kind.includes("n") ? it.y + it.h : it.y;
       let s = Math.max((R - L) / it.w, (B - T) / it.h);
       s = Math.max(0.03, Math.min(s, (kind.includes("w") ? ax - c.bx0 : c.bx1 - ax) / it.w, (kind.includes("n") ? ay - c.fy0 : c.fy1 - ay) / it.h));
-      const w2 = it.w * s, h2 = it.h * s; L = kind.includes("w") ? ax - w2 : ax; R = L + w2; T = kind.includes("n") ? ay - h2 : ay; B = T + h2; guides = [];
+      const w2 = it.w * s, h2 = it.h * s, domX = (R - L) / it.w >= (B - T) / it.h; L = kind.includes("w") ? ax - w2 : ax; R = L + w2; T = kind.includes("n") ? ay - h2 : ay; B = T + h2; guides = g0.filter(g => g[0] === (domX ? "v" : "h") && Math.abs(g[1] - (g[0] === "v" ? (kind.includes("w") ? L : R) : (kind.includes("n") ? T : B))) < 1.5);
     }
     let out = { x: L, y: T, w: R - L, h: B - T };
     if (magnet && !free) { const es = eqSpace(it, out, kind === "move", guides.some(g => g[0] === "v"), guides.some(g => g[0] === "h")); if (kind === "move") { out.x = clamp(out.x + es.dx, c.bx0, c.bx1 - out.w); out.y = clamp(out.y + es.dy, c.fy0, c.fy1 - out.h); } eqm = eqSpace(it, out, false, true, true).marks; } else eqm = [];
