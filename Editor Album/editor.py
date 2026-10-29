@@ -283,12 +283,11 @@ def apply(o):
                     if val: r[k] = val
                     else: r.pop(k, None)
                 if not r: CFG["ritocco"].pop(n, None)
-    elif t == "tono_rif":                                # riferimento del tono: una foto (la sua misura attuale) oppure «ricalcola» (mediana di tutto l'album)
-        if o.get("photo"):
-            for s_ in range(len(SP)):
-                m_ = next((m for m in _tono_misure(s_) if m["name"] == o["photo"]), None)
-                if m_: CFG["tono_rif"] = {k: round(m_["st"][k], 3) for k in "MHST"}; break
-        else: CFG.pop("tono_rif", None)
+    elif t == "tono_rif":                                # riferimento del tono dello spread s: la misura attuale di una foto, oppure «ricalcola» (mediana attuale dello spread)
+        s_ = int(o["s"]); ms_ = _tono_misure(s_); key = "|".join(sorted(m["name"] for m in ms_)); R = CFG.setdefault("tono_rif", {})
+        m_ = next((m for m in ms_ if m["name"] == o.get("photo")), None)
+        if m_: R[key] = {k: round(m_["st"][k], 3) for k in "MHST"}
+        else: R.pop(key, None)
     elif t == "tono_escl":                               # foto escluse dalla misura del tono (scure o chiare di proposito)
         for n in o.get("photos") or [o["photo"]]:
             if o.get("value", True):
@@ -872,19 +871,16 @@ def _tono_med(ms, k):
     v = [m["st"][k] for m in ms if m["name"] not in CFG["tono_escl"]]
     return statistics.median(v) if v else None
 
-def _tono_rif():
-    """livello di riferimento FISSO dell'album (luce media, alte luci, ombre, tono): la mediana di tutte le foto la prima volta, poi resta salvata nel progetto.
-    Così il valore di una foto non cambia quando ne ritocchi un'altra; si cambia con «Riferimento» nella scheda Tono"""
+def _tono_rif(s):
+    """livello di riferimento FISSO di uno spread (luce media, alte luci, ombre, tono): la mediana delle sue foto la prima volta che lo si misura, poi resta salvata nel progetto
+    (per l'insieme di foto dello spread). Così il valore di una foto non cambia quando ne ritocchi un'altra; si cambia con «Riferimento» nella scheda Tono"""
     import statistics
-    r = CFG.get("tono_rif")
-    if r: return r
-    vals = {k: [] for k in "MHST"}
-    for s in range(len(SP)):
-        for m in _tono_misure(s):
-            if m["name"] in CFG["tono_escl"]: continue
-            for k in vals: vals[k].append(m["st"][k])
-    r = {k: round(statistics.median(v), 3) for k, v in vals.items()} if vals["T"] else dict(M=-2.0, H=-1.0, S=-4.0, T=-1.5)
-    CFG["tono_rif"] = r; return r
+    ms = _tono_misure(s); key = "|".join(sorted(m["name"] for m in ms)); R = CFG.setdefault("tono_rif", {})
+    if "T" in R: R.clear()                                          # formato della versione 80 (riferimento unico): non vale più
+    if key in R: return R[key]
+    vals = {k: [m["st"][k] for m in ms if m["name"] not in CFG["tono_escl"]] for k in "MHST"}
+    R[key] = {k: round(statistics.median(v), 3) for k, v in vals.items()} if vals["T"] else dict(M=-2.0, H=-1.0, S=-4.0, T=-1.5)
+    return R[key]
 
 def _tono_stato(d, soglie): return "ok" if abs(d) <= soglie[0] else "att" if abs(d) <= soglie[1] else "no"
 
@@ -924,7 +920,7 @@ def tono_spread(s, over=None):
         ms = _tono_misure(s); items = []; pen = []
         if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_stat(_tono_sim(m["i"], m["im"], over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]), m["bw"]))) if m["name"] in over else m for m in ms]
         if not ms: return dict(s=s, items=[], score=100, prev=None, next=None)
-        tg = dict(_tono_rif()); ck = (spread_hash(s), tuple(CFG["tono_escl"]), tuple(sorted(tg.items())))
+        tg = dict(_tono_rif(s)); ck = (spread_hash(s), tuple(CFG["tono_escl"]), tuple(sorted(tg.items())))
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d, dh, ds = st["T"] - tg["T"], st["H"] - tg["H"], st["S"] - tg["S"]
             stato = "escl" if esc else _tono_stato(d, (TONO_VERDE, TONO_GIALLO))
@@ -941,7 +937,7 @@ def tono_spread(s, over=None):
             if not esc: pen.append(min(abs(d), 1.0))
         def vic(t):
             if not (0 <= t < len(SP)): return None
-            mm = _tono_misure(t); v = _tono_med(mm, "T") if mm else None; return None if v is None else round(v - tg["T"], 2)
+            return round(_tono_rif(t)["T"] - tg["T"], 2) if _tono_misure(t) else None
         return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), verde=TONO_VERDE, giallo=TONO_GIALLO, sh=TONO_H, ss=TONO_S)
 
 def live_photo(q):

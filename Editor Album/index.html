@@ -1103,13 +1103,13 @@ function drawTono() {
   const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 0.05 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + fn1(v)}</span>`;
   const fixable = no.filter(x => !C || x.compl), fixAtt = at.filter(x => !C || x.compl);
   P.innerHTML = `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto allo stesso tono">Uniformità ${T.score} / 100</span></div>
-    <div id="tchart">${cols}<div id="tband"><span>zona giusta · riferimento dell'album</span></div></div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>
+    <div id="tchart">${cols}<div id="tband"><span>zona giusta · riferimento dello spread</span></div></div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>
     <div class="tr"><div class="seg tmode"><button data-m="s" class="${C ? "" : "on"}" title="Corregge solo l'Esposizione">Semplice</button><button data-m="c" class="${C ? "on" : ""}" title="Corregge Esposizione, Alteluci, Ombre e Bianchi">Completa</button></div>
       <button class="primary" id="tfix" ${fixable.length ? "" : "disabled"}>${fixable.length ? `Correggi le ${fixable.length} foto` : "Niente da correggere"}</button>
       ${fixAtt.length ? `<button id="tfixall">Correggi anche le ${fixAtt.length} da guardare</button>` : ""}
       <button id="tpl2" class="${tonoPills ? "on" : ""}" title="Mostra o nascondi i numeri sulle cornici">Numeri sulle foto</button>
-      <div style="display:flex;gap:6px"><button id="trif" style="flex:1" ${selItem() && selItem().k !== "t" ? "" : "disabled"} title="Usa il tono della foto selezionata come riferimento per tutto l'album">Riferimento: questa foto</button><button id="trif2" title="Ricalcola il riferimento: mediana di tutte le foto dell'album">↻</button></div>
-      <div class="hlp">${C ? "Esposizione + alteluci, ombre, bianchi (pochissimo, mai oltre ±20)." : "Solo l'Esposizione."} Ogni foto è confrontata con un riferimento fisso dell'album: ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>`;
+      <div style="display:flex;gap:6px"><button id="trif" style="flex:1" ${selItem() && selItem().k !== "t" ? "" : "disabled"} title="Usa il tono della foto selezionata come riferimento di questo spread">Riferimento: questa foto</button><button id="trif2" title="Ricalcola il riferimento di questo spread: mediana delle sue foto di adesso">↻</button></div>
+      <div class="hlp">${C ? "Esposizione + alteluci, ombre, bianchi (pochissimo, mai oltre ±20)." : "Solo l'Esposizione."} Ogni foto è confrontata con un riferimento fisso dello spread (fissato alla prima misura): ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>`;
   const ch = $("tchart"), box = ch.querySelector(".tbarbox"); if (box) { const cb = ch.getBoundingClientRect(), bb = box.getBoundingClientRect(); const sc2 = (bb.height - 18) / H, band = $("tband"); band.style.bottom = (cb.bottom - bb.bottom + lo * sc2) + "px"; band.style.height = ((hi - lo) * sc2) + "px"; ch.querySelectorAll(".tb").forEach(b => b.style.height = Math.round(parseFloat(b.style.height) * sc2) + "px"); }
   P.querySelectorAll(".tmode button").forEach(b => b.onclick = () => { tonoMode = b.dataset.m; try { localStorage.setItem("tonoMode", tonoMode); } catch (e) {} drawTono(); renderStage(); });
   P.querySelectorAll(".tcol").forEach(c => { const [side, idx] = c.dataset.at.split(":"), x = its.find(y => y.side === side && y.idx === +idx);
@@ -1117,8 +1117,8 @@ function drawTono() {
     c.oncontextmenu = e => { e.preventDefault(); op({ op: "tono_escl", photo: x.name, value: x.stato !== "escl" }); }; });
   if ($("tfix")) $("tfix").onclick = () => tonoFix(fixable); if ($("tfixall")) $("tfixall").onclick = () => tonoFix(fixable.concat(fixAtt));
   $("tpl2").onclick = () => { tonoPills = !tonoPills; drawTono(); renderStage(); };
-  $("trif").onclick = () => { const i = selItem(); if (i && i.k !== "t") op({ op: "tono_rif", photo: i.name }); toast("Riferimento: " + (i ? i.name : "")); };
-  $("trif2").onclick = () => { op({ op: "tono_rif" }); toast("Riferimento ricalcolato su tutto l'album"); };
+  $("trif").onclick = () => { const i = selItem(); if (i && i.k !== "t") op({ op: "tono_rif", s: cur, photo: i.name }); toast("Riferimento: " + (i ? i.name : "")); };
+  $("trif2").onclick = () => { op({ op: "tono_rif", s: cur }); toast("Riferimento dello spread ricalcolato"); };
 }
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
