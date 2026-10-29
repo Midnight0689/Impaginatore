@@ -3,6 +3,11 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 96 — Tono: foto selezionata evidenziata, pulsanti riordinati, test
+- Selezionando una foto (sullo spread o nella scheda) la sua scheda nel pannello Tono si evidenzia in blu, e se serve il pannello scorre fino a lei.
+- Pulsanti: restano Semplice/Completa, «Correggi…», «Vista album» e «Impostazioni»; Intensità, «Numeri sulle foto» e Standard/zona sono dentro «Impostazioni».
+- Lo smoke test controlla anche il Tono: misura, vista album, indipendenza dalla Scala, standard modificabile, correzione che avvicina allo standard, un solo annulla, mappa dei bruciati (32 controlli in tutto). — `index.html`, `tests/smoke.py`.
+
 ## Versione 95 — Un gruppo di foto non può uscire dallo spread
 Trascinando due o più foto selezionate, il gruppo si ferma quando la foto più esterna arriva al bordo dello spread: prima si poteva spingere il gruppo fuori e quella dal lato opposto andava persa. — `index.html` (`startFree`).
 

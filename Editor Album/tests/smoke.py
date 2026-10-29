@@ -77,6 +77,26 @@ try:
     after = json.dumps([[(i.get("kind"), i.get("tx"), i.get("name")) for i in sp["items"]] for sp in st["spreads"]])
     check("riapertura identica", before == after); check("stella ricordata", any(p["star"] for p in st["photos"]))
 
+    # ---- Tono: misura, indipendenza dalla Scala, correzione, annulla
+    T0 = call(P, "/api/tono?s=1"); it0 = T0["items"]
+    check("tono: misura di ogni foto dello spread", len(it0) >= 2 and all(k in it0[0] for k in ("d", "H", "S", "B", "stato", "stato_c")), str(it0[:1]))
+    check("tono: vista album con tutti gli spread", len(call(P, "/api/tono_all")) == len(st["spreads"]))
+    x0 = it0[0]; at0 = [1, x0["side"], x0["idx"]]
+    op({"op": "set", "at": at0, "z": 1.5}); T1 = call(P, "/api/tono?s=1"); y1 = next(i for i in T1["items"] if i["name"] == x0["name"])
+    check("tono: non cambia con la Scala", (x0["d"], x0["H"], x0["S"]) == (y1["d"], y1["H"], y1["S"]), f"{(x0['d'], x0['H'], x0['S'])} -> {(y1['d'], y1['H'], y1['S'])}")
+    op({"op": "set", "at": at0, "z": 1.0})
+    op({"op": "tono_L", "value": 68}); T2 = call(P, "/api/tono?s=1"); check("tono: standard modificabile", T2["rif"] == 68 and st["tono_L"] == 68)
+    fl = [i for i in T2["items"] if i["stato"] != "ok" and i.get("nuova") is not None]
+    if fl:
+        f = fl[0]
+        op({"op": "tono_fix", "items": [{"photo": f["name"], "ev": f["nuova"]}]}); T3 = call(P, "/api/tono?s=1"); g = next(i for i in T3["items"] if i["name"] == f["name"])
+        check("tono: la correzione avvicina la foto allo standard", abs(g["d"]) < abs(f["d"]), f"{f['d']} -> {g['d']}")
+        check("tono: l'esposizione è cambiata", abs(g["evp"] - f["evp"]) > 1e-6)
+        op({"op": "undo"}); T4 = call(P, "/api/tono?s=1"); h4 = next(i for i in T4["items"] if i["name"] == f["name"]); check("tono: un solo annulla ripristina l'esposizione", abs(h4["evp"] - f["evp"]) < 1e-6)
+    else: check("tono: ci sono foto da correggere con lo standard 68", False, "nessuna foto segnalata")
+    op({"op": "tono_L", "value": 55}); op({"op": "tono_L", "value": 52}); check("tono: valore standard di default non salvato", "tono_L" not in json.load(open(os.path.join(proj, "progetto.json"))) or st["tono_L"] == 52)
+    br = urllib.request.urlopen(f"http://127.0.0.1:{P}/img/bruc?s=1&side={x0['side']}&idx={x0['idx']}&h=x", timeout=60).read(); check("tono: mappa dei bianchi bruciati", br[:4] == b"\x89PNG")
+
     # ---- esportazione
     dj = os.path.join(TMP, "out_jpg"); okx, L = esporta(P, fmt="jpg", range="", dest=dj, res="bozza", q=80)
     jp = sorted(f for f in os.listdir(dj)) if os.path.isdir(dj) else []
