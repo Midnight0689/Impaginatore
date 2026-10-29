@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 120 — Tolta la riga sopra «Design»
+- Nel pannello destro la prima intestazione (Design) non ha più la riga sottile sopra. — `index.html` (`.insp > .sec:first-child`).
+
 ## Versione 119 — Anteprima Design più grande, anteprima grande col tasto Z
 - Anteprima «Design» più grande (pannello destro 350 px invece di 310, altezza massima 440 px) e senza le linee dei terzi.
 - L'anteprima grande della foto si apre/chiude col tasto Z (prima barra spaziatrice); la barra tenuta premuta ora fa sempre la manina nell'Album, anche con una foto selezionata. — `index.html`.
