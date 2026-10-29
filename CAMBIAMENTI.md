@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.1.0 — Quattordici modelli d'autore
+- Nuovi modelli pensati sullo spread intero (cornici libere): Larga e due, Colonna e due, Quattro piccole, Sette foto, Respiro, Dettagli, Panorama, Panorama e quattro, Galleria con cornice, Due terzi e due, Mosaico, Editoriale, Scalini, Cornice; ognuno anche specchiato. Alcuni attraversano la piega o hanno margini bianchi. Compaiono insieme agli altri secondo le proporzioni delle foto; gli schemi identici a uno già esistente si mostrano una volta sola. — `editor.py` (`_sp_models`, `_sp_build`, `COUPLED`, dedupe in `tpl_options`).
+
 ## Versione 1.0.2 — Modelli: «Mostra altri» con più taglio
 - Resta il filtro sulle proporzioni (scarto fino al 28%), ma sotto la lista compare «Mostra altri N modelli (tagliano di più le foto)»: fino a 36 modelli con scarto fino al 55%, in ordine dal meno al più tagliato, etichettati «taglio maggiore». Vale sia nel pannello Modelli sia nella vista Foto. Con foto di orientamento misto prima restavano 3 modelli, ora fino a una quarantina. — `editor.py` (`tpl_options` → `piu`), `index.html` (`.tmore`).
 

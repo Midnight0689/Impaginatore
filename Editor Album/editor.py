@@ -101,6 +101,45 @@ BUILD = {
     "F5": lambda p, m: [A.P(p[0], 4, 0, 8, 5), A.P(p[1], 0, 0, 4, 5), A.P(p[2], 0, 5, 4, 3), A.P(p[3], 4, 5, 4, 3), A.P(p[4], 8, 5, 4, 3)] if m else [A.P(p[0], 0, 0, 8, 5), A.P(p[1], 8, 0, 4, 5), A.P(p[2], 0, 5, 4, 3), A.P(p[3], 4, 5, 4, 3), A.P(p[4], 8, 5, 4, 3)],   # 5 foto
     "S6": lambda p, m: [A.P(p[j], 4 * (j % 3), 4 * (j // 3), 4, 4) for j in range(6)],       # 6 foto: griglia 3x2
 }
+
+# ---- modelli «d'autore» pensati sullo spread intero (cornici libere): alcuni attraversano la piega o hanno margini bianchi
+def _sp_split(a, b, n, g):
+    t = (b - a - g * (n - 1)) / n; return [(a + i * (t + g), a + i * (t + g) + t) for i in range(n)]
+def _sp_stack(x0, x1, n, y0, y1, g):
+    t = (y1 - y0 - g * (n - 1)) / n; return [(x0, y0 + i * (t + g), x1, y0 + i * (t + g) + t) for i in range(n)]
+def _sp_models(CW, CH, G):
+    F = CW / 2; PL, PR = F - G / 2, F + G / 2; M = {}
+    M["X1"] = [(0, 0, PL, .62 * CH)] + [(a, .62 * CH + G, b, CH) for a, b in _sp_split(0, PL, 2, G)] + [(a, 0, b, CH) for a, b in _sp_split(PR, CW, 2, G)]
+    M["X2"] = [(0, 0, .24 * CW, CH)] + _sp_stack(.24 * CW + G, PL, 2, 0, CH, G) + [(PR, 0, CW, CH)]
+    M["X3"] = [(0, 0, PL, CH)] + [r for a, b in _sp_split(PR, CW, 2, G) for r in _sp_stack(a, b, 2, 0, CH, G)]
+    M["X4"] = [(0, 0, PL, .6 * CH)] + [(a, .6 * CH + G, b, CH) for a, b in _sp_split(0, PL, 2, G)] + [r for a, b in _sp_split(PR, CW, 2, G) for r in _sp_stack(a, b, 2, 0, CH, G)]
+    M["X5"] = [(0, 0, PL, CH), (.66 * CW, .12 * CH, .84 * CW, .88 * CH)]
+    M["X6"] = [(0, 0, PL, CH)] + [r for a, b in _sp_split(PR, CW, 3, G) for r in _sp_stack(a, b, 2, 0, CH, G)]
+    M["X7"] = [(.03 * CW, .12 * CH, .97 * CW, .88 * CH)]
+    M["X8"] = [(0, 0, CW, .6 * CH)] + [(a, .6 * CH + G, b, CH) for a, b in _sp_split(0, CW, 4, G)]
+    M["X9"] = [(.08 * CW, .1 * CH, .27 * CW, .9 * CH), (.29 * CW, .1 * CH, .48 * CW, .9 * CH), (.52 * CW, .1 * CH, .71 * CW, .9 * CH), (.73 * CW, .1 * CH, .92 * CW, .9 * CH)]
+    M["X10"] = [(0, 0, .62 * CW, CH)] + [(a, 0, b, CH) for a, b in _sp_split(.62 * CW + G, CW, 2, G)]
+    M["X11"] = [(0, 0, .25 * CW - G / 2, CH)] + _sp_stack(.25 * CW + G / 2, PL, 3, 0, CH, G) + _sp_stack(PR, .75 * CW - G / 2, 2, 0, CH, G) + [(.75 * CW + G / 2, 0, CW, CH)]
+    M["X12"] = [(0, 0, PL, CH), (.76 * CW, .3 * CH, .9 * CW, .93 * CH)]
+    M["X13"] = [(.1 * CW, .05 * CH, .27 * CW, .75 * CH), (.29 * CW, .2 * CH, .46 * CW, .9 * CH), (.54 * CW, .1 * CH, .71 * CW, .8 * CH), (.73 * CW, .25 * CH, .9 * CW, .95 * CH)]
+    M["X14"] = [(.25 * CW, .18 * CH, .75 * CW, .82 * CH), (.03 * CW, .07 * CH, .2 * CW, .45 * CH), (.8 * CW, .07 * CH, .97 * CW, .45 * CH), (.03 * CW, .55 * CH, .2 * CW, .93 * CH), (.8 * CW, .55 * CH, .97 * CW, .93 * CH)]
+    return M
+def _sp_build(key, side, m):
+    def build(p, _m=False):
+        CW, CH, G = A.CW, A.CH, A.G; F = CW / 2; R = _sp_models(CW, CH, G)[key]
+        if m: R = [(CW - xb, ya, CW - xa, yb) for xa, ya, xb, yb in R]
+        x0, x1 = (0, F - G / 2) if side == "L" else (F + G / 2, CW)
+        mine = sorted((r for r in R if ((r[0] + r[2]) / 2 < F) == (side == "L")), key=lambda r: (round(r[0] / 50), round(r[1] / 50)))
+        return [dict(k="f", i=p[j] - 1, x=round((r[0] - x0) / (x1 - x0), 4), y=round(r[1] / CH, 4), w=round((r[2] - r[0]) / (x1 - x0), 4), h=round((r[3] - r[1]) / CH, 4), bw=False, z=1.0) for j, r in enumerate(mine)]
+    return build
+SPM_KEYS = ["X%d" % k for k in range(1, 15)]
+for _k in SPM_KEYS:
+    for _m in (False, True):
+        for _sd in "LR":
+            _n = _k + ("M" if _m else "") + _sd; BUILD[_n] = _sp_build(_k, _sd, _m)       # la versione specchiata ha un altro numero di foto per pagina: modulo a parte
+            NPH[_n] = sum(1 for r in _sp_models(A.CW, A.CH, A.G)[_k] if (((A.CW - r[2] + A.CW - r[0]) if _m else (r[0] + r[2])) / 2 < A.CW / 2) == (_sd == "L"))
+COUPLED = [((k + ("M" if m else "") + "L", "I", False), (k + ("M" if m else "") + "R", "I", False)) for k in SPM_KEYS for m in (False, True)]
+
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
 UT_FILE = os.path.expanduser("~/.album-tools/modelli_utente.json")
 UT_KEEP = ("k", "c", "r", "w", "h", "x", "y", "a", "zo")          # solo la geometria: foto, zoom e bianco/nero restano quelli della foto che ci va dentro
@@ -750,6 +789,14 @@ def tpl_options(photos, cur=None, side=None, s=None):
             for b in LAYS:
                 if NPH[a[0]] + NPH[b[0]] != N or (a[0] == "BLANK" and b[0] == "BLANK"): continue
                 out.append(build(a, b))
+        for a, b in COUPLED:
+            if NPH[a[0]] + NPH[b[0]] == N: out.append(build(a, b))
+        seen = set(); dd = []       # uno stesso schema ottenuto in due modi (modulo di pagina o modello d'autore) si mostra una volta sola
+        for t in out:
+            k = tuple(sorted((round(f["x"] / 40), round(f["y"] / 40), round(f["w"] / 40), round(f["h"] / 40)) for f in t["frames"]))
+            if k in seen and not t["cur"]: continue
+            seen.add(k); dd.append(t)
+        out = dd
     else:
         for a in LAYS:
             if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a))
