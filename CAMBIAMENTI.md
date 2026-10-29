@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 83 — Pannello Tono ridisegnato: una riga per foto con scala
+Le barre verticali si schiacciavano con il pannello basso. Ora ogni foto ha una riga: numero, miniatura, scala della luce (L* 20–90) con la fascia verde della zona giusta e il pallino della foto, valore, e un consiglio scritto («Esposizione +0,5 · Ombre +20»). In Completa un pallino tratteggiato mostra dove arriva la foto dopo la correzione. La colonna dei comandi scorre se il pannello è basso. — `index.html`.
+
 ## Versione 82 — Tono più intelligente: scene volute, centro e pelle, correzione leggera, vista album
 - **Scene chiare o scure di proposito** (abito bianco, interno con luci accese): la tolleranza per quella foto sale di 1,5 volte e sotto la miniatura compare «ok · scena chiara/scura». Nella vista album sono segnate con un contorno blu.
 - **Misura dove conta**: nella luce media il centro pesa più dei bordi e la pelle il doppio, quindi uno sfondo scuro non fa sembrare sottoesposto un viso giusto.
