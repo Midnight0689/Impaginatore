@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 95 — Un gruppo di foto non può uscire dallo spread
+Trascinando due o più foto selezionate, il gruppo si ferma quando la foto più esterna arriva al bordo dello spread: prima si poteva spingere il gruppo fuori e quella dal lato opposto andava persa. — `index.html` (`startFree`).
+
 ## Versione 94 — Trascinare più foto da una pagina all'altra
 Con due o più foto selezionate, trascinandole oltre la piega passano tutte all'altra pagina (prima ne passava solo una, quella afferrata): ognuna cambia pagina se il suo centro arriva nell'altra metà, e la selezione resta sulle stesse foto. — `editor.py` (op `nudge`), `index.html` (`startFree`).
 

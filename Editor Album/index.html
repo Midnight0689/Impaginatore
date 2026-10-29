@@ -1227,6 +1227,7 @@ function startFree(e, it, kind) {
     return { bx0, bx1, pb0, pb1, by0, by1, fy0, fy1, tx, ty };
   };
   const best = (v, ts) => { let b = null; for (const t of ts) if (Math.abs(v - t) < sd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
+  const grpI = msel.length > 1 && inM(it) ? S.spreads[cur].items.filter(o => inM(o) && o.k !== "t") : [];
   let eqm = [], side = it.side, c = ctx(side), rect = { x: it.x, y: it.y, w: it.w, h: it.h }, moved = false, ghost = null, guides = [];
   const compute = ev => {
     const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k; let L = it.x, T = it.y, R = it.x + it.w, B = it.y + it.h; guides = [];
@@ -1242,6 +1243,11 @@ function startFree(e, it, kind) {
       if (cym !== null && Math.abs(ny + it.h / 2 - cym) <= dye) { ny = cym - it.h / 2; guides.push(["h", cym]); }
       else if (gt !== null && (gb === null || Math.abs(ny - gt) <= Math.abs(ny + it.h - gb))) { ny = gt; guides.push(["h", gt]); } else if (gb !== null) { ny = gb - it.h; guides.push(["h", gb]); }
       L = clamp(nx, c.bx0, c.bx1 - it.w); T = clamp(ny, c.fy0, c.fy1 - it.h); R = L + it.w; B = T + it.h;
+      if (grpI.length > 1) {       // gruppo: nessuna foto può uscire dallo spread (si ferma la più esterna)
+        const gl = Math.min(...grpI.map(o => o.x)), gr = Math.max(...grpI.map(o => o.x + o.w)), gt = Math.min(...grpI.map(o => o.y)), gb = Math.max(...grpI.map(o => o.y + o.h));
+        const ddx = Math.min(Math.max(L - it.x, c.bx0 - gl), c.bx1 - gr), ddy = Math.min(Math.max(T - it.y, c.fy0 - gt), c.fy1 - gb);
+        L = it.x + ddx; T = it.y + ddy; R = L + it.w; B = T + it.h; guides = [];
+      }
     } else {
       const minw = (c.pb1 - c.pb0) * 0.03, minh = (c.by1 - c.by0) * 0.03;
       const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2]); if (t !== null) { guides.push(["v", t]); return t; } return v; };
