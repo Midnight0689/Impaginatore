@@ -1057,12 +1057,12 @@ function startFree(e, it, kind) {
   const wasOnly = msel.length === 1 && msel[0] === kOf(it) && !cropMode;
   const k = S.W / $("wrap").clientWidth, gap = S.gap, x0 = e.clientX, y0 = e.clientY, sd = 9 * k, free = e.altKey || !magnet;      // Alt = nessun aggancio
   const ctx = side => {                                  // limiti e bordi di aggancio: la foto può occupare tutto lo spread, anche a cavallo della piega
-    const G = S.spreads[cur].grid, g = G[side], [pb0, pb1] = g.bx, [by0, by1] = g.by, bx0 = G.L.bx[0], bx1 = G.R.bx[1], fd = S.fold;
-    const tx = { lo: [bx0, fd + gap / 2, fd], hi: [bx1, fd - gap / 2, fd] }, ty = { lo: [by0], hi: [by1] };       // lo = bordo sinistro/alto, hi = destro/basso
+    const G = S.spreads[cur].grid, g = G[side], [pb0, pb1] = g.bx, [by0, by1] = g.by, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (g.full || g).by, bx0 = FL, bx1 = FR;       // limiti = bordo vero della pagina (anche dove c'è il margine bianco)
+    const tx = { lo: [bx0, pb0, fd + gap / 2, fd], hi: [bx1, pb1, fd - gap / 2, fd] }, ty = { lo: [by0, fy0], hi: [by1, fy1] };       // lo = bordo sinistro/alto, hi = destro/basso
     S.spreads[cur].items.filter(i => !(i.side === it.side && i.idx === it.idx)).forEach(o => {
       tx.lo.push(o.x, o.x + o.w + gap); tx.hi.push(o.x + o.w, o.x - gap); if (o.side === side) { ty.lo.push(o.y, o.y + o.h + gap); ty.hi.push(o.y + o.h, o.y - gap); } });
     if (showGuides) { const gg = S.spreads[cur].guides; gg.v.forEach(x => { tx.lo.push(x); tx.hi.push(x); }); gg.h.forEach(y => { ty.lo.push(y); ty.hi.push(y); }); }
-    return { bx0, bx1, pb0, pb1, by0, by1, tx, ty };
+    return { bx0, bx1, pb0, pb1, by0, by1, fy0, fy1, tx, ty };
   };
   const best = (v, ts) => { let b = null; for (const t of ts) if (Math.abs(v - t) < sd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
   let eqm = [], side = it.side, c = ctx(side), rect = { x: it.x, y: it.y, w: it.w, h: it.h }, moved = false, ghost = null, guides = [];
@@ -1079,18 +1079,18 @@ function startFree(e, it, kind) {
       const dye = Math.min(gt === null ? 1e9 : Math.abs(ny - gt), gb === null ? 1e9 : Math.abs(ny + it.h - gb));
       if (cym !== null && Math.abs(ny + it.h / 2 - cym) <= dye) { ny = cym - it.h / 2; guides.push(["h", cym]); }
       else if (gt !== null && (gb === null || Math.abs(ny - gt) <= Math.abs(ny + it.h - gb))) { ny = gt; guides.push(["h", gt]); } else if (gb !== null) { ny = gb - it.h; guides.push(["h", gb]); }
-      L = clamp(nx, c.bx0, c.bx1 - it.w); T = clamp(ny, c.by0, c.by1 - it.h); R = L + it.w; B = T + it.h;
+      L = clamp(nx, c.bx0, c.bx1 - it.w); T = clamp(ny, c.fy0, c.fy1 - it.h); R = L + it.w; B = T + it.h;
     } else {
       const minw = (c.pb1 - c.pb0) * 0.03, minh = (c.by1 - c.by0) * 0.03;
       const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2]); if (t !== null) { guides.push(["v", t]); return t; } return v; };
       const sy = (v, s2) => { if (free) return v; const t = best(v, c.ty[s2]); if (t !== null) { guides.push(["h", t]); return t; } return v; };
       if (kind.includes("w")) L = clamp(sx(it.x + dx, "lo"), c.bx0, R - minw);
       if (kind.includes("e")) R = clamp(sx(R + dx, "hi"), L + minw, c.bx1);
-      if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.by0, B - minh);
-      if (kind.includes("s")) B = clamp(sy(B + dy, "hi"), T + minh, c.by1);
+      if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
+      if (kind.includes("s")) B = clamp(sy(B + dy, "hi"), T + minh, c.fy1);
     }
     let out = { x: L, y: T, w: R - L, h: B - T };
-    if (magnet && !free) { const es = eqSpace(it, out, kind === "move", guides.some(g => g[0] === "v"), guides.some(g => g[0] === "h")); if (kind === "move") { out.x = clamp(out.x + es.dx, c.bx0, c.bx1 - out.w); out.y = clamp(out.y + es.dy, c.by0, c.by1 - out.h); } eqm = eqSpace(it, out, false, true, true).marks; } else eqm = [];
+    if (magnet && !free) { const es = eqSpace(it, out, kind === "move", guides.some(g => g[0] === "v"), guides.some(g => g[0] === "h")); if (kind === "move") { out.x = clamp(out.x + es.dx, c.bx0, c.bx1 - out.w); out.y = clamp(out.y + es.dy, c.fy0, c.fy1 - out.h); } eqm = eqSpace(it, out, false, true, true).marks; } else eqm = [];
     return out;
   };
   let raf = 0, lastEv = null, gkey = "", srcEl = null;

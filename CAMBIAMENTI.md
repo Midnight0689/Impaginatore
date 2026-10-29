@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 66 — Le foto arrivano fino al bordo della pagina anche con il margine bianco
+- Nelle pagine con margine bianco la foto non poteva superare il margine: ora si può allargare/spostare fino al bordo vero della pagina (il margine resta come punto di aggancio). «Tutta pagina» ora riempie davvero la pagina, bordo compreso. — `editor.py` (`fullpage`, limiti verticali, `grid.full`), `index.html` (`startFree`).
+
 ## Versione 65 — Regolazioni più leggibili
 - Nel pannello della foto, Luce e Colore (Contrasto … Saturazione): nome e valore stanno sopra, lo slider sotto a tutta larghezza, così «Temperatura» e «Saturazione» non si sovrappongono più. Colonna delle etichette degli altri cursori un po' più larga. — `index.html`.
 

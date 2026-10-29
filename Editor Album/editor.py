@@ -178,7 +178,7 @@ def _zprep(s, sel):
 def _put_px(s, side, idx, x, y, W, H):
     pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]; (x0, x1), (y0, y1) = A._frame(side, pg[0]); w, h = W / (x1 - x0), H / (y1 - y0)
     fx, fy = (x - x0) / (x1 - x0), (y - y0) / (y1 - y0)
-    pg[1][idx] = mkfree(it, min(max(fx, -1.0), 2 - w), min(max(fy, 0.0), 1 - h), w, h)
+    pg[1][idx] = mkfree(it, min(max(fx, -1.0), 2 - w), min(max(fy, -0.5), 1.5 - h), w, h)
 
 def _put_obj(s, it, x, y, W, H):
     """come _put_px, ma per l'elemento `it` (oggetto): se dopo lo spostamento il suo centro è nell'altra metà dello spread passa all'altra pagina"""
@@ -429,7 +429,7 @@ def apply(o):
     elif t == "free":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]
         x, y, w, h = (float(o[k]) for k in ("x", "y", "w", "h"))
-        w, h = max(w, 0.03), max(h, 0.03); x, y = min(max(x, -1.0), 2 - w), min(max(y, 0.0), 1 - h)     # x oltre 0..1: la cornice passa sull'altra pagina
+        w, h = max(w, 0.03), max(h, 0.03); x, y = min(max(x, -1.0), 2 - w), min(max(y, -0.5), 1.5 - h)     # x oltre 0..1: la cornice passa sull'altra pagina
         old = it
         if it["k"] == "t" and o.get("ts") is not None: it = dict(it, ts=round(min(max(float(o["ts"]), 0.2), 6.0), 3))
         pg[1][idx] = mkfree(it, x, y, w, h)
@@ -442,7 +442,7 @@ def apply(o):
         if it["k"] == "t" and o.get("ts") is not None: it = dict(it, ts=round(min(max(float(o["ts"]), 0.2), 6.0), 3))
         dst = SP[s][0 if to == "L" else 1]
         x, y, w, h = (float(o[k]) for k in ("x", "y", "w", "h"))
-        w, h = max(w, 0.03), max(h, 0.03); x, y = min(max(x, -1.0), 2 - w), min(max(y, 0.0), 1 - h)
+        w, h = max(w, 0.03), max(h, 0.03); x, y = min(max(x, -1.0), 2 - w), min(max(y, -0.5), 1.5 - h)
         src[1].pop(idx)
         dst[1].append(mkfree(it, x, y, w, h))
     elif t == "snap":
@@ -504,7 +504,7 @@ def apply(o):
         for a in o["ats"]:
             side, idx = a[0], int(a[1]); pg = SP[s_][0 if side == "L" else 1]
             if pg[1][idx]["k"] == "t": continue
-            (x0, x1), (y0, y1) = A._frame(side, pg[0]); _put_px(s_, side, idx, x0, y0, x1 - x0, y1 - y0)
+            (x0, x1), (y0, y1) = A._frame(side, "I"); _put_px(s_, side, idx, x0, y0, x1 - x0, y1 - y0)       # tutta la pagina, fino al bordo
     elif t == "orient":                                   # cornici tutte verticali o tutte orizzontali: scambia larghezza e altezza se serve (centro fermo)
         s_ = o["s"]; R = _rects(s_)
         for a in o["ats"]:
@@ -661,7 +661,7 @@ def spread_view(s):
                 n = A.name(it["i"]); e.update(name=n, bw=bool(it.get("bw")), z=it.get("z", 1.0), a=it.get("a") or 0, ar=A.M[it["i"]]["ar"],
                                               ev=A.ev_for(it["i"]), evp=CFG["esposizione"]["per_foto"].get(n, 0.0), tono=CFG["tono"].get(n), rit=CFG["ritocco"].get(n), bd=it.get("bd"), sh=it.get("sh") or 0, oc=it.get("oc", 100), face=list(A._faces_center(it["i"]) or []))
             out.append(e)
-    return dict(h=spread_hash(s), guides=GD[s], L=SP[s][0][0], R=SP[s][1][0], items=out, grid=dict(L=page_grid("L", SP[s][0][0]), R=page_grid("R", SP[s][1][0])))
+    return dict(h=spread_hash(s), guides=GD[s], L=SP[s][0][0], R=SP[s][1][0], items=out, grid=dict(L=dict(page_grid("L", SP[s][0][0]), full=page_grid("L", "I")), R=dict(page_grid("R", SP[s][1][0]), full=page_grid("R", "I"))))
 
 def locked_sides(s):
     """pagine che non si toccano con i modelli: quelle con un vecchio blocco titolo/crediti o con solo testo (senza foto)"""
