@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 98 — Tono: anteprime più grandi e scorrevoli, meno pulsanti
+Le schede delle foto sono più grandi (176 px) e, se sono tante, scorrono di lato (anche con la rotellina) come la galleria. Tolti Semplice/Completa e i pulsanti «Correggi…»: la correzione si fa a mano, il pannello suggerisce solo l'esposizione. Restano «Vista album» e «Impostazioni» (numeri sulle foto, standard e zona). — `index.html`.
+
 ## Versione 97 — Magnete di misura: stessa larghezza o altezza di un'altra foto
 Ridimensionando una foto dai lati o dagli angoli, quando la sua larghezza (o altezza) si avvicina a quella di un'altra foto dello spread, si aggancia alla stessa misura: compare l'etichetta rosa «stessa larghezza» (o «altezza») e l'altra foto si evidenzia con un contorno tratteggiato. Segue il Magnete (si spegne con il tasto Magnete o tenendo Alt) e non agisce con Maiusc (proporzioni). — `index.html` (`startFree`).
 

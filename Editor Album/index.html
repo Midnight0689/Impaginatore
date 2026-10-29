@@ -378,12 +378,12 @@
   #tonopanel .th { display: flex; align-items: baseline; gap: 12px; flex-wrap: nowrap; } #tonopanel .tt { flex: none; white-space: nowrap; } #tonopanel .tt { font-size: 17px; font-weight: 600; } #tonopanel .ts { font-size: 12.5px; color: var(--dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #tonopanel .tsc { flex: none; } #tonopanel .tsc { padding: 1px 10px; border-radius: 11px; font-size: 12px; font-weight: 600; margin-left: auto; }
   .tsc.ok, .tpill.ok { background: #32d74b; color: #06240f; } .tsc.att, .tpill.att { background: #e0b23c; color: #231a00; } .tsc.no, .tpill.no { background: #ff6961; color: #3a0a07; } .tpill.escl { background: #555; color: #ddd; }
   #tchart { flex: 1; min-height: 0; display: flex; gap: 10px; align-items: flex-start; overflow-x: auto; overflow-y: auto; padding: 2px 2px 6px; }
-  .tcard { flex: 0 0 132px; width: 132px; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 5px; border-radius: 10px; cursor: pointer; } .tcard:hover { background: rgba(255,255,255,.05); } .tcard.selc { background: rgba(10,132,255,.2); box-shadow: 0 0 0 2px var(--blue); }
-  .tcard .tth { position: relative; } #pool .tcard img { display: block; width: 100%; height: 64px; margin: 0; box-sizing: border-box; object-fit: cover; border-radius: 7px; border: 2px solid transparent; cursor: pointer; } #pool .tcard.ok img { border-color: #32d74b; } #pool .tcard.att img { border-color: #e0b23c; } #pool .tcard.no img { border-color: #ff6961; } #pool .tcard.escl img { border-color: #555; opacity: .55; }
+  .tcard { flex: 0 0 176px; width: 176px; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 5px; border-radius: 10px; cursor: pointer; } .tcard:hover { background: rgba(255,255,255,.05); } .tcard.selc { background: rgba(10,132,255,.2); box-shadow: 0 0 0 2px var(--blue); }
+  .tcard .tth { position: relative; } #pool .tcard img { display: block; width: 100%; height: 92px; margin: 0; box-sizing: border-box; object-fit: cover; border-radius: 7px; border: 2px solid transparent; cursor: pointer; } #pool .tcard.ok img { border-color: #32d74b; } #pool .tcard.att img { border-color: #e0b23c; } #pool .tcard.no img { border-color: #ff6961; } #pool .tcard.escl img { border-color: #555; opacity: .55; }
   .tcard .tnn { position: absolute; left: 5px; top: 4px; font-size: 11px; font-weight: 600; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; padding: 0 6px; }
-  .tnum { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 6px; font-size: 11px; color: var(--dim); } .tnum b { color: #f2f2f7; font-weight: 600; } .tnum .ok b { color: #6bbf7a; } .tnum .att b { color: #e0b23c; } .tnum .no b { color: #ff6961; }
+  .tnum { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; font-size: 12px; color: var(--dim); } .tnum b { color: #f2f2f7; font-weight: 600; } .tnum .ok b { color: #6bbf7a; } .tnum .att b { color: #e0b23c; } .tnum .no b { color: #ff6961; }
   .tseg { display: flex; gap: 3px; } .tseg i { flex: 1; height: 5px; border-radius: 3px; background: #2c2c2e; } .tseg i.on.ok { background: #32d74b; } .tseg i.on.att { background: #e0b23c; } .tseg i.on.no { background: #ff6961; }
-  .tcard .tw { font-size: 13px; } .tcard .tw.ok { color: #6bbf7a; } .tcard .tw.att { color: #e0b23c; } .tcard .tw.no { color: #ff6961; } .tcard .tw.escl { color: var(--dim); } .tcard .tad2 { white-space: normal; overflow-wrap: anywhere; font-size: 11.5px; color: var(--dim); line-height: 1.25; }
+  .tcard .tw { font-size: 14px; } .tcard .tw.ok { color: #6bbf7a; } .tcard .tw.att { color: #e0b23c; } .tcard .tw.no { color: #ff6961; } .tcard .tw.escl { color: var(--dim); } .tcard .tad2 { white-space: normal; overflow-wrap: anywhere; font-size: 11.5px; color: var(--dim); line-height: 1.25; }
   #tonopanel .tn { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; gap: 10px; } #tonopanel .tr button { height: 30px; } #tonopanel .tr .hlp { font-size: 11.5px; color: var(--dim); line-height: 1.35; margin-top: 2px; }
   #tonopanel .tmode { display: flex; background: #1b1b1d; border-radius: 8px; padding: 2px; } #tonopanel .tmode button { flex: 1; height: 24px; padding: 0; background: transparent; font-size: 12px; } #tonopanel .tmode button.on { background: var(--blue); color: #fff; }
   #talb { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; align-content: start; padding: 2px; } .tac { background: #1b1b1d; border-radius: 10px; padding: 7px 8px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; gap: 5px; } .tac:hover { background: #242427; } .tac.cur { border-color: var(--blue); }
@@ -1077,7 +1077,7 @@ async function loadTono() {
   try { const d = await api("/api/tono?s=" + cur); if (TONOK !== k) return; TONO = d; } catch (e) { return; }
   drawTono(); renderStage();
 }
-let tonoMode = (() => { try { return localStorage.getItem("tonoMode") === "c" ? "c" : "s"; } catch (e) { return "s"; } })();
+let tonoMode = "s";       // la correzione si fa a mano: il pannello suggerisce solo l'esposizione
 const tst = x => tonoMode === "c" ? x.stato_c : x.stato;
 let tonoF = (() => { try { const v = parseFloat(localStorage.getItem("tonoF")); return v >= 0 && v <= 1 ? v : 1; } catch (e) { return 1; } })();      // intensità della correzione (0–100%)
 let tonoSet = false, tonoView = "s", tonoSort = "o", TONOALL = null, TONOALLK = "";
@@ -1132,11 +1132,9 @@ function drawTono() {
   if (tonoView === "a") loadTonoAll();
   P.innerHTML = tonoView === "a" ? albumHtml(C) + RIGHT() : `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto nello standard">Uniformità ${T.score} / 100</span></div>
     <div id="tchart">${cols}</div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>` + RIGHT();
-  function RIGHT() { return `<div class="tr"><div class="seg tmode"><button data-m="s" class="${C ? "" : "on"}" title="Corregge solo l'Esposizione">Semplice</button><button data-m="c" class="${C ? "on" : ""}" title="Corregge Esposizione, Alteluci, Ombre e Bianchi">Completa</button></div>
-      <button class="primary" id="tfix" ${fixable.length ? "" : "disabled"}>${fixable.length ? `Correggi le ${fixable.length} foto` : "Niente da correggere"}</button>
-      ${fixAtt.length ? `<button id="tfixall">Correggi anche le ${fixAtt.length} da guardare</button>` : ""}
+  function RIGHT() { return `<div class="tr">
       <div class="tbtn2"><button id="tview" class="${tonoView === "a" ? "on" : ""}" title="Tutti gli spread dell'album in un colpo d'occhio">${tonoView === "a" ? "Torna allo spread" : "Vista album"}</button><button id="tset" class="${tonoSet ? "on" : ""}" title="Intensità della correzione, numeri sulle foto, standard e zona">Impostazioni</button></div>
-      ${tonoSet ? `<div class="tsetp"><div class="tint" title="Quanta parte della correzione proposta applicare: 100% porta la foto al bordo della zona giusta, meno è più leggero"><span>Intensità</span><input id="tint" type="range" min="0" max="100" step="5" value="${Math.round(tonoF * 100)}"><b id="tintv">${Math.round(tonoF * 100)}%</b></div>
+      ${tonoSet ? `<div class="tsetp">
       <button id="tpl2" class="${tonoPills ? "on" : ""}" title="Mostra o nascondi i numeri sulle cornici">Numeri sulle foto</button>
       <div class="rif" title="Luce media standard di una foto (L*) e ampiezza della zona giusta. 50 = grigio al 18%; per ritratti e bambini 52–58. Vale per tutte le foto dell'album."><span>Standard L*</span><input id="trif" type="number" min="30" max="75" step="1" value="${Math.round(T.rif)}"><span>±</span><input id="tzon" type="number" min="4" max="30" step="1" value="${Math.round(T.zona)}"></div>
       <div class="hlp">Ogni foto è confrontata con lo standard fisso: ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>` : ""}</div>`; }
@@ -1147,6 +1145,7 @@ function drawTono() {
     c.onclick = () => { sel = { s: cur, side, idx: +idx }; msel = [side + ":" + idx]; render(); };
     c.oncontextmenu = e => { e.preventDefault(); op({ op: "tono_escl", photo: x.name, value: x.stato !== "escl" }); }; });
   if ($("tfix")) $("tfix").onclick = () => tonoFix(fixable); if ($("tfixall")) $("tfixall").onclick = () => tonoFix(fixable.concat(fixAtt));
+  const tc = $("tchart"); if (tc) tc.onwheel = e => { if (tc.scrollWidth > tc.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); tc.scrollLeft += e.deltaY; } };
   if ($("tpl2")) $("tpl2").onclick = () => { tonoPills = !tonoPills; drawTono(); renderStage(); };
   $("tset").onclick = () => { tonoSet = !tonoSet; drawTono(); };
   $("tview").onclick = () => { tonoView = tonoView === "a" ? "s" : "a"; drawTono(); };
