@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 94 — Trascinare più foto da una pagina all'altra
+Con due o più foto selezionate, trascinandole oltre la piega passano tutte all'altra pagina (prima ne passava solo una, quella afferrata): ognuna cambia pagina se il suo centro arriva nell'altra metà, e la selezione resta sulle stesse foto. — `editor.py` (op `nudge`), `index.html` (`startFree`).
+
 ## Versione 93 — Il tono non dipende più dalla Scala
 Il tono veniva misurato sulla parte della foto visibile dopo lo zoom, quindi cambiando «Scala» i valori (media, luci, ombre) si spostavano. Ora si misura sulla foto inquadrata nella cornice senza lo zoom: ingrandire o rimpicciolire la foto non cambia più i numeri. — `editor.py` (`_tono_img`).
 

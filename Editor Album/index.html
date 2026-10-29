@@ -1306,8 +1306,9 @@ function startFree(e, it, kind) {
     const f = { x: (rect.x - c.pb0) / (c.pb1 - c.pb0), y: (rect.y - c.by0) / (c.by1 - c.by0), w: rect.w / (c.pb1 - c.pb0), h: rect.h / (c.by1 - c.by0) };
     if (it.k === "t" && it.kind !== "txt") f.ts = kind === "move" ? (it.ts || 1) : (it.ts || 1) * rect.w / it.w;
     if (it.kind === "txt" && kind !== "move" && (kind.includes("n") || kind.includes("s"))) f.autoh = false;
-    if (side !== it.side) { await op({ op: "crosspage", at: [cur, it.side, it.idx], to: side, ...f }); const n = S.spreads[cur].items.filter(i => i.side === side).length; sel = { s: cur, side, idx: n - 1 }; render(); }
-    else if (grp && kind === "move") op({ op: "nudge", s: cur, ats: mAts(), dx: rect.x - it.x, dy: rect.y - it.y });
+    if (grp && kind === "move") { const nomi = new Set(S.spreads[cur].items.filter(inM).map(i => i.name).filter(Boolean)); await op({ op: "nudge", s: cur, ats: mAts(), dx: rect.x - it.x, dy: rect.y - it.y });       // il gruppo si muove insieme, anche da una pagina all'altra
+      msel = S.spreads[cur].items.filter(i => i.name && nomi.has(i.name)).map(kOf); if (msel.length) { const l = msel[msel.length - 1].split(":"); sel = { s: cur, side: l[0], idx: +l[1] }; } render(); }
+    else if (side !== it.side) { await op({ op: "crosspage", at: [cur, it.side, it.idx], to: side, ...f }); const n = S.spreads[cur].items.filter(i => i.side === side).length; sel = { s: cur, side, idx: n - 1 }; render(); }
     else op({ op: "free", at: [cur, it.side, it.idx], ...f });
   };
   window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);

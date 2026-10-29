@@ -543,11 +543,12 @@ def apply(o):
             (x0, x1), (y0, y1) = A._frame(side, pg[0]); f = min(1.0, (y1 - y0) / H, (x1 - x0) / W); W, H = W * f, H * f
             _put_px(s_, side, idx, L["x"] + L["W"] / 2 - W / 2, L["y"] + L["H"] / 2 - H / 2, W, H)
     elif t == "nudge":                                    # spostamento di gruppo (in pixel della pagina)
-        s_ = o["s"]; R = _rects(s_)
+        s_ = o["s"]; R = _rects(s_); mv = []
         for a in o["ats"]:
-            key = (a[0], int(a[1])); L = R.get(key)
-            if L is None or SP[s_][0 if key[0] == "L" else 1][1][key[1]]["k"] == "t": continue
-            _put_px(s_, key[0], key[1], L["x"] + float(o["dx"]), L["y"] + float(o["dy"]), L["W"], L["H"])
+            key = (a[0], int(a[1])); L = R.get(key); pg = SP[s_][0 if key[0] == "L" else 1][1]
+            if L is None or key[1] >= len(pg) or pg[key[1]]["k"] == "t": continue
+            mv.append((pg[key[1]], L))
+        for it, L in mv: _put_obj(s_, it, L["x"] + float(o["dx"]), L["y"] + float(o["dy"]), L["W"], L["H"])         # ognuna passa all'altra pagina se il suo centro ci arriva
     elif t == "gscale":                                   # allargamento di gruppo: le foto scelte si ingrandiscono/rimpiccioliscono insieme attorno a un punto fisso (px della vista)
         s_ = o["s"]; R = _rects(s_); sx, sy = min(max(float(o["sx"]), 0.1), 10.0), min(max(float(o["sy"]), 0.1), 10.0); ax, ay = float(o["ax"]) + BL, float(o["ay"]) + BL
         for a in o["ats"]:
