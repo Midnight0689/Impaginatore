@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 139 — Controlla album: corretto lo stile rotto
+- Le classi della finestra «Controlla album» (`.gl` ecc.) coincidevano con quelle delle guide dello spread (`.gl` = linea guida blu), e la finestra usciva sbagliata (striscia azzurra). Rinominate con prefisso `a_`. — `index.html`.
+
 ## Versione 138 — «Controlla album» come anteprima al centro
 - Il pannello è ora una finestra centrale su fondo scuro (come l'anteprima grande): miniature degli spread con stacchi diversi, clic su una per andarci, «Correggi tutto l'album», si chiude con ✕, Esc o clic fuori. — `index.html` (`gapAll`, `#gapall`).
 
