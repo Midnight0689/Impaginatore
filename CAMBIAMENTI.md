@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.4.3 — Bordo blu della galleria a 4 px
+- Il bordo di selezione dentro la foto passa da 6 a 4 px. — `index.html`.
+
 ## Versione 1.4.2 — Bordo blu di selezione dentro la foto
 - Nella galleria (fila sotto lo spread e vista Foto) il bordo blu di 6 px è disegnato all'interno della foto, non più all'esterno: non tocca le vicine. Vince anche sul bordo giallo della stellina. — `index.html` (`#pool img.psel`, `.ph.sel`).
 
