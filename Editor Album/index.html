@@ -19,6 +19,7 @@
   button.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   #app { display: grid; grid-template-columns: var(--lc, 210px) 1fr var(--rc, 290px); grid-template-rows: 46px 1fr var(--pr, 150px); height: 100%; }
+  body.pfold:not(.nopool) { --pr: 44px !important; } body.pfold #poolbar, body.pfold #poolrow, body.pfold #tonopanel, body.pfold #poolgrip { display: none !important; } body.pfold #ptabs { padding-bottom: 0; }
   body.nolist { --lc: 0px; } body.nolist #list { display: none; } body.noside { --rc: 0px; } body.noside #side { display: none; } body.nopool { --pr: 0px; } body.nopool #pool { display: none; }
   #top { grid-column: 1 / 4; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
   #top .title { font-weight: 600; margin-right: 8px; }
@@ -568,7 +569,7 @@ function applyZoom(keepPoint) {
   if (ZM > 1.001) { rw.style.width = Math.round((st.clientWidth - 32) * ZM) + "px"; rw.style.maxWidth = "none"; } else { rw.style.width = ""; rw.style.maxWidth = ""; }
   if (keepPoint) { const r1 = w.getBoundingClientRect(); st.scrollLeft += (r1.left + fx * r1.width) - keepPoint.x; st.scrollTop += (r1.top + fy * r1.height) - keepPoint.y; }
   let z = $("zpill"); if (!z) { z = document.createElement("button"); z.id = "zpill"; z.title = "Torna alla vista intera dello spread"; z.onclick = () => { ZM = 1; applyZoom(); renderStage(); }; st.appendChild(z); }
-  z.style.display = ZM > 1.001 ? "" : "none"; z.textContent = Math.round(ZM * 100) + "% · Adatta";
+  z.style.display = ""; z.style.opacity = ZM > 1.001 ? "" : ".6"; z.textContent = ZM > 1.001 ? Math.round(ZM * 100) + "% · Fit" : "Fit";
   clearTimeout(zmT); zmT = setTimeout(() => { if (S && view === "album") renderStage(); drawRulers(); }, 160);
 }
 $("stage").addEventListener("wheel", e => {
@@ -584,6 +585,7 @@ function stageK() { const w = $("wrap").clientWidth || 800, k = Math.ceil(Math.m
 let DRAG = false;
 function clearGhosts() { if (!DRAG) { $("ghosts").innerHTML = ""; clearLive(); } }
 function renderStage() {
+  if (!$("zpill")) applyZoom();
   const sp = S.spreads[cur]; const m = $("main");
   const src = `/img/spread/${cur}?k=${stageK()}&h=${sp.h}`;
   if (m.getAttribute("src") !== src) { const im = new Image(); im.onload = () => { if (m.dataset.want === src) { m.src = src; requestAnimationFrame(clearGhosts); } }; m.dataset.want = src; im.src = src; } else setTimeout(clearGhosts, 120);   // cambia solo quando la nuova è pronta: niente lampi
@@ -1070,6 +1072,7 @@ new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
 let pBar = null;
 let PH = (() => { try { return +localStorage.getItem("poolH") || 0; } catch (e) { return 0; } })();
+let poolFold = (() => { try { return localStorage.getItem("poolFold") === "1"; } catch (e) { return false; } })(); document.body.classList.toggle("pfold", poolFold);
 let poolTab = (() => { try { return localStorage.getItem("poolTab") === "tono" ? "tono" : "gal"; } catch (e) { return "gal"; } })(), PHT = (() => { try { return +localStorage.getItem("poolHT") || 0; } catch (e) { return 0; } })();
 let TONO = null, TONOK = "", tonoPills = true;
 function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = document.createElement("style"); st.id = "prs"; document.head.appendChild(st); } st.textContent = `body:not(.nopool) { --pr: ${poolTab === "tono" ? (PHT || 320) : (PH || PF.sz + 78)}px; } #poolrow { --ph: ${PF.sz}px; }`; }
@@ -1077,8 +1080,8 @@ function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = d
 // ---- scheda «Tono»: misura se le foto dello spread hanno la stessa luminosità e propone la correzione di esposizione
 function tabsUI() {
   const T = $("ptabs"); if (T.dataset.t === poolTab) return; T.dataset.t = poolTab;
-  T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}">Galleria</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="Misura se le foto dello spread hanno lo stesso tono">Tono</button></div>`;
-  T.querySelectorAll("button").forEach(b => b.onclick = () => { poolTab = b.dataset.t; try { localStorage.setItem("poolTab", poolTab); } catch (e) {} renderPool(); setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); });
+  T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}" title="Clicca per nascondere o mostrare la galleria">Galleria</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="Misura se le foto dello spread hanno lo stesso tono">Tono</button></div>`;
+  T.querySelectorAll("button").forEach(b => b.onclick = () => { poolFold = b.dataset.t === poolTab && !poolFold; document.body.classList.toggle("pfold", poolFold); try { localStorage.setItem("poolFold", poolFold ? "1" : "0"); } catch (e) {} poolTab = b.dataset.t; try { localStorage.setItem("poolTab", poolTab); } catch (e) {} renderPool(); setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); });
 }
 const tkey = () => S && S.spreads.length ? [cur, ...[-1, 0, 1].map(d => (S.spreads[cur + d] || {}).h), (S.tono_escl || []).join("|"), S.tono_L, S.tono_Z].join("~") : "";
 const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + Math.abs(v).toFixed(1).replace(".", ","), fL = v => (v > 0.5 ? "+" : v < -0.5 ? "−" : "") + Math.abs(Math.round(v));

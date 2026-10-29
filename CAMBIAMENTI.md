@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 108 — Pulsante Fit sempre visibile; Galleria si chiude con un clic
+- Il pulsantino in basso a destra dello spread ora c'è sempre: «Fit» (con lo zoom «250% · Fit») e riporta lo spread a tutta vista.
+- Clic sulla linguetta già attiva (Galleria o Tono) chiude la sezione e resta solo la striscia con le due linguette; un clic su una linguetta la riapre. Scelta ricordata (`poolFold`). — `index.html` (`body.pfold`, `tabsUI`, `applyZoom`).
+
 ## Versione 107 — Con lo zoom niente fascia grigia a tutta larghezza
 - La fascia fissa dei pulsanti con lo zoom non ha più lo sfondo grigio lungo tutta la larghezza: restano solo i due blocchi (Strumenti e Selezione) con il loro sfondo, e il resto lascia passare i clic. — `index.html` (`#stage.zoomed #tools`).
 
