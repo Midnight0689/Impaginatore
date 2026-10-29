@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 109 — Galleria: «Tutte» mostra tutte le foto
+- Nella galleria sotto lo spread «Tutte» ora mostra tutte le foto del progetto: quelle già usate sono scure con la scritta «spread N» (doppio clic: ci porta allo spread, non si trascinano). «Da usare» mostra solo le libere. L'anteprima grande con la barra scorre sulle foto visibili.
+- Casella «Cerca nome…» più larga (150 px), non si schiaccia più. — `index.html` (`renderPool`, `poolVis`, `.gQ`, `#poolrow .pw`).
+
 ## Versione 108 — Pulsante Fit sempre visibile; Galleria si chiude con un clic
 - Il pulsantino in basso a destra dello spread ora c'è sempre: «Fit» (con lo zoom «250% · Fit») e riporta lo spread a tutta vista.
 - Clic sulla linguetta già attiva (Galleria o Tono) chiude la sezione e resta solo la striscia con le due linguette; un clic su una linguetta la riapre. Scelta ricordata (`poolFold`). — `index.html` (`body.pfold`, `tabsUI`, `applyZoom`).

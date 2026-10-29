@@ -195,7 +195,7 @@
   .fbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .fbar .seg { margin: 0; } .fbar .seg button { padding: 0 11px; white-space: nowrap; } .fbar .seg button.on { background: var(--blue) !important; color: #fff; }
   .fbar .seg { background: #1b1b1d; border-radius: 8px; padding: 2px; } .fbar .seg button .c { opacity: .6; margin-left: 4px; font-size: 11px; }
   .fbar .zoom { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; } .fbar .zoom button { width: 28px; height: 28px; padding: 0; font-size: 17px; line-height: 1; } .fbar .zoom input[type=range] { width: 130px; padding: 0; accent-color: var(--blue); }
-  .fbar .gQ { width: 100px; } .fbar select { height: 28px; padding: 0 6px; } .fbar .dots { display: inline-flex; gap: 5px; align-items: center; } .fbar .dots i { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background: var(--c); } .fbar .dots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .fbar .dots i.nc { background: transparent; border: 2px dashed #777; } .fbar .dots i.nc.on { border-color: #fff; } .fbar .dots .lb { color: var(--dim); font-size: 11px; } .fbar .dots.as i { width: 18px; height: 18px; }
+  .fbar .gQ { width: 150px; min-width: 150px; flex: none; padding: 0 10px; box-sizing: border-box; } .fbar select { height: 28px; padding: 0 6px; } .fbar .dots { display: inline-flex; gap: 5px; align-items: center; } .fbar .dots i { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background: var(--c); } .fbar .dots i.on { border-color: #fff; box-shadow: 0 0 0 2px var(--c); } .fbar .dots i.nc { background: transparent; border: 2px dashed #777; } .fbar .dots i.nc.on { border-color: #fff; } .fbar .dots .lb { color: var(--dim); font-size: 11px; } .fbar .dots.as i { width: 18px; height: 18px; }
   .ph .cl { position: absolute; bottom: 24px; left: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.6); } #pool { display: flex; flex-direction: column; overflow: hidden !important; } #pool .fbar { padding-bottom: 4px; font-size: 12px; flex: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; } #pool .fbar > * { flex: none; } #pool .fbar::-webkit-scrollbar { display: none; } #pool .fbar button { height: 24px !important; } #pool { position: relative; } #poolrow { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; } #poolrow img { height: var(--ph, 100px); margin: 0; flex: none; } #poolrow .cap { flex: 0 0 100%; margin: 0 0 2px; } #poolrow .empty { flex: 0 0 100%; }
   #poolgrip { position: absolute; left: 0; right: 0; top: -4px; height: 9px; cursor: ns-resize; z-index: 6; } #poolgrip::after { content: ''; position: absolute; left: 50%; top: 3px; width: 44px; height: 4px; margin-left: -22px; border-radius: 2px; background: rgba(255,255,255,.22); } #poolgrip:hover::after { background: var(--blue); }
   #cmenu { position: fixed; z-index: 90; background: #2a2a2d; border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); min-width: 150px; } #cmenu .mi { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; white-space: nowrap; } #cmenu .mi:hover { background: var(--blue); } #cmenu .mi.off { opacity: .35; pointer-events: none; } #cmenu kbd { font: inherit; font-size: 11px; color: var(--dim); } #cmenu .mi:hover kbd { color: #fff; } #cmenu .mh { color: var(--dim); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px 2px; } #cmenu .mi.sub { background: rgba(255,255,255,.05); } .csub { position: fixed; z-index: 91; background: #2a2a2d; border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); min-width: 220px; max-height: 90vh; overflow-y: auto; } .csub .mi { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; white-space: nowrap; } .csub .mi:hover { background: var(--blue); } .csub .mi.off { opacity: .35; pointer-events: none; } .csub kbd { font: inherit; font-size: 11px; color: var(--dim); } .csub hr { border: 0; border-top: 1px solid var(--line); margin: 5px 4px; } .csub .chips { display: flex; align-items: center; gap: 5px; padding: 5px 8px; font-size: 12px; color: var(--dim); } .csub .chips b { font-weight: 500; color: var(--text); background: rgba(255,255,255,.09); border-radius: 6px; padding: 3px 7px; cursor: pointer; } .csub .chips b:hover { background: var(--blue); }
@@ -371,7 +371,7 @@
   .slot.srcdrag { background: rgba(0,0,0,.4); outline: 2px dashed rgba(255,255,255,.6); outline-offset: -2px; }
   body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
   body.tplopen #tools, body.tplopen .sb { visibility: hidden; }
-  #poolrow img { object-fit: cover; min-width: 0; }
+  #poolrow img { object-fit: cover; min-width: 0; } #poolrow .pw { position: relative; display: block; height: var(--ph); min-width: 0; margin-right: 6px; } #poolrow .pw img { width: 100%; height: 100%; margin: 0; display: block; opacity: .38; } #poolrow .pw .u { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: rgba(255,255,255,.9); font-size: 10px; padding: 2px 6px; text-align: center; border-radius: 0 0 5px 5px; pointer-events: none; }
   #grpbox { position: absolute; border: 2px dashed var(--accent); pointer-events: none; z-index: 40; } #grpbox .hd { pointer-events: auto; }
   #nmenu { z-index: 120; }
   .sl { grid-template-columns: 72px 1fr 46px 18px; }
@@ -1170,7 +1170,7 @@ function drawTono() {
   const selEl = P.querySelector(".tcard.selc"); if (selEl) { const ch2 = $("tchart"), r = selEl.getBoundingClientRect(), cr = ch2.getBoundingClientRect(); if (r.left < cr.left) ch2.scrollLeft -= cr.left - r.left + 8; else if (r.right > cr.right) ch2.scrollLeft += r.right - cr.right + 8; }
 }
 function renderPool() {
-  const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);
+  const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.photos.slice();
   if (!pBar) pBar = mkBar($("poolbar"), PF, { filters: PFILT, zmin: 50, zmax: 220, onChange: renderPool, onZoom: setPoolH });
   if (!$("poolgrip")) { const gr = document.createElement("div"); gr.id = "poolgrip"; gr.title = "Trascina per alzare o abbassare la galleria (doppio clic: altezza automatica)"; $("pool").prepend(gr);
     gr.ondblclick = () => { if (poolTab === "tono") PHT = 0; else PH = 0; try { localStorage.removeItem(poolTab === "tono" ? "poolHT" : "poolH"); } catch (e) {} setPoolH(); after(); };
@@ -1182,11 +1182,11 @@ function renderPool() {
   if (poolTab === "tono") { loadTono(); return; }
   pBar(freeAll);
   const free = filterList(freeAll, PF), keep = P.scrollTop; P.innerHTML = "";
-  const info = document.createElement("div"); info.className = "cap"; info.textContent = `Foto libere: ${free.length}${free.length !== freeAll.length ? " di " + freeAll.length : ""} — non sono in nessuno spread${S.tolte.length ? " · in grigio: tolte apposta" : ""} · passa sopra una foto e premi 1-7 per il colore (0 lo toglie)`; P.appendChild(info);
-  if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna: tutte le foto sono usate."}</span>`);
+  const info = document.createElement("div"); info.className = "cap"; const nFree = freeAll.filter(x => x.sp == null && !x.tolta).length; info.textContent = `Foto: ${free.length}${free.length !== freeAll.length ? " di " + freeAll.length : ""} · da usare: ${nFree} · scure con la scritta: già in uno spread (doppio clic per andarci)${S.tolte.length ? " · in grigio: tolte apposta" : ""} · passa sopra una foto e premi 1-7 per il colore (0 lo toglie)`; P.appendChild(info);
+  if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna foto."}</span>`);
   free.forEach(f => {
-    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
-    im.ondblclick = () => { if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
+    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
+    im.ondblclick = () => { if (used) { cur = f.sp; view = "album"; render(); return; } if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
     if (POOLSEL === n) im.classList.add("psel"); im.onclick = () => { qlPref = "pool"; POOLSEL = POOLSEL === n ? null : n; P.querySelectorAll("img.psel").forEach(x => x.classList.remove("psel")); if (POOLSEL) im.classList.add("psel"); };       // clic: seleziona la foto (spazio = anteprima grande)
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
@@ -1194,7 +1194,9 @@ function renderPool() {
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
     if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
     if (S.tolte.includes(n)) { im.className = "tolta" + (f.star ? " star" : ""); im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
-    P.appendChild(im);
+    if (used) { im.title = n + " · già nello spread " + (f.sp + 1) + " · doppio clic per andarci"; im.classList.add("pused"); im.style.cursor = "pointer";
+      const w = document.createElement("span"); w.className = "pw"; w.style.flex = im.style.flex; w.style.maxWidth = im.style.maxWidth; w.appendChild(im); w.insertAdjacentHTML("beforeend", `<span class="u">spread ${f.sp + 1}</span>`); P.appendChild(w); }
+    else P.appendChild(im);
   });
   P.scrollTop = keep;
 }
@@ -1803,7 +1805,7 @@ function qlook(n, src) {       // anteprima grande di una foto (barra spaziatric
 }
 $("qlook").onclick = () => qlook(null);
 document.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("#slots, #sbarR")) qlPref = "spread"; }, true);
-const poolVis = () => filterList(S.unused.map(n => S.photos.find(p => p.n === n)).filter(Boolean), PF).map(p => p.n);
+const poolVis = () => filterList(S.photos, PF).map(p => p.n);
 function qlList() {       // le foto tra cui scorrere con le frecce: quelle che si vedono dove l'anteprima è stata aperta
   if (view === "foto") return visPhotos().map(p => p.n);
   return qlSrc === "spread" ? [] : poolVis();       // dallo spread niente frecce: confonderebbero la numerazione
