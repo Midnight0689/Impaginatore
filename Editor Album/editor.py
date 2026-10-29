@@ -821,7 +821,7 @@ TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
 TONO_Z0 = 12.0                                                       # zona giusta attorno al riferimento (L*): ±12 (nel tuo album mezza foto su due sta tra L* 46 e 59); oltre +6 da correggere
 TONO_HZ = (82.0, 97.0)                                               # zona giusta delle alte luci (95° percentile, L*): sotto 82 piatte, sopra 97 bruciate
-TONO_SZ = (14.0, 22.0)                                               # ombre (5° percentile, L*): fino a 14 ok, oltre «milky»
+TONO_SZ = (26.0, 34.0)                                               # ombre (5° percentile, L*): fino a 26 ok (scelta di Stefano), oltre «milky»
 TONO_MAX = 1.0                                                       # correzione di esposizione al massimo ±1 EV per volta
 def _tono_L0(): return float(CFG.get("tono_L", TONO_L0))
 def _tono_Z(): return float(CFG.get("tono_Z", TONO_Z0))

@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 86 — Tono: ombre giuste fino a L* 26
+La soglia delle ombre passa da 14 a 26 (giallo fino a 34): ombre aperte come piacciono a Stefano non vengono più segnalate. — `editor.py` (`TONO_SZ`).
+
 ## Versione 85 — Tono: valori numerici sotto ogni foto
 Sotto ogni miniatura: **Media** (luce media L*), **Luci** (alte luci), **Ombre** e **Bruc.** (quota di bianchi bruciati, senza dettaglio). Luci, ombre e bruciato si colorano se fuori zona. — `editor.py` (campo `B`), `index.html`.
 
