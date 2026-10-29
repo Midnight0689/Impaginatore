@@ -35,6 +35,7 @@
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
+  .eqm.e { border-color: #4aa3ff; } .eqm.e b { background: #4aa3ff; } .eqm.x.e::before, .eqm.x.e::after { border-color: #4aa3ff; } .eqm.y.e { border-color: #4aa3ff; } .eqm.y.e::before, .eqm.y.e::after { border-color: #4aa3ff; }
   .eqm b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #ff3d7f; color: #fff; font-size: 10px; font-weight: 600; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
   .gl.snap { filter: drop-shadow(0 0 3px #ff3d7f); }
   .sth.over { border-color: #6bbf7a; border-style: dashed; }
@@ -1232,9 +1233,16 @@ function eqSpace(self, r, snap, doneX, doneY) {            // spaziatura uguale 
   }
   return out;
 }
+function edgeMarks(r) {       // distanze dai bordi della pagina (sinistra, destra, sopra, sotto): servono a capire se la foto è centrata
+  const G = S.spreads[cur].grid, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (G.L.full || G.L).by, cx = r.x + r.w / 2;
+  const span = r.x < fd - 1 && r.x + r.w > fd + 1, x0 = span || cx < fd ? FL : fd, x1 = span || cx >= fd ? FR : fd, M = [];
+  const add = (ax, from, to, at) => { if (to - from > 0.5) M.push({ ax, from, to, at, g: to - from, e: 1 }); };
+  add("x", x0, r.x, r.y + r.h / 2); add("x", r.x + r.w, x1, r.y + r.h / 2); add("y", fy0, r.y, cx); add("y", r.y + r.h, fy1, cx);
+  return M;
+}
 function drawEq(marks) {
   document.querySelectorAll(".eqm").forEach(x => x.remove());
-  marks.forEach(m => { const d = document.createElement("div"); d.className = "eqm " + m.ax;
+  marks.forEach(m => { const d = document.createElement("div"); d.className = "eqm " + m.ax + (m.e ? " e" : "");
     if (m.ax === "x") { d.style.left = m.from / S.W * 100 + "%"; d.style.width = (m.to - m.from) / S.W * 100 + "%"; d.style.top = m.at / S.H * 100 + "%"; } else { d.style.top = m.from / S.H * 100 + "%"; d.style.height = (m.to - m.from) / S.H * 100 + "%"; d.style.left = m.at / S.W * 100 + "%"; }
     d.innerHTML = `<b>${cmOf(m.g).toFixed(2)}</b>`; $("slots").appendChild(d); });
 }
@@ -1333,8 +1341,8 @@ function startFree(e, it, kind) {
     document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
     szm.forEach(m => { const el = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, m.o.side, m.o.idx])); if (el) el.classList.add("samesz"); });
     ghost.innerHTML = szm.length ? `<b class="szl">stessa ${szm.map(m => m.d === "w" ? "larghezza" : "altezza").join(" e ")}</b>` : "";
-    const key = JSON.stringify([guides, eqm]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
-    drawEq(eqm);
+    const edges = edgeMarks(rect), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
+    drawEq(eqm.concat(edges));
     document.querySelectorAll(".guide").forEach(x => x.remove());
     guides.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
       if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
