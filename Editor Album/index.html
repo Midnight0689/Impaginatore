@@ -587,7 +587,7 @@ function renderList() {
     let d = L.children[k];
     if (!d) { d = document.createElement("div"); d.innerHTML = "<img><span></span>"; L.appendChild(d); }
     d.className = "sth" + (k === cur ? " sel" : ""); const src = `/img/spread/${k}?k=0.05&h=${sp.h}`, im = d.firstChild;
-    if (im.getAttribute("src") !== src) im.src = src; d.lastChild.textContent = k + 1; d.onclick = () => go(k); d.oncontextmenu = e => spreadMenu(e, k);
+    if (im.getAttribute("src") !== src) im.src = src; d.lastChild.textContent = k ? k + 1 : "Copertina 1"; d.onclick = () => go(k); d.oncontextmenu = e => spreadMenu(e, k);
     d.draggable = true; d.ondragstart = e => { dragData = { spread: k }; e.dataTransfer.setData("text/plain", "s" + k); };
     d.ondragover = e => { if (dragData && dragData.spread != null) { e.preventDefault(); d.classList.add("over"); } }; d.ondragleave = () => d.classList.remove("over");
     d.ondrop = e => { d.classList.remove("over"); if (dragData && dragData.spread != null) { e.preventDefault(); const a = dragData.spread; dragData = null; moveSp(a, k); } };
