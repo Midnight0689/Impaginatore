@@ -209,7 +209,7 @@ def controlla_aggiornamenti():
 
 def ciclo_aggiornamenti():
     while True:
-        controlla_aggiornamenti(); time.sleep(3 * 3600)
+        controlla_aggiornamenti(); time.sleep(10 * 60)
 
 
 def riavvia_programma():
@@ -254,7 +254,7 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/": self.send(open(os.path.join(HERE, "home.html"), "rb").read(), "text/html; charset=utf-8")
             elif u.path == "/api/ping": self.send({"ok": True})
             elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI))
-            elif u.path == "/api/aggiornamento": self.send(AGG)
+            elif u.path == "/api/aggiornamento": AGG.update(attuale=info_versione("HEAD")); self.send(AGG)       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
             elif u.path == "/api/versioni": self.send({"versioni": elenco_versioni()})
             elif u.path == "/api/pronto": self.send({"pronto": pronto(int(q["porta"][0]))})
             elif u.path == "/api/cover":

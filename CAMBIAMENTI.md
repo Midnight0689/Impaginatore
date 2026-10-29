@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.5 — La pagina dei progetti controlla subito gli aggiornamenti
+- Prima la versione mostrata nella pagina dei progetti e il controllo di GitHub si aggiornavano solo ogni 3 ore (o col pulsante «Controlla aggiornamenti»): dopo un nuovo rilascio si vedeva ancora il numero vecchio e il pulsante «Aggiorna» non compariva. Ora il controllo parte ogni 10 minuti e ogni volta che si apre la pagina, e la versione in uso si rilegge a ogni richiesta. — `home.py` (`ciclo_aggiornamenti`, `/api/aggiornamento`), `home.html`.
+
 ## Versione 1.3.4 — Spostare un gruppo di foto: aggancio al centro e distanze sul blocco
 - Spostando più foto selezionate il blocco si aggancia come un'unica foto: il suo centro va al centro della pagina sinistra, della pagina destra o della piega (e a metà altezza); in mancanza, i bordi del blocco si agganciano ai bordi dello spread, al bordo giusto con lo stacco dalle altre foto e a quelli delle altre foto. Le guide compaiono. Alt = nessun aggancio. Le distanze blu dai lati (anche quella in basso, che spariva) si misurano ora sul blocco intero. — `index.html` (`startFree` → ramo `grpI`, `gbb`).
 

@@ -195,7 +195,7 @@ $("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (
 $("vclose").onclick = () => $("vver").style.display = "none";
 $("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
 $("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };
-checkUpd(); setInterval(checkUpd, 600000);
+checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load();
 </script>
 <div id="credit">Created by <b>Stefano Imperato</b></div>
