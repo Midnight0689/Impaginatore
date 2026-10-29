@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 133 — Aggancio: precedenza allo stacco tra le foto
+- Nel ridimensionamento (singolo e di gruppo) il bordo si aggancia prima alla distanza giusta dalle altre foto (interspazio) e solo dopo a centri e stesse linee. — `index.html` (`sx`/`sy`, `startGroup`).
+
 ## Versione 132 — Aggancio magnetico anche nel ridimensionamento di gruppo
 - Il bordo che trascini del riquadro di gruppo (anche con Maiusc) si aggancia a: bordi e metà dello spread, piega, metà delle due pagine, guide, bordi/centri delle altre foto; la guida compare. Alt = nessun aggancio. — `index.html` (`startGroup` → `calc`, `gd`).
 

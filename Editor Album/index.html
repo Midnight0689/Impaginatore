@@ -696,8 +696,11 @@ function startGroup(e, its, bb, kind) {
     if (magnet && !ev.altKey) {       // aggancio magnetico del bordo che si muove: bordi/centri dello spread, guide, altre foto
       const sp = S.spreads[cur], oth = sp.items.filter(o => !its.includes(o) && o.k !== "t"), TX = [0, S.W, S.fold, S.fold / 2, (S.fold + S.W) / 2, ...sp.guides.v], TY = [0, S.H, S.H / 2, ...sp.guides.h];
       oth.forEach(o => { TX.push(o.x, o.x + o.w, o.x + o.w / 2); TY.push(o.y, o.y + o.h, o.y + o.h / 2); });
-      const sdd = 9 * k, snap = (T, a, len, sc, west) => { let b = null; const v = west ? a - len * sc : a + len * sc; for (const t of T) if (Math.abs(v - t) < sdd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
-      const bx = kind.includes("e") || kind.includes("w") ? snap(TX, ax, bw, sx, kind.includes("w")) : null, by = kind.includes("n") || kind.includes("s") ? snap(TY, ay, bh, sy, kind.includes("n")) : null;
+      const sdd = 9 * k, gp = S.gap, near = (T, v) => { let b = null; for (const t of T) if (Math.abs(v - t) < sdd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
+      const snap = (T, a, len, sc, west, axis) => { const v = west ? a - len * sc : a + len * sc, P = [];       // precedenza: il bordo con lo stacco giusto dalle altre foto (distanza = interspazio)
+        oth.forEach(o => { const [p0, p1] = axis === "x" ? [o.x, o.x + o.w] : [o.y, o.y + o.h]; P.push(west ? p1 + gp : p0 - gp); });
+        const b = near(P, v); return b !== null ? b : near(T, v); };
+      const bx = kind.includes("e") || kind.includes("w") ? snap(TX, ax, bw, sx, kind.includes("w"), "x") : null, by = kind.includes("n") || kind.includes("s") ? snap(TY, ay, bh, sy, kind.includes("n"), "y") : null;
       const sxS = bx === null ? null : Math.abs(bx - ax) / bw, syS = by === null ? null : Math.abs(by - ay) / bh;
       if (corner && ev.shiftKey) { const pick = sxS !== null && (syS === null || Math.abs(sxS - sx) <= Math.abs(syS - sy)) ? "x" : syS !== null ? "y" : null; if (pick === "x") { sx = sy = sxS; gd.push(["v", bx]); } else if (pick === "y") { sx = sy = syS; gd.push(["h", by]); } }
       else { if (sxS !== null) { sx = sxS; gd.push(["v", bx]); } if (syS !== null) { sy = syS; gd.push(["h", by]); } }
@@ -1337,8 +1340,8 @@ function startFree(e, it, kind) {
       }
     } else {
       const minw = (c.pb1 - c.pb0) * 0.03, minh = (c.by1 - c.by0) * 0.03;
-      const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2].concat(c.ex[s2])); if (t !== null) { guides.push(["v", t]); return t; } return v; };
-      const sy = (v, s2) => { if (free) return v; const t = best(v, c.ty[s2].concat(c.ey[s2])); if (t !== null) { guides.push(["h", t]); return t; } return v; };
+      const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2]) ?? best(v, c.ex[s2]); if (t !== null) { guides.push(["v", t]); return t; } return v; };
+      const sy = (v, s2) => { if (free) return v; const t = best(v, c.ty[s2]) ?? best(v, c.ey[s2]); if (t !== null) { guides.push(["h", t]); return t; } return v; };
       if (kind.includes("w")) L = clamp(sx(it.x + dx, "lo"), c.bx0, R - minw);
       if (kind.includes("e")) R = clamp(sx(R + dx, "hi"), L + minw, c.bx1);
       if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
