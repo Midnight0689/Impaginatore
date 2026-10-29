@@ -3,6 +3,10 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 118 — Frecce della tastiera spostano la foto; distanze sempre visibili
+- Con una o più foto selezionate le frecce le spostano di 0,1 cm (Maiusc: 1 cm), restando dentro lo spread; i colpi ravvicinati sono un solo passo di annulla. Senza selezione ↑/↓ cambiano spread come prima.
+- Le distanze azzurre dai bordi della pagina restano visibili finché la foto è selezionata (spariscono con Esc o deselezionando). — `index.html` (`nudgeKey`, `selMarks`).
+
 ## Versione 117 — Distanze dai bordi della pagina mentre sposti/ridimensioni
 - Mentre trascini o ridimensioni una foto compaiono, in azzurro, le distanze (cm) dai bordi della sua pagina: sinistra, destra, sopra e sotto, così si vede se è centrata sia in orizzontale che in verticale. Se la foto copre la piega vale l'intero spread. Le misure rosa delle spaziature uguali restano. — `index.html` (`edgeMarks`, `drawEq`).
 

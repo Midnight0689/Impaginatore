@@ -640,7 +640,29 @@ function renderStage() {
     if (it.k !== "t" && poolTab === "tono" && tonoPills && TONO && TONO.s === cur && TONOK === tkey()) { const ti = TONO.items.find(x => x.side === it.side && x.idx === it.idx); if (ti) { d.classList.add("t-" + tst(ti)); d.insertAdjacentHTML("beforeend", `<span class="tpill ${tst(ti)}">${ti.n}${tst(ti) === "escl" ? "" : " · " + fL(ti.d)}</span>`); } }
     box.appendChild(d);
   });
-  reapplyLive(); groupBox();
+  reapplyLive(); groupBox(); selMarks();
+}
+function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina restano visibili finché non la deseleziono
+  if (DRAG || !S || view !== "album" || !S.spreads.length) return;
+  const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
+  if (!its.length) { document.querySelectorAll(".eqm").forEach(x => x.remove()); return; }
+  const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
+  drawEq(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }));
+}
+let nudgeP = null;       // frecce della tastiera: 0,1 cm (con Maiusc 1 cm); i colpi ravvicinati diventano un solo spostamento
+function nudgeKey(e) {
+  const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
+  if (!its.length) return false;
+  const st = (e.shiftKey ? 1 : 0.1) / 2.54 * S.ppi, d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
+  if (!nudgeP) nudgeP = { dx: 0, dy: 0, ats: ks.map(k => { const [a, b] = k.split(":"); return [a, +b]; }), nomi: new Set(its.map(i => i.name).filter(Boolean)) };
+  const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
+  nudgeP.dx = clamp(nudgeP.dx + d[0], -x0, S.W - x1); nudgeP.dy = clamp(nudgeP.dy + d[1], -y0, S.H - y1);
+  clearTimeout(nudgeP.t); nudgeP.t = setTimeout(async () => {
+    const n = nudgeP; nudgeP = null; if (!n.dx && !n.dy) return;
+    await op({ op: "nudge", s: cur, ats: n.ats, dx: n.dx, dy: n.dy });
+    msel = S.spreads[cur].items.filter(i => i.name && n.nomi.has(i.name)).map(kOf); if (msel.length) { const l = msel[msel.length - 1].split(":"); sel = { s: cur, side: l[0], idx: +l[1] }; } render();
+  }, 140);
+  return true;
 }
 function groupBox() {       // due o più foto selezionate: riquadro unico con le maniglie, si allargano tutte insieme
   const sp = S.spreads[cur], its = msel.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
@@ -1865,6 +1887,7 @@ document.addEventListener("keydown", e => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c" && msel.length) { e.preventDefault(); copySel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") { e.preventDefault(); pasteSel(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") { e.preventDefault(); dupSpread(); return; }
+    if (/^Arrow(Left|Right|Up|Down)$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !textTool && !cropMode && $("tpl").style.display !== "block" && (msel.length || sel) && S.spreads.length && nudgeKey(e)) { e.preventDefault(); return; }
     if (e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setTextTool(!textTool); return; }
     if ((e.key === "+" || e.key === "=" || e.key === "-" || e.key === "_") && !e.metaKey && !e.ctrlKey && !e.altKey && msel.length) { e.preventDefault(); op({ op: "zorder", s: cur, ats: mAts(), dir: e.key === "+" || e.key === "=" ? "forward" : "backward" }); return; }
     if ((e.key === "]" || e.key === "[" || e.key === "}" || e.key === "{") && msel.length) { e.preventDefault(); op({ op: "zorder", s: cur, ats: mAts(), dir: e.key === "]" ? "forward" : e.key === "[" ? "backward" : e.key === "}" ? "front" : "back" }); return; }
