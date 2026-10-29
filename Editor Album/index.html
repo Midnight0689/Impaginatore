@@ -383,6 +383,7 @@
   #tband { position: absolute; left: 0; right: 0; background: rgba(50,215,75,.16); pointer-events: none; border-top: 1px dashed rgba(50,215,75,.35); border-bottom: 1px dashed rgba(50,215,75,.35); } #tband span { position: absolute; right: 4px; top: -15px; font-size: 11px; color: #6bbf7a; }
   #tonopanel .tn { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; gap: 10px; } #tonopanel .tr button { height: 30px; } #tonopanel .tr .hlp { font-size: 11.5px; color: var(--dim); line-height: 1.35; margin-top: 2px; }
   #tonopanel .tmode { display: flex; background: #1b1b1d; border-radius: 8px; padding: 2px; } #tonopanel .tmode button { flex: 1; height: 24px; padding: 0; background: transparent; font-size: 12px; } #tonopanel .tmode button.on { background: var(--blue); color: #fff; }
+  #tonopanel .rif { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); } #tonopanel .rif input { width: 64px; height: 26px; }
   .tdots { font-size: 10.5px; color: var(--dim); display: flex; gap: 3px; align-items: center; justify-content: center; margin-top: 2px; white-space: nowrap; } .tdots i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-left: 3px; } .tdots i.ok { background: #32d74b; } .tdots i.att { background: #e0b23c; } .tdots i.no { background: #ff6961; }
   .tpill { position: absolute; right: 4px; top: 4px; padding: 1px 9px; border-radius: 11px; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 3; white-space: nowrap; }
   .slot.t-no:not(.sel) { outline: 3px solid #ff6961; } .slot.t-att:not(.sel) { outline: 3px solid #e0b23c; }
@@ -609,7 +610,7 @@ function renderStage() {
         d.appendChild(ch);
       }
     }
-    if (it.k !== "t" && poolTab === "tono" && tonoPills && TONO && TONO.s === cur && TONOK === tkey()) { const ti = TONO.items.find(x => x.side === it.side && x.idx === it.idx); if (ti) { d.classList.add("t-" + tst(ti)); d.insertAdjacentHTML("beforeend", `<span class="tpill ${tst(ti)}">${ti.n}${tst(ti) === "escl" ? "" : " · " + fdv(ti.d)}</span>`); } }
+    if (it.k !== "t" && poolTab === "tono" && tonoPills && TONO && TONO.s === cur && TONOK === tkey()) { const ti = TONO.items.find(x => x.side === it.side && x.idx === it.idx); if (ti) { d.classList.add("t-" + tst(ti)); d.insertAdjacentHTML("beforeend", `<span class="tpill ${tst(ti)}">${ti.n}${tst(ti) === "escl" ? "" : " · " + fL(ti.d)}</span>`); } }
     box.appendChild(d);
   });
   reapplyLive(); groupBox();
@@ -937,7 +938,7 @@ async function livePump() {
 function updPills() {
   if (!TONO) return;
   document.querySelectorAll("#slots .slot").forEach(d => { const at = d.dataset.at && JSON.parse(d.dataset.at); if (!at) return; const ti = TONO.items.find(x => x.side === at[1] && x.idx === at[2]); const p = d.querySelector(".tpill"); if (!ti || !p) return;
-    d.classList.remove("t-no", "t-att", "t-ok", "t-escl"); d.classList.add("t-" + tst(ti)); p.className = "tpill " + tst(ti); p.textContent = `${ti.n}${tst(ti) === "escl" ? "" : " · " + fdv(ti.d)}`; });
+    d.classList.remove("t-no", "t-att", "t-ok", "t-escl"); d.classList.add("t-" + tst(ti)); p.className = "tpill " + tst(ti); p.textContent = `${ti.n}${tst(ti) === "escl" ? "" : " · " + fL(ti.d)}`; });
 }
 function ritNow() { const r = {}; document.querySelectorAll("#insp .sl.rit").forEach(row => { const v = +row.querySelector("input").value; if (v) r[row.dataset.k] = v; }); return r; }
 function wireRit(it) {
@@ -1057,8 +1058,8 @@ function tabsUI() {
   T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}">Galleria</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="Misura se le foto dello spread hanno lo stesso tono">Tono</button></div>`;
   T.querySelectorAll("button").forEach(b => b.onclick = () => { poolTab = b.dataset.t; try { localStorage.setItem("poolTab", poolTab); } catch (e) {} renderPool(); setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); });
 }
-const tkey = () => S && S.spreads.length ? [cur, ...[-1, 0, 1].map(d => (S.spreads[cur + d] || {}).h), (S.tono_escl || []).join("|"), JSON.stringify(S.tono_rif)].join("~") : "";
-const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + Math.abs(v).toFixed(1).replace(".", ",");
+const tkey = () => S && S.spreads.length ? [cur, ...[-1, 0, 1].map(d => (S.spreads[cur + d] || {}).h), (S.tono_escl || []).join("|"), S.tono_L, S.tono_Z].join("~") : "";
+const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + Math.abs(v).toFixed(1).replace(".", ","), fL = v => (v > 0.5 ? "+" : v < -0.5 ? "−" : "") + Math.abs(Math.round(v));
 async function loadTono() {
   if (!S || !S.spreads.length) return; const k = tkey();
   if (k === TONOK && TONO) { drawTono(); return; }
@@ -1080,36 +1081,34 @@ function drawTono() {
   if (!its.length) { P.innerHTML = '<span class="empty">Nessuna foto in questo spread.</span>'; return; }
   const no = its.filter(x => tst(x) === "no"), at = its.filter(x => tst(x) === "att"), okn = its.filter(x => tst(x) === "ok").length;
   const why = (x, g) => { const q = g ? "troppo" : "un po'";
-    if (Math.abs(x.d) > T.verde || !C) return `la ${x.n} è ${q} ${x.d < 0 ? "scura" : "chiara"}`;
-    if (Math.abs(x.dh) > T.sh[0]) return `la ${x.n} ha le alte luci ${q} ${x.dh < 0 ? "basse" : "forti"}`;
-    return `la ${x.n} ha le ombre ${q} ${x.ds < 0 ? "chiuse" : "aperte"}`; };
+    if (Math.abs(x.d) > T.zona || !C) return `la ${x.n} è ${q} ${x.d < 0 ? "scura" : "chiara"}`;
+    return x.H < T.hz[0] ? `la ${x.n} ha le alte luci spente` : `la ${x.n} ha le alte luci quasi bruciate`; };
   const parts = no.map(x => why(x, 1)).concat(at.map(x => why(x, 0)));
-  const title = no.length ? "foto da sistemare" : at.length ? "foto da guardare" : "";
-  const head = title ? `${no.length || at.length} ${title}` : "Tono uniforme";
-  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " Le altre sono in linea." : "") : `Le ${its.filter(x => tst(x) !== "escl").length} foto hanno lo stesso tono.`;
-  const sc = T.score >= 85 ? "ok" : T.score >= 60 ? "att" : "no", H = 110, lo = Math.round((50 - T.verde * 30) / 100 * H), hi = Math.round((50 + T.verde * 30) / 100 * H);
-  const dot = (v, th) => { const a = Math.abs(v); return a <= th[0] ? "ok" : a <= th[1] ? "att" : "no"; };
+  const head = no.length ? `${no.length} foto da sistemare` : at.length ? `${at.length} foto da guardare` : "Tono in linea";
+  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " Le altre sono nello standard." : "") : `Le ${its.filter(x => tst(x) !== "escl").length} foto sono nello standard (L* ${Math.round(T.rif)} ±${T.zona}).`;
+  const sc = T.score >= 85 ? "ok" : T.score >= 60 ? "att" : "no", H = 110, k1 = 1.1, lo = Math.round((50 - T.zona * k1) / 100 * H), hi = Math.round((50 + T.zona * k1) / 100 * H);
+  const dot = st => st;
   const cols = its.map(x => {
-    const stt = tst(x), pct = Math.min(100, Math.max(8, 50 + x.d * 30)), bh = Math.round(pct / 100 * H), esc = stt === "escl";
+    const stt = tst(x), pct = Math.min(100, Math.max(8, 50 + x.d * k1)), bh = Math.round(pct / 100 * H), esc = stt === "escl", de = Math.round(((x.nuova ?? x.evp) - x.evp) * 20) / 20;
     let act;
     if (esc) act = "esclusa";
     else if (stt === "ok") act = "ok";
-    else if (!C) act = `${x.d < 0 ? "schiarisci" : "scurisci"} di ${fn1(x.d)}${stt === "att" ? "?" : ""}${x.bruc ? "<br>⚠ luci" : ""}`;
+    else if (!C) act = de ? `${de > 0 ? "schiarisci" : "scurisci"} di ${fn1(de)}${stt === "att" ? "?" : ""}${x.bruc ? "<br>⚠ luci" : ""}` : "limite luci: ritocca a mano";
     else if (!x.compl) act = "da guardare";
-    else { const ch = []; const de = Math.round((x.compl.ev - (x.evp || 0)) * 20) / 20; if (de) ch.push(`esp. ${de > 0 ? "+" : "−"}${fn1(de)}`); for (const k in x.compl.rit) { const dv = x.compl.rit[k] - ((x.rit0 || {})[k] || 0); if (dv) ch.push(`${RITN[k]} ${dv > 0 ? "+" : "−"}${Math.abs(dv)}`); } act = (ch.length ? ch.join("<br>") : "nessuna correzione") + (x.compl.bruc ? "<br>⚠ luci" : "") + (stt === "att" ? "?" : ""); }
-    const dots = C && !esc ? `<div class="tdots" title="Alte luci ${fdv(x.dh)} EV · Ombre ${fdv(x.ds)} EV"><i class="${dot(x.dh, T.sh)}"></i>luci <i class="${dot(x.ds, T.ss)}"></i>ombre</div>` : "";
-    return `<div class="tcol" data-at="${x.side}:${x.idx}" title="${x.name} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tbarbox"><div class="tv" style="color:${esc ? "#98989f" : "#f2f2f7"}">${esc ? "–" : fdv(x.d)}</div><div class="tb ${stt}" style="height:${bh}px"></div></div><img class="${stt}" src="/img/thumb/${x.name}?w=120">${dots}<div class="ta ${stt}">${x.n} · ${act}</div></div>`;
+    else { const ch = []; const d2 = Math.round((x.compl.ev - x.evp) * 20) / 20; if (d2) ch.push(`esp. ${d2 > 0 ? "+" : "−"}${fn1(d2)}`); for (const k in x.compl.rit) { const dv = x.compl.rit[k] - ((x.rit0 || {})[k] || 0); if (dv) ch.push(`${RITN[k]} ${dv > 0 ? "+" : "−"}${Math.abs(dv)}`); } act = (ch.length ? ch.join("<br>") : "nessuna correzione") + (x.compl.bruc ? "<br>⚠ luci" : "") + (stt === "att" ? "?" : ""); }
+    const dots = C && !esc ? `<div class="tdots" title="Alte luci L* ${Math.round(x.H)} (zona ${T.hz[0]}–${T.hz[1]}) · Ombre L* ${Math.round(x.S)} (fino a ${T.sz[0]})"><i class="${x.sh}"></i>luci <i class="${x.ss}"></i>ombre</div>` : "";
+    return `<div class="tcol" data-at="${x.side}:${x.idx}" title="${x.name} · luce media L* ${Math.round(x.d + T.rif)} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tbarbox"><div class="tv" style="color:${esc ? "#98989f" : "#f2f2f7"}">${esc ? "–" : fL(x.d)}</div><div class="tb ${stt}" style="height:${bh}px"></div></div><img class="${stt}" src="/img/thumb/${x.name}?w=120">${dots}<div class="ta ${stt}">${x.n} · ${act}</div></div>`;
   }).join("");
-  const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 0.05 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + fn1(v)}</span>`;
+  const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 2 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + Math.round(Math.abs(v)) + " L*"}</span>`;
   const fixable = no.filter(x => !C || x.compl), fixAtt = at.filter(x => !C || x.compl);
-  P.innerHTML = `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto allo stesso tono">Uniformità ${T.score} / 100</span></div>
-    <div id="tchart">${cols}<div id="tband"><span>zona giusta · riferimento dello spread</span></div></div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>
+  P.innerHTML = `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto nello standard">Uniformità ${T.score} / 100</span></div>
+    <div id="tchart">${cols}<div id="tband"><span>standard · L* ${Math.round(T.rif)} ±${T.zona}</span></div></div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>
     <div class="tr"><div class="seg tmode"><button data-m="s" class="${C ? "" : "on"}" title="Corregge solo l'Esposizione">Semplice</button><button data-m="c" class="${C ? "on" : ""}" title="Corregge Esposizione, Alteluci, Ombre e Bianchi">Completa</button></div>
       <button class="primary" id="tfix" ${fixable.length ? "" : "disabled"}>${fixable.length ? `Correggi le ${fixable.length} foto` : "Niente da correggere"}</button>
       ${fixAtt.length ? `<button id="tfixall">Correggi anche le ${fixAtt.length} da guardare</button>` : ""}
       <button id="tpl2" class="${tonoPills ? "on" : ""}" title="Mostra o nascondi i numeri sulle cornici">Numeri sulle foto</button>
-      <div style="display:flex;gap:6px"><button id="trif" style="flex:1" ${selItem() && selItem().k !== "t" ? "" : "disabled"} title="Usa il tono della foto selezionata come riferimento di questo spread">Riferimento: questa foto</button><button id="trif2" title="Ricalcola il riferimento di questo spread: mediana delle sue foto di adesso">↻</button></div>
-      <div class="hlp">${C ? "Esposizione + alteluci, ombre, bianchi (pochissimo, mai oltre ±20)." : "Solo l'Esposizione."} Ogni foto è confrontata con un riferimento fisso dello spread (fissato alla prima misura): ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>`;
+      <div class="rif" title="Luce media standard di una foto (L*) e ampiezza della zona giusta. 50 = grigio al 18%; per ritratti e bambini 52–58. Vale per tutte le foto dell'album."><span>Standard L*</span><input id="trif" type="number" min="30" max="75" step="1" value="${Math.round(T.rif)}"><span>±</span><input id="tzon" type="number" min="4" max="30" step="1" value="${Math.round(T.zona)}"></div>
+      <div class="hlp">Ogni foto è confrontata con lo standard fisso: ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>`;
   const ch = $("tchart"), box = ch.querySelector(".tbarbox"); if (box) { const cb = ch.getBoundingClientRect(), bb = box.getBoundingClientRect(); const sc2 = (bb.height - 18) / H, band = $("tband"); band.style.bottom = (cb.bottom - bb.bottom + lo * sc2) + "px"; band.style.height = ((hi - lo) * sc2) + "px"; ch.querySelectorAll(".tb").forEach(b => b.style.height = Math.round(parseFloat(b.style.height) * sc2) + "px"); }
   P.querySelectorAll(".tmode button").forEach(b => b.onclick = () => { tonoMode = b.dataset.m; try { localStorage.setItem("tonoMode", tonoMode); } catch (e) {} drawTono(); renderStage(); });
   P.querySelectorAll(".tcol").forEach(c => { const [side, idx] = c.dataset.at.split(":"), x = its.find(y => y.side === side && y.idx === +idx);
@@ -1117,8 +1116,7 @@ function drawTono() {
     c.oncontextmenu = e => { e.preventDefault(); op({ op: "tono_escl", photo: x.name, value: x.stato !== "escl" }); }; });
   if ($("tfix")) $("tfix").onclick = () => tonoFix(fixable); if ($("tfixall")) $("tfixall").onclick = () => tonoFix(fixable.concat(fixAtt));
   $("tpl2").onclick = () => { tonoPills = !tonoPills; drawTono(); renderStage(); };
-  $("trif").onclick = () => { const i = selItem(); if (i && i.k !== "t") op({ op: "tono_rif", s: cur, photo: i.name }); toast("Riferimento: " + (i ? i.name : "")); };
-  $("trif2").onclick = () => { op({ op: "tono_rif", s: cur }); toast("Riferimento dello spread ricalcolato"); };
+  $("trif").onchange = () => op({ op: "tono_L", value: +$("trif").value }); $("tzon").onchange = () => op({ op: "tono_L", zona: +$("tzon").value });
 }
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.unused.map(n => PM.get(n)).filter(Boolean);

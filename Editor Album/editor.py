@@ -283,11 +283,15 @@ def apply(o):
                     if val: r[k] = val
                     else: r.pop(k, None)
                 if not r: CFG["ritocco"].pop(n, None)
-    elif t == "tono_rif":                                # riferimento del tono dello spread s: la misura attuale di una foto, oppure «ricalcola» (mediana attuale dello spread)
-        s_ = int(o["s"]); ms_ = _tono_misure(s_); key = "|".join(sorted(m["name"] for m in ms_)); R = CFG.setdefault("tono_rif", {})
-        m_ = next((m for m in ms_ if m["name"] == o.get("photo")), None)
-        if m_: R[key] = {k: round(m_["st"][k], 3) for k in "MHST"}
-        else: R.pop(key, None)
+    elif t == "tono_L":                                  # riferimento standard del tono (L* medio) e ampiezza della zona giusta
+        if "value" in o:
+            v = round(min(max(float(o["value"]), 30.0), 75.0), 1)
+            if abs(v - TONO_L0) < 0.05: CFG.pop("tono_L", None)
+            else: CFG["tono_L"] = v
+        if "zona" in o:
+            z = round(min(max(float(o["zona"]), 4.0), 30.0), 1)
+            if abs(z - TONO_Z0) < 0.05: CFG.pop("tono_Z", None)
+            else: CFG["tono_Z"] = z
     elif t == "tono_escl":                               # foto escluse dalla misura del tono (scure o chiare di proposito)
         for n in o.get("photos") or [o["photo"]]:
             if o.get("value", True):
@@ -810,12 +814,17 @@ def state():
     with LOCK:
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
-                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_rif=CFG.get("tono_rif"), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
+                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG))
 
 TONO_C = {}; TONO_IM = {}
-TONO_VERDE, TONO_GIALLO, TONO_MAX = 0.3, 0.6, 1.0                    # scarto (EV) dalla mediana dello spread: entro VERDE ok, entro GIALLO da guardare, oltre da correggere
-TONO_H = (0.45, 0.9); TONO_S = (0.8, 1.6)                            # stesse soglie per alte luci e ombre (modo «Completa»)
+TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
+TONO_Z0 = 12.0                                                       # zona giusta attorno al riferimento (L*): ±12 (nel tuo album mezza foto su due sta tra L* 46 e 59); oltre +6 da correggere
+TONO_HZ = (82.0, 97.0)                                               # zona giusta delle alte luci (95° percentile, L*): sotto 82 piatte, sopra 97 bruciate
+TONO_SZ = (14.0, 22.0)                                               # ombre (5° percentile, L*): fino a 14 ok, oltre «milky»
+TONO_MAX = 1.0                                                       # correzione di esposizione al massimo ±1 EV per volta
+def _tono_L0(): return float(CFG.get("tono_L", TONO_L0))
+def _tono_Z(): return float(CFG.get("tono_Z", TONO_Z0))
 def _tono_img(L):
     """la parte visibile della foto in piccolo (112 px): serve a provare le correzioni senza rifare le anteprime"""
     i = L["i"]; l, t, r, b = A.zcrop(L); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
@@ -835,7 +844,7 @@ def _tono_img(L):
         TONO_IM[key] = sm.crop((x0, y0, x1, y1)) if x1 - x0 >= 24 and y1 - y0 >= 16 else sm
     return TONO_IM[key]
 def _tono_sim(i, im, evp, rit, bw=False):
-    """la foto com'è con esposizione evp e ritocchi rit (stessa pipeline dell'anteprima e del PSD), come luminanza lineare (gamma 2.2)"""
+    """la foto com'è con esposizione evp e ritocchi rit (stessa pipeline dell'anteprima e del PSD), come mappa di L* (CIE Lab, sRGB)"""
     import numpy as np
     n = A.name(i); R = CFG["ritocco"]; old = R.get(n); eo = A.ev_for(i) - CFG["esposizione"]["per_foto"].get(n, 0.0) + evp
     FL._CUR[0] = i
@@ -847,12 +856,12 @@ def _tono_sim(i, im, evp, rit, bw=False):
         if old is None: R.pop(n, None)
         else: R[n] = old
     if bw: out = ImageOps.grayscale(out)                                     # in bianco e nero conta la luminosità del grigio, come nell'anteprima
-    a = (np.asarray(out.convert("RGB"), dtype=np.float32) / 255) ** 2.2
-    return a[..., 0] * .2126 + a[..., 1] * .7152 + a[..., 2] * .0722
-def _tono_stat(Y):
-    import numpy as np, math
-    l2 = lambda v: math.log2(max(float(v), 5e-4)); p = np.percentile(Y, (10, 90, 95))
-    return dict(M=l2(Y.mean()), H=l2(p[2]), S=l2(p[0]), T=(l2(Y.mean()) + l2(p[1])) / 2, B=float((Y > 0.9).mean()))
+    c = np.asarray(out.convert("RGB"), dtype=np.float32) / 255
+    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4); Y = lin[..., 0] * .2126 + lin[..., 1] * .7152 + lin[..., 2] * .0722
+    return np.where(Y > 0.008856, 116 * np.cbrt(Y) - 16, 903.3 * Y)
+def _tono_stat(Lm):
+    import numpy as np
+    p = np.percentile(Lm, (5, 95)); return dict(M=float(Lm.mean()), H=float(p[1]), S=float(p[0]), B=float((Lm > 96).mean()))
 def _tono_misure(s):
     key = spread_hash(s)
     if key in TONO_C: return TONO_C[key]
@@ -866,31 +875,25 @@ def _tono_misure(s):
     if len(TONO_C) > 120: TONO_C.clear()
     TONO_C[key] = out; return out
 
-def _tono_med(ms, k):
-    import statistics
-    v = [m["st"][k] for m in ms if m["name"] not in CFG["tono_escl"]]
-    return statistics.median(v) if v else None
+def _tono_stato(d, z, g): return "ok" if abs(d) <= z else "att" if abs(d) <= g else "no"
+def _tono_fuori(v, lo, hi): return max(0.0, lo - v, v - hi)                 # quanto un valore esce dalla zona [lo, hi]
 
-def _tono_rif(s):
-    """livello di riferimento FISSO di uno spread (luce media, alte luci, ombre, tono): la mediana delle sue foto la prima volta che lo si misura, poi resta salvata nel progetto
-    (per l'insieme di foto dello spread). Così il valore di una foto non cambia quando ne ritocchi un'altra; si cambia con «Riferimento» nella scheda Tono"""
-    import statistics
-    ms = _tono_misure(s); key = "|".join(sorted(m["name"] for m in ms)); R = CFG.setdefault("tono_rif", {})
-    if "T" in R: R.clear()                                          # formato della versione 80 (riferimento unico): non vale più
-    if key in R: return R[key]
-    vals = {k: [m["st"][k] for m in ms if m["name"] not in CFG["tono_escl"]] for k in "MHST"}
-    R[key] = {k: round(statistics.median(v), 3) for k, v in vals.items()} if vals["T"] else dict(M=-2.0, H=-1.0, S=-4.0, T=-1.5)
-    return R[key]
+def _tono_solo_ev(m):
+    """Semplice: l'esposizione che porta la luce media più vicino al riferimento (±1 EV al massimo) senza bruciare altre luci"""
+    st0 = m["st"]; L0 = _tono_L0(); best = (abs(st0["M"] - L0), 0.0); q = 0.0
+    for sgn in (1, -1):
+        v = sgn * 0.05
+        while abs(v) <= TONO_MAX + 1e-9:
+            e = min(max(m["evp"] + v, -2.0), 2.0); st = _tono_stat(_tono_sim(m["i"], m["im"], e, m["rit"], m["bw"]))
+            j = abs(st["M"] - L0) + 100 * max(0.0, st["B"] - st0["B"] - 0.02)
+            if j < best[0] - 1e-9: best = (j, round(v, 2))
+            v += sgn * 0.05
+    return round(min(max(m["evp"] + best[1], -2.0), 2.0) * 20) / 20
 
-def _tono_stato(d, soglie): return "ok" if abs(d) <= soglie[0] else "att" if abs(d) <= soglie[1] else "no"
-
-def _tono_ottimizza(m, tgt):
-    """prova esposizione, alteluci, ombre e bianchi della foto m e sceglie i valori che avvicinano luce media, alte luci e ombre ai valori target dello spread (tetti prudenti, penalità sulle correzioni grandi)"""
-    st0 = m["st"]; dead = dict(M=.12, H=.40, S=.70); W = dict(M=3.0, H=.3, S=.12)
-    t = {}
-    for k in "MHS":
-        dv = st0[k] - tgt[k]; t[k] = st0[k] if abs(dv) <= dead[k] else tgt[k] + (dead[k] if dv > 0 else -dead[k])      # il bersaglio è il bordo della zona giusta, non la mediana esatta
-    base = m["rit"]; lim = dict(ev=(-TONO_MAX, TONO_MAX, .05), alt=(-20, 20, 5), omb=(-20, 20, 5), bia=(-15, 15, 5)); p = dict(ev=0.0, alt=0, omb=0, bia=0)
+def _tono_ottimizza(m):
+    """Completa: prova esposizione, alteluci, ombre e bianchi e sceglie i valori che portano luce media, alte luci e ombre nelle zone giuste (tetti prudenti, penalità sulle correzioni grandi, mai più luci bruciate)"""
+    st0 = m["st"]; L0 = _tono_L0(); base = m["rit"]
+    lim = dict(ev=(-TONO_MAX, TONO_MAX, .05), alt=(-20, 20, 5), omb=(-20, 20, 5), bia=(-15, 15, 5)); p = dict(ev=0.0, alt=0, omb=0, bia=0)
     def rit_of(q):
         r = dict(base)
         for k in ("alt", "omb", "bia"):
@@ -900,8 +903,9 @@ def _tono_ottimizza(m, tgt):
         return r
     def J(q):
         e = min(max(m["evp"] + q["ev"], -2.0), 2.0); st = _tono_stat(_tono_sim(m["i"], m["im"], e, rit_of(q), m["bw"]))
-        j = sum(W[k] * (st[k] - t[k]) ** 2 for k in "MHS") + 0.05 * (q["ev"] ** 2 + (q["alt"] / 40) ** 2 + (q["omb"] / 40) ** 2 + (q["bia"] / 30) ** 2)
-        return j + 40 * max(0.0, st["B"] - st0["B"] - 0.02) ** 2 * 100, st
+        dm = max(0.0, abs(st["M"] - L0) - 4) / 8; dh = _tono_fuori(st["H"], *TONO_HZ) / 10; ds = _tono_fuori(st["S"], 0, TONO_SZ[0]) / 10
+        j = 3 * dm * dm + dh * dh + .5 * ds * ds + 0.05 * (q["ev"] ** 2 + (q["alt"] / 20) ** 2 + (q["omb"] / 20) ** 2 + (q["bia"] / 15) ** 2)
+        return j + 4000 * max(0.0, st["B"] - st0["B"] - 0.02) ** 2, st
     best, _ = J(p)
     for _ in range(3):
         for k in ("ev", "alt", "omb", "bia"):
@@ -911,34 +915,35 @@ def _tono_ottimizza(m, tgt):
                 if j < best - 1e-9: best, p = j, q
                 v += step
     j, st = J(p); e = round(min(max(m["evp"] + p["ev"], -2.0), 2.0) * 20) / 20
-    return dict(ev=e, rit={k: round(min(max(base.get(k, 0) + p[k], -100), 100)) for k in ("alt", "omb", "bia") if p[k]}, dopo=dict(d=st["T"], dh=st["H"], ds=st["S"]), bruc=bool(st["B"] > st0["B"] + 0.02))
+    return dict(ev=e, rit={k: round(min(max(base.get(k, 0) + p[k], -100), 100)) for k in ("alt", "omb", "bia") if p[k]}, dopo=st, bruc=bool(st["B"] > st0["B"] + 0.02))
 
 def tono_spread(s, over=None):
-    """over = {foto: {ev, rit}}: valori di prova (cursore in movimento) al posto di quelli salvati.
-    misura il tono delle foto dello spread s (luce media, alte luci, ombre) rispetto alla loro mediana e propone le correzioni: solo esposizione («semplice») o anche alteluci/ombre/bianchi («completa»)"""
+    """misura il tono delle foto dello spread s rispetto a un riferimento STANDARD (L* medio, uguale per tutto l'album) e propone le correzioni:
+    solo esposizione («semplice») o anche alteluci/ombre/bianchi («completa»). over = {foto: {ev, rit}}: valori di prova (cursore in movimento)"""
     with LOCK:
-        ms = _tono_misure(s); items = []; pen = []
+        ms = _tono_misure(s); items = []; pen = []; L0 = _tono_L0()
         if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_stat(_tono_sim(m["i"], m["im"], over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]), m["bw"]))) if m["name"] in over else m for m in ms]
-        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None)
-        tg = dict(_tono_rif(s)); ck = (spread_hash(s), tuple(CFG["tono_escl"]), tuple(sorted(tg.items())))
+        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)
         for j, m in enumerate(ms):
-            st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d, dh, ds = st["T"] - tg["T"], st["H"] - tg["H"], st["S"] - tg["S"]
-            stato = "escl" if esc else _tono_stato(d, (TONO_VERDE, TONO_GIALLO))
-            sc_ = "escl" if esc else max((stato, min(_tono_stato(dh, TONO_H), "att", key=("ok", "att", "no").index)), key=("ok", "att", "no").index)   # le ombre sono solo un'informazione (puntino): dipendono troppo dalla scena. Le alte luci diverse al massimo «da guardare»
-            ev1 = round(min(max(m["evp"] - max(min(d, TONO_MAX), -TONO_MAX), -2.0), 2.0) * 20) / 20
-            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 2), dh=round(dh, 2), ds=round(ds, 2), stato=stato, stato_c=sc_, nuova=ev1, evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]},
-                     bruc=bool(not esc and ev1 > m["evp"] and _tono_stat(_tono_sim(m["i"], m["im"], ev1, m["rit"], m["bw"]))["B"] > st["B"] + 0.02))
-            if not esc and sc_ != "ok" and not over:
-                ck2 = ck + (m["name"],)
-                if ck2 not in TONO_C:
-                    TONO_C[ck2] = _tono_ottimizza(m, tg)
-                c = TONO_C[ck2]; e["compl"] = dict(ev=c["ev"], rit=c["rit"], bruc=c["bruc"], d=round(c["dopo"]["d"] - tg["T"], 2), dh=round(c["dopo"]["dh"] - tg["H"], 2), ds=round(c["dopo"]["ds"] - tg["S"], 2))
+            st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d = st["M"] - L0
+            stato = "escl" if esc else _tono_stato(d, _tono_Z(), _tono_Z() + 6)
+            fh = _tono_fuori(st["H"], *TONO_HZ); sh = "ok" if fh == 0 else "att" if fh <= 8 else "no"; ss = "ok" if st["S"] <= TONO_SZ[0] else "att" if st["S"] <= TONO_SZ[1] else "no"
+            sc_ = "escl" if esc else max((stato, "att" if sh != "ok" else "ok"), key=("ok", "att", "no").index)    # le alte luci fuori zona al massimo «da guardare»; le ombre solo informative
+            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 1), H=round(st["H"], 1), S=round(st["S"], 1), sh=sh, ss=ss, stato=stato, stato_c=sc_, evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]})
+            if not esc and stato != "ok" and not over:
+                ck = (spread_hash(s), m["name"], L0, tuple(CFG["tono_escl"]))
+                if ck not in TONO_C: TONO_C[ck] = (_tono_solo_ev(m), _tono_ottimizza(m))
+                ev1, c = TONO_C[ck]; e["nuova"] = ev1; e["compl"] = dict(ev=c["ev"], rit=c["rit"], bruc=c["bruc"], d=round(c["dopo"]["M"] - L0, 1))
+                e["bruc"] = bool(ev1 > m["evp"] and _tono_stat(_tono_sim(m["i"], m["im"], ev1, m["rit"], m["bw"]))["B"] > st["B"] + 0.02)
+            if not esc: pen.append(min(max(0.0, abs(d) - _tono_Z()) / 12, 1.0))
             items.append(e)
-            if not esc: pen.append(min(abs(d), 1.0))
         def vic(t):
             if not (0 <= t < len(SP)): return None
-            return round(_tono_rif(t)["T"] - tg["T"], 2) if _tono_misure(t) else None
-        return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), verde=TONO_VERDE, giallo=TONO_GIALLO, sh=TONO_H, ss=TONO_S)
+            mm = [m["st"]["M"] for m in _tono_misure(t) if m["name"] not in CFG["tono_escl"]]
+            if not mm: return None
+            import statistics
+            return round(statistics.median(mm) - statistics.median([m["st"]["M"] for m in ms if m["name"] not in CFG["tono_escl"]] or [L0]), 1)
+        return dict(s=s, items=items, score=round(100 * (1 - sum(pen) / len(pen))) if pen else 100, prev=vic(s - 1), next=vic(s + 1), rif=L0, zona=_tono_Z(), giallo=_tono_Z() + 6, hz=TONO_HZ, sz=TONO_SZ)
 
 def live_photo(q):
     """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
@@ -1139,8 +1144,10 @@ def save(backup=True):
         _scrivi(os.path.join(PROJ, "spec.py"), "\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
         out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
-        if CFG.get("tono_rif"): out["tono_rif"] = CFG["tono_rif"]
-        else: out.pop("tono_rif", None)
+        out.pop("tono_rif", None)
+        for k_ in ("tono_L", "tono_Z"):
+            if k_ in CFG: out[k_] = CFG[k_]
+            else: out.pop(k_, None)
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)
