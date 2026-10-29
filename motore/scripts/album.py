@@ -161,17 +161,16 @@ def ev_for(i):
     return round(ev + _ESP.get("per_foto", {}).get(n, 0.0), 2)
 WB = CFG.get("bilanciamento_bianco", {})     # {"_DSC1406": [r, g, b]} guadagni lineari
 def apply_ev(im, ev, gains=None):
-    """esposizione in luce lineare con spalla morbida sulle alte luci (simile al cursore di Lightroom)"""
+    """esposizione come il livello Esposizione di Photoshop (gamma 2.2, nessuna spalla: identica nel PSD); poi i guadagni del bilanciamento bianco in luce lineare"""
     import numpy as np
     if abs(ev) < 1e-3 and not gains: return im
     a = np.asarray(im.convert("RGB")).astype(np.float32) / 255
-    lin = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4) * (2 ** ev)
-    if gains: lin = lin * np.array(gains, dtype=np.float32)
-    if ev > 0:
-        k = 0.8; lin = np.where(lin > k, k + (1 - k) * (1 - np.exp(-(lin - k) / (1 - k))), lin)
-    lin = np.clip(lin, 0, 1)
-    s = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * lin ** (1 / 2.4) - 0.055)
-    return Image.fromarray((s * 255 + 0.5).astype(np.uint8))
+    if abs(ev) >= 1e-3: a = np.clip(a ** 2.2 * (2 ** ev), 0, 1) ** (1 / 2.2)
+    if gains:
+        lin = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4) * np.array(gains, dtype=np.float32)
+        lin = np.clip(lin, 0, 1)
+        a = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * lin ** (1 / 2.4) - 0.055)
+    return Image.fromarray((a * 255 + 0.5).astype(np.uint8))
 
 # ---------------- testi ----------------
 TXTCFG = CFG.get("testo", {})

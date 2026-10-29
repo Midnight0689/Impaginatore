@@ -930,7 +930,7 @@ def save(backup=True):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): shutil.copy2(p, os.path.join(bk, f"{ts}_{f}"))
         has_free = any(it["k"] == "f" or it.get("a") or it.get("bd") or it.get("sh") or it.get("oc", 100) < 100 or "fx" in it for sp in SP for pg in sp for it in pg[1])
-        if has_free: shutil.copy2(os.path.join(HERE, "album_libere.py"), os.path.join(PROJ, "album_libere.py")); shutil.copy2(os.path.join(HERE, "testo.py"), os.path.join(PROJ, "testo.py"))
+        if has_free: shutil.copy2(os.path.join(HERE, "album_libere.py"), os.path.join(PROJ, "album_libere.py")); shutil.copy2(os.path.join(HERE, "testo.py"), os.path.join(PROJ, "testo.py")); shutil.copy2(os.path.join(HERE, "vib_lut.npz"), os.path.join(PROJ, "vib_lut.npz"))
         lines = [f'"""{CFG.get("nome", "Album")}: {len(SP)} spread. Salvato dall\'editor il {time.strftime("%d/%m/%Y %H:%M")}."""', "from album import *"]
         if has_free: lines.append("from album_libere import *     # cornici libere FREE(...) e angoli ROT(...): serve questo file, sta nella cartella del progetto")
         lines += ["", "SPREADS = ["]
@@ -1202,8 +1202,8 @@ def esporta_progetto(o):
     def go():
         try:
             LOG.append(f"Esporto il progetto in {out}"); os.makedirs(os.path.join(out, "_cache"))
-            for f in ("spec.py", "album_libere.py", "testo.py"):
-                src = os.path.join(PROJ, f) if os.path.exists(os.path.join(PROJ, f)) else os.path.join(HERE, f)
+            for f in ("spec.py", "album_libere.py", "testo.py", "vib_lut.npz"):
+                src = os.path.join(PROJ, f) if f == "spec.py" and os.path.exists(os.path.join(PROJ, f)) else os.path.join(HERE, f)       # i file del programma si prendono sempre dalla versione attuale (una copia vecchia nel progetto darebbe un PSD diverso dall'anteprima)
                 if os.path.exists(src): shutil.copy2(src, os.path.join(out, f))
             for f in ("faces.json", "origine.json"):
                 if os.path.exists(os.path.join(PROJ, "_cache", f)): shutil.copy2(os.path.join(PROJ, "_cache", f), os.path.join(out, "_cache", f))

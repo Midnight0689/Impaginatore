@@ -197,12 +197,46 @@ def rit_lut(r):
     return (y * 255 + 0.5).astype(np.uint8)
 
 
-def rit_curva(r, n=11):
-    """punti (x, y) 0-255 della curva, per il livello Curve di Photoshop"""
+RIT_X = (0, 4, 10, 18, 30, 48, 70, 95, 120, 145, 170, 195, 218, 238, 249, 255)       # 16 punti: il massimo che Photoshop accetta, più fitti vicino a neri e bianchi
+
+
+def rit_curva(r):
+    """punti (x, y) 0-255 della curva (estremi compresi: i neri possono essere alzati), per il livello Curve di Photoshop"""
     L = rit_lut(r)
     if L is None: return None
-    pts = [[round(k * 255 / (n - 1)), int(L[round(k * 255 / (n - 1))])] for k in range(1, n - 1)]
-    return pts
+    return [[x, int(L[x])] for x in RIT_X]
+
+
+def sat_matrice(sat):
+    """saturazione = scala la distanza dal grigio (pesi 601): è una matrice 3x3, quindi identica in anteprima e nel Miscelatore canale di Photoshop (valori in %)"""
+    k = 1 + sat / 100; w = (0.299, 0.587, 0.114)
+    return [[100 * ((1 if c == j else 0) * k + (1 - k) * w[j]) for j in range(3)] for c in range(3)]
+
+
+_VIB = [None]
+
+
+def vib_lut():
+    """tabella 3D misurata in Photoshop (livello Vibranza, -100..100, griglia 17x17x17): l'anteprima fa quello che farà il PSD"""
+    if _VIB[0] is None:
+        import numpy as np, os
+        _VIB[0] = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "vib_lut.npz"))["lut"]
+    return _VIB[0]
+
+
+def vib_apply(a, v):
+    """a: array uint8 (H, W, 3); v: vibranza intera -100..100 (interpolazione trilineare nella tabella)"""
+    import numpy as np
+    T = vib_lut()[int(v) + 100].astype(np.float32)
+    f = a.astype(np.float32) * (16 / 255.0); i0 = np.minimum(f.astype(np.int32), 15); t = f - i0
+    r0, g0, b0 = i0[..., 0], i0[..., 1], i0[..., 2]; tr, tg, tb = t[..., 0:1], t[..., 1:2], t[..., 2:3]
+    out = 0
+    for dr in (0, 1):
+        for dg in (0, 1):
+            for db in (0, 1):
+                w = (tr if dr else 1 - tr) * (tg if dg else 1 - tg) * (tb if db else 1 - tb)
+                out = out + w * T[r0 + dr, g0 + dg, b0 + db]
+    return (out + 0.5).clip(0, 255).astype(np.uint8)
 
 
 def rit_gains(r):
@@ -222,7 +256,8 @@ def wb_total(i):
 def rit_job(i):
     r = rit(i)
     if not r: return None
-    return dict(c=rit_curva(r), vib=round(r.get("vib", 0)), sat=round(r.get("sat", 0))) if (rit_lut(r) is not None or r.get("vib") or r.get("sat")) else None
+    vib, sat = int(round(r.get("vib", 0))), int(round(r.get("sat", 0)))
+    return dict(c=rit_curva(r), vib=vib, sat=sat, satm=sat_matrice(sat) if sat else None) if (rit_lut(r) is not None or vib or sat) else None
 
 
 def _apply_rit(im, i):
@@ -233,12 +268,11 @@ def _apply_rit(im, i):
     a = np.asarray(im.convert("RGB"))
     L = rit_lut(r)
     if L is not None: a = L[a]
-    v, s = r.get("vib", 0) / 100, r.get("sat", 0) / 100
-    if v or s:
-        f = a.astype(np.float32) / 255; gray = (f * np.array([.299, .587, .114], dtype=np.float32)).sum(2, keepdims=True)
-        sat = (f.max(2, keepdims=True) - f.min(2, keepdims=True))
-        k = (1 + v * (1 - sat) if v > 0 else 1 + v) * (1 + s)
-        a = (np.clip(gray + (f - gray) * k, 0, 1) * 255 + 0.5).astype(np.uint8)
+    sat, vib = int(round(r.get("sat", 0))), int(round(r.get("vib", 0)))
+    if sat:
+        M = np.array(sat_matrice(sat), dtype=np.float32) / 100
+        a = (np.clip(a.astype(np.float32) @ M.T, 0, 255) + 0.5).astype(np.uint8)
+    if vib: a = vib_apply(a, vib)
     return Image.fromarray(a)
 
 

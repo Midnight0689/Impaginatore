@@ -3,6 +3,15 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 71 — Anteprima e PSD ora coincidono (controllo matematico con Photoshop)
+Misurato su 27 foto uguali, ognuna con un parametro diverso: PSD aperto in Photoshop, appiattito e confrontato con l'anteprima.
+- **Curve di contrasto/alteluci/ombre/bianchi/neri:** il livello Curve del PSD ora ha 16 punti (più fitti vicino a neri e bianchi) e comprende gli estremi veri (prima i neri alzati venivano persi, errore fino a 21/255). — `album_libere.py` (`rit_curva`), `genera_psd_angolo.py`.
+- **Saturazione:** ora è una matrice (Miscelatore canale in Photoshop), identica all'anteprima (errore 0.2/255; prima fino a 6/255 di scarto).
+- **Vibranza:** l'anteprima usa una tabella misurata sul livello Vibranza di Photoshop (`vib_lut.npz`, da -100 a 100), non più una formula approssimata.
+- **Esposizione:** l'anteprima segue il livello Esposizione di Photoshop (gamma 2.2, senza la spalla morbida sulle alte luci che nel PSD non c'era): +1 ora combacia (prima +1.5/255 di scarto e luci diverse). — `motore/scripts/album.py`.
+- Esportando i PSD, i file del programma si prendono sempre dalla versione attuale. — `editor.py`.
+- Risultato: differenza media anteprima↔PSD ≈ 2.4–4.2/255 su tutti i parametri, quanto il solo ricampionamento delle immagini (foto senza correzioni: 2.44); scarto medio di colore ≈ 0.
+
 ## Versione 70 — Blocca guide
 - Nuovo pulsante «Blocca» accanto a Guide: le guide restano visibili e agganciano ancora, ma non si spostano né si tolgono, non se ne creano di nuove dai righelli e «Cancella» è spento. Si ricorda tra una sessione e l'altra. — `index.html`.
 
