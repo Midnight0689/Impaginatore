@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 136 — Spaziature: tutti identici, misura a scelta
+- Niente più tolleranza larga: uno stacco è verde solo se è uguale alla misura di riferimento (scarto massimo 0,1 mm, un pixel di arrotondamento), altrimenti rosso. Nel riquadro Strumenti un menu sceglie il riferimento: standard del progetto, il più frequente dello spread, o un valore in cm scritto a mano. «Correggi spazi» porta tutto a quel valore. — `index.html` (`GAPMODE`, `GAPVAL`, `gapPairs`).
+
 ## Versione 135 — Controllo e correzione delle spaziature
 - Nuovi pulsanti negli Strumenti: **Spaziature** (mostra lo stacco di ogni coppia di foto vicine: verde ≤0,2 mm dallo standard, giallo ≤0,5 mm, rosso oltre; ignora stacchi sotto 1 mm o molto grandi), **Correggi spazi** (porta tutti gli stacchi dello spread allo standard muovendo il bordo davanti della foto; un solo annulla), **Controlla album** (elenca gli spread con stacchi da correggere). — `index.html` (`gapPairs`, `gapFix`, `gapAll`, `GAPCHK`), `editor.py` (op `setrects`).
 

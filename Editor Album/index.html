@@ -649,8 +649,8 @@ function renderStage() {
   });
   reapplyLive(); groupBox(); selMarks();
 }
-let GAPCHK = false;       // tasto Spaziature: misure di tutti gli stacchi tra le foto dello spread
-const GTOL = { ok: 0.02, warn: 0.05 };       // cm: fino a 0,2 mm giusto, fino a 0,5 mm quasi, oltre da correggere
+let GAPCHK = false, GAPMODE = "std", GAPVAL = 0;       // tasto Spaziature: misure di tutti gli stacchi tra le foto dello spread
+const GTOL = 0.01;       // cm (circa un pixel di arrotondamento): oltre questo lo stacco è diverso dagli altri
 function gapPairs(si) {       // coppie di foto vicine (affiancate o sovrapposte in altezza/larghezza) con lo stacco voluto
   const its = S.spreads[si].items.filter(i => i.k !== "t"), G = S.gap, out = [], max = Math.max(G * 4, S.ppi / 2.54), min = S.ppi / 2.54 * 0.1;
   const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0);
@@ -661,20 +661,23 @@ function gapPairs(si) {       // coppie di foto vicine (affiancate o sovrapposte
     g = b.y - (a.y + a.h);
     if (g >= min && g <= max && ov(a.x, a.x + a.w, b.x, b.x + b.w) > Math.min(a.w, b.w) * 0.1 && !its.some(c => c !== a && c !== b && c.y < b.y && c.y + c.h > a.y + a.h && ov(c.x, c.x + c.w, Math.max(a.x, b.x), Math.min(a.x + a.w, b.x + b.w)) > 0)) { const x0 = Math.max(a.x, b.x), x1 = Math.min(a.x + a.w, b.x + b.w); out.push({ ax: "y", a, b, g, from: a.y + a.h, to: b.y, at: (x0 + x1) / 2 }); }
   }));
-  out.forEach(p => { const d = cmOf(Math.abs(p.g - G)); p.c = d <= GTOL.ok ? "ok" : d <= GTOL.warn ? "warn" : "bad"; });
+  let ref = G;       // a quale misura devono essere tutti uguali: standard, la più frequente dello spread, o un valore scelto
+  if (GAPMODE === "custom" && GAPVAL > 0) ref = GAPVAL;
+  else if (GAPMODE === "freq" && out.length) { const n = new Map(); out.forEach(p => { const k = Math.round(p.g); n.set(k, (n.get(k) || 0) + 1); }); ref = [...n].sort((a, b) => b[1] - a[1] || Math.abs(a[0] - G) - Math.abs(b[0] - G))[0][0]; }
+  out.forEach(p => { p.ref = ref; p.c = cmOf(Math.abs(p.g - ref)) <= GTOL ? "ok" : "bad"; });
   return out;
 }
-function gapStat(si) { const P = gapPairs(si); return { n: P.length, ok: P.filter(p => p.c === "ok").length, bad: P.filter(p => p.c !== "ok").length }; }
+function gapStat(si) { const P = gapPairs(si); return { ref: P.length ? P[0].ref : S.gap, n: P.length, ok: P.filter(p => p.c === "ok").length, bad: P.filter(p => p.c !== "ok").length }; }
 function gapMarks() { return gapPairs(cur).map(p => ({ ax: p.ax, from: p.from, to: p.to, at: p.at, g: p.g, c: p.c })); }
 async function gapFix() {
   if (!S.spreads.length) return;
-  const G = S.gap, R = new Map(); let ch = 0;
+  const R = new Map(); let ch = 0;
   S.spreads[cur].items.forEach(i => R.set(i, { x: i.x, y: i.y, w: i.w, h: i.h }));
   for (let pass = 0; pass < 3; pass++) {
     S.spreads[cur].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });       // lavora sulle misure aggiornate
     const P = gapPairs(cur).filter(p => p.c !== "ok"); if (!P.length) break;
     const need = new Map();       // per ogni foto e asse: il bordo davanti si porta a stacco standard dal vicino più vicino
-    P.forEach(p => { const k = p.b, key = p.ax; const t = p.from + G; const m = need.get(k) || {}; if (m[key] === undefined || t > m[key]) m[key] = t; need.set(k, m); });
+    P.forEach(p => { const k = p.b, key = p.ax; const t = p.from + p.ref; const m = need.get(k) || {}; if (m[key] === undefined || t > m[key]) m[key] = t; need.set(k, m); });
     need.forEach((m, b) => { const r = R.get(b);
       if (m.x !== undefined && b.x + b.w - m.x > r.w * 0.03) { r.w = b.x + b.w - m.x; r.x = m.x; ch++; }
       if (m.y !== undefined && b.y + b.h - m.y > r.h * 0.03) { r.h = b.y + b.h - m.y; r.y = m.y; ch++; } });
@@ -821,7 +824,7 @@ function renderSbar() {
       ${B("mvup", "mprev", "Sposta prima", "Sposta questo spread prima", cur === 0 ? "disabled" : "")}${B("mvdn", "mnext", "Sposta dopo", "Sposta questo spread dopo", cur === n - 1 ? "disabled" : "")}</div></div>`;
     $("vistabox").innerHTML = `<div class="box"><div class="grp">${B("tmag", "magnet", "Magnete", "Calamita: guide e foto si agganciano a bordi, centri, piega e spaziature uguali (tieni Alt per disattivarla al volo)", magnet ? 'class="on"' : "")}${B("trul", "ruler", "Righelli", "Righelli (R)", showRulers ? 'class="on"' : "")}${B("tgui", "guide", "Guide", "Guide (G): si creano trascinandole dal righello", showGuides ? 'class="on"' : "")}${B("tlock", "lock", "Blocca guide", "Blocca le guide: non si spostano né si tolgono per sbaglio (restano come aggancio)", lockGuides ? 'class="on"' : "")}${B("twarn", "warn", "Avviso ritaglio", "Mostra o nascondi l'avviso rosso con «ritaglio ×» sulle foto ingrandite troppo (spento di solito)", showCropWarn ? 'class="on"' : "")}${B("cgui", "clear", "Cancella", "Cancella le guide di questo spread", sp.guides.v.length + sp.guides.h.length && !lockGuides ? "" : "disabled")}</div></div>`;
     $("side").style.setProperty("--vbh", ($("vistabox").offsetHeight || 104) + "px");
-    $("sbarL").innerHTML = `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}${B("mgap", "dist-h", "Spaziature", "Controlla che tutti gli stacchi tra le foto siano uguali (verde giusto, giallo quasi, rosso sbagliato). Un secondo clic toglie le misure", GAPCHK ? 'class="on"' : "")}${B("mgapfix", "same", "Correggi spazi", "Porta tutti gli stacchi tra le foto di questo spread alla distanza standard (un solo annulla)")}${B("mgapall", "photo", "Controlla album", "Elenca gli spread con stacchi sbagliati")}</div></div>`;
+    $("sbarL").innerHTML = `<div class="box"><i>Strumenti</i><div class="g3">${B("ttxt", "text", "Testo", "Strumento Testo (T): clicca o trascina sulla pagina e scrivi", textTool ? 'class="on"' : "")}${B("mcopy", "dup", "Copia", "Copia gli elementi scelti (Cmd+C)", msel.length ? "" : "disabled")}${B("mpaste", "paste", "Incolla", "Incolla (Cmd+V): in un altro spread nella stessa posizione")}${B("mswap", "swap", "Inverti pagine", "Scambia le due pagine: ciò che sta a sinistra va a destra e viceversa")}${B("mgap", "dist-h", "Spaziature", "Controlla che tutti gli stacchi tra le foto siano uguali alla misura scelta (verde uguale, rosso diverso). Un secondo clic toglie le misure", GAPCHK ? 'class="on"' : "")}${B("mgapfix", "same", "Correggi spazi", "Porta tutti gli stacchi di questo spread alla misura scelta, tutti identici (un solo annulla)")}${B("mgapall", "photo", "Controlla album", "Elenca gli spread con stacchi diversi")}</div><select id="gapm" title="A quale misura devono essere uguali tutti gli stacchi" style="margin-top:6px;width:100%"><option value="std">Stacchi tutti = standard (${cmOf(S.gap).toFixed(2)} cm)</option><option value="freq">Tutti come il più frequente dello spread</option><option value="custom">Tutti = un valore a scelta${GAPMODE === "custom" ? " (" + cmOf(GAPVAL).toFixed(2) + " cm)" : "…"}</option></select></div>`;
   $("sbarR").innerHTML = (`<div class="box"><i>${msel.length ? sel_lbl : "Selezione"}</i><div class="g4">
       ${B("zfront", "front", "In cima", "Porta in primo piano (Maiusc + ])")}${B("zfw", "up", "Avanti", "Un livello avanti (] oppure +)")}${B("zbw", "down", "Indietro", "Un livello indietro ([ oppure −)")}${B("zback", "back", "In fondo", "Manda in fondo (Maiusc + [)")}</div>
       ${onlyTxt ? "" : `<div class="g3" style="margin-top:6px">${B("msame", "same", "Stessa misura", "Tutte con la stessa larghezza e altezza della foto che hai toccato per ultima", msel.length < 2 ? "disabled" : "")}${B("mar", "photo", "Proporzioni", "Ridà alla cornice le proporzioni della foto originale")}${B("mfull", "full", "Tutta pagina", "La foto occupa tutta la sua pagina")}${B("mver", "vert", "Verticali", "Tutte le cornici selezionate in verticale")}${B("mhor", "horiz", "Orizzontali", "Tutte le cornici selezionate in orizzontale")}</div>`}</div>`);
@@ -840,7 +843,7 @@ function renderSbar() {
     $("mfull").onclick = () => op({ op: "fullpage", s: cur, ats: mAts() }); $("mver").onclick = () => op({ op: "orient", s: cur, dir: "v", ats: mAts() }); $("mhor").onclick = () => op({ op: "orient", s: cur, dir: "h", ats: mAts() }); }
   }
   document.querySelectorAll(".sb [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
-  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mgap").onclick = () => { GAPCHK = !GAPCHK; if (GAPCHK) { const r = gapStat(cur); toast(r.n ? `Spaziature: ${r.ok} giuste su ${r.n}` + (r.bad ? `, ${r.bad} da correggere` : "") : "Nessuna coppia di foto vicine da controllare"); } render(); }; $("mgapfix").onclick = gapFix; $("mgapall").onclick = gapAll; $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
+  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mgap").onclick = () => { GAPCHK = !GAPCHK; if (GAPCHK) { const r = gapStat(cur); toast(r.n ? `Spaziature: ${r.ok} su ${r.n} uguali a ${cmOf(r.ref).toFixed(2)} cm` + (r.bad ? `, ${r.bad} diverse` : "") : "Nessuna coppia di foto vicine da controllare"); } render(); }; $("gapm").value = GAPMODE; $("gapm").onchange = e => { const v = e.target.value; if (v === "custom") { const t = prompt("Stacco in cm (es. 0,30):", cmOf(GAPVAL || S.gap).toFixed(2).replace(".", ",")); const n = parseFloat((t || "").replace(",", ".")); if (!(n > 0)) { e.target.value = GAPMODE; return; } GAPVAL = n / 2.54 * S.ppi; } GAPMODE = v; render(); }; $("mgapfix").onclick = gapFix; $("mgapall").onclick = gapAll; $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
   $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides); $("tlock").onclick = () => setLock(!lockGuides); $("twarn").onclick = () => setCropWarn(!showCropWarn);
