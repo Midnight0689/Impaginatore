@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 111 — Barra della galleria allineata
+- Tutti i controlli della barra (filtri, colori, ordine, Solo ★, Preferita, Tolta, cerca, zoom) hanno la stessa altezza (28 px) e sono allineati sulla stessa riga; tolta la scritta d'aiuto sopra le miniature. — `index.html` (`.fbar`, `renderPool`).
+
 ## Versione 110 — Pulsanti ★ Preferita e ✕ Tolta
 - Nelle barre della galleria (Foto e sotto lo spread) due pulsanti visibili: «★ Preferita» e «✕ Tolta», sulle foto scelte (o sotto il mouse). Scorciatoie P e X. Il filtro stella ora si chiama «Solo ★». «Tolta» non vale per foto già in uno spread. — `index.html` (`markStar`, `markTolta`, `mkBar`), `editor.py` (op `tolta` accetta `photos`).
 
