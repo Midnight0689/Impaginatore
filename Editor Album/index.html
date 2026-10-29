@@ -35,6 +35,13 @@
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
+  #keys { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; }
+  #keys .kc { width: min(1000px, 94vw); max-height: 90vh; overflow: auto; background: rgba(40,40,43,.97); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.6); color: #eee; font-size: 13px; }
+  #keys .kh { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 16px; position: sticky; top: 0; background: rgba(40,40,43,.99); } #keys .kx { background: none; border: 0; color: inherit; font-size: 16px; cursor: pointer; }
+  #keys .kb { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px 32px; padding: 18px 22px 24px; }
+  #keys h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  #keys .kr { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); } #keys .kr span:last-child { text-align: right; white-space: nowrap; }
+  #keys kbd { font: 600 11px -apple-system, system-ui, sans-serif; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; margin-left: 3px; }
   #gapmenu { position: fixed; z-index: 450; width: 260px; background: rgba(40,40,43,.97); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.5); color: #eee; font-size: 12px; display: flex; flex-direction: column; gap: 8px; }
   #gapmenu label { display: flex; align-items: center; gap: 6px; cursor: pointer; } #gapmenu label b { margin-left: auto; } #gapmenu #gmv { width: 52px; padding: 2px 4px; text-align: right; }
   #gapmenu .mb { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; } #gapmenu .mb button { padding: 7px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: inherit; cursor: pointer; } #gapmenu .mb button:first-child { background: var(--accent); color: #111; border: 0; font-weight: 600; }
@@ -448,6 +455,7 @@
     <button id="missb" class="danger" style="display:none" title="Alcune foto non si trovano più: clicca per ricollegarle"></button>
     <button id="prjb" title="Ricollega foto, esporta il progetto"><span style="display:contents"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">Progetto</span></span></button>
     <button id="verb" title="Torna a una versione salvata prima"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">Versioni</span></button>
+    <button id="keysb" class="ico" title="Tutte le scorciatoie (?)"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
     <span class="stgsw" id="stgsw" title="Colore dello sfondo dietro lo spread"></span>
     <button id="tlist" class="ico" title="Mostra/nascondi l'elenco degli spread"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><button id="tside" class="ico" title="Mostra/nascondi il pannello delle impostazioni"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></svg></button><button id="tfull" class="ico" title="Modifica a tutto schermo (Tab)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     <button id="expb" class="primary"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span class="lbl">Esporta…</span></button>
@@ -2004,7 +2012,25 @@ $("stage").addEventListener("pointerdown", e => {
 }, true);
 $("stage").addEventListener("pointermove", e => { if (!panD) return; const st = $("stage"); st.scrollLeft = panD.l - (e.clientX - panD.x); st.scrollTop = panD.t - (e.clientY - panD.y); });
 $("stage").addEventListener("pointerup", () => { panD = null; document.body.classList.remove("panning"); });
+const KEYS = [
+  ["Generali", [["Salva", "⌘ S"], ["Annulla / Ripeti", "⌘ Z · ⇧ ⌘ Z"], ["Mostra/nascondi pannelli (galleria e Tono restano)", "Tab"], ["Modelli di impaginazione", "M"], ["Righelli", "R"], ["Guide", "G"], ["Questa lista", "?"], ["Cambia spread", "↑ · ↓"]]],
+  ["Foto sullo spread", [["Seleziona tutte", "⌘ A"], ["Copia · Taglia · Incolla", "⌘ C · ⌘ X · ⌘ V"], ["Duplica spread", "⌘ D"], ["Elimina", "⌫"], ["Sposta di 0,01 cm", "← ↑ → ↓"], ["Sposta di 0,1 cm", "⇧ ← ↑ → ↓"], ["Porta avanti · indietro", "+ · −"], ["Avanti · indietro (alternativa)", "] · ["], ["In cima · in fondo", "} · {"], ["Strumento testo", "T"], ["Deseleziona / esci", "Esc"]]],
+  ["Trascinare e ridimensionare", [["Senza aggancio magnetico", "tieni ⌥"], ["Ridimensiona in proporzione", "tieni ⇧"], ["Sposta la vista (manina)", "tieni Spazio"], ["Anteprima grande della foto", "Z · Spazio"], ["Anteprima: foto precedente/successiva", "← →"]]],
+  ["Galleria", [["Preferita (si toglie risalendo)", "P"], ["Tolta", "X"], ["Assegna colore 1–7", "1 … 7"], ["Toglie il colore", "0"], ["Seleziona intervallo", "⇧ clic"], ["Seleziona tutte (vista Foto)", "⌘ A"], ["Anteprima grande", "Z"]]],
+  ["Misure e spaziature", [["Distanze dai lati", "restano sulla foto selezionata"], ["Controlla stacchi dello spread", "Strumenti › Spaziature"], ["Correggi stacchi (scelta misura)", "Strumenti › Correggi spazi"], ["Stacchi di tutto l'album", "Strumenti › Controlla album"]]],
+];
+function keysOpen() {
+  if ($("keys")) { $("keys").remove(); return; }
+  const d = document.createElement("div"); d.id = "keys";
+  const close = () => { d.remove(); document.removeEventListener("keydown", esc, true); }, esc = e => { if (e.key === "Escape" || e.key === "?") { e.preventDefault(); e.stopPropagation(); close(); } };
+  const kb = t => t.split(/( · |  oppure  | \+ )/).map(x => /^( · |  oppure  | \+ )$/.test(x) ? `<i style="opacity:.5;font-style:normal"> ${x.trim() === "oppure" ? "oppure" : x.trim()} </i>` : x.split(" ").map(k => /^(⌘|⇧|⌥|⌫|Tab|Esc|Spazio|[A-Z0-9?+−\]\[{}↑↓←→…])$/.test(k) ? `<kbd>${k}</kbd>` : k).join(" ")).join("");
+  d.innerHTML = `<div class="kc"><div class="kh"><b>Scorciatoie da tastiera</b><button class="kx" title="Chiudi (Esc)">✕</button></div><div class="kb">` + KEYS.map(([t, r]) => `<div><h4>${t}</h4>${r.map(([a, b]) => `<div class="kr"><span>${a}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + `</div></div>`;
+  d.querySelector(".kx").onclick = close; d.onclick = e => { if (e.target === d) close(); };
+  document.body.appendChild(d); document.addEventListener("keydown", esc, true);
+}
+$("keysb").onclick = keysOpen;
 document.addEventListener("keydown", e => {
+  if (e.key === "?" && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable) { e.preventDefault(); keysOpen(); return; }
   if (qlName && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); qlStep(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1); return; }
   if (qlName && (e.key.toLowerCase() === "z" || e.key === " " || e.key === "Escape") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
   if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") { e.preventDefault(); if (view === "album") setPan(true); return; }       // barra spaziatrice tenuta premuta = manina

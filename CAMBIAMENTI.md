@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.0.1 — Pulsante delle scorciatoie
+- Nella barra in alto un pulsante con la tastiera (o il tasto ?) apre una finestra centrale con tutte le scorciatoie, divise per argomento; si chiude con Esc, ? o un clic fuori. — `index.html` (`KEYS`, `keysOpen`, `#keysb`). Quando si aggiungono scorciatoie nuove, aggiornare `KEYS`.
+
 ## Rilascio 1.0.0 (build 144) — Prima versione definitiva
 - Numerazione all'italiana dei software seri: **maggiore.minore.correzione**. 1.0.0 = la versione con cui si stampa l'album di Serena. Funzione nuova → 1.1.0; solo correzioni → 1.0.1; cambio che rompe la compatibilità con i vecchi progetti → 2.0.0. Il numero si sceglie a mano modificando il file `VERSION` (radice) e annotando qui; il numero di build (conteggio commit) resta come riferimento. — `VERSION`, `home.py` (`info_versione`), `home.html` (`nomeV`).
 
