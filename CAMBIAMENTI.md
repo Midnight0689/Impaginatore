@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 106 — Barra spaziatrice tenuta premuta = manina
+- Se non c'è nessuna foto da mostrare in anteprima, tenendo premuta la barra nell'Album compare la manina e trascinando col mouse si sposta lo spread (utile con lo zoom). Rilasciando la barra torna tutto normale. — `index.html` (`setPan`, `body.pan`).
+
 ## Versione 105 — Con lo zoom i pulsanti restano fermi
 - Con lo zoom dello spread la fascia dei pulsanti scorreva insieme allo spread e spariva: ora resta incollata in alto (sticky) e centrata nella parte visibile. — `index.html` (`#stage.zoomed #tools`).
 

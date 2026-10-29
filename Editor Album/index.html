@@ -98,6 +98,7 @@
   #rh { left: 22px; top: 0; height: 22px; cursor: row-resize; } #rv { left: 0; top: 22px; width: 22px; cursor: col-resize; }
   #rc { left: 0; top: 0; width: 22px; height: 22px; }
   #wrap { max-width: none; }
+  body.pan #stage, body.pan #stage * { cursor: grab !important; } body.panning #stage, body.panning #stage * { cursor: grabbing !important; }
   #stage.zoomed #tools, body.tpin #stage.zoomed #tools { position: sticky !important; top: 0; left: 16px; z-index: 28; align-self: flex-start; width: calc(100cqw - 32px) !important; max-width: none !important; box-sizing: border-box; padding: 6px 0 !important; background: var(--stg, var(--bg)) !important; box-shadow: 0 8px 14px -8px rgba(0,0,0,.5) !important; justify-content: safe center; }
   #stage.zoomed { align-items: safe center; justify-content: safe center; } #zpill { position: fixed; right: calc(var(--rc, 290px) + 16px); bottom: calc(var(--pr, 150px) + 14px); z-index: 30; height: 28px; padding: 0 12px; border-radius: 14px; background: rgba(20,20,22,.85); border: 1px solid var(--line); color: var(--text); font-size: 12px; backdrop-filter: blur(8px); }
   #guides { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: visible; }
@@ -1810,6 +1811,17 @@ function qlStep(d) {
   if (view === "foto") { SELP = [n]; lastClick = n; render(); }
   else { POOLSEL = n; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
 }
+// ---- barra spaziatrice tenuta premuta senza foto selezionata: manina, trascini lo spread (utile con lo zoom)
+let PAN = false, panD = null;
+function setPan(v) { if (v === PAN) return; PAN = v; document.body.classList.toggle("pan", v); if (!v) { panD = null; document.body.classList.remove("panning"); } }
+document.addEventListener("keyup", e => { if (e.key === " ") setPan(false); });
+window.addEventListener("blur", () => setPan(false));
+$("stage").addEventListener("pointerdown", e => {
+  if (!PAN || e.button !== 0) return; e.preventDefault(); e.stopPropagation();
+  const st = $("stage"); panD = { x: e.clientX, y: e.clientY, l: st.scrollLeft, t: st.scrollTop, id: e.pointerId }; document.body.classList.add("panning"); try { st.setPointerCapture(e.pointerId); } catch (x) {}
+}, true);
+$("stage").addEventListener("pointermove", e => { if (!panD) return; const st = $("stage"); st.scrollLeft = panD.l - (e.clientX - panD.x); st.scrollTop = panD.t - (e.clientY - panD.y); });
+$("stage").addEventListener("pointerup", () => { panD = null; document.body.classList.remove("panning"); });
 document.addEventListener("keydown", e => {
   if (qlName && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); qlStep(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1); return; }
   if (qlName && (e.key === " " || e.key === "Escape")) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
@@ -1819,7 +1831,7 @@ document.addEventListener("keydown", e => {
     if (view === "foto") { n = SELP.length ? SELP[SELP.length - 1] : HOV; src = "foto"; }
     else if (qlPref === "spread" && sn) { n = sn; src = "spread"; }       // l'ultima cosa toccata è una foto dello spread
     else if (pn) { n = pn; src = "pool"; } else if (HOV) { n = HOV; src = "pool"; } else if (sn) { n = sn; src = "spread"; }
-    e.preventDefault(); if (n) qlook(n, src); return; }
+    e.preventDefault(); if (n) qlook(n, src); else if (view === "album") setPan(true); return; }
   if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); const nn = view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []; if (nn.length) { const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); } return; }
   if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
