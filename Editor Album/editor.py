@@ -945,7 +945,7 @@ def tono_spread(s, over=None, light=False):
             ze = m["ze"]; stato = "escl" if esc else _tono_stato(d, ze, ze + 6)
             fh = _tono_fuori(st["H"], *TONO_HZ); sh = "ok" if fh == 0 else "att" if fh <= 8 else "no"; ss = "ok" if st["S"] <= TONO_SZ[0] else "att" if st["S"] <= TONO_SZ[1] else "no"
             sc_ = "escl" if esc else max((stato, "att" if sh != "ok" else "ok"), key=("ok", "att", "no").index)    # le alte luci fuori zona al massimo «da guardare»; le ombre solo informative
-            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 1), H=round(st["H"], 1), S=round(st["S"], 1), sh=sh, ss=ss, stato=stato, stato_c=sc_, scena=m["sc"], ze=round(ze, 1), evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]})
+            e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 1), H=round(st["H"], 1), S=round(st["S"], 1), B=round(st["B"] * 100, 1), sh=sh, ss=ss, stato=stato, stato_c=sc_, scena=m["sc"], ze=round(ze, 1), evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]})
             if not esc and stato != "ok" and not over and not light:
                 ck = (spread_hash(s), m["name"], L0, _tono_Z(), tuple(CFG["tono_escl"]))
                 if ck not in TONO_C: TONO_C[ck] = (_tono_solo_ev(m), _tono_ottimizza(m))

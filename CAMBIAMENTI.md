@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 85 — Tono: valori numerici sotto ogni foto
+Sotto ogni miniatura: **Media** (luce media L*), **Luci** (alte luci), **Ombre** e **Bruc.** (quota di bianchi bruciati, senza dettaglio). Luci, ombre e bruciato si colorano se fuori zona. — `editor.py` (campo `B`), `index.html`.
+
 ## Versione 84 — Pannello Tono: schede con verdetto a parole
 Tolta la scala con i pallini. Ogni foto ha una scheda con miniatura, cinque segmenti (troppo scura · un po' scura · giusta · un po' chiara · troppo chiara, si illumina quello della foto), il verdetto a parole e il consiglio («Esposizione +0,5»). I numeri L* restano nel suggerimento al passaggio del mouse. — `index.html`.
 
