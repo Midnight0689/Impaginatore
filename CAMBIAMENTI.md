@@ -3,6 +3,13 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 76 — Scheda Tono: correzione «Completa» (esposizione + alteluci, ombre, bianchi) e bianco e nero
+- **Interruttore Semplice / Completa** nella scheda Tono. «Semplice» = solo Esposizione (come prima). «Completa» misura per ogni foto luce media, alte luci (95° percentile) e ombre (10°) e prova esposizione, Alteluci, Ombre e Bianchi con la stessa pipeline dell'anteprima e del PSD, scegliendo i valori che avvicinano la foto alla mediana dello spread. Tetti prudenti (esposizione ±1 EV, alteluci/ombre ±40, bianchi ±30), zona di tolleranza attorno alla mediana (non porta la foto al valore esatto, solo dentro la fascia giusta) e penalità sulle correzioni grandi; non accetta correzioni che bruciano le luci.
+- Sotto ogni miniatura, in Completa, due puntini (luci e ombre) e l'elenco di cosa cambierebbe («esp. +0,1 · luci −10 · ombre +25»).
+- **«Correggi»** è un'unica operazione con un solo annulla per tutte le foto (`tono_fix`).
+- **Bianco e nero:** la misura ora considera la foto come appare in B/N (prima la misurava a colori). Un eventuale bordo bianco o nero della foto stessa non conta come tono.
+- — `editor.py` (`_tono_sim`, `_tono_ottimizza`, `tono_spread`, op `tono_fix`), `index.html`.
+
 ## Versione 75 — Scheda Tono: misura più giusta sulle foto con sfondo scuro
 Una foto con sfondo scuro e soggetto chiaro (es. fiocco bianco su legno) veniva proposta di +1 EV perché la mediana guardava solo lo sfondo, e la correzione la rovinava. Ora il tono è la media tra la luce media e le alte luci (90° percentile): le foto di quello spread risultano allo stesso tono (scarti ≤ 0,2). La correzione automatica è limitata a ±1 EV per volta. — `editor.py` (`_tono_misure`, `TONO_MAX`).
 
