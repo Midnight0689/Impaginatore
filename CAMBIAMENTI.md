@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 93 — Il tono non dipende più dalla Scala
+Il tono veniva misurato sulla parte della foto visibile dopo lo zoom, quindi cambiando «Scala» i valori (media, luci, ombre) si spostavano. Ora si misura sulla foto inquadrata nella cornice senza lo zoom: ingrandire o rimpicciolire la foto non cambia più i numeri. — `editor.py` (`_tono_img`).
+
 ## Versione 92 — Avviso di ritaglio a richiesta, «Blocca guide»
 L'etichetta rossa «nome · ritaglio ×1,40» sulle foto ingrandite troppo ora è spenta di solito: nel riquadro Vista c'è il tasto «Avviso ritaglio» per accenderla e spegnerla (la scelta resta ricordata). Il tasto «Blocca» si chiama «Blocca guide». — `index.html`.
 

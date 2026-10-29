@@ -826,8 +826,8 @@ TONO_MAX = 1.0                                                       # correzion
 def _tono_L0(): return float(CFG.get("tono_L", TONO_L0))
 def _tono_Z(): return float(CFG.get("tono_Z", TONO_Z0))
 def _tono_img(L):
-    """la parte visibile della foto in piccolo (112 px): serve a provare le correzioni senza rifare le anteprime"""
-    i = L["i"]; l, t, r, b = A.zcrop(L); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
+    """la foto in piccolo (112 px), inquadrata nella cornice ma SENZA lo zoom (Scala): serve a provare le correzioni senza rifare le anteprime, e il tono non cambia se la ingrandisci"""
+    i = L["i"]; l, t, r, b = A.crop(i, L["W"], L["H"], 1.0); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
     if key not in TONO_IM:
         if len(TONO_IM) > 400: TONO_IM.clear()
         im = Image.open(os.path.join(A.THUMBS, A.M[i]["n"])).convert("RGB"); W, H = im.size; bw_, bh_ = max(1.0, (r - l) * W), max(1.0, (b - t) * H)
