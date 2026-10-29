@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 89 — Tono: schede sempre della stessa larghezza
+In Completa il consiglio lungo («Esposizione +0,5 · Luci +5 · Ombre +20…») allargava la scheda: ora va a capo e tutte le schede restano larghe uguali. — `index.html`.
+
 ## Versione 88 — Ogni progetto ha sempre lo stesso indirizzo
 Prima l'editor si apriva su una porta qualsiasi libera (8801, 8802…): dopo un riavvio l'indirizzo cambiava e ricaricare la pagina dava «impossibile». Ora ogni progetto ha una porta fissa, ricavata dal suo percorso, e se un editor di quel progetto è già attivo la home lo riusa invece di lanciarne un secondo. — `home.py` (`porta_stabile`, `gia_attivo`), `editor.py` (`/api/ping` con il percorso).
 
