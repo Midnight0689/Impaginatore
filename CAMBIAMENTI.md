@@ -3,6 +3,13 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 72 — Curva e bianco e nero coincidono con Photoshop
+Test completo `tests/fedelta_psd.py` (51 casi, PSD appiattito in Photoshop vs anteprima): scarto medio ≤ 1.4/255 su tutti i parametri, max pixel ≤ 9/255 solo agli estremi ±100.
+- **Curva (panello Tono):** Photoshop usa una spline cubica naturale; l'anteprima usava un'interpolazione monotona diversa (scarto fino a 50/255). Ora è la stessa (scarto 0.7). La curva parte sempre da (0,0) e arriva a (255,255) come nel PSD. — `album_libere.py` (`tono_lut`).
+- **Bianco e nero:** il livello B/N del PSD aveva i pesi predefiniti di Photoshop (scarto medio fino a 19/255); ora ha pesi di luminanza (R30 Y89 G59 C70 B11 M41), uguali all'anteprima (scarto 0.2). Resta un livello modificabile. — `motore/scripts/photoshop.py`.
+- Nuovo `tests/fedelta_psd.py`: da rilanciare dopo ogni modifica a regolazioni/PSD.
+- I PSD già esportati vanno rifatti per avere il B/N nuovo.
+
 ## Versione 71 — Anteprima e PSD ora coincidono (controllo matematico con Photoshop)
 Misurato su 27 foto uguali, ognuna con un parametro diverso: PSD aperto in Photoshop, appiattito e confrontato con l'anteprima.
 - **Curve di contrasto/alteluci/ombre/bianchi/neri:** il livello Curve del PSD ora ha 16 punti (più fitti vicino a neri e bianchi) e comprende gli estremi veri (prima i neri alzati venivano persi, errore fino a 21/255). — `album_libere.py` (`rit_curva`), `genera_psd_angolo.py`.

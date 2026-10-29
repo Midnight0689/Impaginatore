@@ -69,7 +69,9 @@ function wbAdjustment(p){   // bilanciamento del bianco = Miscelatore canale non
   executeAction(cid("Mk  "),d,DialogModes.NO); var L=app.activeDocument.activeLayer; L.name="Bilanciamento bianco"; L.grouped=true; return L; }
 function bwAdjustment(){
   var d=new ActionDescriptor(),ref=new ActionReference(); ref.putClass(cid("AdjL")); d.putReference(cid("null"),ref);
-  var u=new ActionDescriptor(); u.putClass(cid("Type"),cid("BanW")); d.putObject(cid("Usng"),cid("AdjL"),u);
+  // pesi = luminanza Rec.601 (30 89 59 70 11 41): il bianco e nero coincide con quello dell'anteprima
+  var b=new ActionDescriptor(); b.putInteger(cid("Rd  "),30); b.putInteger(cid("Yllw"),89); b.putInteger(cid("Grn "),59); b.putInteger(cid("Cyn "),70); b.putInteger(cid("Bl  "),11); b.putInteger(cid("Mgnt"),41); b.putBoolean(sid("useTint"),false);
+  var u=new ActionDescriptor(); u.putObject(cid("Type"),cid("BanW"),b); d.putObject(cid("Usng"),cid("AdjL"),u);
   executeAction(cid("Mk  "),d,DialogModes.NO); var L=app.activeDocument.activeLayer; L.name="Bianco e nero"; L.grouped=true; return L; }
 function selectNone(){ try{ var d=new ActionDescriptor(),r=new ActionReference(); r.putEnumerated(cid("Lyr "),cid("Ordn"),cid("Trgt")); d.putReference(cid("null"),r); executeAction(sid("selectNoLayers"),d,DialogModes.NO);}catch(e){} }
 function groupIds(list,name){  // seleziona i livelli per ID e li raggruppa (come Cmd+G): l'unico modo affidabile, spostare dentro gruppi vuoti fallisce

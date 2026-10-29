@@ -140,26 +140,25 @@ def _render_ombre(spread, K, corrected=True):
 
 
 def tono_lut(t):
-    """tabella 0-255 -> 0-255 per Livelli (neri b, bianchi w, mezzitoni m) + Curva (punti c, interpolazione monotona)"""
+    """tabella 0-255 -> 0-255 per Livelli (neri b, bianchi w, mezzitoni m) + Curva (punti c, spline cubica naturale come Photoshop)"""
     import numpy as np
     x = np.arange(256, dtype=np.float64) / 255
     b, w, m = float(t.get("b", 0)) / 255, float(t.get("w", 255)) / 255, float(t.get("m", 1.0))
     y = np.clip((x - b) / max(w - b, 1e-3), 0, 1) ** (1 / max(m, 0.05))
     pts = sorted((float(a) / 255, float(c) / 255) for a, c in (t.get("c") or []))
     if pts:
-        if pts[0][0] > 0: pts.insert(0, (0.0, pts[0][1]))
-        if pts[-1][0] < 1: pts.append((1.0, pts[-1][1]))
+        if pts[0][0] > 0: pts.insert(0, (0.0, 0.0))                       # come nel PSD: la curva parte da (0,0) e arriva a (255,255)
+        if pts[-1][0] < 1: pts.append((1.0, 1.0))
         px, py = np.array([q[0] for q in pts]), np.array([q[1] for q in pts]); n = len(px)
-        h = np.diff(px); d = np.diff(py) / np.maximum(h, 1e-9); mt = np.zeros(n); mt[0], mt[-1] = d[0], d[-1]
-        for k in range(1, n - 1): mt[k] = 0 if d[k - 1] * d[k] <= 0 else (d[k - 1] + d[k]) / 2
-        for k in range(n - 1):                                           # Fritsch-Carlson: niente sovraelongazioni
-            if abs(d[k]) < 1e-12: mt[k] = mt[k + 1] = 0
-            else:
-                a_, b_ = mt[k] / d[k], mt[k + 1] / d[k]; r = a_ * a_ + b_ * b_
-                if r > 9: tt = 3 / r ** .5; mt[k], mt[k + 1] = tt * a_ * d[k], tt * b_ * d[k]
-        i = np.clip(np.searchsorted(px, y, side="right") - 1, 0, n - 2); u = (y - px[i]) / np.maximum(h[i], 1e-9)
-        h00, h10, h01, h11 = 2 * u**3 - 3 * u**2 + 1, u**3 - 2 * u**2 + u, -2 * u**3 + 3 * u**2, u**3 - u**2
-        y = h00 * py[i] + h10 * h[i] * mt[i] + h01 * py[i + 1] + h11 * h[i] * mt[i + 1]
+        h = np.maximum(np.diff(px), 1e-9)
+        A = np.zeros((n, n)); r = np.zeros(n); A[0, 0] = A[-1, -1] = 1       # spline cubica naturale: e' quella di Photoshop (misurata)
+        for k in range(1, n - 1):
+            A[k, k - 1], A[k, k], A[k, k + 1] = h[k - 1], 2 * (h[k - 1] + h[k]), h[k]
+            r[k] = 3 * ((py[k + 1] - py[k]) / h[k] - (py[k] - py[k - 1]) / h[k - 1])
+        cc = np.linalg.solve(A, r)
+        i = np.clip(np.searchsorted(px, y, side="right") - 1, 0, n - 2); t_ = y - px[i]
+        bb = (py[i + 1] - py[i]) / h[i] - h[i] * (2 * cc[i] + cc[i + 1]) / 3; dd = (cc[i + 1] - cc[i]) / (3 * h[i])
+        y = py[i] + bb * t_ + cc[i] * t_**2 + dd * t_**3
     return (np.clip(y, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
