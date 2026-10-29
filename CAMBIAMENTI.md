@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 112 — Più aria nella galleria
+- Più spazio (10 px) tra la barra dei filtri e le miniature; la galleria è alta 14 px in più di default (chi ha già trascinato l'altezza la mantiene). — `index.html` (`setPoolH`, `#pool .fbar`).
+
 ## Versione 111 — Barra della galleria allineata
 - Tutti i controlli della barra (filtri, colori, ordine, Solo ★, Preferita, Tolta, cerca, zoom) hanno la stessa altezza (28 px) e sono allineati sulla stessa riga; tolta la scritta d'aiuto sopra le miniature. — `index.html` (`.fbar`, `renderPool`).
 
