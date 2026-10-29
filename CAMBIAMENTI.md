@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 129 — Resize: aggancio alla metà dello spread
+- Nel ridimensionamento i bordi si agganciano anche alla metà dello spread (asse della piega), alla metà di ciascuna pagina e alla metà dell'altezza. — `index.html` (`ctx` → `ex`, `ey`).
+
 ## Versione 128 — Ridimensionamento: aggancio alla stessa linea delle altre foto
 - Nel ridimensionamento i bordi si agganciano anche alla stessa linea (bordo sinistro, destro, alto, basso o centro) di qualsiasi altra foto dello spread, anche dell'altra pagina; compare la guida. Lo spostamento resta com'era. Alt disattiva. — `index.html` (`ctx` → `ex`, `ey`).
 

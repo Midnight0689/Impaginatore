@@ -1288,7 +1288,8 @@ function startFree(e, it, kind) {
   const ctx = side => {                                  // limiti e bordi di aggancio: la foto può occupare tutto lo spread, anche a cavallo della piega
     const G = S.spreads[cur].grid, g = G[side], [pb0, pb1] = g.bx, [by0, by1] = g.by, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (g.full || g).by, bx0 = FL, bx1 = FR;       // limiti = bordo vero della pagina (anche dove c'è il margine bianco)
     const tx = { lo: [bx0, pb0, fd + gap / 2, fd], hi: [bx1, pb1, fd - gap / 2, fd] }, ty = { lo: [by0, fy0], hi: [by1, fy1] };       // lo = bordo sinistro/alto, hi = destro/basso
-    const ex = { lo: [], hi: [] }, ey = { lo: [], hi: [] };       // solo per il ridimensionamento: anche la stessa linea (bordo o centro) delle altre foto, su tutto lo spread
+    const ex = { lo: [], hi: [] }, ey = { lo: [], hi: [] };
+    for (const k of ["lo", "hi"]) { ex[k].push((bx0 + bx1) / 2, (bx0 + fd) / 2, (fd + bx1) / 2); ey[k].push((fy0 + fy1) / 2); }       // metà dello spread (e delle due pagine), metà altezza       // solo per il ridimensionamento: anche la stessa linea (bordo o centro) delle altre foto, su tutto lo spread
     S.spreads[cur].items.filter(i => !(i.side === it.side && i.idx === it.idx) && i.k !== "t").forEach(o => { for (const k of ["lo", "hi"]) { ex[k].push(o.x, o.x + o.w, o.x + o.w / 2); ey[k].push(o.y, o.y + o.h, o.y + o.h / 2); } });
     S.spreads[cur].items.filter(i => !(i.side === it.side && i.idx === it.idx)).forEach(o => {
       tx.lo.push(o.x, o.x + o.w + gap); tx.hi.push(o.x + o.w, o.x - gap); if (o.side === side) { ty.lo.push(o.y, o.y + o.h + gap); ty.hi.push(o.y + o.h, o.y - gap); } });
