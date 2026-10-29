@@ -1447,10 +1447,21 @@ function startFree(e, it, kind) {
       if (cym !== null && Math.abs(ny + it.h / 2 - cym) <= dye) { ny = cym - it.h / 2; guides.push(["h", cym]); }
       else if (gt !== null && (gb === null || Math.abs(ny - gt) <= Math.abs(ny + it.h - gb))) { ny = gt; guides.push(["h", gt]); } else if (gb !== null) { ny = gb - it.h; guides.push(["h", gb]); }
       L = clamp(nx, c.bx0, c.bx1 - it.w); T = clamp(ny, c.fy0, c.fy1 - it.h); R = L + it.w; B = T + it.h;
-      if (grpI.length > 1) {       // gruppo: nessuna foto può uscire dallo spread (si ferma la più esterna)
-        const gl = Math.min(...grpI.map(o => o.x)), gr = Math.max(...grpI.map(o => o.x + o.w)), gt = Math.min(...grpI.map(o => o.y)), gb = Math.max(...grpI.map(o => o.y + o.h));
-        const ddx = Math.min(Math.max(L - it.x, c.bx0 - gl), c.bx1 - gr), ddy = Math.min(Math.max(T - it.y, c.fy0 - gt), c.fy1 - gb);
-        L = it.x + ddx; T = it.y + ddy; R = L + it.w; B = T + it.h; guides = [];
+      if (grpI.length > 1) {       // gruppo: si aggancia come un blocco unico (centro del blocco al centro delle pagine/della piega, poi i bordi); nessuna foto esce dallo spread
+        const gl = Math.min(...grpI.map(o => o.x)), gr = Math.max(...grpI.map(o => o.x + o.w)), gt = Math.min(...grpI.map(o => o.y)), gb = Math.max(...grpI.map(o => o.y + o.h)), bw = gr - gl, bh = gb - gt;
+        let ddx = dx, ddy = dy; guides = [];
+        if (!free) {
+          const cl = ctx("L"), cr = ctx("R"), oth = S.spreads[cur].items.filter(o => !inM(o) && o.k !== "t");
+          const CX = [(cl.pb0 + cl.pb1) / 2, (cr.pb0 + cr.pb1) / 2, S.fold], CY = [(cl.by0 + cl.by1) / 2];       // centri: mezza pagina sinistra, destra, piega; metà altezza
+          const EX = [cl.bx0, cr.bx1, cl.pb0, cl.pb1, cr.pb0, cr.pb1, S.fold - gap / 2, S.fold + gap / 2], EY = [cl.fy0, cl.fy1, cl.by0, cl.by1];
+          oth.forEach(o => { EX.push(o.x, o.x + o.w, o.x - gap, o.x + o.w + gap); EY.push(o.y, o.y + o.h, o.y - gap, o.y + o.h + gap); });
+          const ax = (L0, w0, C, E) => { const c = best(L0 + w0 / 2, C); if (c !== null) return { v: c - w0 / 2, g: c };       // il centro vince sui bordi
+            const a1 = best(L0, E), a2 = best(L0 + w0, E); if (a1 !== null && (a2 === null || Math.abs(L0 - a1) <= Math.abs(L0 + w0 - a2))) return { v: a1, g: a1 }; if (a2 !== null) return { v: a2 - w0, g: a2 }; return null; };
+          const sx = ax(gl + dx, bw, CX, EX), sy = ax(gt + dy, bh, CY, EY);
+          if (sx) { ddx = sx.v - gl; guides.push(["v", sx.g]); } if (sy) { ddy = sy.v - gt; guides.push(["h", sy.g]); }
+        }
+        ddx = Math.min(Math.max(ddx, c.bx0 - gl), c.bx1 - gr); ddy = Math.min(Math.max(ddy, c.fy0 - gt), c.fy1 - gb);
+        L = it.x + ddx; T = it.y + ddy; R = L + it.w; B = T + it.h;
       }
     } else {
       const minw = (c.pb1 - c.pb0) * 0.03, minh = (c.by1 - c.by0) * 0.03;
@@ -1513,7 +1524,8 @@ function startFree(e, it, kind) {
     document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
     szm.forEach(m => { const el = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, m.o.side, m.o.idx])); if (el) el.classList.add("samesz"); });
     ghost.innerHTML = szm.length ? `<b class="szl">stessa ${szm.map(m => m.d === "w" ? "larghezza" : "altezza").join(" e ")}</b>` : "";
-    const edges = edgeMarks(rect, grpI.length > 1 ? grpI : [it]), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
+    const gbb = grpI.length > 1 && kind === "move" ? { x: Math.min(...grpI.map(o => o.x)) + rect.x - it.x, y: Math.min(...grpI.map(o => o.y)) + rect.y - it.y, w: Math.max(...grpI.map(o => o.x + o.w)) - Math.min(...grpI.map(o => o.x)), h: Math.max(...grpI.map(o => o.y + o.h)) - Math.min(...grpI.map(o => o.y)) } : rect;       // spostando un gruppo le distanze si misurano sul blocco intero
+    const edges = edgeMarks(gbb, grpI.length > 1 ? grpI : [it]), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
     drawEq(eqm.concat(edges));
     document.querySelectorAll(".guide").forEach(x => x.remove());
     guides.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";

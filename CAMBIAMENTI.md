@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.4 — Spostare un gruppo di foto: aggancio al centro e distanze sul blocco
+- Spostando più foto selezionate il blocco si aggancia come un'unica foto: il suo centro va al centro della pagina sinistra, della pagina destra o della piega (e a metà altezza); in mancanza, i bordi del blocco si agganciano ai bordi dello spread, al bordo giusto con lo stacco dalle altre foto e a quelli delle altre foto. Le guide compaiono. Alt = nessun aggancio. Le distanze blu dai lati (anche quella in basso, che spariva) si misurano ora sul blocco intero. — `index.html` (`startFree` → ramo `grpI`, `gbb`).
+
 ## Versione 1.3.3 — Correggi spazi: bordi allineati attraverso la piega (spread 18 di Serena)
 - Se due foto sulla stessa pagina finiscono a bordi diversi (qui 9 px) e davanti a loro sta una foto dell'altra pagina, la correzione andava avanti e indietro: sistemava uno stacco e rompeva l'altro. Ora il bordo della foto davanti va allo stacco giusto dalla foto più lontana e le altre foto dietro si allungano fino allo stesso bordo, così i bordi restano allineati. Provato sui dati veri di Serena: spread 17 da 3 stacchi sbagliati a 0, spread 18 da 1 a 0. — `index.html` (`gapFix`).
 
