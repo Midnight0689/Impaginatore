@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 65 — Regolazioni più leggibili
+- Nel pannello della foto, Luce e Colore (Contrasto … Saturazione): nome e valore stanno sopra, lo slider sotto a tutta larghezza, così «Temperatura» e «Saturazione» non si sovrappongono più. Colonna delle etichette degli altri cursori un po' più larga. — `index.html`.
+
 ## Versione 64 — Menu «Nuovo» di nuovo cliccabile
 - Il menu di Nuovo (spread vuoto, prossime foto, scegli le foto) finiva sotto la barra strumenti e non si poteva cliccare: ora sta sopra. — `index.html`.
 

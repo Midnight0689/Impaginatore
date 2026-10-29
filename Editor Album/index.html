@@ -361,6 +361,11 @@
   #poolrow img { object-fit: cover; min-width: 0; }
   #grpbox { position: absolute; border: 2px dashed var(--accent); pointer-events: none; z-index: 40; } #grpbox .hd { pointer-events: auto; }
   #nmenu { z-index: 120; }
+  .sl { grid-template-columns: 72px 1fr 46px 18px; }
+  .sl.rit { grid-template-columns: 1fr auto; row-gap: 5px; margin: 12px 0; }
+  .sl.rit b { grid-column: 1; grid-row: 1; font-weight: 500; color: var(--text); opacity: .85; }
+  .sl.rit .v { grid-column: 2; grid-row: 1; min-width: 34px; font-size: 12px; }
+  .sl.rit input { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
 </style>
 </head>
 <body>
