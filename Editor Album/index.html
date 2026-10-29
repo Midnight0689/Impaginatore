@@ -1288,10 +1288,12 @@ function startFree(e, it, kind) {
   const ctx = side => {                                  // limiti e bordi di aggancio: la foto può occupare tutto lo spread, anche a cavallo della piega
     const G = S.spreads[cur].grid, g = G[side], [pb0, pb1] = g.bx, [by0, by1] = g.by, fd = S.fold, FL = (G.L.full || G.L).bx[0], FR = (G.R.full || G.R).bx[1], [fy0, fy1] = (g.full || g).by, bx0 = FL, bx1 = FR;       // limiti = bordo vero della pagina (anche dove c'è il margine bianco)
     const tx = { lo: [bx0, pb0, fd + gap / 2, fd], hi: [bx1, pb1, fd - gap / 2, fd] }, ty = { lo: [by0, fy0], hi: [by1, fy1] };       // lo = bordo sinistro/alto, hi = destro/basso
+    const ex = { lo: [], hi: [] }, ey = { lo: [], hi: [] };       // solo per il ridimensionamento: anche la stessa linea (bordo o centro) delle altre foto, su tutto lo spread
+    S.spreads[cur].items.filter(i => !(i.side === it.side && i.idx === it.idx) && i.k !== "t").forEach(o => { for (const k of ["lo", "hi"]) { ex[k].push(o.x, o.x + o.w, o.x + o.w / 2); ey[k].push(o.y, o.y + o.h, o.y + o.h / 2); } });
     S.spreads[cur].items.filter(i => !(i.side === it.side && i.idx === it.idx)).forEach(o => {
       tx.lo.push(o.x, o.x + o.w + gap); tx.hi.push(o.x + o.w, o.x - gap); if (o.side === side) { ty.lo.push(o.y, o.y + o.h + gap); ty.hi.push(o.y + o.h, o.y - gap); } });
     if (showGuides) { const gg = S.spreads[cur].guides; gg.v.forEach(x => { tx.lo.push(x); tx.hi.push(x); }); gg.h.forEach(y => { ty.lo.push(y); ty.hi.push(y); }); }
-    return { bx0, bx1, pb0, pb1, by0, by1, fy0, fy1, tx, ty };
+    return { bx0, bx1, pb0, pb1, by0, by1, fy0, fy1, tx, ty, ex, ey };
   };
   const best = (v, ts) => { let b = null; for (const t of ts) if (Math.abs(v - t) < sd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
   const grpI = msel.length > 1 && inM(it) ? S.spreads[cur].items.filter(o => inM(o) && o.k !== "t") : [];
@@ -1317,8 +1319,8 @@ function startFree(e, it, kind) {
       }
     } else {
       const minw = (c.pb1 - c.pb0) * 0.03, minh = (c.by1 - c.by0) * 0.03;
-      const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2]); if (t !== null) { guides.push(["v", t]); return t; } return v; };
-      const sy = (v, s2) => { if (free) return v; const t = best(v, c.ty[s2]); if (t !== null) { guides.push(["h", t]); return t; } return v; };
+      const sx = (v, s2) => { if (free) return v; const t = best(v, c.tx[s2].concat(c.ex[s2])); if (t !== null) { guides.push(["v", t]); return t; } return v; };
+      const sy = (v, s2) => { if (free) return v; const t = best(v, c.ty[s2].concat(c.ey[s2])); if (t !== null) { guides.push(["h", t]); return t; } return v; };
       if (kind.includes("w")) L = clamp(sx(it.x + dx, "lo"), c.bx0, R - minw);
       if (kind.includes("e")) R = clamp(sx(R + dx, "hi"), L + minw, c.bx1);
       if (kind.includes("n")) T = clamp(sy(it.y + dy, "lo"), c.fy0, B - minh);
