@@ -680,21 +680,36 @@ function startGroup(e, its, bb, kind) {
   e.preventDefault(); e.stopPropagation();
   const k = S.W / $("wrap").clientWidth, x0 = e.clientX, y0 = e.clientY, bw = bb.R - bb.L, bh = bb.B - bb.T;
   const ax = kind.includes("w") ? bb.R : bb.L, ay = kind.includes("n") ? bb.B : bb.T;       // il bordo opposto resta fermo
-  const corner = kind.length === 2; let sx = 1, sy = 1, moved = false, raf = 0, last = null; const gh = [];
+  const corner = kind.length === 2; let sx = 1, sy = 1, moved = false, raf = 0, last = null, gd = []; const gh = [];
   const draw = () => { const sc = $("wrap").clientWidth / S.W;
     if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
-    its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; }); };
+    its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; });
+    document.querySelectorAll(".guide").forEach(x => x.remove());
+    gd.forEach(([t, v]) => { const d = document.createElement("div"); d.className = "guide";
+      if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
+      $("slots").appendChild(d); }); };
   const calc = ev => {       // angoli liberi; con Maiusc in proporzione (come Photoshop)
     const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k, fx = kind.includes("e") ? 1 : -1, fy = kind.includes("s") ? 1 : -1;
     sx = kind.includes("e") || kind.includes("w") ? (bw + fx * dx) / bw : 1; sy = kind.includes("n") || kind.includes("s") ? (bh + fy * dy) / bh : 1;
     if (corner && ev.shiftKey) sx = sy = Math.max(sx, sy); sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1);
+    gd = [];
+    if (magnet && !ev.altKey) {       // aggancio magnetico del bordo che si muove: bordi/centri dello spread, guide, altre foto
+      const sp = S.spreads[cur], oth = sp.items.filter(o => !its.includes(o) && o.k !== "t"), TX = [0, S.W, S.fold, S.fold / 2, (S.fold + S.W) / 2, ...sp.guides.v], TY = [0, S.H, S.H / 2, ...sp.guides.h];
+      oth.forEach(o => { TX.push(o.x, o.x + o.w, o.x + o.w / 2); TY.push(o.y, o.y + o.h, o.y + o.h / 2); });
+      const sdd = 9 * k, snap = (T, a, len, sc, west) => { let b = null; const v = west ? a - len * sc : a + len * sc; for (const t of T) if (Math.abs(v - t) < sdd && (b === null || Math.abs(v - t) < Math.abs(v - b))) b = t; return b; };
+      const bx = kind.includes("e") || kind.includes("w") ? snap(TX, ax, bw, sx, kind.includes("w")) : null, by = kind.includes("n") || kind.includes("s") ? snap(TY, ay, bh, sy, kind.includes("n")) : null;
+      const sxS = bx === null ? null : Math.abs(bx - ax) / bw, syS = by === null ? null : Math.abs(by - ay) / bh;
+      if (corner && ev.shiftKey) { const pick = sxS !== null && (syS === null || Math.abs(sxS - sx) <= Math.abs(syS - sy)) ? "x" : syS !== null ? "y" : null; if (pick === "x") { sx = sy = sxS; gd.push(["v", bx]); } else if (pick === "y") { sx = sy = syS; gd.push(["h", by]); } }
+      else { if (sxS !== null) { sx = sxS; gd.push(["v", bx]); } if (syS !== null) { sy = syS; gd.push(["h", by]); } }
+      sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1);
+    }
     const mx = Math.max(1, (kind.includes("w") ? ax : S.W - ax) / bw), my = Math.max(1, (kind.includes("n") ? ay : S.H - ay) / bh);       // nessuna foto esce dallo spread
     if (corner && ev.shiftKey) sx = sy = Math.min(sx, sy, mx, my); else { sx = Math.min(sx, mx); sy = Math.min(sy, my); } };
   const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; last = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; calc(last); draw(); }); };
   const onUp = async ev => {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
     if (raf) { cancelAnimationFrame(raf); raf = 0; if (moved) { calc(ev); draw(); } }
-    document.body.classList.remove("dragging"); DRAG = false;
+    document.body.classList.remove("dragging"); DRAG = false; document.querySelectorAll(".guide").forEach(x => x.remove());
     if (!moved) { clearGhosts(); return; }
     setTimeout(clearGhosts, 2500);
     await op({ op: "gscale", s: cur, ats: its.map(i => [i.side, i.idx]), sx, sy, ax, ay });
