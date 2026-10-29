@@ -283,6 +283,12 @@ def apply(o):
                     if val: r[k] = val
                     else: r.pop(k, None)
                 if not r: CFG["ritocco"].pop(n, None)
+    elif t == "tono_rif":                                # riferimento del tono: una foto (la sua misura attuale) oppure «ricalcola» (mediana di tutto l'album)
+        if o.get("photo"):
+            for s_ in range(len(SP)):
+                m_ = next((m for m in _tono_misure(s_) if m["name"] == o["photo"]), None)
+                if m_: CFG["tono_rif"] = {k: round(m_["st"][k], 3) for k in "MHST"}; break
+        else: CFG.pop("tono_rif", None)
     elif t == "tono_escl":                               # foto escluse dalla misura del tono (scure o chiare di proposito)
         for n in o.get("photos") or [o["photo"]]:
             if o.get("value", True):
@@ -805,7 +811,7 @@ def state():
     with LOCK:
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
-                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
+                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_rif=CFG.get("tono_rif"), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG))
 
 TONO_C = {}; TONO_IM = {}
@@ -866,6 +872,20 @@ def _tono_med(ms, k):
     v = [m["st"][k] for m in ms if m["name"] not in CFG["tono_escl"]]
     return statistics.median(v) if v else None
 
+def _tono_rif():
+    """livello di riferimento FISSO dell'album (luce media, alte luci, ombre, tono): la mediana di tutte le foto la prima volta, poi resta salvata nel progetto.
+    Così il valore di una foto non cambia quando ne ritocchi un'altra; si cambia con «Riferimento» nella scheda Tono"""
+    import statistics
+    r = CFG.get("tono_rif")
+    if r: return r
+    vals = {k: [] for k in "MHST"}
+    for s in range(len(SP)):
+        for m in _tono_misure(s):
+            if m["name"] in CFG["tono_escl"]: continue
+            for k in vals: vals[k].append(m["st"][k])
+    r = {k: round(statistics.median(v), 3) for k, v in vals.items()} if vals["T"] else dict(M=-2.0, H=-1.0, S=-4.0, T=-1.5)
+    CFG["tono_rif"] = r; return r
+
 def _tono_stato(d, soglie): return "ok" if abs(d) <= soglie[0] else "att" if abs(d) <= soglie[1] else "no"
 
 def _tono_ottimizza(m, tgt):
@@ -904,7 +924,7 @@ def tono_spread(s, over=None):
         ms = _tono_misure(s); items = []; pen = []
         if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_stat(_tono_sim(m["i"], m["im"], over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]), m["bw"]))) if m["name"] in over else m for m in ms]
         if not ms: return dict(s=s, items=[], score=100, prev=None, next=None)
-        tg = {k: _tono_med(ms, k) for k in "MHST"}; ck = (spread_hash(s), tuple(CFG["tono_escl"]))
+        tg = dict(_tono_rif()); ck = (spread_hash(s), tuple(CFG["tono_escl"]), tuple(sorted(tg.items())))
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d, dh, ds = st["T"] - tg["T"], st["H"] - tg["H"], st["S"] - tg["S"]
             stato = "escl" if esc else _tono_stato(d, (TONO_VERDE, TONO_GIALLO))
@@ -1123,6 +1143,8 @@ def save(backup=True):
         _scrivi(os.path.join(PROJ, "spec.py"), "\n".join(lines) + "\n")
         out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
         out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+        if CFG.get("tono_rif"): out["tono_rif"] = CFG["tono_rif"]
+        else: out.pop("tono_rif", None)
         if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
         if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
         else: out.pop("guide", None)
