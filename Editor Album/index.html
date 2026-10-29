@@ -563,7 +563,8 @@ function pageHasText(side) { return slotsOf(cur).some(i => i.side === side && i.
 function render() {
   if (!S) return;
   msel = msel.filter(k => { const [a, b] = k.split(":"); return S.spreads[Math.min(cur, S.spreads.length - 1)].items.some(i => i.side === a && i.idx === +b); });
-  if (sel && msel.length === 0) msel = [sel.side + ":" + sel.idx];
+  if (sel && (msel.length === 0 || !msel.includes(sel.side + ":" + sel.idx))) msel = [sel.side + ":" + sel.idx];       // la cornice attiva è sempre dentro la selezione: una selezione rimasta di prima non resta gialla
+  if (!sel && msel.length === 1) msel = [];
   cur = Math.min(cur, S.spreads.length - 1);
   if (sel && !selItem()) sel = null;
   $("title").textContent = S.nome;
