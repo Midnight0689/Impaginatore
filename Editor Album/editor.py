@@ -810,7 +810,7 @@ def state():
 
 TONO_C = {}; TONO_IM = {}
 TONO_VERDE, TONO_GIALLO, TONO_MAX = 0.3, 0.6, 1.0                    # scarto (EV) dalla mediana dello spread: entro VERDE ok, entro GIALLO da guardare, oltre da correggere
-TONO_H = (0.35, 0.7); TONO_S = (0.6, 1.2)                            # stesse soglie per alte luci e ombre (modo «Completa»)
+TONO_H = (0.45, 0.9); TONO_S = (0.8, 1.6)                            # stesse soglie per alte luci e ombre (modo «Completa»)
 def _tono_img(L):
     """la parte visibile della foto in piccolo (112 px): serve a provare le correzioni senza rifare le anteprime"""
     i = L["i"]; l, t, r, b = A.zcrop(L); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
@@ -870,11 +870,11 @@ def _tono_stato(d, soglie): return "ok" if abs(d) <= soglie[0] else "att" if abs
 
 def _tono_ottimizza(m, tgt):
     """prova esposizione, alteluci, ombre e bianchi della foto m e sceglie i valori che avvicinano luce media, alte luci e ombre ai valori target dello spread (tetti prudenti, penalità sulle correzioni grandi)"""
-    st0 = m["st"]; dead = dict(M=.25, H=.30, S=.50); W = dict(M=1.0, H=.5, S=.25)
+    st0 = m["st"]; dead = dict(M=.12, H=.40, S=.70); W = dict(M=3.0, H=.3, S=.12)
     t = {}
     for k in "MHS":
         dv = st0[k] - tgt[k]; t[k] = st0[k] if abs(dv) <= dead[k] else tgt[k] + (dead[k] if dv > 0 else -dead[k])      # il bersaglio è il bordo della zona giusta, non la mediana esatta
-    base = m["rit"]; lim = dict(ev=(-TONO_MAX, TONO_MAX, .05), alt=(-40, 40, 5), omb=(-40, 40, 5), bia=(-30, 30, 5)); p = dict(ev=0.0, alt=0, omb=0, bia=0)
+    base = m["rit"]; lim = dict(ev=(-TONO_MAX, TONO_MAX, .05), alt=(-20, 20, 5), omb=(-20, 20, 5), bia=(-15, 15, 5)); p = dict(ev=0.0, alt=0, omb=0, bia=0)
     def rit_of(q):
         r = dict(base)
         for k in ("alt", "omb", "bia"):
@@ -906,7 +906,7 @@ def tono_spread(s):
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d, dh, ds = st["T"] - tg["T"], st["H"] - tg["H"], st["S"] - tg["S"]
             stato = "escl" if esc else _tono_stato(d, (TONO_VERDE, TONO_GIALLO))
-            sc_ = "escl" if esc else max((_tono_stato(d, (TONO_VERDE, TONO_GIALLO)), _tono_stato(dh, TONO_H), _tono_stato(ds, TONO_S)), key=("ok", "att", "no").index)
+            sc_ = "escl" if esc else max((stato, min(_tono_stato(dh, TONO_H), "att", key=("ok", "att", "no").index)), key=("ok", "att", "no").index)   # le ombre sono solo un'informazione (puntino): dipendono troppo dalla scena. Le alte luci diverse al massimo «da guardare»
             ev1 = round(min(max(m["evp"] - max(min(d, TONO_MAX), -TONO_MAX), -2.0), 2.0) * 20) / 20
             e = dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 2), dh=round(dh, 2), ds=round(ds, 2), stato=stato, stato_c=sc_, nuova=ev1, evp=m["evp"], rit0={k: m["rit"][k] for k in ("alt", "omb", "bia") if k in m["rit"]},
                      bruc=bool(not esc and ev1 > m["evp"] and _tono_stat(_tono_sim(m["i"], m["im"], ev1, m["rit"], m["bw"]))["B"] > st["B"] + 0.02))

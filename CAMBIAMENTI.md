@@ -3,6 +3,12 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 77 — Correzione Completa più prudente
+Sullo spread 3 la Completa aveva corretto una foto già a posto (esposizione −0,6 e alteluci +40) perché le sue ombre erano diverse dalle altre: troppo aggressiva. Ora:
+- Le **ombre** non fanno più scattare nessuna correzione (restano solo il puntino informativo): dipendono troppo dalla scena. Le alte luci diverse al massimo mettono «da guardare».
+- La correzione parte solo dalle foto fuori tono (stessi casi di «Semplice»), e luce media pesa molto di più di alte luci e ombre; alteluci/ombre ±20, bianchi ±15.
+- Sul progetto di Serena i casi da correggere passano da 48 a 12, tutti con la luce media davvero fuori; le correzioni non bruciano le luci (la Completa si ferma prima della Semplice se per arrivare alla mediana dovesse bruciarle). — `editor.py` (`_tono_ottimizza`, soglie).
+
 ## Versione 76 — Scheda Tono: correzione «Completa» (esposizione + alteluci, ombre, bianchi) e bianco e nero
 - **Interruttore Semplice / Completa** nella scheda Tono. «Semplice» = solo Esposizione (come prima). «Completa» misura per ogni foto luce media, alte luci (95° percentile) e ombre (10°) e prova esposizione, Alteluci, Ombre e Bianchi con la stessa pipeline dell'anteprima e del PSD, scegliendo i valori che avvicinano la foto alla mediana dello spread. Tetti prudenti (esposizione ±1 EV, alteluci/ombre ±40, bianchi ±30), zona di tolleranza attorno alla mediana (non porta la foto al valore esatto, solo dentro la fascia giusta) e penalità sulle correzioni grandi; non accetta correzioni che bruciano le luci.
 - Sotto ogni miniatura, in Completa, due puntini (luci e ombre) e l'elenco di cosa cambierebbe («esp. +0,1 · luci −10 · ombre +25»).
