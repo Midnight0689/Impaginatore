@@ -362,11 +362,13 @@
   #grpbox { position: absolute; border: 2px dashed var(--accent); pointer-events: none; z-index: 40; } #grpbox .hd { pointer-events: auto; }
   #nmenu { z-index: 120; }
   .sl { grid-template-columns: 72px 1fr 46px 18px; }
-  .sl.rit { grid-template-columns: 1fr auto; row-gap: 5px; margin: 12px 0; }
-  .sl.rit b { grid-column: 1; grid-row: 1; font-weight: 500; color: var(--text); opacity: .85; }
-  .sl.rit .v { grid-column: 2; grid-row: 1; min-width: 34px; font-size: 12px; }
-  .sl.rit input { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
+  .sl.st, .sl.rit { grid-template-columns: 1fr auto; row-gap: 5px; margin: 12px 0; }
+  .sl.st b, .sl.rit b { grid-column: 1; grid-row: 1; font-weight: 500; color: var(--text); opacity: .85; }
+  .sl.st .v, .sl.rit .v { grid-column: 2; grid-row: 1; min-width: 34px; font-size: 12px; }
+  .sl.st input, .sl.rit input { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
   .sl input[style*="--rb"]::-webkit-slider-runnable-track { box-shadow: 0 0 0 1px rgba(255,255,255,.22); }
+  .sl.st { row-gap: 5px; margin: 12px 0; } .sl.st b { font-weight: 500; color: var(--text); opacity: .85; }
+  .cl { color: var(--dim); font-size: 11px; margin: 2px 0 6px; } .cdots.bdc { gap: 10px; margin-bottom: 12px; } .cdots.bdc.off { opacity: .45; } .cdots.bdc i { width: 26px; height: 26px; box-shadow: 0 0 0 1px rgba(255,255,255,.3); } .cdots.bdc i.on { box-shadow: 0 0 0 2px var(--c), 0 0 0 4px #fff; border-color: #1b1b1b; }
 </style>
 </head>
 <body>
@@ -844,9 +846,10 @@ function renderSide() {
     <div class="sec">Colore</div>
     <div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>
     <div class="sec">Cornice</div>
-    <div class="sl"><b>Bordo:</b><input id="bdw" style="--rb:linear-gradient(90deg,#555,#fff)" type="range" min="0" max="20" step="0.5" value="${it.bd ? it.bd[0] : 0}"><span class="v" id="bdv">${it.bd ? it.bd[0] + " mm" : "no"}</span></div>
-    <div class="cdots" id="bdc">${[["#ffffff", "bianco"], ["#f3ead8", "crema"], ["#9a9a9a", "grigio"], ["#000000", "nero"]].map(([c, n]) => `<i data-c="${c}" style="--c:${c}" title="Bordo ${n}" class="${it.bd && it.bd[1] === c ? "on" : ""}"></i>`).join("")}</div>
-    <div class="sl"><b>Ombra:</b><input id="shw" style="--rb:linear-gradient(90deg,#aaa,#000)" type="range" min="0" max="100" step="1" value="${it.sh || 0}"><span class="v" id="shv">${it.sh || "no"}</span></div>
+    <div class="sl st"><b>Bordo</b><input id="bdw" style="--rb:linear-gradient(90deg,#555,#fff)" type="range" min="0" max="20" step="0.5" value="${it.bd ? it.bd[0] : 0}"><span class="v" id="bdv">${it.bd ? it.bd[0] + " mm" : "no"}</span></div>
+    <div class="cl">Colore del bordo</div>
+    <div class="cdots bdc ${it.bd ? "" : "off"}" id="bdc">${[["#ffffff", "bianco"], ["#f3ead8", "crema"], ["#9a9a9a", "grigio"], ["#000000", "nero"]].map(([c, n]) => `<i data-c="${c}" style="--c:${c}" title="Bordo ${n}" class="${it.bd && it.bd[1] === c ? "on" : ""}"></i>`).join("")}</div>
+    <div class="sl st"><b>Ombra</b><input id="shw" style="--rb:linear-gradient(90deg,#aaa,#000)" type="range" min="0" max="100" step="1" value="${it.sh || 0}"><span class="v" id="shv">${it.sh || "no"}</span></div>
     <div class="sec">Etichetta colore</div>
     <div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}" class="${((S.photos.find(x => x.n === it.name) || {}).col) === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" title="Nessun colore"></i></div>
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
