@@ -712,14 +712,18 @@ async function gapFix(si = cur, quiet = false) {
   if (!S.spreads.length) return 0;
   const R = new Map(); let ch = 0;
   S.spreads[si].items.forEach(i => R.set(i, { x: i.x, y: i.y, w: i.w, h: i.h }));
-  for (let pass = 0; pass < 3; pass++) {
+  for (let pass = 0; pass < 4; pass++) {
     S.spreads[si].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });       // lavora sulle misure aggiornate
-    const P = gapPairs(si).filter(p => p.c !== "ok"); if (!P.length) break;
-    const need = new Map();       // per ogni foto e asse: il bordo davanti si porta a stacco standard dal vicino più vicino
-    P.forEach(p => { const k = p.b, key = p.ax; const t = p.from + p.ref; const m = need.get(k) || {}; if (m[key] === undefined || t > m[key]) m[key] = t; need.set(k, m); });
-    need.forEach((m, b) => { const r = R.get(b);
-      if (m.x !== undefined && b.x + b.w - m.x > r.w * 0.03) { r.w = b.x + b.w - m.x; r.x = m.x; ch++; }
-      if (m.y !== undefined && b.y + b.h - m.y > r.h * 0.03) { r.h = b.y + b.h - m.y; r.y = m.y; ch++; } });
+    const P = gapPairs(si); if (!P.some(p => p.c !== "ok")) break;
+    const grp = new Map();       // per ogni foto «davanti» (b) e asse: tutte le foto che le stanno dietro (a)
+    P.forEach(p => { const k = p.b, m = grp.get(k) || { x: [], y: [] }; m[p.ax].push(p); grp.set(k, m); });
+    grp.forEach((m, b) => ["x", "y"].forEach(ax => {
+      const L = m[ax]; if (!L.length || !L.some(p => p.c !== "ok")) return;
+      const ref = L[0].ref, t = Math.max(...L.map(p => p.from)) + ref, rb = R.get(b);       // il bordo di b va allo stacco giusto dalla più lontana…
+      if (ax === "x") { if (b.x + b.w - t > rb.w * 0.03) { rb.w = b.x + b.w - t; rb.x = t; ch++; } } else if (b.y + b.h - t > rb.h * 0.03) { rb.h = b.y + b.h - t; rb.y = t; ch++; }
+      L.forEach(p => { const ra = R.get(p.a), e = t - ref;       // …e le altre foto dietro si allungano fino allo stesso bordo: così i bordi restano allineati
+        if (ax === "x") { if (Math.abs(ra.x + ra.w - e) > 0.5 && e - ra.x > ra.w * 0.03) { ra.w = e - ra.x; ch++; } } else if (Math.abs(ra.y + ra.h - e) > 0.5 && e - ra.y > ra.h * 0.03) { ra.h = e - ra.y; ch++; } });
+    }));
   }
   S.spreads[si].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });
   if (!ch) { if (!quiet) toast("Gli stacchi sono già giusti"); return 0; }
