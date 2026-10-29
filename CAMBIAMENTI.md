@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 69 — Scala, Angolo, Esposizione, Opacità come gli altri
+- Stesso layout di Luce/Colore: nome e valore sopra (con ⊗ per ripristinare), cursore grande a tutta larghezza sotto. — `index.html`.
+
 ## Versione 68 — Sezione Cornice più chiara
 - Bordo e Ombra con nome e valore sopra e cursore sotto; i colori del bordo hanno un'etichetta («Colore del bordo»), pallini più grandi con anello chiaro sul selezionato, e restano attenuati finché il bordo è «no». — `index.html`.
 
