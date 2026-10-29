@@ -96,7 +96,7 @@
   .mods button { padding: 6px 2px; }
   #pool { grid-column: 2; grid-row: 3; background: var(--panel); border-top: 1px solid var(--line); padding: 6px 10px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   #pool .cap { color: var(--dim); font-size: 11px; margin-bottom: 4px; }
-  #pool img { height: 100px; box-sizing: content-box; margin-right: 13px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
+  #pool img { height: 100px; box-sizing: content-box; margin-right: 22px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
   #pool img:hover { border-color: var(--accent); } #pool img.psel { border-color: var(--blue); box-shadow: 0 0 0 6px var(--blue); position: relative; z-index: 2; }
   #qlook { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; cursor: zoom-out; } #qlook img { max-width: 94vw; max-height: 90vh; object-fit: contain; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,.6); } #qlook span { color: #cfcfd4; font-size: 13px; }
   #pool img.tolta { opacity: .4; }
@@ -336,7 +336,7 @@
   .sth.sel { background: rgba(10,132,255,.16); box-shadow: inset 0 0 0 1.5px var(--blue); } .sth img { border-radius: 3px; box-shadow: 0 2px 6px rgba(0,0,0,.45); background: #2a2a2d; }
   .sth span { display: block; margin-top: 4px; font-size: 10.5px; color: var(--dim); text-align: center; } .sth.sel span { color: var(--text); }
   /* galleria foto + striscia */
-  #libgrid { gap: 14px; padding: 16px; background: #161618; }
+  #libgrid { gap: 24px; padding: 20px; background: #161618; }
   .ph { border: 0; border-radius: 6px; background: #1f1f22; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: transform .1s, box-shadow .12s; } .ph:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.5); }
   .ph.sel { box-shadow: 0 0 0 6px var(--blue); position: relative; z-index: 2; } .ph.used img { opacity: .38; }
   .ph .n { background: var(--blue); color: #fff; top: 6px; left: 6px; min-width: 18px; font-size: 11px; padding: 0 5px; line-height: 18px; }
@@ -402,7 +402,7 @@
   .slot.srcdrag { background: rgba(0,0,0,.4); outline: 2px dashed rgba(255,255,255,.6); outline-offset: -2px; }
   body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
   body.tplopen #tools, body.tplopen .sb { visibility: hidden; }
-  #poolrow img { object-fit: cover; min-width: 0; } #poolrow .pw { position: relative; display: block; height: var(--ph); min-width: 0; margin-right: 13px; } #poolrow .pw img { width: 100%; height: 100%; margin: 0; display: block; opacity: .38; } #poolrow .pw .u { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: rgba(255,255,255,.9); font-size: 10px; padding: 2px 6px; text-align: center; border-radius: 0 0 5px 5px; pointer-events: none; }
+  #poolrow img { object-fit: cover; min-width: 0; } #poolrow .pw { position: relative; display: block; height: var(--ph); min-width: 0; margin-right: 22px; } #poolrow .pw img { width: 100%; height: 100%; margin: 0; display: block; opacity: .38; } #poolrow .pw .u { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: rgba(255,255,255,.9); font-size: 10px; padding: 2px 6px; text-align: center; border-radius: 0 0 5px 5px; pointer-events: none; }
   #grpbox { position: absolute; border: 2px dashed var(--accent); pointer-events: none; z-index: 40; } #grpbox .hd { pointer-events: auto; }
   #nmenu { z-index: 120; }
   .sl { grid-template-columns: 72px 1fr 46px 18px; }

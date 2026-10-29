@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.4.1 — Ancora più spazio tra le foto della galleria
+- Fila sotto lo spread 22 px (era 13), vista Foto 24 px (era 14). — `index.html`.
+
 ## Versione 1.4.0 — Più spazio tra le foto della galleria
 - Con il bordo blu più spesso le foto selezionate toccavano le vicine: nella fila sotto lo spread lo spazio tra le foto passa da 6 a 13 px, nella vista Foto da 8 a 14 px. — `index.html` (`#pool img`, `#poolrow .pw`, `#libgrid`).
 
