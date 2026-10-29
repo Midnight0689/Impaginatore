@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.3.1 — Modelli: niente misure sopra la galleria
+- Aprendo i Modelli le misure blu (distanze dai lati) e le guide della foto selezionata restavano visibili sopra le miniature; ora si nascondono finché la galleria è aperta. — `index.html` (`body.tplopen .eqm`).
+
 ## Versione 1.3.0 — Cinque modelli in più: Trittico, Provino, Onda, Principale e tre, Piramide
 - Aggiunti ai modelli d'autore (anche specchiati): Trittico (3 foto, la centrale sulla piega), Provino (12 foto piccole), Onda (6 verticali sfalsate), Principale e tre (4 foto, la grande sulla piega), Piramide (6 foto su bianco). Provati applicandoli a uno spread di prova. — `editor.py` (`_sp_models`, `SPM_KEYS`).
 

@@ -36,6 +36,7 @@
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
   .tmore { grid-column: 1 / -1; margin: 10px 4px; padding: 9px 12px; border-radius: 9px; border: 1px dashed var(--line); background: transparent; color: var(--dim); cursor: pointer; width: calc(100% - 8px); } .tmore:hover { color: #fff; border-color: var(--accent); }
+  body.tplopen .eqm, body.tplopen .guide, body.tplopen #grpbox { display: none !important; }       /* misure e guide dello spread non devono comparire sopra la galleria dei modelli */
   #keys { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; }
   #keys .kc { width: min(1000px, 94vw); max-height: 90vh; overflow: auto; background: rgba(40,40,43,.97); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.6); color: #eee; font-size: 13px; }
   #keys .kh { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 16px; position: sticky; top: 0; background: rgba(40,40,43,.99); } #keys .kx { background: none; border: 0; color: inherit; font-size: 16px; cursor: pointer; }
