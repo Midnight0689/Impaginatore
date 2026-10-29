@@ -796,9 +796,9 @@ def state():
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG))
 
 TONO_C = {}
-TONO_VERDE, TONO_GIALLO = 0.3, 0.6                    # scarto (EV) dalla mediana dello spread: entro VERDE ok, entro GIALLO da guardare, oltre da correggere
+TONO_VERDE, TONO_GIALLO, TONO_MAX = 0.3, 0.6, 1.0                    # scarto (EV) dalla mediana dello spread: entro VERDE ok, entro GIALLO da guardare, oltre da correggere
 def _tono_misure(s):
-    """per ogni foto dello spread s, come appare adesso: log2 della luminanza mediana (luce lineare, gamma 2.2 come l'esposizione di Photoshop) e dell'98° percentile"""
+    """per ogni foto dello spread s, come appare adesso: tono = media tra la luce media e le alte luci (90° percentile), in log2 (luce lineare, gamma 2.2 come l'esposizione di Photoshop) e dell'98° percentile"""
     import numpy as np, math
     key = spread_hash(s)
     if key in TONO_C: return TONO_C[key]
@@ -809,7 +809,7 @@ def _tono_misure(s):
             if it["k"] == "t": continue
             a = (np.asarray(A._photo(L, 0.08, True).convert("RGB"), dtype=np.float32) / 255) ** 2.2
             Y = a[..., 0] * .2126 + a[..., 1] * .7152 + a[..., 2] * .0722
-            n = A.name(it["i"]); out.append(dict(side=side, idx=idx, name=n, ly=math.log2(max(float(np.median(Y)), 1e-4)), lp=math.log2(max(float(np.percentile(Y, 98)), 1e-4)), evp=CFG["esposizione"]["per_foto"].get(n, 0.0)))
+            n = A.name(it["i"]); out.append(dict(side=side, idx=idx, name=n, ly=(math.log2(max(float(Y.mean()), 1e-4)) + math.log2(max(float(np.percentile(Y, 90)), 1e-4))) / 2, lp=math.log2(max(float(np.percentile(Y, 98)), 1e-4)), evp=CFG["esposizione"]["per_foto"].get(n, 0.0)))
     if len(TONO_C) > 200: TONO_C.clear()
     TONO_C[key] = out; return out
 
@@ -825,7 +825,7 @@ def tono_spread(s):
         for j, m in enumerate(ms):
             esc = m["name"] in CFG["tono_escl"]; d = 0.0 if med is None else m["ly"] - med
             stato = "escl" if esc else "ok" if abs(d) <= TONO_VERDE else "att" if abs(d) <= TONO_GIALLO else "no"
-            ev_new = round(min(max(m["evp"] - d, -2.0), 2.0) * 20) / 20
+            ev_new = round(min(max(m["evp"] - max(min(d, TONO_MAX), -TONO_MAX), -2.0), 2.0) * 20) / 20
             dd = m["evp"] - ev_new                                        # quanto cambia davvero (può fermarsi a ±2)
             items.append(dict(side=m["side"], idx=m["idx"], name=m["name"], n=j + 1, d=round(d, 2), stato=stato, nuova=ev_new, bruc=bool(not esc and ev_new > m["evp"] and m["lp"] + (ev_new - m["evp"]) > 0.0)))
             if not esc: pen.append(min(abs(d), 1.0))

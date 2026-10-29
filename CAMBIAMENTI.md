@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 75 — Scheda Tono: misura più giusta sulle foto con sfondo scuro
+Una foto con sfondo scuro e soggetto chiaro (es. fiocco bianco su legno) veniva proposta di +1 EV perché la mediana guardava solo lo sfondo, e la correzione la rovinava. Ora il tono è la media tra la luce media e le alte luci (90° percentile): le foto di quello spread risultano allo stesso tono (scarti ≤ 0,2). La correzione automatica è limitata a ±1 EV per volta. — `editor.py` (`_tono_misure`, `TONO_MAX`).
+
 ## Versione 74 — Scheda «Tono»: misura se le foto di uno spread hanno la stessa luminosità
 - **Pannello in basso a due schede:** «Galleria» e «Tono» (la scelta si ricorda; ognuna ha la sua altezza regolabile). — `index.html`.
 - **Scheda Tono:** frase di sintesi («2 foto da sistemare: la 2 è troppo scura…»), voto di uniformità su 100, una colonna per foto (più alta = più chiara) con la fascia verde «zona giusta» (±0,3 EV dalla mediana dello spread), miniatura e istruzione («schiarisci di 0,8», «ok»); riga con il tono degli spread vicini; «⚠ luci» se schiarire farebbe bruciare le alte luci.
