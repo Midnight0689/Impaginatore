@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 142 — Frecce: spostamento di 0,01 cm
+- Con una foto selezionata le frecce della tastiera la muovono di 0,01 cm (con Maiusc 0,1 cm; prima 0,1 e 1). — `index.html` (`nudgeKey`).
+
 ## Versione 141 — Distanze dai lati: dalla foto vicina, non dal bordo dello spread
 - Le misure di una foto selezionata (e durante lo spostamento/ridimensionamento) su ogni lato partono dalla foto più vicina su quel lato (che si sovrappone nell'altra misura); solo se non c'è nessuna foto si misura dal bordo della pagina. — `index.html` (`edgeMarks`).
 

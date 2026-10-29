@@ -738,11 +738,11 @@ function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina
   const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
   drawEq(GM.concat(edgeMarks({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, its)));
 }
-let nudgeP = null;       // frecce della tastiera: 0,1 cm (con Maiusc 1 cm); i colpi ravvicinati diventano un solo spostamento
+let nudgeP = null;       // frecce della tastiera: 0,01 cm (con Maiusc 0,1 cm); i colpi ravvicinati diventano un solo spostamento
 function nudgeKey(e) {
   const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t");
   if (!its.length) return false;
-  const st = (e.shiftKey ? 1 : 0.1) / 2.54 * S.ppi, d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
+  const st = (e.shiftKey ? 0.1 : 0.01) / 2.54 * S.ppi, d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[e.key];
   if (!nudgeP) nudgeP = { dx: 0, dy: 0, ats: ks.map(k => { const [a, b] = k.split(":"); return [a, +b]; }), nomi: new Set(its.map(i => i.name).filter(Boolean)) };
   const x0 = Math.min(...its.map(i => i.x)), y0 = Math.min(...its.map(i => i.y)), x1 = Math.max(...its.map(i => i.x + i.w)), y1 = Math.max(...its.map(i => i.y + i.h));
   nudgeP.dx = clamp(nudgeP.dx + d[0], -x0, S.W - x1); nudgeP.dy = clamp(nudgeP.dy + d[1], -y0, S.H - y1);
