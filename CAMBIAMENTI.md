@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 107 — Con lo zoom niente fascia grigia a tutta larghezza
+- La fascia fissa dei pulsanti con lo zoom non ha più lo sfondo grigio lungo tutta la larghezza: restano solo i due blocchi (Strumenti e Selezione) con il loro sfondo, e il resto lascia passare i clic. — `index.html` (`#stage.zoomed #tools`).
+
 ## Versione 106 — Barra spaziatrice tenuta premuta = manina
 - Se non c'è nessuna foto da mostrare in anteprima, tenendo premuta la barra nell'Album compare la manina e trascinando col mouse si sposta lo spread (utile con lo zoom). Rilasciando la barra torna tutto normale. — `index.html` (`setPan`, `body.pan`).
 
