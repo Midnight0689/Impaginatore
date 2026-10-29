@@ -687,7 +687,9 @@ function startGroup(e, its, bb, kind) {
   const calc = ev => {       // angoli liberi; con Maiusc in proporzione (come Photoshop)
     const dx = (ev.clientX - x0) * k, dy = (ev.clientY - y0) * k, fx = kind.includes("e") ? 1 : -1, fy = kind.includes("s") ? 1 : -1;
     sx = kind.includes("e") || kind.includes("w") ? (bw + fx * dx) / bw : 1; sy = kind.includes("n") || kind.includes("s") ? (bh + fy * dy) / bh : 1;
-    if (corner && ev.shiftKey) sx = sy = Math.max(sx, sy); sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1); };
+    if (corner && ev.shiftKey) sx = sy = Math.max(sx, sy); sx = Math.max(sx, 0.1); sy = Math.max(sy, 0.1);
+    const mx = Math.max(1, (kind.includes("w") ? ax : S.W - ax) / bw), my = Math.max(1, (kind.includes("n") ? ay : S.H - ay) / bh);       // nessuna foto esce dallo spread
+    if (corner && ev.shiftKey) sx = sy = Math.min(sx, sy, mx, my); else { sx = Math.min(sx, mx); sy = Math.min(sy, my); } };
   const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; last = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; calc(last); draw(); }); };
   const onUp = async ev => {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
