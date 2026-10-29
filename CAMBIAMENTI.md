@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.4.6 — Niente cornice gialla di avviso nel Tono
+- Nella scheda Tono le foto «da controllare» avevano il bordo giallo, uguale al colore della selezione: sembravano selezionate. Ora l'avviso è solo nell'etichetta gialla; il bordo rosso (fuori tolleranza) resta. Tolto anche il riallineamento della 1.4.5, che non serviva. — `index.html`.
+
 ## Versione 1.4.5 — Cornice gialla rimasta su due foto
 - Se la selezione non coincideva con la cornice attiva (es. dopo uno spostamento o una modifica che cambia i numeri delle cornici) restava gialla una seconda foto. Ora a ogni ridisegno la selezione si riallinea alla cornice attiva. — `index.html`.
 

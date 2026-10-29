@@ -438,7 +438,7 @@
   #tonopanel .rif { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); } #tonopanel .rif input { width: 64px; height: 26px; }
   .tdots { font-size: 10.5px; color: var(--dim); display: flex; gap: 3px; align-items: center; justify-content: center; margin-top: 2px; white-space: nowrap; } .tdots i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-left: 3px; } .tdots i.ok { background: #32d74b; } .tdots i.att { background: #e0b23c; } .tdots i.no { background: #ff6961; }
   .tpill { position: absolute; right: 4px; top: 4px; padding: 1px 9px; border-radius: 11px; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 3; white-space: nowrap; }
-  .slot.t-no:not(.sel) { outline: 3px solid #ff6961; } .slot.t-att:not(.sel) { outline: 3px solid #e0b23c; }
+  .slot.t-no:not(.sel) { outline: 3px solid #ff6961; } .slot.t-att:not(.sel) { outline: none; }       /* il giallo è il colore della selezione: l'avviso «attenzione» resta solo nell'etichetta */
   .slot .live { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; object-fit: fill; z-index: 0; }
 </style>
 </head>
@@ -563,8 +563,7 @@ function pageHasText(side) { return slotsOf(cur).some(i => i.side === side && i.
 function render() {
   if (!S) return;
   msel = msel.filter(k => { const [a, b] = k.split(":"); return S.spreads[Math.min(cur, S.spreads.length - 1)].items.some(i => i.side === a && i.idx === +b); });
-  if (sel && (msel.length === 0 || !msel.includes(sel.side + ":" + sel.idx))) msel = [sel.side + ":" + sel.idx];       // la cornice attiva è sempre dentro la selezione: una selezione rimasta di prima non resta gialla
-  if (!sel && msel.length === 1) msel = [];
+  if (sel && msel.length === 0) msel = [sel.side + ":" + sel.idx];
   cur = Math.min(cur, S.spreads.length - 1);
   if (sel && !selItem()) sel = null;
   $("title").textContent = S.nome;
