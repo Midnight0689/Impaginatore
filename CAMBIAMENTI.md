@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 102 — Anteprima di una foto dello spread, senza frecce
+Selezionando una foto nello spread e premendo la barra spaziatrice si apre la sua anteprima grande (se l'ultima cosa toccata è una foto dello spread, ha la precedenza su una foto selezionata in galleria). Da qui le frecce non fanno niente, per non confondere la numerazione dello spread; dalla galleria e dalla vista Foto restano le frecce avanti/indietro. — `index.html` (`qlook`, `qlSrc`).
+
 ## Versione 101 — Anteprima grande: frecce per la foto precedente e successiva
 Con l'anteprima aperta (barra spaziatrice), le frecce ← → (e ↑ ↓) passano alla foto precedente o successiva tra quelle che si vedono nella galleria (con i filtri attivi), nella vista Foto o nello spread; la selezione segue e le foto vicine vengono caricate in anticipo. Si ferma alla prima e all'ultima. — `index.html` (`qlStep`).
 

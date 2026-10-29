@@ -1175,7 +1175,7 @@ function renderPool() {
     const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; im.onpointerdown = e => startPhotoDrag(e, n);
     im.ondblclick = () => { if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, [n], true);
-    if (POOLSEL === n) im.classList.add("psel"); im.onclick = () => { POOLSEL = POOLSEL === n ? null : n; P.querySelectorAll("img.psel").forEach(x => x.classList.remove("psel")); if (POOLSEL) im.classList.add("psel"); };       // clic: seleziona la foto (spazio = anteprima grande)
+    if (POOLSEL === n) im.classList.add("psel"); im.onclick = () => { qlPref = "pool"; POOLSEL = POOLSEL === n ? null : n; P.querySelectorAll("img.psel").forEach(x => x.classList.remove("psel")); if (POOLSEL) im.classList.add("psel"); };       // clic: seleziona la foto (spazio = anteprima grande)
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
     if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
@@ -1776,20 +1776,20 @@ $("ego").onclick = async () => {
 $("wrap").addEventListener("contextmenu", e => { if (!S || e.target.closest(".slot") || textTool) return; bgMenu(e); });
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
-let qlName = null;
-function qlook(n) {       // anteprima grande di una foto (barra spaziatrice); stessa tasto o Esc o clic la chiude
+let qlName = null, qlSrc = "", qlPref = "";
+function qlook(n, src) {       // anteprima grande di una foto (barra spaziatrice); stessa tasto o Esc o clic la chiude
   const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
-  qlName = n; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + " · ← → per scorrere · spazio o Esc per chiudere"; q.style.display = "flex";
+  qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + (qlSrc === "spread" ? " · spazio o Esc per chiudere" : " · ← → per scorrere · spazio o Esc per chiudere"); q.style.display = "flex";
 }
 $("qlook").onclick = () => qlook(null);
+document.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("#slots, #sbarR")) qlPref = "spread"; }, true);
 const poolVis = () => filterList(S.unused.map(n => S.photos.find(p => p.n === n)).filter(Boolean), PF).map(p => p.n);
 function qlList() {       // le foto tra cui scorrere con le frecce: quelle che si vedono dove l'anteprima è stata aperta
   if (view === "foto") return visPhotos().map(p => p.n);
-  const pv = poolVis(); if (pv.includes(qlName)) return pv;
-  return S.spreads[cur] ? [...new Set(S.spreads[cur].items.filter(i => i.name).map(i => i.name))] : [];
+  return qlSrc === "spread" ? [] : poolVis();       // dallo spread niente frecce: confonderebbero la numerazione
 }
 function qlStep(d) {
-  const L = qlList(), i = L.indexOf(qlName); if (i < 0) return; const j = Math.min(Math.max(i + d, 0), L.length - 1); if (j === i) return; const n = L[j];
+  if (qlSrc === "spread") return; const L = qlList(), i = L.indexOf(qlName); if (i < 0) return; const j = Math.min(Math.max(i + d, 0), L.length - 1); if (j === i) return; const n = L[j];
   qlook(n); [L[j + d], L[j - d]].forEach(x => { if (x) new Image().src = `/img/thumb/${x}?w=1800`; });
   if (view === "foto") { SELP = [n]; lastClick = n; render(); }
   else { POOLSEL = n; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
@@ -1798,8 +1798,12 @@ document.addEventListener("keydown", e => {
   if (qlName && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); qlStep(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1); return; }
   if (qlName && (e.key === " " || e.key === "Escape")) { e.preventDefault(); e.stopPropagation(); qlook(null); return; }
   if (S && e.key === " " && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && $("busy").style.display !== "flex") {
-    const si = typeof selItem === "function" ? selItem() : null, n = view === "foto" ? (SELP.length ? SELP[SELP.length - 1] : HOV) : (POOLSEL && S.photos.some(p => p.n === POOLSEL) ? POOLSEL : HOV || (si && si.name) || null);
-    e.preventDefault(); if (n) qlook(n); return; }
+    const si = typeof selItem === "function" ? selItem() : null, sn = si && si.name, pn = POOLSEL && S.photos.some(p => p.n === POOLSEL) ? POOLSEL : null;
+    let n, src;
+    if (view === "foto") { n = SELP.length ? SELP[SELP.length - 1] : HOV; src = "foto"; }
+    else if (qlPref === "spread" && sn) { n = sn; src = "spread"; }       // l'ultima cosa toccata è una foto dello spread
+    else if (pn) { n = pn; src = "pool"; } else if (HOV) { n = HOV; src = "pool"; } else if (sn) { n = sn; src = "spread"; }
+    e.preventDefault(); if (n) qlook(n, src); return; }
   if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); if (S && $("busy").style.display !== "flex") $("save").click(); return; }       // ⌘S salva il progetto (non la pagina web)
   if (S && e.key.toLowerCase() === "p" && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); const nn = view === "foto" && SELP.length ? SELP : HOV ? [HOV] : []; if (nn.length) { const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); } return; }
   if (S && /^[0-7]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && (view === "foto" || HOV)) { e.preventDefault(); assignColor(e.key === "0" ? null : COLS[+e.key - 1][0]); return; }
