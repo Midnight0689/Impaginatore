@@ -35,6 +35,11 @@
   .eqm.x { height: 0; border-top: 1px solid #ff3d7f; } .eqm.y { width: 0; border-left: 1px solid #ff3d7f; }
   .eqm.x::before, .eqm.x::after { content: ""; position: absolute; top: -4px; height: 8px; border-left: 1px solid #ff3d7f; } .eqm.x::before { left: 0; } .eqm.x::after { right: 0; }
   .eqm.y::before, .eqm.y::after { content: ""; position: absolute; left: -4px; width: 8px; border-top: 1px solid #ff3d7f; } .eqm.y::before { top: 0; } .eqm.y::after { bottom: 0; }
+  #gapall { position: fixed; right: 16px; top: 64px; width: 330px; max-height: 70vh; overflow: auto; z-index: 70; background: rgba(40,40,43,.96); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.45); color: var(--fg, #eee); font-size: 12px; }
+  #gapall .gh { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); } #gapall .gx { background: none; border: 0; color: inherit; cursor: pointer; font-size: 14px; }
+  #gapall .gl { padding: 6px; } #gapall .gl p { margin: 8px; opacity: .8; }
+  #gapall .gr { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: 8px; border-radius: 8px; cursor: pointer; } #gapall .gr:hover { background: rgba(255,255,255,.08); } #gapall .gr em { font-style: normal; opacity: .7; }
+  #gapall .gf { padding: 8px 12px 12px; } #gapall .gfix { width: 100%; padding: 8px; border-radius: 8px; border: 0; background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
   .eqm.ok { border-color: #2fbf71; } .eqm.ok b { background: #2fbf71; } .eqm.x.ok::before, .eqm.x.ok::after, .eqm.y.ok::before, .eqm.y.ok::after { border-color: #2fbf71; }
   .eqm.warn { border-color: #f0a020; } .eqm.warn b { background: #f0a020; } .eqm.x.warn::before, .eqm.x.warn::after, .eqm.y.warn::before, .eqm.y.warn::after { border-color: #f0a020; }
   .eqm.bad { border-color: #ff3d3d; border-width: 2px; } .eqm.bad b { background: #ff3d3d; } .eqm.x.bad::before, .eqm.x.bad::after, .eqm.y.bad::before, .eqm.y.bad::after { border-color: #ff3d3d; }
@@ -669,27 +674,38 @@ function gapPairs(si) {       // coppie di foto vicine (affiancate o sovrapposte
 }
 function gapStat(si) { const P = gapPairs(si); return { ref: P.length ? P[0].ref : S.gap, n: P.length, ok: P.filter(p => p.c === "ok").length, bad: P.filter(p => p.c !== "ok").length }; }
 function gapMarks() { return gapPairs(cur).map(p => ({ ax: p.ax, from: p.from, to: p.to, at: p.at, g: p.g, c: p.c })); }
-async function gapFix() {
-  if (!S.spreads.length) return;
+async function gapFix(si = cur, quiet = false) {
+  if (!S.spreads.length) return 0;
   const R = new Map(); let ch = 0;
-  S.spreads[cur].items.forEach(i => R.set(i, { x: i.x, y: i.y, w: i.w, h: i.h }));
+  S.spreads[si].items.forEach(i => R.set(i, { x: i.x, y: i.y, w: i.w, h: i.h }));
   for (let pass = 0; pass < 3; pass++) {
-    S.spreads[cur].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });       // lavora sulle misure aggiornate
-    const P = gapPairs(cur).filter(p => p.c !== "ok"); if (!P.length) break;
+    S.spreads[si].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });       // lavora sulle misure aggiornate
+    const P = gapPairs(si).filter(p => p.c !== "ok"); if (!P.length) break;
     const need = new Map();       // per ogni foto e asse: il bordo davanti si porta a stacco standard dal vicino più vicino
     P.forEach(p => { const k = p.b, key = p.ax; const t = p.from + p.ref; const m = need.get(k) || {}; if (m[key] === undefined || t > m[key]) m[key] = t; need.set(k, m); });
     need.forEach((m, b) => { const r = R.get(b);
       if (m.x !== undefined && b.x + b.w - m.x > r.w * 0.03) { r.w = b.x + b.w - m.x; r.x = m.x; ch++; }
       if (m.y !== undefined && b.y + b.h - m.y > r.h * 0.03) { r.h = b.y + b.h - m.y; r.y = m.y; ch++; } });
   }
-  S.spreads[cur].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });
-  if (!ch) { toast("Gli stacchi sono già giusti"); return; }
-  const rects = S.spreads[cur].items.filter(i => i.k !== "t").map(i => { const r = R.get(i); return [i.side, i.idx, r.x, r.y, r.w, r.h]; });
-  await op({ op: "setrects", s: cur, rects });
-  const r = gapStat(cur); toast(r.bad ? `Corretti, restano ${r.bad} stacchi da guardare a mano` : "Tutti gli stacchi sono uguali"); }
-async function gapAll() {
-  const bad = []; S.spreads.forEach((sp, i) => { const r = gapStat(i); if (r.bad) bad.push((i + 1) + " (" + r.bad + ")"); });
-  toast(bad.length ? "Stacchi da correggere negli spread: " + bad.join(", ") : "Tutti gli stacchi dell'album sono giusti", false); }
+  S.spreads[si].items.forEach(i => { const r = R.get(i); i.x = r.x; i.y = r.y; i.w = r.w; i.h = r.h; });
+  if (!ch) { if (!quiet) toast("Gli stacchi sono già giusti"); return 0; }
+  const rects = S.spreads[si].items.filter(i => i.k !== "t").map(i => { const r = R.get(i); return [i.side, i.idx, r.x, r.y, r.w, r.h]; });
+  await op({ op: "setrects", s: si, rects });
+  if (!quiet) { const r = gapStat(si); toast(r.bad ? `Corretti, restano ${r.bad} stacchi da guardare a mano` : "Tutti gli stacchi sono uguali"); }
+  return ch; }
+function gapAll() {       // pannello con gli spread che hanno stacchi diversi: resta aperto finché non lo chiudi
+  const old = $("gapall"); if (old) { old.remove(); return; }
+  const d = document.createElement("div"); d.id = "gapall";
+  const fill = () => {
+    const rows = []; S.spreads.forEach((sp, i) => { const r = gapStat(i); if (r.bad) rows.push({ i, r }); });
+    d.innerHTML = `<div class="gh"><b>Spaziature dell'album</b><button class="gx" title="Chiudi">✕</button></div>` + (rows.length
+      ? `<div class="gl">${rows.map(({ i, r }) => `<button class="gr" data-s="${i}"><span>Spread ${i + 1}</span><em>${r.bad} su ${r.n} diversi · riferimento ${cmOf(r.ref).toFixed(2)} cm</em></button>`).join("")}</div><div class="gf"><button class="gfix">Correggi tutto l'album</button></div>`
+      : `<div class="gl"><p>Tutti gli stacchi dell'album sono uguali al riferimento scelto.</p></div>`);
+    d.querySelector(".gx").onclick = () => d.remove();
+    d.querySelectorAll(".gr").forEach(b => b.onclick = () => { GAPCHK = true; go(+b.dataset.s); });
+    const f = d.querySelector(".gfix"); if (f) f.onclick = async () => { f.disabled = true; f.textContent = "Correggo…"; let n = 0; for (const { i } of rows) n += (await gapFix(i, true)) ? 1 : 0; toast(`Corretti ${n} spread`); fill(); };
+  };
+  fill(); document.body.appendChild(d); }
 function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina restano visibili finché non la deseleziono
   if (DRAG || !S || view !== "album" || !S.spreads.length) return;
   const sp = S.spreads[cur], ks = msel.length ? msel : sel ? [sel.side + ":" + sel.idx] : [], its = ks.map(k => sp.items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t"), GM = GAPCHK ? gapMarks() : [];
@@ -843,7 +859,7 @@ function renderSbar() {
     $("mfull").onclick = () => op({ op: "fullpage", s: cur, ats: mAts() }); $("mver").onclick = () => op({ op: "orient", s: cur, dir: "v", ats: mAts() }); $("mhor").onclick = () => op({ op: "orient", s: cur, dir: "h", ats: mAts() }); }
   }
   document.querySelectorAll(".sb [data-al]").forEach(b => b.onclick = () => op({ op: "align", s: cur, ats: mAts(), mode: b.dataset.al }));
-  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mgap").onclick = () => { GAPCHK = !GAPCHK; if (GAPCHK) { const r = gapStat(cur); toast(r.n ? `Spaziature: ${r.ok} su ${r.n} uguali a ${cmOf(r.ref).toFixed(2)} cm` + (r.bad ? `, ${r.bad} diverse` : "") : "Nessuna coppia di foto vicine da controllare"); } render(); }; $("gapm").value = GAPMODE; $("gapm").onchange = e => { const v = e.target.value; if (v === "custom") { const t = prompt("Stacco in cm (es. 0,30):", cmOf(GAPVAL || S.gap).toFixed(2).replace(".", ",")); const n = parseFloat((t || "").replace(",", ".")); if (!(n > 0)) { e.target.value = GAPMODE; return; } GAPVAL = n / 2.54 * S.ppi; } GAPMODE = v; render(); }; $("mgapfix").onclick = gapFix; $("mgapall").onclick = gapAll; $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
+  $("mswap").onclick = () => op({ op: "swappages", s: cur }).then(() => { sel = null; msel = []; render(); toast("Pagine invertite"); }); $("mgap").onclick = () => { GAPCHK = !GAPCHK; if (GAPCHK) { const r = gapStat(cur); toast(r.n ? `Spaziature: ${r.ok} su ${r.n} uguali a ${cmOf(r.ref).toFixed(2)} cm` + (r.bad ? `, ${r.bad} diverse` : "") : "Nessuna coppia di foto vicine da controllare"); } render(); }; $("gapm").value = GAPMODE; $("gapm").onchange = e => { const v = e.target.value; if (v === "custom") { const t = prompt("Stacco in cm (es. 0,30):", cmOf(GAPVAL || S.gap).toFixed(2).replace(".", ",")); const n = parseFloat((t || "").replace(",", ".")); if (!(n > 0)) { e.target.value = GAPMODE; return; } GAPVAL = n / 2.54 * S.ppi; } GAPMODE = v; render(); }; $("mgapfix").onclick = () => gapFix(); $("mgapall").onclick = gapAll; $("mcopy").onclick = copySel; $("mpaste").onclick = pasteSel;
   $("ttxt").onclick = () => setTextTool(!textTool);
   $("tmag").onclick = () => { magnet = !magnet; try { localStorage.setItem("mag", magnet ? "1" : "0"); } catch (e) {} render(); toast(magnet ? "Magnetico acceso" : "Magnetico spento"); };
   $("trul").onclick = () => setRulers(!showRulers); $("tgui").onclick = () => setGuides(!showGuides); $("tlock").onclick = () => setLock(!lockGuides); $("twarn").onclick = () => setCropWarn(!showCropWarn);

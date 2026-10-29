@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di versione = numero del commit, vedi riquadro Versione), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 137 — «Controlla album» diventa un pannello
+- Prima mostrava un messaggio che spariva: ora apre un pannello con l'elenco degli spread con stacchi diversi (quanti, e il riferimento); un clic su una riga porta allo spread con le misure accese; «Correggi tutto l'album» corregge tutti (un annulla per spread); si chiude con ✕ o riclicando il pulsante. — `index.html` (`gapAll`, `gapFix(si)`, `#gapall`).
+
 ## Versione 136 — Spaziature: tutti identici, misura a scelta
 - Niente più tolleranza larga: uno stacco è verde solo se è uguale alla misura di riferimento (scarto massimo 0,1 mm, un pixel di arrotondamento), altrimenti rosso. Nel riquadro Strumenti un menu sceglie il riferimento: standard del progetto, il più frequente dello spread, o un valore in cm scritto a mano. «Correggi spazi» porta tutto a quel valore. — `index.html` (`GAPMODE`, `GAPVAL`, `gapPairs`).
 
