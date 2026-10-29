@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.4.0 — Più spazio tra le foto della galleria
+- Con il bordo blu più spesso le foto selezionate toccavano le vicine: nella fila sotto lo spread lo spazio tra le foto passa da 6 a 13 px, nella vista Foto da 8 a 14 px. — `index.html` (`#pool img`, `#poolrow .pw`, `#libgrid`).
+
 ## Versione 1.3.9 — Bordo blu delle foto selezionate nella galleria
 - Il bordo di selezione sullo spread torna com'era (3 px, più foto 2 px): le versioni 1.3.6–1.3.8 avevano toccato quello per errore. Il bordo blu delle foto selezionate nella galleria (sotto lo spread e nella vista Foto) passa a 6 px. — `index.html` (`#pool img.psel`, `.ph.sel`).
 
