@@ -12,6 +12,8 @@ import pytest
 from aiuti import attendi_log
 from PIL import Image
 
+from impaginatore import formato
+
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -55,10 +57,11 @@ def test_flusso_principale(editor):
     img = c.raw(f"/img/spread/0?k=0.05&h={st['spreads'][0]['h']}"); assert len(img) > 2000 and Image.open(__import__("io").BytesIO(img)).size[0] > 100
     assert st["canundo"]
     c.post("/api/save"); st = c.get("/api/state"); assert not st["dirty"] and not st.get("saveerr")
-    with open(os.path.join(proj, "spec.py"), encoding="utf-8") as f: spec = f.read()
-    compile(spec, "spec.py", "exec"); assert "TEXT(" in spec and "caps=True" in spec
+    doc = formato.leggi_album(os.path.join(proj, "album.json"))
+    assert any(e.get("kind") == "txt" and e.get("caps") is True for sp in doc["spread"] for lato in ("sinistra", "destra") for e in sp[lato]["elementi"])
+    assert not os.path.exists(os.path.join(proj, "spec.py")), "la 2.0 salva solo album.json"
     assert not [f for f in os.listdir(proj) if f.endswith(".tmp")], "nessun .tmp rimasto"
-    assert "__pycache__" not in os.listdir(proj), "leggere spec.py non deve lasciare file nel progetto"
+    assert "__pycache__" not in os.listdir(proj), "leggere il progetto non deve lasciare file nel progetto"
     with open(os.path.join(proj, "progetto.json"), encoding="utf-8") as f: json.load(f)
     prima = json.dumps([[(i.get("kind"), i.get("tx"), i.get("name")) for i in sp["items"]] for sp in st["spreads"]])
     # riapertura (stesso processo: inizializza rilegge tutto)

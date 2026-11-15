@@ -1,11 +1,14 @@
-"""Esegue genera_psd.py aggiungendo l'angolo delle foto (ROT): dopo aver messo la foto nella cornice la ruota attorno al centro della cornice.
-Imposta anche il profilo colore sRGB sul documento (senza, Photoshop può usare il profilo del monitor e i colori cambiano).
-Non modifica genera_psd.py (lo script della skill): legge il suo codice e ci applica delle sostituzioni; se genera_psd.py è
-cambiato e non combaciano, genera i PSD senza angoli e lo dice.
+"""PSD con gli angoli delle foto (ROT): dopo aver messo la foto nella cornice la ruota attorno al centro della cornice.
+Imposta anche il profilo colore sRGB sul documento (senza, Photoshop può usare il profilo del monitor e i colori cambiano),
+e aggiunge livelli di testo, scala dei titoli, tono, ritocco, bordi, ombre e opacità.
+
+È genera_psd con le sue parti estese (genera_psd.PARTI -> PARTI qui sotto) e le voci estese delle foto e dei testi:
+nessuna modifica del codice come testo, niente exec.
 
     python -m impaginatore.motore.genera_psd_angolo --progetto <cartella> [--spread 1,2,5 | tutti] [--forza]
 """
-import os, sys
+from . import genera_psd
+
 ROT_JS = r'''function rotAround(L,deg,fx,fy){ var b=L.bounds, cx=(b[0].as("px")+b[2].as("px"))/2, cy=(b[1].as("px")+b[3].as("px"))/2;
   L.rotate(deg,AnchorPosition.MIDDLECENTER); var r=deg*Math.PI/180, nx=fx+(cx-fx)*Math.cos(r)-(cy-fy)*Math.sin(r), ny=fy+(cx-fx)*Math.sin(r)+(cy-fy)*Math.cos(r);
   var b2=L.bounds, c2x=(b2[0].as("px")+b2[2].as("px"))/2, c2y=(b2[1].as("px")+b2[3].as("px"))/2; L.translate(px(nx-c2x),px(ny-c2y)); }
@@ -48,36 +51,21 @@ function curvesAdj(pts){ var d=new ActionDescriptor(),ref=new ActionReference();
   ch.putList(cid("Crv "),pl); var list=new ActionList(); list.putObject(cid("CrvA"),ch); var l=new ActionDescriptor(); l.putList(cid("Adjs"),list);
   var u=new ActionDescriptor(); u.putObject(cid("Type"),cid("Crvs"),l); d.putObject(cid("Usng"),cid("AdjL"),u);
   executeAction(cid("Mk  "),d,DialogModes.NO); var L=app.activeDocument.activeLayer; L.name="Curva"; L.grouped=true; return L; }'''
-NEWDOC = 'var doc=app.documents.add(G.CW,G.CH,72,nm,NewDocumentMode.RGB,DocumentFill.WHITE);'
-TXT_OLD = '''  var L1 = title ? [TX.nome,TX.serif,380,0, it.x+it.w/2, it.y+it.h/2+82] : [TX.nome,TX.serif,170,0, it.x, it.y+it.h-247];
-  var L2 = title ? [TX.sotto,TX.sans,62,355, it.x+it.w/2, it.y+it.h/2+307] : [TX.sotto,TX.sans,62,225, it.x+6, it.y+it.h-124];
-  var L3 = title ? [TX.data,TX.sans,62,355, it.x+it.w/2, it.y+it.h/2+417] : [TX.data,TX.sans,62,225, it.x+6, it.y+it.h-34];'''
-TXT_NEW = '''  var s_=it.ts||1;
+TESTO_JS = '''  var s_=it.ts||1;
   var L1 = title ? [TX.nome,TX.serif,380*s_,0, it.x+it.w/2, it.y+it.h/2+82*s_] : [TX.nome,TX.serif,170*s_,0, it.x, it.y+it.h-247*s_];
   var L2 = title ? [TX.sotto,TX.sans,62*s_,355*s_, it.x+it.w/2, it.y+it.h/2+307*s_] : [TX.sotto,TX.sans,62*s_,225*s_, it.x+6*s_, it.y+it.h-124*s_];
-  var L3 = title ? [TX.data,TX.sans,62*s_,355*s_, it.x+it.w/2, it.y+it.h/2+417*s_] : [TX.data,TX.sans,62*s_,225*s_, it.x+6*s_, it.y+it.h-34*s_];'''
-reps = [(TXT_OLD, TXT_NEW), ('items.append(dict(txt=it["kind"], x=it["x"],', 'items.append(dict(txt=it["kind"], ts=float(it.get("ts") or 1), X=(__import__("testo").job_x(it) if it["kind"] == "txt" else None), x=it["x"],'), (NEWDOC, 'var doc=app.documents.add(G.CW,G.CH,72,nm,NewDocumentMode.RGB,DocumentFill.WHITE,1,BitsPerChannelType.EIGHT,"sRGB IEC61966-2.1");'),
-        ('bw=bool(it.get("bw")), ev=ev_for(it["i"])', 'bw=bool(it.get("bw")), ang=float(it.get("a") or 0), ev=ev_for(it["i"]), tono=__import__("album_libere").tono_job(it["i"]), rit=__import__("album_libere").rit_job(it["i"]), sty=__import__("album_libere").sty_job(it)'),
-        ('addText(doc,it,ids[it.side]); }', '(it.txt=="txt"?addTextX:addText)(doc,it,ids[it.side]); }'),
-        ('if (it.bw) { doc.activeLayer=top; top=bwAdjustment();', 'if (it.tono) { var T=it.tono; if (T.b>0||T.w<255||Math.abs(T.m-1)>0.001){ doc.activeLayer=top; top=levelsAdj(T.b,T.w,T.m); ids[it.side].push(top.id); } if (T.c && T.c.length){ var pp=[[0,0]].concat(T.c,[[255,255]]); doc.activeLayer=top; top=curvesAdj(pp); ids[it.side].push(top.id); } }\n    if (it.rit) { var RT=it.rit; if (RT.c && RT.c.length){ doc.activeLayer=top; top=curvesAdj(RT.c); top.name="Ritocco: tono"; ids[it.side].push(top.id); } if (RT.satm){ doc.activeLayer=top; top=mixAdj(RT.satm,"Saturazione"); ids[it.side].push(top.id); } if (RT.vib){ doc.activeLayer=top; top=vibAdj(RT.vib,0); top.name="Vibranza"; ids[it.side].push(top.id); } }\n    if (it.bw) { doc.activeLayer=top; top=bwAdjustment();'),
-        ('var top=FR;', 'if (it.sty && it.sty.oc<100) { try { FR.opacity=it.sty.oc; } catch(e) { log.push("opacità non applicata: "+e); } }\n    if (it.sty && it.sty.sh>0) { try { var SL=rectLayer(doc,it.x,it.y,it.x+it.w,it.y+it.h,[255,255,255],"Ombra "+it.name); layerFx(SL,{bd:0,sh:it.sty.sh,ppi:it.sty.ppi}); SL.move(FR,ElementPlacement.PLACEAFTER); ids[it.side].push(SL.id); } catch(e) { log.push("ombra non applicata: "+e); } doc.activeLayer=FR; }\n    if (it.sty && it.sty.bd>0) { try { var BL=rectLayer(doc,it.x,it.y,it.x+it.w,it.y+it.h,it.sty.col,"Bordo "+it.name); BL.fillOpacity=0; layerFx(BL,{bd:it.sty.bd,col:it.sty.col,sh:0,ppi:it.sty.ppi}); ids[it.side].push(BL.id); } catch(e) { log.push("bordo non applicato: "+e); } doc.activeLayer=FR; }\n    var top=FR;'),
-        ('g = WB.get(name(it["i"]))', 'g = __import__("album_libere").wb_total(it["i"])'),
-        ('fitLayer(L,it.left,it.top,it.width); L.name=it.name;', 'fitLayer(L,it.left,it.top,it.width); if (it.ang) rotAround(L,it.ang,it.x+it.w/2,it.y+it.h/2); L.name=it.name;'),
-        ('var log=[]; var STEP="start";', ROT_JS)]
+  var L3 = title ? [TX.data,TX.sans,62*s_,355*s_, it.x+it.w/2, it.y+it.h/2+417*s_] : [TX.data,TX.sans,62*s_,225*s_, it.x+6*s_, it.y+it.h-34*s_];'''      # titoli e firma con la scala ts
+PARTI = dict(TESTO=TESTO_JS, INIZIO=ROT_JS,
+             NUOVO_DOC='var doc=app.documents.add(G.CW,G.CH,72,nm,NewDocumentMode.RGB,DocumentFill.WHITE,1,BitsPerChannelType.EIGHT,"sRGB IEC61966-2.1");',
+             ANGOLO='if (it.ang) rotAround(L,it.ang,it.x+it.w/2,it.y+it.h/2); ',
+             STILE='if (it.sty && it.sty.oc<100) { try { FR.opacity=it.sty.oc; } catch(e) { log.push("opacità non applicata: "+e); } }\n    if (it.sty && it.sty.sh>0) { try { var SL=rectLayer(doc,it.x,it.y,it.x+it.w,it.y+it.h,[255,255,255],"Ombra "+it.name); layerFx(SL,{bd:0,sh:it.sty.sh,ppi:it.sty.ppi}); SL.move(FR,ElementPlacement.PLACEAFTER); ids[it.side].push(SL.id); } catch(e) { log.push("ombra non applicata: "+e); } doc.activeLayer=FR; }\n    if (it.sty && it.sty.bd>0) { try { var BL=rectLayer(doc,it.x,it.y,it.x+it.w,it.y+it.h,it.sty.col,"Bordo "+it.name); BL.fillOpacity=0; layerFx(BL,{bd:it.sty.bd,col:it.sty.col,sh:0,ppi:it.sty.ppi}); ids[it.side].push(BL.id); } catch(e) { log.push("bordo non applicato: "+e); } doc.activeLayer=FR; }\n    ',
+             TONO='if (it.tono) { var T=it.tono; if (T.b>0||T.w<255||Math.abs(T.m-1)>0.001){ doc.activeLayer=top; top=levelsAdj(T.b,T.w,T.m); ids[it.side].push(top.id); } if (T.c && T.c.length){ var pp=[[0,0]].concat(T.c,[[255,255]]); doc.activeLayer=top; top=curvesAdj(pp); ids[it.side].push(top.id); } }\n    if (it.rit) { var RT=it.rit; if (RT.c && RT.c.length){ doc.activeLayer=top; top=curvesAdj(RT.c); top.name="Ritocco: tono"; ids[it.side].push(top.id); } if (RT.satm){ doc.activeLayer=top; top=mixAdj(RT.satm,"Saturazione"); ids[it.side].push(top.id); } if (RT.vib){ doc.activeLayer=top; top=vibAdj(RT.vib,0); top.name="Vibranza"; ids[it.side].push(top.id); } }\n    ',
+             AGGIUNGI_TESTO='(it.txt=="txt"?addTextX:addText)')
 
 
-def sostituzioni(src):
-    """codice di genera_psd.py con le sostituzioni applicate e True, oppure il codice com'era e False"""
-    if not all(a in src for a, _ in reps): return src, False
-    for a, b in reps: src = src.replace(a, b, 1)
-    return src, True
+def main(argv=None):
+    return genera_psd.main(argv, parti=PARTI, estesa=True)
 
 
 if __name__ == "__main__":
-    from impaginatore.motore import compat
-    compat.installa()                                   # il codice aggiunto usa __import__("testo") e __import__("album_libere")
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "genera_psd.py")
-    with open(path, encoding="utf-8") as f: src, ok = sostituzioni(f.read())
-    if not ok: print("ATTENZIONE: genera_psd.py della skill è cambiato: i PSD vengono generati senza gli angoli delle foto.", flush=True)
-    sys.argv[0] = path
-    exec(compile(src, path, "exec"), {"__name__": "__main__", "__file__": path})
+    main()

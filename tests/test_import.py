@@ -13,7 +13,7 @@ for n in nomi: importlib.import_module(n)
 assert threading.active_count() == 1, threading.enumerate()
 assert set(os.listdir(".")) == prima, set(os.listdir(".")) ^ prima
 assert not os.listdir(os.environ["HOME"]), os.listdir(os.environ["HOME"])
-assert not any(type(f).__name__ == "_Alias" for f in sys.meta_path), "i nomi 1.x si installano solo leggendo uno spec"
+assert not [f for f in sys.meta_path if type(f).__module__.startswith("impaginatore")], "nessun cercatore di moduli aggiunto"
 from impaginatore.editor import server as E
 from impaginatore.home import server as H
 assert E.PROJ is None and E.SP == [] and H.PROGETTI is None and H.EDITORS == {}

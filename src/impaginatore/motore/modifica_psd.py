@@ -8,8 +8,8 @@ python modifica_psd.py --progetto P sostituisci 23:_DSC8801 _DSC9355     mette u
 python modifica_psd.py --progetto P colore 15:_DSC0299                    toglie il Bianco e nero
 python modifica_psd.py --progetto P bn 15:_DSC0299                        aggiunge il Bianco e nero
 python modifica_psd.py --progetto P esposizione 4:_DSC3674 0.95           imposta l'esposizione
-python modifica_psd.py --progetto P rifai-pagina 9 sinistra               ricostruisce SOLO quella pagina dalla spec attuale
-                                                                          (aggiorna prima spec.py), l'altra pagina non si tocca
+python modifica_psd.py --progetto P rifai-pagina 9 sinistra               ricostruisce SOLO quella pagina dall'impaginazione attuale
+                                                                          (cambia prima lo spread nell'editor), l'altra pagina non si tocca
 
 Dopo ogni modifica: verifica_psd.py e un'esportazione di controllo da guardare.
 """
@@ -128,7 +128,9 @@ log.join("\n");
     else:
         print(__doc__)
     # questi file ora contengono modifiche "a mano": genera_psd.py non deve più sovrascriverli
-    reg = json.load(open(REG, encoding="utf-8")) if os.path.exists(REG) else {}
+    from impaginatore import formato
+    from impaginatore.motore.genera_psd import _registro
+    reg = _registro(REG)                                 # rovinato: vale come vuoto (allora genera_psd non sovrascrive niente)
     for p in glob.glob(os.path.join(OUT, "Spread_*.psd")):
         if os.path.basename(p) in reg and os.path.getmtime(p) > reg[os.path.basename(p)] + 5: reg[os.path.basename(p)] = 0
-    json.dump(reg, open(REG, "w", encoding="utf-8"), indent=1)
+    formato.scrivi_json(REG, reg, indent=1)              # atomico (BUG-005): un registro troncato farebbe dimenticare quali PSD sono stati toccati a mano

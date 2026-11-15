@@ -3,6 +3,7 @@
 Stato: fine del compito T-006 (fase 0). Il comportamento è quello della 1.5.2: stessa interfaccia, stesso formato dei
 progetti, stesse operazioni. Cambia la struttura: un pacchetto Python installabile (`src/impaginatore`), uno strato che
 isola le differenze tra macOS, Windows e Linux, nessun effetto all'import, una base di test.
+Dopo T-101 il formato dei progetti è `album.json` (solo dati): vedi «Formato dei progetti» e `FORMATO-PROGETTO.md`.
 
 ## Mappa dei moduli
 
@@ -11,16 +12,19 @@ src/impaginatore/
 ├── __init__.py          __version__ (unico posto della versione: lo leggono pyproject, home, editor, aggiornamenti)
 ├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...»
 ├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1) e porta_libera()
-├── formato.py           l'unico modulo che legge e scrive spec.py / progetto.json (carica, salva, testo_spec, conta_spread...)
+├── formato.py           l'unico modulo che legge e scrive l'impaginazione (album.json) e i JSON del progetto; scritture atomiche
+├── formato_1x.py        spec.py delle 1.x: lettura con ast senza eseguirlo (migrazione) e scrittura per «Esporta per la 1.x»
+├── validazione.py      controllo dei dati letti da un progetto (album.json, progetto.json, modelli, cache): ErroreProgetto
+├── archivio.py         estrazione sicura di uno ZIP di progetto (percorsi, limiti, tipi di file)
+├── nomi.py             nome del progetto (un dato) e nome di cartella valido su macOS, Windows e Linux
 ├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti
 ├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni
 ├── motore/              motore di impaginazione (viene dalla skill «impaginazione-album-stefano»)
 │   ├── album.py         progetto caricato, geometria, foto (metadati, miniature, volti con OpenCV), moduli P/FULL/DUO..., render
 │   ├── album_libere.py  cornici libere, angoli, stili, testi liberi, tono/ritocco: si «installa» dentro album all'import
 │   ├── testo.py         testi liberi: font installati (nomi letti dai file), misura e disegno
-│   ├── compat.py        nomi 1.x «album», «album_libere», «testo» come moduli di primo livello (per spec.py e i PSD)
 │   ├── photoshop.py     funzioni per gli script (app_name, run_jsx, open_documents) + libreria ExtendScript JS_LIB
-│   ├── genera_psd_angolo.py  esegue genera_psd.py con le aggiunte per angoli, testi, tono, sRGB (sostituzioni sul testo)
+│   ├── genera_psd_angolo.py  genera_psd con le parti JavaScript estese (angoli, testi, tono, sRGB): niente exec
 │   └── abbina, analizza, anteprima, esporta_pdf, genera_psd, modifica_psd, verifica_psd   script: python -m impaginatore.motore.<nome>
 ├── piattaforma/         TUTTO ciò che cambia tra sistemi (il resto del codice non controlla sys.platform)
 │   ├── __init__.py      sistema() -> "mac" | "windows" | "linux", letto a ogni chiamata (i test lo simulano)
@@ -66,15 +70,13 @@ impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
 
 ## Formato dei progetti
 
-Invariato rispetto alla 1.5.2 (cartella con `progetto.json` + `spec.py`, vedi `formato.py`). `spec.py` è codice Python
-(`from album import *`, `SPREADS = [...]`): `formato.carica` lo compila dal testo e lo esegue con i nomi 1.x resi
-disponibili da `motore/compat.py` (un cercatore in `sys.meta_path` che restituisce i moduli del pacchetto), senza lasciare
-`__pycache__` nel progetto. Quando ci sono cornici libere/angoli/testi, `formato.salva` copia ancora `album_libere.py`,
-`testo.py`, `vib_lut.npz` accanto a `spec.py` (le leggono gli script 1.x; il programma usa sempre le sue): per questo quei
-due moduli funzionano anche da soli (`try: from . import album / except ImportError: import album`).
-I test `tests/test_formato.py` provano: progetto salvato dalla 1.5.2 riaperto e risalvato identico; stesse operazioni
-della 1.5.2 -> stesso `spec.py` (misure dei testi a parte, dipendono dai font), stesso `progetto.json`, stesso stato;
-progetto salvato dalla 2.0 aperto con l'`album.py` della 1.5.2.
+Dalla 2.0 (T-101) l'impaginazione si salva in `album.json` (formato 2, solo dati): schema, limiti, regole di controllo,
+migrazione dei progetti 1.x, esportazione per la 1.x e Importa ZIP sono in `FORMATO-PROGETTO.md`. Nessun file di un
+progetto viene eseguito: `spec.py` delle 1.x si legge con `ast` (`formato_1x`), si converte una volta in `album.json` e
+resta come `spec.py.1x`. `tests/test_formato.py` prova che il progetto salvato dalla 1.5.2 (`tests/dati/progetto_152`)
+convertito dà lo stesso stato dell'editor e le stesse anteprime di `spec.py` eseguito come faceva la 1.5.2, e che un
+progetto esportato per la 1.x si apre con l'`album.py` della 1.5.2. `tests/test_sicurezza.py` rifà i payload dell'audit
+e controlla che nel pacchetto non ci siano `exec`, `eval`, `compile`, `__import__`, `importlib`, `runpy`, `pickle`.
 
 ## Stato globale che resta (un progetto per processo)
 
@@ -87,16 +89,14 @@ progetto salvato dalla 2.0 aperto con l'`album.py` della 1.5.2.
 | `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli) | `configura(...)`, `crea_server(...)` |
 | `piattaforma/dialoghi.py` | implementazione scelta con `imposta()` | `imposta(None)` |
 | `piattaforma/font.py` | `_cerca_linux` in `lru_cache` | riavvio |
-| `motore/compat.py` | cercatore in `sys.meta_path` (installato alla prima lettura di uno spec) | `disinstalla()` |
 | PIL | `Image.MAX_IMAGE_PIXELS = None` (foto enormi), impostato da `carica_progetto` | — |
-| `formato.carica` | aggiunge per un attimo la cartella del progetto a `sys.path` e spegne la scrittura dei .pyc | lo rimette com'era |
 
 Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor nello stesso processo, uno alla volta.
 
 ## Punti di estensione
 
-- **Formato di salvataggio** (T-101): `formato.py`. Un formato nuovo (JSON) va aggiunto lì: `carica` sceglie il lettore,
-  `salva` scrive il nuovo; spec.py resta leggibile (migrazione) e va tolto l'`exec` sui dati dell'utente.
+- **Formato di salvataggio**: `formato.py` e `validazione.py`. Un formato 3 aumenta `validazione.FORMATO`, aggiunge in
+  `formato.carica` la conversione dal 2 e un test con un progetto salvato nel formato 2 (vedi `FORMATO-PROGETTO.md`).
 - **Finestre di scelta**: `piattaforma.dialoghi.imposta(oggetto con _scegli(tipo, messaggio))` per tutto il processo;
   `IMPAGINATORE_DIALOGHI=mac|tk|zenity|kdialog|nessuno` per sceglierle per nome (vale anche per i processi figli).
 - **Finestra desktop** (T-201): `home.server.configura(...)` + `crea_server(0)` in un thread + finestra pywebview sull'indirizzo;
@@ -112,6 +112,8 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **Riavvio dell'editor**: `editor.server.riavvia_processo` (di serie `os.execv` con gli stessi argomenti) si può sostituire
   quando l'editor gira dentro un altro processo.
 - **Photoshop**: `piattaforma.photoshop.trova / esegui_jsx / esegui_js`; i test li sostituiscono con un Photoshop finto.
+  Lo script JavaScript dei PSD ha parti con nome (`genera_psd.PARTI`: `TESTO`, `INIZIO`, `NUOVO_DOC`, `ANGOLO`, `STILE`,
+  `TONO`, `AGGIUNGI_TESTO`) che una variante sostituisce passando `parti=` a `genera_psd.main`.
 
 ## Variabili d'ambiente
 
