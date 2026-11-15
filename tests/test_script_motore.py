@@ -250,3 +250,12 @@ def test_verifica_psd_segnala_i_problemi(prj, monkeypatch, capsys):
                         "misura 7097x2657 invece di 7087x2657", "cornici diverse dalla spec (normale se modificato a mano)"]
     assert out[-1].endswith("spread con problemi 1")
 
+
+def test_verifica_psd_senza_risoluzione(prj, monkeypatch, capsys):
+    """un PSD senza la risoluzione scritta (risorsa 1005, facoltativa) si verifica lo stesso: misure in px, cm sconosciuti
+    (prima: ZeroDivisionError)"""
+    _faces(prj, {}); A = _carica(prj)
+    _psd_su_disco(prj, monkeypatch, {1: _PSD((A.CW, A.CH), _psd_spread(A, 1).livelli, ppi=0)})
+    come_script(monkeypatch, "verifica_psd", "--progetto", prj)
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "Spread 01: 7087x2657px (risoluzione non scritta nel PSD) | V10 [+0.25], Q09 [+0.25], H06 [+0.25]"

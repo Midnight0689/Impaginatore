@@ -56,7 +56,8 @@ if __name__ == "__main__":
             exp = sorted((i["x"], i["y"], i["x"] + i["W"], i["y"] + i["H"]) for i in layout(SP[n - 1]) if i["k"] != "t")
             if sorted(fr.values()) != exp: issues.append("cornici diverse dalla spec (normale se modificato a mano)")
         if issues: bad += 1
-        print(f"Spread {n:02d}: {Wd}x{Hd}px {Wd / ppi * 2.54:.2f}x{Hd / ppi * 2.54:.2f}cm @{ppi:.2f} | {', '.join(info)}" + (f"\n   <-- CONTROLLA: {'; '.join(issues)}" if issues else ""))
+        cm = f"{Wd / ppi * 2.54:.2f}x{Hd / ppi * 2.54:.2f}cm @{ppi:.2f}" if ppi else "(risoluzione non scritta nel PSD)"      # la risorsa 1005 è facoltativa
+        print(f"Spread {n:02d}: {Wd}x{Hd}px {cm} | {', '.join(info)}" + (f"\n   <-- CONTROLLA: {'; '.join(issues)}" if issues else ""))
     dup = [k for k, v in Counter(names_all).items() if v > 1]
     unused = [name(i) for i in range(len(M)) if name(i) not in names_all and name(i) not in set(CFG.get("tolte", []))]
     print(f"\nfoto nei PSD {len(names_all)} | doppie {dup} | non usate {unused} | spread con problemi {bad}")
