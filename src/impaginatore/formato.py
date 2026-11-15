@@ -17,6 +17,7 @@ import os
 import shutil
 import stat
 import tempfile
+import time
 
 from . import formato_1x
 from .validazione import FORMATO, PAGINE, ErroreProgetto
@@ -223,14 +224,29 @@ def file_album(cartella):
 def carica(cartella):
     """impaginazione del progetto ([[modo, [elementi]], [modo, [elementi]]] per spread). Il motore
     (impaginatore.motore.album) dev'essere già caricato con lo stesso progetto: servono i nomi delle foto.
-    Un progetto 1.x (solo spec.py) si converte qui, una volta: vedi converti_1x"""
+    Un progetto 1.x (solo spec.py) si converte qui, una volta: vedi converti_1x. Con album.json e spec.py insieme
+    (progetto esportato per la 1.x) vale quello che è stato cambiato dopo l'esportazione: vedi _spec_cambiato"""
     from .motore import album as A
     from .motore import album_libere  # noqa: F401  (insegna al motore le cornici libere)
     cartella = os.path.abspath(cartella)
-    p = os.path.join(cartella, ALBUM)
-    if os.path.isfile(p): return da_documento(leggi_album(p, set(A.IDX)))
-    if os.path.isfile(os.path.join(cartella, SPEC)): return converti_1x(cartella)
+    p, s = os.path.join(cartella, ALBUM), os.path.join(cartella, SPEC)
+    if os.path.isfile(p):
+        spreads = da_documento(leggi_album(p, set(A.IDX)))
+        if os.path.isfile(s) and _spec_cambiato(s, spreads, A.name): return converti_1x(cartella)
+        if os.path.isfile(s): os.replace(s, _libero(os.path.join(cartella, COPIA_1X)))
+        return spreads
+    if os.path.isfile(s): return converti_1x(cartella)
     return []
+
+
+def _spec_cambiato(path, spreads, nome_foto):
+    """album.json e spec.py insieme: un progetto esportato per la 1.x («Esporta progetto» con spec.py). Se spec.py è ancora
+    quello che la 2.0 scriverebbe per album.json (riga di descrizione a parte) vale album.json, che ha anche quello che la
+    1.x non sa scrivere; se è diverso, l'ha cambiato la 1.x e vale spec.py"""
+    with open(path, "rb") as f: testo = f.read(formato_1x.MAX_BYTE + 1)
+    try: righe = testo.decode("utf-8-sig").replace("\r\n", "\n").split("\n")[1:]
+    except UnicodeDecodeError: return True
+    return righe != formato_1x.testo_spec(spreads, "", nome_foto, "").split("\n")[1:]
 
 
 def documento_1x(path):
@@ -250,11 +266,14 @@ def documento_1x(path):
 
 
 def converti_1x(cartella):
-    """spec.py (1.x) -> album.json, senza eseguire niente; spec.py resta come spec.py.1x (copia, mai più letta).
-    Restituisce l'impaginazione"""
-    src = os.path.join(cartella, SPEC)
+    """spec.py (1.x) -> album.json, senza eseguire niente; spec.py resta come spec.py.1x (copia, mai più letta) e un
+    album.json che c'era già va in _backup_editor (si ritrova tra le versioni). Restituisce l'impaginazione"""
+    src, p = os.path.join(cartella, SPEC), os.path.join(cartella, ALBUM)
     doc = documento_1x(src)
-    scrivi_atomico(os.path.join(cartella, ALBUM), testo_album(doc))
+    if os.path.isfile(p):
+        bk = os.path.join(cartella, "_backup_editor"); os.makedirs(bk, exist_ok=True)
+        copia_atomica(p, os.path.join(bk, f"{time.strftime('%Y%m%d-%H%M%S')}_{ALBUM}"))
+    scrivi_atomico(p, testo_album(doc))
     os.replace(src, _libero(os.path.join(cartella, COPIA_1X)))
     return da_documento(doc)
 
@@ -268,10 +287,10 @@ def _libero(p):
 def controlla(cartella):
     """controlla l'impaginazione di un progetto senza il motore e senza eseguire niente; restituisce il numero di spread.
     Errori: ErroreProgetto con un messaggio per l'utente (la home lo mostra prima di aprire l'editor)"""
-    p = file_album(cartella)
+    p, s = file_album(cartella), os.path.join(cartella, SPEC)
     if p is None: return 0
-    if os.path.basename(p) == ALBUM: return len(leggi_album(p)["spread"])
-    return len(formato_1x.leggi_file(p, prova=True))
+    n = len(formato_1x.leggi_file(s, prova=True)) if os.path.isfile(s) else 0          # anche accanto ad album.json: carica può convertirlo
+    return len(leggi_album(p)["spread"]) if os.path.basename(p) == ALBUM else n
 
 
 def conta_spread(cartella):

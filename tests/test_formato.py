@@ -173,6 +173,36 @@ def test_album_json_rilegge_quello_che_scrive(tmp_path, foto_campione):
     assert not formato_1x.ha_liberi([[["I", [dict(k="p", i=0)]], ["W", []]]]) and formato_1x.ha_liberi(spreads)
 
 
+def test_esportato_per_la_1x_e_riaperto_con_la_2(tmp_path, foto_campione):
+    """album.json e spec.py insieme (progetto esportato per la 1.x): se spec.py è ancora quello dell'esportazione vale
+    album.json (che tiene anche quello che la 1.x non sa scrivere); se la 1.x l'ha cambiato vale spec.py, e l'album.json di
+    prima resta tra le versioni. In tutti e due i casi spec.py si legge senza eseguirlo e poi resta solo come copia"""
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
+    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    album.carica_progetto(str(p)); spreads = _tutti_i_tipi()
+    doc = formato.salva(str(p), spreads, album.name)
+    formato_1x.esporta(str(p), spreads, "Album", album.name)
+    assert formato.controlla(str(p)) == 2
+    assert formato.documento(formato.carica(str(p)), album.name) == doc, "spec.py non cambiato: vale album.json (con zo e ts)"
+    assert not (p / "spec.py").exists() and (p / "spec.py.1x").exists() and not (p / "_backup_editor").exists()
+    formato_1x.esporta(str(p), spreads, "Album", album.name)
+    testo = (p / "spec.py").read_text(encoding="utf-8"); assert "bw=True, z=1.3" in testo
+    (p / "spec.py").write_bytes(testo.replace("bw=True, z=1.3", "z=1.3").replace("\n", "\r\n").encode("utf-8"))       # la 1.x l'ha cambiato
+    letto = formato.carica(str(p))
+    assert letto[0][0][1][0]["bw"] is False and "zo" not in letto[1][1][1][1], "vale spec.py (la 1.x non scrive zo dei titoli)"
+    assert formato.leggi_album(str(p / "album.json"))["spread"][0]["sinistra"]["elementi"][0].get("bw") is None
+    copie = os.listdir(p / "_backup_editor"); assert len(copie) == 1 and copie[0].endswith("_album.json")
+    assert formato.leggi_album(str(p / "_backup_editor" / copie[0])) == doc and (p / "spec.py.1x.2").exists()
+    (p / "spec.py").write_text("import os\nSPREADS = []\n", encoding="utf-8")                     # accanto ad album.json, ma con codice
+    prima = (p / "album.json").read_bytes()
+    with pytest.raises(validazione.ErroreProgetto, match="istruzioni non riconosciute"): formato.controlla(str(p))
+    with pytest.raises(validazione.ErroreProgetto, match="istruzioni non riconosciute"): formato.carica(str(p))
+    (p / "spec.py").write_bytes(b"\xff\xfe")
+    with pytest.raises(validazione.ErroreProgetto, match="non è un testo UTF-8"): formato.carica(str(p))
+    assert (p / "album.json").read_bytes() == prima and len(os.listdir(p / "_backup_editor")) == 1, "un progetto che non si apre non si tocca"
+
+
 def test_nuovo_progetto_e_solo_dati(home):
     p = home.nuovo({"nome": "  Nuovo  ", "w": 30, "h": 30})
     assert os.path.basename(p) == "Nuovo" and sorted(os.listdir(p)) == ["Foto", "album.json", "progetto.json"]
