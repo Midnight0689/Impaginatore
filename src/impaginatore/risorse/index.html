@@ -1037,10 +1037,10 @@ function renderTextBar(it) {
   const f = FONTS.find(x => x.ps === it.font) || { fam: it.font, sty: "", ps: it.font }, at = [cur, it.side, it.idx], pt = it.size * 72 / S.ppi, set = o => op({ op: "settext", at, ...o });
   const sts = FONTS.filter(x => x.fam === f.fam), lh = Math.round((it.lh || 1.2) * 100);
   B.innerHTML = `<button id="tb-fam" class="fam" title="Carattere" style="font-family:'${escH(f.fam.replace(/'/g, ""))}'">${escH(f.fam)}<i>▾</i></button>
-    <select id="tb-sty" title="Stile (Regular, Bold, Italic…)">${sts.map(x => `<option value="${x.ps}"${x.ps === it.font ? " selected" : ""}>${x.sty}</option>`).join("")}</select>
+    <select id="tb-sty" title="Stile (Regular, Bold, Italic…)">${sts.map(x => `<option value="${escH(x.ps)}"${x.ps === it.font ? " selected" : ""}>${escH(x.sty)}</option>`).join("")}</select>
     <span class="sep"></span><label title="Corpo (pt)"><b>T</b><input id="tb-sz" type="number" min="3" max="400" step="0.5" value="${+pt.toFixed(1)}"></label><select id="tb-szl" title="Corpi comuni"><option value="">▾</option>${SIZES.map(n => `<option>${n}</option>`).join("")}</select>
     <label title="Interlinea (% del corpo)"><b>↕</b><input id="tb-lh" type="number" min="60" max="300" step="5" value="${lh}"><u>%</u></label>
-    <label title="Spaziatura tra le lettere"><b>VA</b><input id="tb-tr" type="number" min="-100" max="800" step="5" value="${it.tr}"></label>
+    <label title="Spaziatura tra le lettere"><b>VA</b><input id="tb-tr" type="number" min="-100" max="800" step="5" value="${escH(it.tr)}"></label>
     <span class="sep"></span><span class="seg2"><button data-al="left" class="${it.al === "left" ? "on" : ""}" title="A sinistra">⇤</button><button data-al="center" class="${it.al === "center" ? "on" : ""}" title="Centrato">↔</button><button data-al="right" class="${it.al === "right" ? "on" : ""}" title="A destra">⇥</button></span>
     <button id="tb-caps" class="${it.caps ? "on" : ""}" title="Tutto maiuscolo">TT</button><input id="tb-col" type="color" value="${hex(it.col)}" title="Colore">`;
   const wr = $("wrap"), sc = wr.clientWidth / S.W, bx = it.x * sc, by = it.y * sc; B.style.display = "flex";

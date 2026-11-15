@@ -61,6 +61,14 @@ def test_xss_da_nomi_ed_exif(home_srv, apri_editor, tmp_path):
         assert CATTIVO in b.js("document.getElementById('info').innerText"), "la data EXIF nel pannello, come testo"
         b.js("renderLib()"); b.pausa(0.5)
         _senza_iniezioni(b)
+        # livello di testo con un carattere dal nome cattivo (nomi e stili vengono dai file dei font del sistema): barra e pannello del testo
+        font = 'x"></select><img src=x onerror="document.body.dataset.xss=3">'
+        b.js(f"(async () => {{ FONTS.push({{ fam: 'Cattiva', sty: {json.dumps(font)}, ps: {json.dumps(font)} }}); await op({{ op: 'addtext', s: 0, fx: 0.1, fy: 0.1, fw: 0.3, fh: 0.1 }}); "
+             f"const it = slotsOf(0).find(i => i.k === 't' && i.kind === 'txt'); await op({{ op: 'settext', at: [0, it.side, it.idx], font: {json.dumps(font)} }}); "
+             "sel = { s: 0, side: it.side, idx: it.idx }; msel = [it.side + ':' + it.idx]; render(); })()")
+        b.pausa(1)
+        assert b.js("document.getElementById('tb-sty').options[0].value") == font and b.js("document.getElementById('tsty').options[0].text") == font
+        _senza_iniezioni(b)
         assert not b.problemi(), b.problemi()
 
 
