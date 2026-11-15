@@ -1710,7 +1710,6 @@ def stato_aggiornamenti():
 class H(Gestore):
     COOKIE = ("/", "/api/fthumb")                     # pagina e immagini (img, CSS): anche con il solo cookie
     COOKIE_PREFISSI = ("/img/", "/vai/")
-    def log_message(self, *a): pass
     def send(self, body, ctype="application/json", code=200, etag=None):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()

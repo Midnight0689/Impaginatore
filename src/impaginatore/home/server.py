@@ -185,8 +185,6 @@ def esci():
 class H(Gestore):
     COOKIE = ("/", "/api/cover")                  # pagina e copertine (immagini): anche con il solo cookie
 
-    def log_message(self, *a): pass
-
     def send(self, body, ctype="application/json", code=200):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()

@@ -120,3 +120,27 @@ def test_album_senza_progetto_non_legge_niente():
     r = subprocess.run([sys.executable, "-c", "from impaginatore.motore import album as a; print(a.PROJ, a.CFG, a.M)"], capture_output=True, text=True, encoding="utf-8")
     assert r.stdout.strip() == "None None []"
     assert album.progetto_da_argv(["x", "--progetto", "rel"]) == os.path.abspath("rel")
+
+
+def test_registro_dei_psd_letto_e_scritto(prj, monkeypatch):
+    """BUG-007: il registro dei PSD generati (psd_generati.json) si legge e si scrive con file chiusi. modifica_psd segna i PSD
+    cambiati a mano dopo la generazione (genera_psd non li sovrascrive più); genera_psd salta quelli segnati"""
+    import time
+
+    from impaginatore.piattaforma import photoshop
+    out = os.path.join(prj, "PSD"); os.makedirs(out); os.makedirs(os.path.join(prj, "_cache"), exist_ok=True)
+    reg = os.path.join(prj, "_cache", "psd_generati.json"); t = time.time() - 600
+    for n in ("Spread_01.psd", "Spread_02.psd"):
+        with open(os.path.join(out, n), "wb") as f: f.write(b"8BPS")
+        os.utime(os.path.join(out, n), (t, t))
+    os.utime(os.path.join(out, "Spread_02.psd"), (t + 60, t + 60))                       # toccato a mano dopo la generazione
+    with open(reg, "w", encoding="utf-8") as f: json.dump({"Spread_01.psd": t, "Spread_02.psd": t}, f)
+    monkeypatch.setattr(sys, "argv", ["modifica_psd", "--progetto", prj, "nessun-comando"])
+    runpy.run_module("impaginatore.motore.modifica_psd", run_name="__main__")
+    with open(reg, encoding="utf-8") as f: assert json.load(f) == {"Spread_01.psd": t, "Spread_02.psd": 0}
+    ps = PhotoshopFinto()
+    for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
+    album.carica_progetto(prj)
+    monkeypatch.setattr(sys, "argv", ["genera_psd", "--progetto", prj, "--spread", "1,2"])
+    runpy.run_module("impaginatore.motore.genera_psd", run_name="__main__")
+    assert '"n": 1' in ps.script[-1] and '"n": 2' not in ps.script[-1], "il PSD toccato a mano non si rigenera"

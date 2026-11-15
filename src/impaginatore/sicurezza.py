@@ -91,9 +91,8 @@ class Sessione:
             trovato = None
             for c in list(self._codici):                     # tutti confrontati a tempo costante
                 if uguali(c, codice): trovato = c
-            if trovato is None: return False
-            del self._codici[trovato]
-            return True
+            if trovato is not None: del self._codici[trovato]
+        return trovato is not None
 
 
 # ---------------------------------------------------------------- file di sessione (client locali fidati)

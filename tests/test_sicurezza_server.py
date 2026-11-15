@@ -130,7 +130,7 @@ def test_avvio_monouso_e_cookie(srv, monkeypatch):
     assert _richiesta(c, "POST", "/api/ping", b"{}", Cookie=cookie, Content_Type="application/json")[0] == 401
     assert _richiesta(c, "GET", "/", Cookie=f"{nome}=sbagliato")[0] == 401
     assert _richiesta(c, "GET", "/", Cookie=f"impaginatore_{c.porta + 1}={c.gettone}")[0] == 401, "il cookie di un'altra porta non vale"
-    assert _richiesta(c, "GET", "/", Cookie='a="b')[0] == 401
+    assert _richiesta(c, "GET", "/", Cookie='a="b')[0] == 401 and _richiesta(c, "GET", "/", Cookie="a=b; expires=1; $x=1")[0] == 401, "cookie illeggibili"
     # navigazione senza cookie: una pagina che spiega come aprire il programma (non un JSON)
     st, h, corpo = _richiesta(c, "GET", "/", Sec_Fetch_Mode="navigate", Accept="text/html")
     assert st == 401 and h["Content-Type"].startswith("text/html") and "non è collegata" in corpo.decode("utf-8")
@@ -194,6 +194,28 @@ def test_file_di_sessione_casi_limite(casa, monkeypatch):
     sicurezza.togli_sessione("editor", 5, "g")
     assert sicurezza.indirizzo_avvio("editor", 5, timeout=0.5) is None, "il server non risponde"
     assert sicurezza.indirizzo_avvio("editor", 6) is None, "nessun file di sessione"
+
+
+def _porta_spenta():
+    with socket.socket() as k: k.bind(("127.0.0.1", 0)); return k.getsockname()[1]
+
+
+def test_sessioni_vecchie_o_di_altri_progetti(home_srv, editor, monkeypatch):
+    """file di sessione rimasti da un server chiuso male, o editor di un altro progetto: la schermata non li scambia per i suoi"""
+    H = home_srv.modulo; spenta = _porta_spenta()
+    sicurezza.scrivi_sessione("editor", spenta, "vecchio"); sicurezza.scrivi_sessione("home", spenta, "vecchio")
+    for pt in (spenta, editor.porta):
+        monkeypatch.setattr(H, "porta_stabile", lambda path, pt=pt: pt)
+        assert H.gia_attivo("/un/altro/progetto") is None, pt
+    assert H.gia_attivo(editor.progetto) == editor.porta
+    assert H.gia_aperto(spenta) is False and H.gia_aperto(home_srv.porta) is True
+    assert home_srv.get(f"/api/pronto?porta={spenta}") == {"pronto": False, "indirizzo": None}
+
+
+def test_radici_dell_editor_senza_progetto(editor, monkeypatch, tmp_path):
+    E = editor.E; monkeypatch.setattr(E, "PROJ", None)
+    assert E._radici_progetto() == []
+    E.RADICI.scelta(str(tmp_path)); assert E.RADICI.tutte() == [str(tmp_path)], "restano solo le cartelle scelte con la finestra"
 
 
 def test_gettone_e_codici():

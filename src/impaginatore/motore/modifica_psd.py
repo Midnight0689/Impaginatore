@@ -133,4 +133,4 @@ log.join("\n");
         with open(REG, encoding="utf-8") as f: reg = json.load(f)
     for p in glob.glob(os.path.join(OUT, "Spread_*.psd")):
         if os.path.basename(p) in reg and os.path.getmtime(p) > reg[os.path.basename(p)] + 5: reg[os.path.basename(p)] = 0
-    json.dump(reg, open(REG, "w", encoding="utf-8"), indent=1)
+    with open(REG, "w", encoding="utf-8") as f: json.dump(reg, f, indent=1)

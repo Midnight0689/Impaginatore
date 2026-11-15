@@ -56,6 +56,16 @@ def test_formati_png_tiff_webp_e_avvisi(home, apri_editor):
     assert c.codice("/api/fthumb?p=" + urllib.parse.quote(os.path.join(fd, "nota.txt"))) == 500
 
 
+def test_foto_importate_in_un_progetto_che_legge_un_altra_cartella(home, apri_editor, tmp_path):
+    """le foto importate vanno in <progetto>/Foto e all'apertura si aggiungono a foto_extra: anche PNG, TIFF e WebP"""
+    cli = str(tmp_path / "Cliente"); crea_foto(cli, [("A01", 600, 400, "2026:01:01 10:00:00")])
+    p = home.nuovo({"nome": "Fuori", "w": 30, "h": 30, "foto": cli}); fd = os.path.join(p, "Foto"); os.makedirs(fd, exist_ok=True)
+    Image.new("RGB", (300, 200), (200, 0, 0)).save(os.path.join(fd, "B02.png")); Image.new("RGB", (200, 300)).save(os.path.join(fd, "C03.tif"))
+    with open(os.path.join(fd, "nota.txt"), "w", encoding="utf-8") as f: f.write("x")
+    st = apri_editor(p).get("/api/state")
+    assert [x["n"] for x in st["photos"]] == ["A01", "B02", "C03"] and st["scartate"] == []
+
+
 def test_profilo_colore_convertito_in_srgb():
     """BUG-004: una foto con profilo incorporato si converte in sRGB (non si buttano via i numeri come se fossero sRGB)"""
     lab = ImageCms.ImageCmsProfile(ImageCms.createProfile("LAB"))

@@ -75,7 +75,7 @@ class Gestore(BaseHTTPRequestHandler):
     COOKIE_PREFISSI = ()
     _csp = None
 
-    def log_message(self, *a): pass
+    def log_message(self, *a): pass               # niente righe su stderr per ogni richiesta (i rifiuti vanno nel registro)
 
     # ------------------------------------------------------------ controlli
     def _origini(self):

@@ -166,6 +166,24 @@ def test_aggiornamenti_spenti_e_predefiniti(monkeypatch):
     with pytest.raises(NotImplementedError): aggiornamenti.Aggiornamenti().ripristina("x")
 
 
+def test_contratto_pacchetti_firmati(monkeypatch):
+    """SEC-007: il contratto degli aggiornamenti firmati esiste ma non fa niente: non disponibile, nessuna rete, niente installazione"""
+    import threading
+
+    from impaginatore.aggiornamenti import firmati
+    p = firmati.PacchettiFirmati("https://esempio.invalid")
+    assert isinstance(p, aggiornamenti.Aggiornamenti) and firmati.CHIAVI_FIDATE == ()
+    s = p.stato(); assert s["disponibile"] is False and s["errore"] == "" and "firmati" in s["motivo"] and p.controlla() == s
+    assert p.versioni() == [] and p.fonte == "https://esempio.invalid" and p.riavvia() is None
+    for f in (p.manifesto, lambda: p.verifica(b"x", b"y"), lambda: p.scarica({})):
+        with pytest.raises(NotImplementedError): f()
+    for f in (p.aggiorna, lambda: p.ripristina("abc")):
+        with pytest.raises(ValueError, match="non ancora attivi"): f()
+    e = threading.Event(); assert p.ciclo(e) is None
+    monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "")
+    assert not isinstance(aggiornamenti.predefiniti(), firmati.PacchettiFirmati), "predefiniti() non lo sceglie"
+
+
 def test_riavvio_dopo_aggiornamento(home, monkeypatch):
     from impaginatore.piattaforma import processi
     lanci, uscite = [], []
