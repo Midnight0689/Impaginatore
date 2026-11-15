@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en" data-fine-lancio="2027-04-23">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impaginatore · Wedding albums laid out on your own computer, with a perpetual licence</title>
+<meta name="description" content="Desktop app for laying out wedding albums on Mac, Windows and Linux. A draft of the whole album, equal spacing on every spread, layered PSD. Your photos stay on your computer. Pay once.">
+<link rel="canonical" data-url="en/" href="https://impaginatore.example/en/">
+<link rel="alternate" hreflang="it" data-url="" href="https://impaginatore.example/">
+<link rel="alternate" hreflang="en" data-url="en/" href="https://impaginatore.example/en/">
+<link rel="alternate" hreflang="x-default" data-url="" href="https://impaginatore.example/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Impaginatore">
+<meta property="og:locale" content="en_GB">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:title" content="Impaginatore · Lay out the album on your computer. Pay once. Yours to keep.">
+<meta property="og:description" content="A draft of the whole album, equal spacing on every spread, layered PSD. Your photos stay on your computer. Perpetual licence for Mac, Windows and Linux.">
+<meta property="og:url" data-url="en/" content="https://impaginatore.example/en/">
+<meta property="og:image" data-url="img/og/og-en.jpg" content="https://impaginatore.example/img/og/og-en.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Impaginatore logo next to the editor with a wedding album open.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/marca/apple-touch-icon.png">
+<link rel="preload" href="../font/InstrumentSans%5Bwdth,wght%5D.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../font/Newsreader%5Bopsz,wght%5D.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../css/font.css">
+<link rel="stylesheet" href="../css/token.css">
+<link rel="stylesheet" href="../css/sito.css">
+<script src="../js/sito.js" defer></script>
+<script type="application/ld+json" data-ld="software">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareApplication",
+ "name": "Impaginatore",
+ "applicationCategory": "DesignApplication",
+ "operatingSystem": "macOS, Windows, Linux",
+ "inLanguage": "en",
+ "description": "Desktop app for laying out wedding photo albums on your own computer. Perpetual licence, one-time payment.",
+ "url": "https://impaginatore.example/en/",
+ "image": "https://impaginatore.example/img/og/og-en.jpg",
+ "offers": [
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Essenziale",
+   "price": "39.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/en/index.html#prices",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 39,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  },
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Pro",
+   "price": "79.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/en/index.html#prices",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 79,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  },
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Studio",
+   "price": "119.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/en/index.html#prices",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 119,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json" data-ld="faq">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "inLanguage": "en",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Are my photos uploaded anywhere?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "The app isn’t signed by Apple or Microsoft: can I trust it?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The installers don’t carry an Apple or Microsoft signature. Every file is signed with our own key and has a published SHA-256 fingerprint: the install command checks them by itself and stops if anything doesn’t match. With the classic installer, the system asks you to confirm the first time: on Mac in System Settings, Privacy & Security, Open Anyway; on Windows with More info, Run anyway. How to check a file by hand."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I get a refund?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Within 30 days of purchase we refund the full amount, without asking why. It applies once per customer and per edition. Before buying you can also try it free for 30 days."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How many computers can I use it on?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Essential on 1 computer, Pro on 2, Studio on 5. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, install on the new one and stop using the old one."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Are updates included?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, every update of the version you buy: fixes and new features. A new major version comes out no sooner than 18 months after the previous one; moving to it is optional, costs half the list price of your edition and is included with Studio. If you bought in the 90 days before it comes out, you get it free. If you don’t move, your version keeps working."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need an internet connection?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only to download the app and, if you want, the updates. The licence is checked on your computer: you can lay out and export offline."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens when the trial ends?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The trial lasts 30 days, has the Pro features except PSD and puts a watermark on exported files. Afterwards your projects still open in read-only mode: enter the key and carry on where you left off."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do I need Photoshop?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Impaginatore makes JPG and PDF files itself. Photoshop is only needed for layered PSD: Impaginatore prepares them with the Photoshop installed on your computer, on Mac or Windows."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is the app in English?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The interface is in Italian today. The English version is planned before the launch; this page will say so when it’s ready."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I buy?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, enter the key and carry on with the same album."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which systems does it run on?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems."
+   }
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false"><defs><!-- icone:inizio -->
+<symbol id="i-spread" viewBox="0 0 24 24"><path d="M3 6.5h8v11H3zM13 6.5h8v11h-8z"/></symbol>
+<symbol id="i-piega" viewBox="0 0 24 24"><path d="M3 8h8v8H3zM13 8h8v8h-8zM12 2v3M12 19v3"/></symbol>
+<symbol id="i-abbondanza" viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 3h18v18H3z" stroke-dasharray="2.5 2"/></symbol>
+<symbol id="i-margine" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 7h10v10H8z"/><path d="M3.5 12H8" stroke-dasharray="1.5 1.5"/></symbol>
+<symbol id="i-livelli" viewBox="0 0 24 24"><path d="M3 10h11v10H3z"/><path d="M6.5 7H17v10"/><path d="M10 4h11v10"/></symbol>
+<symbol id="i-bozza" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8.5 11h7M8.5 14h7M8.5 17h4"/></symbol>
+<symbol id="i-locale" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/><path d="M10 9.5h4v3.5h-4zM11 9.5V8h2v1.5"/></symbol>
+<symbol id="i-licenza" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9.5M18 12v3.5M21 12v3"/></symbol>
+<symbol id="i-esporta" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3.5V15M7.5 8 12 3.5 16.5 8"/></symbol>
+<symbol id="i-modelli" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></symbol>
+<symbol id="i-misura" viewBox="0 0 24 24"><path d="M2 8h20v8H2zM6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></symbol>
+<symbol id="i-testo" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M9 19h6"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></symbol>
+<symbol id="i-attenzione" viewBox="0 0 24 24"><path d="M12 3 22 20H2zM12 9.5v5M12 16.5v1.5"/></symbol>
+<symbol id="i-errore" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 8l8 8M16 8l-8 8"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5V17M12 7v1.5"/></symbol>
+<symbol id="i-scarica" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3v12M7.5 10.5 12 15l4.5-4.5"/></symbol>
+<!-- icone:fine --></defs></svg>
+<a class="salta" href="#contenuto">Skip to content</a>
+
+<header class="testata">
+  <div class="pagina">
+    <a class="marchio" href="index.html" aria-label="Impaginatore, home">
+      <picture><source srcset="../img/marca/impaginatore-logotipo-negativo.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="../img/marca/impaginatore-logotipo.svg" alt="Impaginatore" width="149" height="24"></picture>
+    </a>
+    <nav aria-label="Page sections">
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li><a href="#prices">Prices</a></li>
+        <li><a href="#labs">Labs</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </nav>
+    <details class="menu">
+      <summary>Menu</summary>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li><a href="#prices">Prices</a></li>
+        <li><a href="#labs">Labs</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="installa.html">Install</a></li>
+      </ul>
+    </details>
+    <a class="lingua" href="../index.html" hreflang="it" lang="it" aria-label="Italiano">IT</a>
+    <a class="pulsante piccolo" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+    <a class="pulsante piccolo" href="installa.html" data-se="in_vendita" hidden>Download the trial</a>
+  </div>
+</header>
+
+<main id="contenuto">
+
+<section class="eroe" aria-labelledby="titolo">
+  <div class="pagina">
+    <div class="testo">
+      <span class="etichetta">For wedding photographers · macOS, Windows and Linux</span>
+      <h1 id="titolo">Lay out the album on your computer. Pay once. <span class="payoff">Yours to keep.</span></h1>
+      <p class="attacco">Impaginatore drafts the whole album with your photos in shooting order, keeps spacing and margins equal from one spread to the next, and prepares the files for your lab, layered PSD included. Your photos never leave your computer, and the licence never expires.</p>
+      <p class="badge prezzo"><b>Pro <span data-prezzo="pro.oggi" data-listino="€99">€79</span></b><span>one-time</span></p>
+      <div class="fila">
+        <a class="pulsante primario grande" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+        <a class="pulsante primario grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Download the free trial</a>
+        <a class="pulsante grande" href="#prices">See prices</a>
+      </div>
+      <p class="sotto-pulsante"><span data-se-non="in_vendita">On sale from <span data-cfg="data_lancio">23 February 2027</span>. </span><span data-se="lancio">Launch price until <span data-cfg="data_fine_lancio">23 April 2027</span>, then <span data-prezzo="pro.listino">€99</span>. </span>Excluding VAT. Free <span data-valore="prova.giorni">30</span>-day trial, no credit card.</p>
+      <ul class="punti">
+        <li><svg class="icona" aria-hidden="true"><use href="#i-licenza"/></svg>Perpetual licence</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-locale"/></svg>No photo uploads</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-livelli"/></svg>Layered PSD</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Works offline</li>
+      </ul>
+    </div>
+    <figure class="finestra">
+      <div class="cornice">
+        <img src="../img/schermate/editor-album-1200.webp" srcset="../img/schermate/editor-album-800.webp 800w, ../img/schermate/editor-album-1200.webp 1200w, ../img/schermate/editor-album-1600.webp 1600w, ../img/schermate/editor-album-2400.webp 2400w" sizes="(min-width: 1328px) 1200px, 92vw" width="2400" height="1500" fetchpriority="high" alt="The Impaginatore editor with a wedding album open: the list of spreads on the left, spread 22 in the middle with four reception photos under rulers in centimetres, the album photos at the bottom.">
+      </div>
+      <figcaption>The demo album in the editor: 62 photos, 25 spreads, 30 × 30 cm. The interface is in Italian; the English version is on the way.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sezione" id="cost" aria-labelledby="titolo-costi">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Three years of work</span>
+      <div>
+        <h2 id="titolo-costi">You don’t need a subscription to lay out albums.</h2>
+        <p class="attacco"><span data-fonte="mercato">A subscription album app, on its professional plan, costs between €150 and €290 a year.</span> Impaginatore Pro costs <span data-prezzo="pro.oggi" data-listino="€99">€79</span> one-time, with updates for the version you buy.</p>
+      </div>
+    </div>
+    <div class="costi" role="list">
+      <div class="costo" role="listitem">
+        <p class="nome">Subscription album apps<small>professional plan, three years</small></p>
+        <div>
+          <p class="num" data-fonte="mercato">€450 to €870</p>
+          <div class="barra" aria-hidden="true"><i class="pieno" style="width:51.7%"></i><i class="intervallo" style="left:51.7%;width:48.3%"></i></div>
+        </div>
+      </div>
+      <div class="costo" role="listitem">
+        <p class="nome">Impaginatore Pro<small>one-time, for good</small></p>
+        <div>
+          <p class="num"><span data-prezzo="pro.oggi" data-listino="€99">€79</span></p>
+          <div class="barra" aria-hidden="true"><i class="nostro" style="width:11.4%"></i></div>
+        </div>
+      </div>
+    </div>
+    <p class="fonti" data-fonte="mercato">Public prices of the yearly professional plans of five album apps, read on the makers’ websites on 13 November 2026, excluding VAT. Dollar prices converted at the ECB reference rate of that day (€1 = $1.1052); for two apps we used the price already announced for 2027. Prices can change. Sources, with dates and addresses, are available: write to <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
+  </div>
+</section>
+
+<section class="sezione" id="features" aria-labelledby="titolo-funzioni">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Features</span>
+      <div>
+        <h2 id="titolo-funzioni">From the first spread to the last, the same album.</h2>
+        <p class="attacco">The app does the long, repetitive parts. The choices stay yours.</p>
+      </div>
+    </div>
+
+    <article class="funzione" aria-labelledby="f-bozza">
+      <div class="testo">
+        <span class="badge verde">Pro and Studio</span>
+        <h3 id="f-bozza">A draft of the whole album</h3>
+        <p>Impaginatore groups your photos in shooting order and picks, for each group, a layout that respects the proportions of every shot. You start from a whole album to review, not from a blank page.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Panoramas on their own, across the spread</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Portrait and landscape where they sit best</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Every spread stays editable by hand</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="coppia-spread">
+          <div class="foglio"><img src="../img/schermate/spread-01-990.webp" srcset="../img/schermate/spread-01-640.webp 640w, ../img/schermate/spread-01-990.webp 990w, ../img/schermate/spread-01-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread with a single panoramic photo across both pages: the couple seen from behind on a white boardwalk among succulents, heading towards the sea."></div>
+          <div class="foglio"><img src="../img/schermate/spread-04-990.webp" srcset="../img/schermate/spread-04-640.webp 640w, ../img/schermate/spread-04-990.webp 990w, ../img/schermate/spread-04-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread with three photos of the couple on the beach at sunset, one large and two small, and sparkling wine poured into glasses on the right."></div>
+        </div>
+        <figcaption>Two spreads of the demo album, as they come out of the export.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione inversa" aria-labelledby="f-spazi">
+      <div class="testo">
+        <span class="badge verde">Pro and Studio</span>
+        <h3 id="f-spazi">Equal spacing and tone across the album</h3>
+        <p>The gap between photos and the margins stay the same from one spread to the next. The check lists the spreads that don’t match, with the reference measure, and fixes them all together. In the same way you can even out brightness and colour between photos of the same scene.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Spacing check on every spread</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Fix the whole album, or one spread at a time</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Consistent tone between neighbouring photos</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="../img/schermate/controllo-stacchi-1100.webp" srcset="../img/schermate/controllo-stacchi-700.webp 700w, ../img/schermate/controllo-stacchi-1100.webp 1100w, ../img/schermate/controllo-stacchi-2200.webp 2200w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="2200" height="692" loading="lazy" alt="The spacing check window, in Italian: 4 spreads out of 25 have gaps that differ from the 0.30 cm reference, each with its preview, and a button to fix the whole album."></div>
+        <figcaption>The spacing check on the demo album: four spreads to fix.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione" aria-labelledby="f-rifinisci">
+      <div class="testo">
+        <span class="badge">All editions</span>
+        <h3 id="f-rifinisci">Refine spread by spread</h3>
+        <p>Rulers in centimetres, guides, snapping and layouts that adapt to the photos you pick. Move, swap, crop: you decide the final spread, and the app keeps track of the measurements.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Designer layouts and your own</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>A warning when a photo is cropped too much</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Saved versions, to go back</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="../img/schermate/editor-spread-860.webp" srcset="../img/schermate/editor-spread-640.webp 640w, ../img/schermate/editor-spread-860.webp 860w, ../img/schermate/editor-spread-1720.webp 1720w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1720" height="1312" loading="lazy" alt="The editor canvas with rulers in centimetres and the toolbar: a 60 × 30 cm spread with a single panoramic photo of hands fastening the bride’s dress."></div>
+        <figcaption>A 60 × 30 cm spread with the editor’s rulers and tools.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione inversa" aria-labelledby="f-psd">
+      <div class="testo">
+        <span class="badge verde">Pro and Studio</span>
+        <h3 id="f-psd">Layered PSD for Photoshop</h3>
+        <p>Any spread can come out as a Photoshop file with every photo on its own layer, already at print size. Retouch only where needed, without redoing the layout. PSD export needs Photoshop installed, on Mac or Windows; JPG and PDF are made by Impaginatore on its own.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="../img/schermate/psd-livelli-800.webp" srcset="../img/schermate/psd-livelli-800.webp 800w, ../img/schermate/psd-livelli-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="A spread open in Photoshop: the layers panel shows one photo per layer."></div>
+      </figure>
+    </article>
+
+    <article class="funzione" aria-labelledby="f-laboratorio">
+      <div class="testo">
+        <span class="badge">All editions</span>
+        <h3 id="f-laboratorio">Your lab’s formats</h3>
+        <p>When you create the album you choose lab, size and cover: bleed, gutter and safety margins are already right. If your lab isn’t listed, you set size and bleed once and save them.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="../img/schermate/preset-laboratorio-800.webp" srcset="../img/schermate/preset-laboratorio-800.webp 800w, ../img/schermate/preset-laboratorio-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="The new album window: list of labs, available sizes and cover, with bleed and gutter shown in millimetres."></div>
+      </figure>
+    </article>
+
+    <div class="schede">
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-locale"/></svg></div>
+        <h3>Your photos stay on your computer</h3>
+        <p class="secondario">Impaginatore works on the files on your disk. There is no account, no service to upload them to, and the app doesn’t send them anywhere.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-licenza"/></svg></div>
+        <h3>Pay once</h3>
+        <p class="secondario">The licence is in your name and doesn’t expire. It includes every update of the version you buy; the next major version is optional.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-misura"/></svg></div>
+        <h3>Works offline</h3>
+        <p class="secondario">The licence is checked on your computer, without contacting a server. Lay out and export while travelling or in a studio with no network.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="claude" aria-labelledby="titolo-claude" data-se="mcp_disponibile" hidden>
+  <div class="pagina">
+    <article class="funzione">
+      <div class="testo">
+        <span class="badge verde">Pro and Studio · optional</span>
+        <h2 id="titolo-claude">If you use Claude, it can draft the album with you.</h2>
+        <p>Pick the photos and tell Claude how you want the album; it works inside Impaginatore while you watch, and every spread stays yours to change. You can also never use it: the app works the same way.</p>
+        <p class="secondario piccolo">Needs your own Claude subscription, paid separately. Claude receives album data (file names, proportions, shooting time), not the photos, unless you allow it.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="../img/schermate/bozza-claude-800.webp" srcset="../img/schermate/bozza-claude-800.webp 800w, ../img/schermate/bozza-claude-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="Claude and the editor side by side: Claude has prepared the spreads and the editor shows them ready for review."></div>
+      </figure>
+    </article>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="how" aria-labelledby="titolo-come">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">How it works</span>
+      <div><h2 id="titolo-come">Three steps, from your disk to the lab.</h2></div>
+    </div>
+    <ol class="passi">
+      <li>
+        <h3>Create the album</h3>
+        <p class="secondario">Choose size and lab, then the folder with your selected photos. Impaginatore reads them from the disk and puts them in shooting order.</p>
+      </li>
+      <li>
+        <h3>Start from the draft</h3>
+        <p class="secondario">With Pro and Studio you get a draft of the whole album. With Essential you build one spread at a time, with layouts suggested for the photos you pick.</p>
+      </li>
+      <li>
+        <h3>Refine and export</h3>
+        <p class="secondario">Adjust the spreads, check spacing and tone across the album, then export JPG for the lab, a PDF for the couple or PSD for Photoshop.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="sezione" id="compare" aria-labelledby="titolo-confronto">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Compare</span>
+      <div>
+        <h2 id="titolo-confronto">What changes compared with the alternatives.</h2>
+        <p class="attacco">A comparison by kind of app, not by brand. Where we fall short, it’s written down.</p>
+      </div>
+    </div>
+    <p class="suggerimento-scorri">Scroll the table sideways to see every column.</p>
+    <div class="scorre" role="region" aria-labelledby="didascalia-confronto" tabindex="0">
+      <table class="confronto">
+        <caption id="didascalia-confronto">Impaginatore and the two most common alternatives, November 2026. Individual apps may differ.</caption>
+        <thead>
+          <tr><th scope="col"><span class="nascosto-vista">Aspect</span></th><th scope="col" class="nostro">Impaginatore</th><th scope="col">Subscription album apps</th><th scope="col">Online services that upload your photos</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">How you pay</th><td class="nostro">Once; the licence doesn’t expire</td><td>Every year or every month</td><td>Every month, or per album</td></tr>
+          <tr><th scope="row">Where the photos are</th><td class="nostro">On your computer</td><td>On your computer</td><td>On the service’s servers</td></tr>
+          <tr><th scope="row">If you stop paying</th><td class="nostro">You keep using it</td><td>You lose the app or some features</td><td>You lose access to the service</td></tr>
+          <tr><th scope="row">Without internet</th><td class="nostro">Works</td><td>Usually works</td><td>Doesn’t work</td></tr>
+          <tr><th scope="row">Automatic album draft</th><td class="nostro">Yes, with Pro and Studio</td><td>Yes, in many</td><td>Yes, in many</td></tr>
+          <tr><th scope="row">Layered PSD</th><td class="nostro">Yes, with Photoshop installed</td><td>In some</td><td>Rarely</td></tr>
+          <tr><th scope="row">Online proofing with the couple</th><td class="nostro"><span class="esito no">No</span></td><td>In many</td><td>Yes</td></tr>
+          <tr><th scope="row">Ordering from the lab</th><td class="nostro"><span class="esito no">No: you export the files and send them</span></td><td>In some</td><td>Often</td></tr>
+          <tr><th scope="row">Ready-made layouts</th><td class="nostro">A few dozen, plus the ones you make</td><td>Hundreds</td><td>Hundreds</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="avviso onesta"><svg class="icona" aria-hidden="true"><use href="#i-info"/></svg><p><b>Where we fall short.</b> We have no online proofing with the couple, no direct ordering from the lab, and fewer ready-made layouts. If you need those, a subscription app may be the right choice for you.</p></div>
+  </div>
+</section>
+
+<section class="sezione" id="prices" aria-labelledby="titolo-prezzi">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Prices</span>
+      <div>
+        <h2 id="titolo-prezzi">Three licences, one payment.</h2>
+        <p class="attacco">Choose by how many albums you make and how many computers you work on. You can move up an edition whenever you like, paying only the difference.</p>
+      </div>
+    </div>
+    <div class="prezzi">
+      <article class="card-prezzo" aria-labelledby="fascia-essenziale">
+        <div><span class="etichetta">A few albums</span><h3 id="fascia-essenziale">Essential</h3></div>
+        <p class="cifra"><strong data-prezzo="essenziale.oggi" data-listino="€49">€39</strong><span>one-time</span></p>
+        <p class="poi" data-se="lancio">until <span data-cfg="data_fine_lancio">23 April 2027</span>, then <span data-prezzo="essenziale.listino">€49</span></p>
+        <p class="per-chi">For a few albums a year, spread by spread.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Full editor, spread by spread</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="modelli_autore.essenziale">30</span> designer layouts, <span data-valore="modelli_personali.essenziale">5</span> of your own</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>JPG and PDF export</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Lab formats</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.essenziale">1</span> computer</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante" data-link="acquisto.essenziale" href="mailto:ordini@impaginatore.example?subject=Purchase%20request%3A%20Impaginatore%20Essenziale&amp;body=Hi%2C%20I%27d%20like%20to%20buy%20Impaginatore%20Essenziale%20%28licence%20for%201%20computer%29.%0A%0AName%20or%20company%3A%0ACountry%3A%0AVAT%20number%20%28businesses%29%3A%0ALicence%20holder%20%28the%20name%20shown%20in%20the%20app%29%3A%0A%0APlease%20send%20me%20the%20amount%20and%20the%20bank%20transfer%20details." data-se="in_vendita" hidden>Buy Essential</a>
+          <a class="pulsante" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+          <p class="nota">Excl. VAT · <span data-prezzo="essenziale.oggi_ivato" data-listino="€59.78">€47.58</span> with <span data-valore="iva">22</span>% VAT</p>
+        </div>
+      </article>
+      <article class="card-prezzo consigliata" aria-labelledby="fascia-pro">
+        <span class="nastro badge verde">Recommended</span>
+        <div><span class="etichetta">Professional</span><h3 id="fascia-pro">Pro</h3></div>
+        <p class="cifra"><strong data-prezzo="pro.oggi" data-listino="€99">€79</strong><span>one-time</span></p>
+        <p class="poi" data-se="lancio">until <span data-cfg="data_fine_lancio">23 April 2027</span>, then <span data-prezzo="pro.listino">€99</span></p>
+        <p class="per-chi">For photographers who shoot weddings for a living and want to start from a draft.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Everything in Essential</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>A draft of the whole album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Even spacing and tone across the album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Layered PSD for Photoshop</span></li>
+          <li data-se="mcp_disponibile" hidden><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Works with Claude (subscription paid separately)</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Unlimited layouts · <span data-valore="computer.pro">2</span> computers</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante primario" data-link="acquisto.pro" href="mailto:ordini@impaginatore.example?subject=Purchase%20request%3A%20Impaginatore%20Pro&amp;body=Hi%2C%20I%27d%20like%20to%20buy%20Impaginatore%20Pro%20%28licence%20for%202%20computers%29.%0A%0AName%20or%20company%3A%0ACountry%3A%0AVAT%20number%20%28businesses%29%3A%0ALicence%20holder%20%28the%20name%20shown%20in%20the%20app%29%3A%0A%0APlease%20send%20me%20the%20amount%20and%20the%20bank%20transfer%20details." data-se="in_vendita" hidden>Buy Pro</a>
+          <a class="pulsante primario" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+          <p class="nota">Excl. VAT · <span data-prezzo="pro.oggi_ivato" data-listino="€120.78">€96.38</span> with <span data-valore="iva">22</span>% VAT</p>
+        </div>
+      </article>
+      <article class="card-prezzo" aria-labelledby="fascia-studio">
+        <div><span class="etichetta">More seats</span><h3 id="fascia-studio">Studio</h3></div>
+        <p class="cifra"><strong data-prezzo="studio.oggi" data-listino="€149">€119</strong><span>one-time</span></p>
+        <p class="poi" data-se="lancio">until <span data-cfg="data_fine_lancio">23 April 2027</span>, then <span data-prezzo="studio.listino">€149</span></p>
+        <p class="per-chi">For studios where several people lay out albums.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Everything in Pro</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.studio">5</span> computers, several operators</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="ore_incluse.studio">1</span> hour of support included</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Next major version included</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante" data-link="acquisto.studio" href="mailto:ordini@impaginatore.example?subject=Purchase%20request%3A%20Impaginatore%20Studio&amp;body=Hi%2C%20I%27d%20like%20to%20buy%20Impaginatore%20Studio%20%28licence%20for%205%20computers%29.%0A%0AName%20or%20company%3A%0ACountry%3A%0AVAT%20number%20%28businesses%29%3A%0ALicence%20holder%20%28the%20name%20shown%20in%20the%20app%29%3A%0A%0APlease%20send%20me%20the%20amount%20and%20the%20bank%20transfer%20details." data-se="in_vendita" hidden>Buy Studio</a>
+          <a class="pulsante" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+          <p class="nota">Excl. VAT · <span data-prezzo="studio.oggi_ivato" data-listino="€181.78">€145.18</span> with <span data-valore="iva">22</span>% VAT</p>
+        </div>
+      </article>
+    </div>
+    <p class="nota-prezzi"><span data-se="lancio">Launch prices apply until <span data-cfg="data_fine_lancio">23 April 2027</span> for the first <span data-valore="lancio.licenze">300</span> licences. </span>Every edition includes updates for the version you buy and a <span data-valore="rimborso.giorni">30</span>-day refund, no questions asked. VAT is shown at the Italian rate; at checkout you pay the VAT of your country, or none with a valid EU VAT number. <a href="../prezzi.html" hreflang="it">Full edition comparison (in Italian)</a>.</p>
+
+    <div class="fascia-ore">
+      <div>
+        <span class="etichetta">Support</span>
+        <h3>Support by the hour</h3>
+        <p class="secondario">A person works with you on a video call or remotely: installation, your lab’s formats, Photoshop, training your team. You pay for hours in advance; they last 12 months and are used in <span data-valore="ore.unita">30</span>-minute blocks.</p>
+      </div>
+      <div class="pacchetti">
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ora_1">1</span> hour</span><strong data-prezzo="ore.ora_1">€49</strong><span class="per-ora"><span data-prezzo="ore.ora_1">€49</span> an hour</span><a data-link="ore.ora_1" href="mailto:assistenza@impaginatore.example?subject=Support%20hours%3A%201%20hour&amp;body=Hi%2C%20I%27d%20like%20to%20buy%201%20hour%20of%20support.%0A%0AName%20or%20company%3A%0AVAT%20number%20%28businesses%29%3A%0AWhat%20you%20need%20help%20with%3A%0A" data-se="in_vendita" hidden>Buy</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_5">5</span> hours</span><strong data-prezzo="ore.ore_5">€249</strong><span class="per-ora">a single payment</span><a data-link="ore.ore_5" href="mailto:assistenza@impaginatore.example?subject=Support%20hours%3A%205%20hours&amp;body=Hi%2C%20I%27d%20like%20to%20buy%205%20hours%20of%20support.%0A%0AName%20or%20company%3A%0AVAT%20number%20%28businesses%29%3A%0AWhat%20you%20need%20help%20with%3A%0A" data-se="in_vendita" hidden>Buy</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_10">10</span> hours</span><strong data-prezzo="ore.ore_10">€499</strong><span class="per-ora">a single payment</span><a data-link="ore.ore_10" href="mailto:assistenza@impaginatore.example?subject=Support%20hours%3A%2010%20hours&amp;body=Hi%2C%20I%27d%20like%20to%20buy%2010%20hours%20of%20support.%0A%0AName%20or%20company%3A%0AVAT%20number%20%28businesses%29%3A%0AWhat%20you%20need%20help%20with%3A%0A" data-se="in_vendita" hidden>Buy</a></div>
+      </div>
+      <p class="nota">Excl. VAT · Free for everyone: manual, video guides and bug fixes. If the problem is in the app, you don’t pay.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="trial" aria-labelledby="titolo-prova">
+  <div class="pagina riquadro">
+    <div class="testo">
+      <span class="etichetta">Free trial</span>
+      <h2 id="titolo-prova">Try it on a real album for <span data-valore="prova.giorni">30</span> days.</h2>
+      <p class="attacco">The trial has the Pro features, whole-album draft included, and no spread limit. It doesn’t ask for a credit card. When you buy, you enter the key and carry on with the same album.</p>
+      <div class="fila">
+        <a class="pulsante pieno grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Download the trial</a>
+        <a class="pulsante pieno grande" href="#waitlist" data-se-non="in_vendita">Tell me when it’s out</a>
+      </div>
+    </div>
+    <aside aria-label="The trial at a glance">
+      <dl class="elenco-dati">
+        <dt>Length</dt><dd><span data-valore="prova.giorni">30</span> days</dd>
+        <dt>Features</dt><dd>Those of Pro, except PSD</dd>
+        <dt>Spreads</dt><dd>No limit</dd>
+        <dt>Card</dt><dd>Not needed</dd>
+        <dt>Exports</dt><dd>Watermarked</dd>
+        <dt>Afterwards</dt><dd>Projects stay open in read-only mode</dd>
+      </dl>
+    </aside>
+  </div>
+</section>
+
+<section class="sezione" id="waitlist" aria-labelledby="titolo-lista" data-se-non="in_vendita">
+  <div class="pagina riquadro">
+    <div class="testo">
+      <span class="etichetta">Waiting list</span>
+      <h2 id="titolo-lista">We’ll tell you when it’s out.</h2>
+      <p class="attacco">Impaginatore goes on sale on <span data-cfg="data_lancio">23 February 2027</span>. We’ll write to you that day and a few days before the launch price ends. Nothing else, and you can unsubscribe whenever you like.</p>
+      <form class="modulo" method="post" action="../grazie.html?per=lista" data-modulo data-se="modulo_lista" hidden>
+        <div class="campo">
+          <label for="email-lista">Your email</label>
+          <input type="email" id="email-lista" name="email" autocomplete="email" required>
+        </div>
+        <label class="spunta" for="consenso-lista"><input type="checkbox" id="consenso-lista" name="consenso" value="si" required><span>Use this address only to tell me about the launch. <a data-link="privacy" href="../legale.html#privacy">Privacy notice</a></span></label>
+        <input type="hidden" name="lingua" value="en">
+        <div><button class="pulsante pieno grande" type="submit">Tell me</button></div>
+      </form>
+      <div data-se-non="modulo_lista">
+        <div class="fila"><a class="pulsante pieno grande" data-link="lista" href="mailto:avvisami@impaginatore.example?subject=Tell%20me%20when%20Impaginatore%20launches&amp;body=I%27d%20like%20an%20email%20when%20Impaginatore%20goes%20on%20sale.%0A%0AI%20agree%20that%20you%20use%20this%20address%20only%20for%20this%20purpose%3B%20I%20can%20ask%20you%20to%20delete%20it%20at%20any%20time.%0APrivacy%20notice%3A%20https%3A%2F%2Fimpaginatore.example%2Flegale.html%23privacy%0A">Email us to be notified</a></div>
+        <p class="sotto-pulsante">Your email app opens with a message ready to send. Or write to <a data-link="email.lista_attesa" href="mailto:avvisami@impaginatore.example"><span data-cfg="email.lista_attesa">avvisami@impaginatore.example</span></a>. <a data-link="privacy" href="../legale.html#privacy">Privacy notice</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="labs" aria-labelledby="titolo-laboratori">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">For labs</span>
+      <div>
+        <h2 id="titolo-laboratori">Your products, inside your photographers’ layout app.</h2>
+        <p class="attacco">With the Lab Edition your catalogue goes into Impaginatore: sizes, covers, bleed and preflight checks. Photographers pick the product when they create the album and send you files that already comply.</p>
+      </div>
+    </div>
+    <div class="schede">
+      <div class="card">
+        <h3>Your catalogue</h3>
+        <p class="secondario">Sizes, papers and covers as in your price list, with your brand in the app.</p>
+      </div>
+      <div class="card">
+        <h3>Files that comply</h3>
+        <p class="secondario">Size, bleed and file names follow your rules: fewer files to send back.</p>
+      </div>
+      <div class="card">
+        <h3>A pilot</h3>
+        <p class="secondario"><span data-valore="pilota.giorni">90</span> days with a group of <span data-valore="pilota.min">10</span> to <span data-valore="pilota.max">20</span> of your photographers. For the first <span data-valore="pilota.gratuiti">3</span> labs, setup is free.</p>
+      </div>
+    </div>
+    <div class="fascia-lab">
+      <div>
+        <span class="etichetta">Lab Edition</span>
+        <h3>Let’s talk about your catalogue</h3>
+        <p class="secondario">Tell us how you receive album files today and we’ll suggest how to bring them into Impaginatore. Prices tailored to the number of photographers.</p>
+      </div>
+      <a class="pulsante pieno" data-link="laboratori" href="mailto:laboratori@impaginatore.example?subject=Lab%20Edition%3A%20let%27s%20talk&amp;body=Hi%2C%20we%27d%20like%20to%20know%20more%20about%20the%20Lab%20Edition.%0A%0ALab%3A%0AWebsite%3A%0AHow%20many%20photographers%20work%20with%20you%3A%0AHow%20you%20receive%20album%20files%20today%3A%0A">Let’s talk</a>
+    </div>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="voices" aria-labelledby="titolo-voci" data-se="riprova_sociale" hidden>
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Who uses it</span>
+      <div><h2 id="titolo-voci">What photographers say.</h2></div>
+    </div>
+    <div class="segnaposto">
+      <p><b>PLACEHOLDER.</b> Only real testimonials go here: name, town and written consent of the person quoted. No customer counts, no logos, no invented quotes. Until there are some, the «riprova_sociale» switch in config.json stays off.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="story" aria-labelledby="titolo-storia">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Why it exists</span>
+      <div class="storia">
+        <h2 id="titolo-storia">Born from an app that will stop opening.</h2>
+        <p class="attacco">Impaginatore comes from the workbench of someone who has been laying out albums for more than ten years, and still does it with an app bought in 2012. When Macs stop running apps written for the old Intel processors, that app won’t open any more, and the alternative was a subscription. So he built his own, and sells it the way he would have liked to buy it: once.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="faq" aria-labelledby="titolo-domande">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Questions</span>
+      <div><h2 id="titolo-domande">Frequently asked questions.</h2></div>
+    </div>
+    <div class="domande">
+      <details class="domanda">
+        <summary>Are my photos uploaded anywhere?</summary>
+        <div><p>No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>The app isn’t signed by Apple or Microsoft: can I trust it?</summary>
+        <div><p>The installers don’t carry an Apple or Microsoft signature. Every file is signed with our own key and has a published SHA-256 fingerprint: the install command checks them by itself and stops if anything doesn’t match. With the classic installer, the system asks you to confirm the first time: on Mac in System Settings, Privacy &amp; Security, Open Anyway; on Windows with More info, Run anyway. <a href="installa.html#verify">How to check a file by hand</a>.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Can I get a refund?</summary>
+        <div><p>Yes. Within <span data-valore="rimborso.giorni">30</span> days of purchase we refund the full amount, without asking why. It applies once per customer and per edition. Before buying you can also try it free for <span data-valore="prova.giorni">30</span> days.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>How many computers can I use it on?</summary>
+        <div><p>Essential on <span data-valore="computer.essenziale">1</span> computer, Pro on <span data-valore="computer.pro">2</span>, Studio on <span data-valore="computer.studio">5</span>. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, install on the new one and stop using the old one.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Are updates included?</summary>
+        <div><p>Yes, every update of the version you buy: fixes and new features. A new major version comes out no sooner than <span data-valore="aggiornamenti.mesi">18</span> months after the previous one; moving to it is optional, costs half the list price of your edition and is included with Studio. If you bought in the <span data-valore="aggiornamenti.finestra">90</span> days before it comes out, you get it free. If you don’t move, your version keeps working.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Do I need an internet connection?</summary>
+        <div><p>Only to download the app and, if you want, the updates. The licence is checked on your computer: you can lay out and export offline.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>What happens when the trial ends?</summary>
+        <div><p>The trial lasts <span data-valore="prova.giorni">30</span> days, has the Pro features except PSD and puts a watermark on exported files. Afterwards your projects still open in read-only mode: enter the key and carry on where you left off.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Do I need Photoshop?</summary>
+        <div><p>No. Impaginatore makes JPG and PDF files itself. Photoshop is only needed for layered PSD: Impaginatore prepares them with the Photoshop installed on your computer, on Mac or Windows.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Is the app in English?</summary>
+        <div><p>The interface is in Italian today. The English version is planned before the launch; this page will say so when it’s ready.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>How do I buy?</summary>
+        <div><p>Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, enter the key and carry on with the same album.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Which systems does it run on?</summary>
+        <div><p data-cfg="requisiti">macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="finale" aria-labelledby="titolo-finale">
+  <div class="pagina">
+    <h2 id="titolo-finale" class="payoff">Yours to keep.</h2>
+    <p class="attacco">You lay out the album on your computer, and pay for the licence once.</p>
+    <div class="fila">
+      <a class="pulsante primario grande" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
+      <a class="pulsante primario grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Download the free trial</a>
+      <a class="pulsante grande" href="#prices">Prices and editions</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="piede">
+  <div class="pagina">
+    <div class="colonne">
+      <div>
+        <picture><source srcset="../img/marca/impaginatore-logotipo-negativo.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="../img/marca/impaginatore-logotipo.svg" alt="Impaginatore" width="149" height="24" loading="lazy"></picture>
+        <p class="payoff">Yours to keep.</p>
+        <p>An app for laying out photo albums. This site uses no cookies and doesn’t track your visits.</p>
+      </div>
+      <nav aria-labelledby="piede-prodotto">
+        <h2 id="piede-prodotto">Product</h2>
+        <ul>
+          <li><a href="#prices">Prices</a></li>
+          <li><a href="installa.html">Install</a></li>
+          <li><a href="#labs">Labs</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="../index.html" hreflang="it" lang="it">Italiano</a></li>
+        </ul>
+      </nav>
+      <nav aria-labelledby="piede-legale">
+        <h2 id="piede-legale">Legal (in Italian)</h2>
+        <ul>
+          <li><a data-link="privacy" href="../legale.html#privacy">Privacy</a></li>
+          <li><a data-link="termini" href="../legale.html#condizioni">Terms of sale</a></li>
+          <li><a data-link="licenza" href="../legale.html#licenza">Licence agreement</a></li>
+          <li><a data-link="condizioni_assistenza" href="../legale.html#assistenza">Support terms</a></li>
+          <li><a data-link="terze_parti" href="../legale.html#terze-parti">Third-party licences</a></li>
+          <li><a href="../legale.html#crediti">Photo credits</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h2>Contact</h2>
+        <ul>
+          <li><a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a></li>
+          <li><a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="titolare">
+      <p><span data-cfg="titolare">{{titolare}}</span> · VAT no. <span data-cfg="partita_iva">{{partita_iva}}</span> · <span data-cfg="sede">{{sede}}</span></p>
+      <p>Demo photos from Pexels: <a href="../legale.html#crediti">authors</a>.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

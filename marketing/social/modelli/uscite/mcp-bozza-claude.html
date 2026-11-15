@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="riserva-mcp">
+<meta name="mcp" content="sì">
+<meta name="uso" content="RISERVA MCP (R01): da pubblicare solo dopo il rilascio del server MCP (T-203) e della sua guida (T-403). La fascia «Riserva» in alto è voluta: si toglie (riga con class=&quot;riserva&quot;) solo il giorno del rilascio, dopo aver verificato quali dati passano a Claude.">
+<title>Riserva MCP, bozza con Claude</title>
+<link rel="stylesheet" href="../social.css">
+<style>
+  .riserva { position: absolute; left: 0; right: 0; top: 0; height: 64px; display: grid; place-items: center; z-index: 9;
+    background: var(--imp-ocra-600); color: var(--imp-carta-0); font: 600 26px/1 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; }
+  .scambio { display: grid; gap: 18px; }
+  .scambio p { margin: 0; padding: 22px 28px; border-radius: 12px; font-size: 34px; line-height: 1.35; }
+  .scambio .tu { justify-self: end; max-width: 700px; background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+  .scambio .claude { justify-self: start; max-width: 760px; background: var(--imp-superficie); box-shadow: inset 0 0 0 2px var(--imp-filetto); color: var(--imp-testo); }
+  .scambio .chi { display: block; font: 500 24px/1 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; opacity: .7; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <p class="riserva">Riserva · da pubblicare solo dopo il rilascio del server MCP</p>
+  <div class="gabbia" style="--alto:120px">
+    <p class="etichetta accento"><span lang="it">Funziona con Claude</span><span lang="en">Works with Claude</span></p>
+    <h1 class="titolo medio" style="margin-top:24px">
+      <span lang="it">Claude prepara la bozza. Tu decidi ogni spread.</span>
+      <span lang="en">Claude drafts the album. You decide every spread.</span>
+    </h1>
+    <div class="spinta"></div>
+    <div class="scambio">
+      <p class="tu"><span class="chi"><span lang="it">Tu</span><span lang="en">You</span></span><span lang="it">Impagina l’album Rossi, 30 × 30 cm, una quarantina di spread. Tieni la cerimonia in ordine di tempo.</span><span lang="en">Lay out the Rossi album, 30 × 30 cm, about forty spreads. Keep the ceremony in time order.</span></p>
+      <p class="claude"><span class="chi">Claude</span><span lang="it">Bozza pronta nell’editor. Gli spread che hai già rifinito a mano non li ho toccati.</span><span lang="en">The draft is ready in the editor. I left the spreads you had already finished by hand untouched.</span></p>
+    </div>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

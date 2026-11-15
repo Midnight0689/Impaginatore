@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="it" data-fine-lancio="2027-04-23">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impaginatore · Album di matrimonio impaginati sul tuo computer, con licenza perpetua</title>
+<meta name="description" content="Programma per impaginare album di matrimonio su Mac, Windows e Linux. Bozza di tutto l’album, spazi uguali su ogni spread, PSD a livelli. Le foto restano sul tuo computer. Paghi una volta.">
+<link rel="canonical" data-url="" href="https://impaginatore.example/">
+<link rel="alternate" hreflang="it" data-url="" href="https://impaginatore.example/">
+<link rel="alternate" hreflang="en" data-url="en/" href="https://impaginatore.example/en/">
+<link rel="alternate" hreflang="x-default" data-url="" href="https://impaginatore.example/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Impaginatore">
+<meta property="og:locale" content="it_IT">
+<meta property="og:locale:alternate" content="en_GB">
+<meta property="og:title" content="Impaginatore · Impagina l’album sul tuo computer. Paghi una volta, resta tuo.">
+<meta property="og:description" content="Bozza di tutto l’album, spazi uguali su ogni spread, PSD a livelli. Le foto restano sul tuo computer. Licenza perpetua per Mac, Windows e Linux.">
+<meta property="og:url" data-url="" content="https://impaginatore.example/">
+<meta property="og:image" data-url="img/og/og-it.jpg" content="https://impaginatore.example/img/og/og-it.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Il logo di Impaginatore accanto all’editor con un album di matrimonio aperto.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/marca/apple-touch-icon.png">
+<link rel="preload" href="font/InstrumentSans%5Bwdth,wght%5D.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="font/Newsreader%5Bopsz,wght%5D.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/font.css">
+<link rel="stylesheet" href="css/token.css">
+<link rel="stylesheet" href="css/sito.css">
+<script src="js/sito.js" defer></script>
+<script type="application/ld+json" data-ld="software">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareApplication",
+ "name": "Impaginatore",
+ "applicationCategory": "DesignApplication",
+ "operatingSystem": "macOS, Windows, Linux",
+ "inLanguage": "it",
+ "description": "Programma desktop per impaginare album fotografici di matrimonio sul proprio computer. Licenza perpetua, pagamento una tantum.",
+ "url": "https://impaginatore.example/",
+ "image": "https://impaginatore.example/img/og/og-it.jpg",
+ "offers": [
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Essenziale",
+   "price": "39.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/prezzi.html",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 39,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  },
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Pro",
+   "price": "79.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/prezzi.html",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 79,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  },
+  {
+   "@type": "Offer",
+   "name": "Impaginatore Studio",
+   "price": "119.00",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/PreOrder",
+   "url": "https://impaginatore.example/prezzi.html",
+   "priceSpecification": {
+    "@type": "UnitPriceSpecification",
+    "price": 119,
+    "priceCurrency": "EUR",
+    "valueAddedTaxIncluded": false
+   },
+   "priceValidUntil": "2027-04-23"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json" data-ld="faq">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "inLanguage": "it",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Le mie foto vengono caricate da qualche parte?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Impaginatore legge le foto dalla cartella che scegli, le mostra ed esporta i file sul tuo disco. Non c’è un account e non c’è un servizio online dove caricarle."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Il programma non è firmato da Apple o Microsoft: posso fidarmi?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Gli installatori non hanno la firma di Apple o di Microsoft. Ogni file è firmato con la nostra chiave e ha un’impronta SHA-256 pubblicata: il comando d’installazione le controlla da solo e si ferma se qualcosa non torna. Con l’installatore classico, alla prima apertura il sistema chiede conferma: su Mac da Impostazioni di Sistema, Privacy e sicurezza, Apri comunque; su Windows da Ulteriori informazioni, Esegui comunque. Come verificare un file a mano."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Posso avere un rimborso?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Sì. Entro 30 giorni dall’acquisto ti rimborsiamo tutto, senza chiederti perché. Vale una volta per cliente e per fascia. Prima di comprare puoi anche provarlo gratis per 30 giorni."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Su quanti computer posso usarlo?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Essenziale su 1 computer, Pro su 2, Studio su 5. La licenza è intestata a te e il programma la verifica sul computer, senza collegarsi a un server: il numero di computer è un impegno del contratto, non un blocco. Se cambi computer, installi sul nuovo e smetti di usare il vecchio."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Gli aggiornamenti sono compresi?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Sì, tutti quelli della versione che compri: correzioni e funzioni nuove. Una nuova versione maggiore esce non prima di 18 mesi dalla precedente; passarci è facoltativo, costa la metà del listino della tua fascia ed è inclusa con Studio. Se hai comprato nei 90 giorni prima che esca, la ricevi gratis. Se non passi, la tua versione continua a funzionare."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Serve una connessione a internet?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Solo per scaricare il programma e, se vuoi, gli aggiornamenti. La licenza si verifica sul tuo computer: impagini ed esporti anche senza rete."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Che cosa succede alla fine della prova?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "La prova dura 30 giorni, ha le funzioni di Pro tranne il PSD e mette una filigrana sui file esportati. Alla fine i progetti restano apribili in sola lettura: inserisci la chiave e riprendi da dove eri."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Serve Photoshop?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. JPG e PDF li crea Impaginatore. Photoshop serve solo per i PSD a livelli: Impaginatore li prepara con il Photoshop installato sul tuo computer, su Mac o Windows."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Funziona con il mio laboratorio?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Esporti gli spread in JPG o PDF alla misura che chiede il laboratorio, con abbondanza e margini di sicurezza. Per i laboratori più diffusi ci sono formati pronti; per gli altri imposti misure e abbondanza una volta e le salvi."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Come si compra?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Scegli la fascia e ci mandi i dati per la fattura; ti rispondiamo con l’importo e paghi con bonifico. La chiave arriva per email entro 2 ore lavorative dal pagamento. Se stai usando la prova, inserisci la chiave e continui con lo stesso album."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Su quali sistemi funziona?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "macOS (Apple Silicon e Intel), Windows 10 e 11, Linux a 64 bit. Requisiti minimi di memoria e disco: da definire con le prove sui tre sistemi."
+   }
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false"><defs><!-- icone:inizio -->
+<symbol id="i-spread" viewBox="0 0 24 24"><path d="M3 6.5h8v11H3zM13 6.5h8v11h-8z"/></symbol>
+<symbol id="i-piega" viewBox="0 0 24 24"><path d="M3 8h8v8H3zM13 8h8v8h-8zM12 2v3M12 19v3"/></symbol>
+<symbol id="i-abbondanza" viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 3h18v18H3z" stroke-dasharray="2.5 2"/></symbol>
+<symbol id="i-margine" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 7h10v10H8z"/><path d="M3.5 12H8" stroke-dasharray="1.5 1.5"/></symbol>
+<symbol id="i-livelli" viewBox="0 0 24 24"><path d="M3 10h11v10H3z"/><path d="M6.5 7H17v10"/><path d="M10 4h11v10"/></symbol>
+<symbol id="i-bozza" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8.5 11h7M8.5 14h7M8.5 17h4"/></symbol>
+<symbol id="i-locale" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/><path d="M10 9.5h4v3.5h-4zM11 9.5V8h2v1.5"/></symbol>
+<symbol id="i-licenza" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9.5M18 12v3.5M21 12v3"/></symbol>
+<symbol id="i-esporta" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3.5V15M7.5 8 12 3.5 16.5 8"/></symbol>
+<symbol id="i-modelli" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></symbol>
+<symbol id="i-misura" viewBox="0 0 24 24"><path d="M2 8h20v8H2zM6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></symbol>
+<symbol id="i-testo" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M9 19h6"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></symbol>
+<symbol id="i-attenzione" viewBox="0 0 24 24"><path d="M12 3 22 20H2zM12 9.5v5M12 16.5v1.5"/></symbol>
+<symbol id="i-errore" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 8l8 8M16 8l-8 8"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5V17M12 7v1.5"/></symbol>
+<symbol id="i-scarica" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3v12M7.5 10.5 12 15l4.5-4.5"/></symbol>
+<!-- icone:fine --></defs></svg>
+<a class="salta" href="#contenuto">Vai al contenuto</a>
+
+<header class="testata">
+  <div class="pagina">
+    <a class="marchio" href="index.html" aria-label="Impaginatore, pagina iniziale">
+      <picture><source srcset="img/marca/impaginatore-logotipo-negativo.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="img/marca/impaginatore-logotipo.svg" alt="Impaginatore" width="149" height="24"></picture>
+    </a>
+    <nav aria-label="Sezioni della pagina">
+      <ul>
+        <li><a href="#funzioni">Funzioni</a></li>
+        <li><a href="#come">Come funziona</a></li>
+        <li><a href="#confronto">Confronto</a></li>
+        <li><a href="#prezzi">Prezzi</a></li>
+        <li><a href="#laboratori">Laboratori</a></li>
+        <li><a href="#domande">Domande</a></li>
+      </ul>
+    </nav>
+    <details class="menu">
+      <summary>Menu</summary>
+      <ul>
+        <li><a href="#funzioni">Funzioni</a></li>
+        <li><a href="#come">Come funziona</a></li>
+        <li><a href="#confronto">Confronto</a></li>
+        <li><a href="#prezzi">Prezzi</a></li>
+        <li><a href="#laboratori">Laboratori</a></li>
+        <li><a href="#domande">Domande</a></li>
+        <li><a href="installa.html">Installazione</a></li>
+      </ul>
+    </details>
+    <a class="lingua" href="en/index.html" hreflang="en" lang="en" aria-label="English">EN</a>
+    <a class="pulsante piccolo" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+    <a class="pulsante piccolo" href="installa.html" data-se="in_vendita" hidden>Scarica la prova</a>
+  </div>
+</header>
+
+<main id="contenuto">
+
+<section class="eroe" aria-labelledby="titolo">
+  <div class="pagina">
+    <div class="testo">
+      <span class="etichetta">Per fotografi di matrimonio · macOS, Windows e Linux</span>
+      <h1 id="titolo">Impagina l’album sul tuo computer. Paghi una volta, <span class="payoff">resta tuo.</span></h1>
+      <p class="attacco">Impaginatore propone la bozza di tutto l’album con le foto in ordine di scatto, tiene uguali spazi e margini da uno spread all’altro e prepara i file per il tuo laboratorio, PSD a livelli compresi. Le foto non lasciano mai il tuo computer, e la licenza non scade.</p>
+      <p class="badge prezzo"><b>Pro <span data-prezzo="pro.oggi" data-listino="99 €">79 €</span></b><span>una volta</span></p>
+      <div class="fila">
+        <a class="pulsante primario grande" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+        <a class="pulsante primario grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Scarica la prova gratuita</a>
+        <a class="pulsante grande" href="#prezzi">Vedi i prezzi</a>
+      </div>
+      <p class="sotto-pulsante"><span data-se-non="in_vendita">In vendita dal <span data-cfg="data_lancio">23 febbraio 2027</span>. </span><span data-se="lancio">Prezzo di lancio fino al <span data-cfg="data_fine_lancio">23 aprile 2027</span>, poi <span data-prezzo="pro.listino">99 €</span>. </span>IVA esclusa. Prova gratuita di <span data-valore="prova.giorni">30</span> giorni, senza carta di credito.</p>
+      <ul class="punti">
+        <li><svg class="icona" aria-hidden="true"><use href="#i-licenza"/></svg>Licenza perpetua</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-locale"/></svg>Nessun caricamento delle foto</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-livelli"/></svg>PSD a livelli</li>
+        <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Funziona senza internet</li>
+      </ul>
+    </div>
+    <figure class="finestra">
+      <div class="cornice">
+        <img src="img/schermate/editor-album-1200.webp" srcset="img/schermate/editor-album-800.webp 800w, img/schermate/editor-album-1200.webp 1200w, img/schermate/editor-album-1600.webp 1600w, img/schermate/editor-album-2400.webp 2400w" sizes="(min-width: 1328px) 1200px, 92vw" width="2400" height="1500" fetchpriority="high" alt="L’editor di Impaginatore con un album di matrimonio aperto: a sinistra l’elenco degli spread, al centro lo spread 22 con quattro foto della festa sotto i righelli in centimetri, in basso le foto dell’album.">
+      </div>
+      <figcaption>L’album dimostrativo nell’editor: 62 foto, 25 spread, formato 30 × 30 cm.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sezione" id="costi" aria-labelledby="titolo-costi">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Tre anni di lavoro</span>
+      <div>
+        <h2 id="titolo-costi">Per impaginare non serve un abbonamento.</h2>
+        <p class="attacco"><span data-fonte="mercato">Un programma per album in abbonamento, nel piano professionale, costa fra 150 e 290 € l’anno.</span> Impaginatore Pro costa <span data-prezzo="pro.oggi" data-listino="99 €">79 €</span> una volta, con gli aggiornamenti della versione che compri.</p>
+      </div>
+    </div>
+    <div class="costi" role="list">
+      <div class="costo" role="listitem">
+        <p class="nome">Programmi per album in abbonamento<small>piano professionale, tre anni</small></p>
+        <div>
+          <p class="num" data-fonte="mercato">da 450 a 870 €</p>
+          <div class="barra" aria-hidden="true"><i class="pieno" style="width:51.7%"></i><i class="intervallo" style="left:51.7%;width:48.3%"></i></div>
+        </div>
+      </div>
+      <div class="costo" role="listitem">
+        <p class="nome">Impaginatore Pro<small>una volta, per sempre</small></p>
+        <div>
+          <p class="num"><span data-prezzo="pro.oggi" data-listino="99 €">79 €</span></p>
+          <div class="barra" aria-hidden="true"><i class="nostro" style="width:11.4%"></i></div>
+        </div>
+      </div>
+    </div>
+    <p class="fonti" data-fonte="mercato">Prezzi pubblici dei piani professionali annuali di cinque programmi per album, letti sui siti dei produttori il 13 novembre 2026, IVA esclusa. I prezzi in dollari sono convertiti al cambio di riferimento BCE di quel giorno (1 € = 1,1052 $); per due programmi vale il prezzo già annunciato per il 2027. I prezzi possono cambiare. Le fonti, con data e indirizzo, sono a disposizione: scrivi a <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
+    <!-- Fonti interne: docs/mercato/prezzi.md §1 e §1.1, docs/mercato/competitor.md. Da riverificare e far rivedere (pubblicità comparativa) prima di pubblicare. -->
+  </div>
+</section>
+
+<section class="sezione" id="funzioni" aria-labelledby="titolo-funzioni">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Funzioni</span>
+      <div>
+        <h2 id="titolo-funzioni">Dal primo spread all’ultimo, lo stesso album.</h2>
+        <p class="attacco">Le parti lunghe e ripetitive le fa il programma. Le scelte restano tue.</p>
+      </div>
+    </div>
+
+    <article class="funzione" aria-labelledby="f-bozza">
+      <div class="testo">
+        <span class="badge verde">Pro e Studio</span>
+        <h3 id="f-bozza">La bozza di tutto l’album</h3>
+        <p>Impaginatore divide le foto in gruppi, in ordine di scatto, e per ogni gruppo sceglie un modello che rispetta le proporzioni di ciascuno scatto. Parti da un album intero da rivedere, non da una pagina bianca.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Le panoramiche da sole, su tutto lo spread</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Verticali e orizzontali dove stanno meglio</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Ogni spread resta modificabile a mano</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="coppia-spread">
+          <div class="foglio"><img src="img/schermate/spread-01-990.webp" srcset="img/schermate/spread-01-640.webp 640w, img/schermate/spread-01-990.webp 990w, img/schermate/spread-01-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread con una sola foto panoramica sulle due pagine: gli sposi di spalle su una passerella bianca tra le piante grasse, verso il mare."></div>
+          <div class="foglio"><img src="img/schermate/spread-04-990.webp" srcset="img/schermate/spread-04-640.webp 640w, img/schermate/spread-04-990.webp 990w, img/schermate/spread-04-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread con tre foto degli sposi sulla spiaggia al tramonto, una più grande e due piccole, e a destra lo spumante versato nei calici."></div>
+        </div>
+        <figcaption>Due spread dell’album dimostrativo, come escono dall’esportazione.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione inversa" aria-labelledby="f-spazi">
+      <div class="testo">
+        <span class="badge verde">Pro e Studio</span>
+        <h3 id="f-spazi">Spazi e tono uguali su tutto l’album</h3>
+        <p>Lo stacco fra le foto e i margini restano gli stessi da uno spread all’altro. Il controllo ti indica gli spread che non tornano, con la misura di riferimento, e li sistema tutti insieme. Allo stesso modo puoi uniformare luminosità e colore fra le foto di una stessa scena.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Controllo degli stacchi su tutti gli spread</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Correzione dell’intero album, o di uno spread alla volta</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Tono uniforme fra foto vicine</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="img/schermate/controllo-stacchi-1100.webp" srcset="img/schermate/controllo-stacchi-700.webp 700w, img/schermate/controllo-stacchi-1100.webp 1100w, img/schermate/controllo-stacchi-2200.webp 2200w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="2200" height="692" loading="lazy" alt="La finestra Controllo spaziature: 4 spread su 25 hanno stacchi diversi dal riferimento di 0,30 cm, ciascuno con la sua anteprima, e in basso il pulsante Correggi tutto l’album."></div>
+        <figcaption>Il controllo delle spaziature sull’album dimostrativo: quattro spread da sistemare.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione" aria-labelledby="f-rifinisci">
+      <div class="testo">
+        <span class="badge">Tutte le fasce</span>
+        <h3 id="f-rifinisci">Rifinisci spread per spread</h3>
+        <p>Righelli in centimetri, guide, calamite e modelli che si adattano alle foto che scegli. Sposti, scambi, ritagli: lo spread finale lo decidi tu, e il programma tiene il conto delle misure.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Modelli d’autore e modelli tuoi</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Avviso quando una foto è ritagliata troppo</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Versioni salvate, per tornare indietro</li>
+        </ul>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="img/schermate/editor-spread-860.webp" srcset="img/schermate/editor-spread-640.webp 640w, img/schermate/editor-spread-860.webp 860w, img/schermate/editor-spread-1720.webp 1720w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1720" height="1312" loading="lazy" alt="La tela dell’editor con i righelli in centimetri e la barra degli strumenti: uno spread di 60 × 30 cm con una sola foto panoramica, le mani che chiudono l’abito della sposa."></div>
+        <figcaption>Uno spread di 60 × 30 cm con i righelli e gli strumenti dell’editor.</figcaption>
+      </figure>
+    </article>
+
+    <article class="funzione inversa" aria-labelledby="f-psd">
+      <div class="testo">
+        <span class="badge verde">Pro e Studio</span>
+        <h3 id="f-psd">PSD a livelli per Photoshop</h3>
+        <p>Ogni spread può uscire come file Photoshop con ogni foto su un livello separato, già alla misura di stampa. Ritocchi solo dove serve, senza rifare l’impaginazione. Per i PSD serve Photoshop installato, su Mac o Windows; JPG e PDF li crea Impaginatore da solo.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="img/schermate/psd-livelli-800.webp" srcset="img/schermate/psd-livelli-800.webp 800w, img/schermate/psd-livelli-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="Uno spread aperto in Photoshop: il pannello dei livelli mostra una foto per livello."></div>
+      </figure>
+    </article>
+
+    <article class="funzione" aria-labelledby="f-laboratorio">
+      <div class="testo">
+        <span class="badge">Tutte le fasce</span>
+        <h3 id="f-laboratorio">I formati del tuo laboratorio</h3>
+        <p>Quando crei l’album scegli laboratorio, formato e copertina: abbondanza, piega e margini di sicurezza sono già giusti. Se il tuo laboratorio non è in elenco, imposti misure e abbondanza una volta e le salvi.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="img/schermate/preset-laboratorio-800.webp" srcset="img/schermate/preset-laboratorio-800.webp 800w, img/schermate/preset-laboratorio-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="La finestra per creare un album: elenco dei laboratori, formati disponibili e copertina, con abbondanza e piega indicate in millimetri."></div>
+      </figure>
+    </article>
+
+    <div class="schede">
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-locale"/></svg></div>
+        <h3>Le foto restano sul tuo computer</h3>
+        <p class="secondario">Impaginatore lavora sui file che hai sul disco. Non c’è un account, non c’è un servizio dove caricarle, e il programma non le manda da nessuna parte.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-licenza"/></svg></div>
+        <h3>Paghi una volta</h3>
+        <p class="secondario">La licenza è intestata a te e non scade. Comprende tutti gli aggiornamenti della versione che compri; la versione maggiore successiva è facoltativa.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-misura"/></svg></div>
+        <h3>Funziona senza internet</h3>
+        <p class="secondario">La licenza si verifica sul tuo computer, senza collegarsi a un server. Impagini ed esporti anche in viaggio o in uno studio senza rete.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="claude" aria-labelledby="titolo-claude" data-se="mcp_disponibile" hidden>
+  <div class="pagina">
+    <article class="funzione">
+      <div class="testo">
+        <span class="badge verde">Pro e Studio · facoltativo</span>
+        <h2 id="titolo-claude">Se usi Claude, può preparare la bozza con te.</h2>
+        <p>Scegli le foto e spieghi a Claude come vuoi l’album; lui lavora dentro Impaginatore mentre guardi, e ogni spread resta tuo da cambiare. Puoi anche non usarlo mai: il programma funziona allo stesso modo.</p>
+        <p class="secondario piccolo">Serve un tuo abbonamento a Claude, a parte. Claude riceve i dati dell’album (nomi dei file, proporzioni, data di scatto), non le foto, a meno che tu non lo autorizzi.</p>
+      </div>
+      <figure class="tavola">
+        <div class="foglio"><img src="img/schermate/bozza-claude-800.webp" srcset="img/schermate/bozza-claude-800.webp 800w, img/schermate/bozza-claude-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="Claude e l’editor affiancati: Claude ha preparato gli spread e l’editor li mostra pronti da rivedere."></div>
+      </figure>
+    </article>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="come" aria-labelledby="titolo-come">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Come funziona</span>
+      <div>
+        <h2 id="titolo-come">Tre passi, dal disco al laboratorio.</h2>
+      </div>
+    </div>
+    <ol class="passi">
+      <li>
+        <h3>Crei l’album</h3>
+        <p class="secondario">Scegli formato e laboratorio, poi la cartella con le foto selezionate. Impaginatore le legge dal disco e le mette in ordine di scatto.</p>
+      </li>
+      <li>
+        <h3>Parti dalla bozza</h3>
+        <p class="secondario">Con Pro e Studio ricevi la bozza di tutto l’album. Con Essenziale costruisci uno spread alla volta, con i modelli suggeriti per le foto che scegli.</p>
+      </li>
+      <li>
+        <h3>Rifinisci ed esporti</h3>
+        <p class="secondario">Sistemi gli spread, controlli spazi e tono su tutto l’album, poi esporti JPG per il laboratorio, un PDF per gli sposi o i PSD per Photoshop.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="sezione" id="confronto" aria-labelledby="titolo-confronto">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Confronto</span>
+      <div>
+        <h2 id="titolo-confronto">Che cosa cambia rispetto alle alternative.</h2>
+        <p class="attacco">Un confronto per tipo di programma, non per marca. Dove siamo indietro, lo trovi scritto.</p>
+      </div>
+    </div>
+    <p class="suggerimento-scorri">Scorri la tabella di lato per vedere tutte le colonne.</p>
+    <div class="scorre" role="region" aria-labelledby="didascalia-confronto" tabindex="0">
+      <table class="confronto">
+        <caption id="didascalia-confronto">Impaginatore e le due alternative più diffuse, novembre 2026. I singoli programmi possono fare eccezione.</caption>
+        <thead>
+          <tr><th scope="col"><span class="nascosto-vista">Aspetto</span></th><th scope="col" class="nostro">Impaginatore</th><th scope="col">Programmi per album in abbonamento</th><th scope="col">Servizi online che caricano le foto nel cloud</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Come paghi</th><td class="nostro">Una volta; la licenza non scade</td><td>Ogni anno o ogni mese</td><td>Ogni mese, o per album</td></tr>
+          <tr><th scope="row">Dove stanno le foto</th><td class="nostro">Sul tuo computer</td><td>Sul tuo computer</td><td>Sui server del servizio</td></tr>
+          <tr><th scope="row">Se smetti di pagare</th><td class="nostro">Continui a usarlo</td><td>Perdi il programma o parte delle funzioni</td><td>Perdi l’accesso al servizio</td></tr>
+          <tr><th scope="row">Senza internet</th><td class="nostro">Funziona</td><td>Di solito funziona</td><td>Non funziona</td></tr>
+          <tr><th scope="row">Bozza automatica dell’album</th><td class="nostro">Sì, con Pro e Studio</td><td>Sì, in molti</td><td>Sì, in molti</td></tr>
+          <tr><th scope="row">PSD a livelli</th><td class="nostro">Sì, con Photoshop installato</td><td>In alcuni</td><td>Raramente</td></tr>
+          <tr><th scope="row">Revisione online con gli sposi</th><td class="nostro"><span class="esito no">No</span></td><td>In molti</td><td>Sì</td></tr>
+          <tr><th scope="row">Ordine diretto al laboratorio</th><td class="nostro"><span class="esito no">No: esporti i file e li mandi tu</span></td><td>In alcuni</td><td>Spesso</td></tr>
+          <tr><th scope="row">Modelli pronti</th><td class="nostro">Alcune decine, più quelli che crei</td><td>Centinaia</td><td>Centinaia</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="avviso onesta"><svg class="icona" aria-hidden="true"><use href="#i-info"/></svg><p><b>Dove siamo indietro.</b> Non abbiamo la revisione online con gli sposi né l’ordine diretto al laboratorio, e i modelli pronti sono meno. Se ti servono queste cose, un programma in abbonamento può essere la scelta giusta per te.</p></div>
+  </div>
+</section>
+
+<section class="sezione" id="prezzi" aria-labelledby="titolo-prezzi">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Prezzi</span>
+      <div>
+        <h2 id="titolo-prezzi">Tre licenze, un solo pagamento.</h2>
+        <p class="attacco">Scegli in base a quanti album fai e su quanti computer lavori. Puoi passare a una fascia superiore quando vuoi, pagando solo la differenza.</p>
+      </div>
+    </div>
+    <div class="prezzi">
+      <article class="card-prezzo" aria-labelledby="fascia-essenziale">
+        <div><span class="etichetta">Pochi album</span><h3 id="fascia-essenziale">Essenziale</h3></div>
+        <p class="cifra"><strong data-prezzo="essenziale.oggi" data-listino="49 €">39 €</strong><span>una volta</span></p>
+        <p class="poi" data-se="lancio">fino al <span data-cfg="data_fine_lancio">23 aprile 2027</span>, poi <span data-prezzo="essenziale.listino">49 €</span></p>
+        <p class="per-chi">Per chi impagina qualche album l’anno, spread per spread.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Editor completo, spread per spread</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="modelli_autore.essenziale">30</span> modelli d’autore, <span data-valore="modelli_personali.essenziale">5</span> tuoi</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Esportazione JPG e PDF</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Formati dei laboratori</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.essenziale">1</span> computer</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante" data-link="acquisto.essenziale" href="mailto:ordini@impaginatore.example?subject=Richiesta%20d%27acquisto%3A%20Impaginatore%20Essenziale&amp;body=Ciao%2C%20vorrei%20acquistare%20Impaginatore%20Essenziale%20%28licenza%20per%201%20computer%29.%0A%0ANome%20o%20ragione%20sociale%3A%0APaese%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ACodice%20destinatario%20SdI%20o%20PEC%20%28solo%20per%20l%27Italia%29%3A%0AIntestatario%20della%20licenza%20%28il%20nome%20che%20comparir%C3%A0%20nel%20programma%29%3A%0A%0AMandatemi%20l%27importo%20e%20i%20dati%20per%20il%20bonifico." data-se="in_vendita" hidden>Acquista Essenziale</a>
+          <a class="pulsante" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+          <p class="nota">IVA esclusa · <span data-prezzo="essenziale.oggi_ivato" data-listino="59,78 €">47,58 €</span> con IVA al <span data-valore="iva">22</span>&nbsp;%</p>
+        </div>
+      </article>
+      <article class="card-prezzo consigliata" aria-labelledby="fascia-pro">
+        <span class="nastro badge verde">Consigliato</span>
+        <div><span class="etichetta">Professionista</span><h3 id="fascia-pro">Pro</h3></div>
+        <p class="cifra"><strong data-prezzo="pro.oggi" data-listino="99 €">79 €</strong><span>una volta</span></p>
+        <p class="poi" data-se="lancio">fino al <span data-cfg="data_fine_lancio">23 aprile 2027</span>, poi <span data-prezzo="pro.listino">99 €</span></p>
+        <p class="per-chi">Per chi vive di matrimoni e vuole partire da una bozza.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Tutto di Essenziale</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Bozza di tutto l’album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Spazi e tono uniformi su tutto l’album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>PSD a livelli per Photoshop</span></li>
+          <li data-se="mcp_disponibile" hidden><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Collegamento con Claude (abbonamento a parte)</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Modelli senza limiti · <span data-valore="computer.pro">2</span> computer</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante primario" data-link="acquisto.pro" href="mailto:ordini@impaginatore.example?subject=Richiesta%20d%27acquisto%3A%20Impaginatore%20Pro&amp;body=Ciao%2C%20vorrei%20acquistare%20Impaginatore%20Pro%20%28licenza%20per%202%20computer%29.%0A%0ANome%20o%20ragione%20sociale%3A%0APaese%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ACodice%20destinatario%20SdI%20o%20PEC%20%28solo%20per%20l%27Italia%29%3A%0AIntestatario%20della%20licenza%20%28il%20nome%20che%20comparir%C3%A0%20nel%20programma%29%3A%0A%0AMandatemi%20l%27importo%20e%20i%20dati%20per%20il%20bonifico." data-se="in_vendita" hidden>Acquista Pro</a>
+          <a class="pulsante primario" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+          <p class="nota">IVA esclusa · <span data-prezzo="pro.oggi_ivato" data-listino="120,78 €">96,38 €</span> con IVA al <span data-valore="iva">22</span>&nbsp;%</p>
+        </div>
+      </article>
+      <article class="card-prezzo" aria-labelledby="fascia-studio">
+        <div><span class="etichetta">Più postazioni</span><h3 id="fascia-studio">Studio</h3></div>
+        <p class="cifra"><strong data-prezzo="studio.oggi" data-listino="149 €">119 €</strong><span>una volta</span></p>
+        <p class="poi" data-se="lancio">fino al <span data-cfg="data_fine_lancio">23 aprile 2027</span>, poi <span data-prezzo="studio.listino">149 €</span></p>
+        <p class="per-chi">Per gli studi con più persone che impaginano.</p>
+        <ul>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Tutto di Pro</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.studio">5</span> computer, più operatori</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="ore_incluse.studio">1</span> ora di assistenza inclusa</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Prossima versione maggiore inclusa</span></li>
+        </ul>
+        <div class="azione">
+          <a class="pulsante" data-link="acquisto.studio" href="mailto:ordini@impaginatore.example?subject=Richiesta%20d%27acquisto%3A%20Impaginatore%20Studio&amp;body=Ciao%2C%20vorrei%20acquistare%20Impaginatore%20Studio%20%28licenza%20per%205%20computer%29.%0A%0ANome%20o%20ragione%20sociale%3A%0APaese%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ACodice%20destinatario%20SdI%20o%20PEC%20%28solo%20per%20l%27Italia%29%3A%0AIntestatario%20della%20licenza%20%28il%20nome%20che%20comparir%C3%A0%20nel%20programma%29%3A%0A%0AMandatemi%20l%27importo%20e%20i%20dati%20per%20il%20bonifico." data-se="in_vendita" hidden>Acquista Studio</a>
+          <a class="pulsante" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+          <p class="nota">IVA esclusa · <span data-prezzo="studio.oggi_ivato" data-listino="181,78 €">145,18 €</span> con IVA al <span data-valore="iva">22</span>&nbsp;%</p>
+        </div>
+      </article>
+    </div>
+    <p class="nota-prezzi"><span data-se="lancio">I prezzi di lancio valgono fino al <span data-cfg="data_fine_lancio">23 aprile 2027</span> per le prime <span data-valore="lancio.licenze">300</span> licenze. </span>Tutte le fasce comprendono gli aggiornamenti della versione che compri e il rimborso entro <span data-valore="rimborso.giorni">30</span> giorni, senza domande. <a href="prezzi.html">Confronto completo delle fasce, aggiornamenti e acquisto</a>.</p>
+
+    <div class="fascia-ore">
+      <div>
+        <span class="etichetta">Assistenza</span>
+        <h3>Assistenza a ore</h3>
+        <p class="secondario">Una persona lavora con te in videochiamata o da remoto: installazione, formati del tuo laboratorio, Photoshop, formazione dei collaboratori. Paghi le ore in anticipo; valgono 12 mesi e si usano a blocchi di <span data-valore="ore.unita">30</span> minuti.</p>
+      </div>
+      <div class="pacchetti">
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ora_1">1</span> ora</span><strong data-prezzo="ore.ora_1">49 €</strong><span class="per-ora"><span data-prezzo="ore.ora_1">49 €</span> l’ora</span><a data-link="ore.ora_1" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%201%20ora&amp;body=Ciao%2C%20vorrei%20acquistare%201%20ora%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_5">5</span> ore</span><strong data-prezzo="ore.ore_5">249 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_5" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%205%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%205%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_10">10</span> ore</span><strong data-prezzo="ore.ore_10">499 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_10" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%2010%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%2010%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+      </div>
+      <p class="nota">IVA esclusa · Gratis per tutti: manuale, guide video e correzione dei difetti. Se il problema è del programma, non paghi.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="prova" aria-labelledby="titolo-prova">
+  <div class="pagina riquadro">
+    <div class="testo">
+      <span class="etichetta">Prova gratuita</span>
+      <h2 id="titolo-prova">Provalo su un album vero, per <span data-valore="prova.giorni">30</span> giorni.</h2>
+      <p class="attacco">La prova ha le funzioni di Pro, bozza di tutto l’album compresa, e nessun limite di spread. Non chiede la carta di credito. Quando compri, inserisci la chiave e continui con lo stesso album.</p>
+      <div class="fila">
+        <a class="pulsante pieno grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Scarica la prova</a>
+        <a class="pulsante pieno grande" href="#lista" data-se-non="in_vendita">Avvisami quando esce</a>
+      </div>
+    </div>
+    <aside aria-label="La prova in breve">
+      <dl class="elenco-dati">
+        <dt>Durata</dt><dd><span data-valore="prova.giorni">30</span> giorni</dd>
+        <dt>Funzioni</dt><dd>Quelle di Pro, PSD escluso</dd>
+        <dt>Spread</dt><dd>Senza limiti</dd>
+        <dt>Carta</dt><dd>Non serve</dd>
+        <dt>Esportazioni</dt><dd>Con filigrana</dd>
+        <dt>Alla fine</dt><dd>I progetti restano apribili in sola lettura</dd>
+      </dl>
+    </aside>
+  </div>
+</section>
+
+<section class="sezione" id="lista" aria-labelledby="titolo-lista" data-se-non="in_vendita">
+  <div class="pagina riquadro">
+    <div class="testo">
+      <span class="etichetta">Lista d’attesa</span>
+      <h2 id="titolo-lista">Ti avvisiamo quando esce.</h2>
+      <p class="attacco">Impaginatore sarà in vendita dal <span data-cfg="data_lancio">23 febbraio 2027</span>. Ti scriviamo quel giorno e qualche giorno prima che finisca il prezzo di lancio. Nient’altro, e puoi cancellarti quando vuoi.</p>
+      <form class="modulo" method="post" action="grazie.html?per=lista" data-modulo data-se="modulo_lista" hidden>
+        <div class="campo">
+          <label for="email-lista">La tua email</label>
+          <input type="email" id="email-lista" name="email" autocomplete="email" required>
+        </div>
+        <label class="spunta" for="consenso-lista"><input type="checkbox" id="consenso-lista" name="consenso" value="si" required><span>Usate questo indirizzo solo per avvisarmi del lancio. <a data-link="privacy" href="legale.html#privacy">Informativa sulla privacy</a></span></label>
+        <input type="hidden" name="lingua" value="it">
+        <div><button class="pulsante pieno grande" type="submit">Avvisami</button></div>
+      </form>
+      <div data-se-non="modulo_lista">
+        <div class="fila"><a class="pulsante pieno grande" data-link="lista" href="mailto:avvisami@impaginatore.example?subject=Avvisami%20al%20lancio%20di%20Impaginatore&amp;body=Vorrei%20ricevere%20un%27email%20quando%20Impaginatore%20sar%C3%A0%20in%20vendita.%0A%0AAcconsento%20all%27uso%20di%20questo%20indirizzo%20solo%20per%20questo%20scopo%3B%20posso%20chiedere%20di%20cancellarlo%20quando%20voglio.%0AInformativa%3A%20https%3A%2F%2Fimpaginatore.example%2Flegale.html%23privacy%0A">Scrivici per essere avvisato</a></div>
+        <p class="sotto-pulsante">Si apre il tuo programma di posta con un messaggio già scritto: basta inviarlo. Oppure scrivi a <a data-link="email.lista_attesa" href="mailto:avvisami@impaginatore.example"><span data-cfg="email.lista_attesa">avvisami@impaginatore.example</span></a>. <a data-link="privacy" href="legale.html#privacy">Informativa sulla privacy</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="laboratori" aria-labelledby="titolo-laboratori">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Per i laboratori</span>
+      <div>
+        <h2 id="titolo-laboratori">I tuoi formati, dentro il programma dei tuoi fotografi.</h2>
+        <p class="attacco">Con l’Edizione Laboratorio il tuo catalogo entra in Impaginatore: formati, copertine, abbondanze e controlli di prestampa. I fotografi scelgono il prodotto quando creano l’album e ti mandano file già conformi.</p>
+      </div>
+    </div>
+    <div class="schede">
+      <div class="card">
+        <h3>Il tuo catalogo</h3>
+        <p class="secondario">Formati, carte e copertine come nel tuo listino, con il tuo marchio nel programma.</p>
+      </div>
+      <div class="card">
+        <h3>File già conformi</h3>
+        <p class="secondario">Misure, abbondanza e nomi dei file seguono le tue regole: meno file da rimandare indietro.</p>
+      </div>
+      <div class="card">
+        <h3>Una prova pilota</h3>
+        <p class="secondario"><span data-valore="pilota.giorni">90</span> giorni con un gruppo da <span data-valore="pilota.min">10</span> a <span data-valore="pilota.max">20</span> dei tuoi fotografi. Per i primi <span data-valore="pilota.gratuiti">3</span> laboratori la configurazione è gratuita.</p>
+      </div>
+    </div>
+    <div class="fascia-lab">
+      <div>
+        <span class="etichetta">Edizione Laboratorio</span>
+        <h3>Parliamo del tuo catalogo</h3>
+        <p class="secondario">Ci racconti come ricevete oggi i file degli album e ti proponiamo come portarli in Impaginatore. Prezzi su misura, in base al numero di fotografi.</p>
+      </div>
+      <a class="pulsante pieno" data-link="laboratori" href="mailto:laboratori@impaginatore.example?subject=Edizione%20Laboratorio%3A%20parliamone&amp;body=Ciao%2C%20vorremmo%20saperne%20di%20pi%C3%B9%20sull%27Edizione%20Laboratorio.%0A%0ALaboratorio%3A%0ASito%3A%0AQuanti%20fotografi%20lavorano%20con%20voi%3A%0ACome%20ricevete%20oggi%20i%20file%20degli%20album%3A%0A">Parliamone</a>
+    </div>
+  </div>
+</section>
+
+<section class="sezione fondo-tenue" id="voci" aria-labelledby="titolo-voci" data-se="riprova_sociale" hidden>
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Chi lo usa</span>
+      <div><h2 id="titolo-voci">Dicono di Impaginatore.</h2></div>
+    </div>
+    <div class="segnaposto">
+      <p><b>SEGNAPOSTO.</b> Qui vanno solo testimonianze vere: nome, città e consenso scritto di chi parla. Niente numeri di clienti, niente loghi, niente frasi inventate. Finché non ci sono, l’interruttore «riprova_sociale» in config.json resta spento.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="storia" aria-labelledby="titolo-storia">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Perché esiste</span>
+      <div class="storia">
+        <h2 id="titolo-storia">Nato da un programma che smetterà di aprirsi.</h2>
+        <p class="attacco">Impaginatore nasce dal banco di lavoro di chi impagina album da più di dieci anni, e lo fa ancora con un programma comprato nel 2012. Quando i Mac smetteranno di far girare i programmi scritti per i vecchi processori Intel, quel programma non si aprirà più, e l’alternativa sarebbe stata un abbonamento. Così ha costruito il suo, e lo vende come avrebbe voluto comprarlo: una volta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sezione" id="domande" aria-labelledby="titolo-domande">
+  <div class="pagina">
+    <div class="intestazione">
+      <span class="etichetta">Domande</span>
+      <div><h2 id="titolo-domande">Domande frequenti.</h2></div>
+    </div>
+    <div class="domande">
+      <details class="domanda">
+        <summary>Le mie foto vengono caricate da qualche parte?</summary>
+        <div><p>No. Impaginatore legge le foto dalla cartella che scegli, le mostra ed esporta i file sul tuo disco. Non c’è un account e non c’è un servizio online dove caricarle.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Il programma non è firmato da Apple o Microsoft: posso fidarmi?</summary>
+        <div><p>Gli installatori non hanno la firma di Apple o di Microsoft. Ogni file è firmato con la nostra chiave e ha un’impronta SHA-256 pubblicata: il comando d’installazione le controlla da solo e si ferma se qualcosa non torna. Con l’installatore classico, alla prima apertura il sistema chiede conferma: su Mac da Impostazioni di Sistema, Privacy e sicurezza, Apri comunque; su Windows da Ulteriori informazioni, Esegui comunque. <a href="installa.html#verifica">Come verificare un file a mano</a>.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Posso avere un rimborso?</summary>
+        <div><p>Sì. Entro <span data-valore="rimborso.giorni">30</span> giorni dall’acquisto ti rimborsiamo tutto, senza chiederti perché. Vale una volta per cliente e per fascia. Prima di comprare puoi anche provarlo gratis per <span data-valore="prova.giorni">30</span> giorni.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Su quanti computer posso usarlo?</summary>
+        <div><p>Essenziale su <span data-valore="computer.essenziale">1</span> computer, Pro su <span data-valore="computer.pro">2</span>, Studio su <span data-valore="computer.studio">5</span>. La licenza è intestata a te e il programma la verifica sul computer, senza collegarsi a un server: il numero di computer è un impegno del contratto, non un blocco. Se cambi computer, installi sul nuovo e smetti di usare il vecchio.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Gli aggiornamenti sono compresi?</summary>
+        <div><p>Sì, tutti quelli della versione che compri: correzioni e funzioni nuove. Una nuova versione maggiore esce non prima di <span data-valore="aggiornamenti.mesi">18</span> mesi dalla precedente; passarci è facoltativo, costa la metà del listino della tua fascia ed è inclusa con Studio. Se hai comprato nei <span data-valore="aggiornamenti.finestra">90</span> giorni prima che esca, la ricevi gratis. Se non passi, la tua versione continua a funzionare.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Serve una connessione a internet?</summary>
+        <div><p>Solo per scaricare il programma e, se vuoi, gli aggiornamenti. La licenza si verifica sul tuo computer: impagini ed esporti anche senza rete.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Che cosa succede alla fine della prova?</summary>
+        <div><p>La prova dura <span data-valore="prova.giorni">30</span> giorni, ha le funzioni di Pro tranne il PSD e mette una filigrana sui file esportati. Alla fine i progetti restano apribili in sola lettura: inserisci la chiave e riprendi da dove eri.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Serve Photoshop?</summary>
+        <div><p>No. JPG e PDF li crea Impaginatore. Photoshop serve solo per i PSD a livelli: Impaginatore li prepara con il Photoshop installato sul tuo computer, su Mac o Windows.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Funziona con il mio laboratorio?</summary>
+        <div><p>Esporti gli spread in JPG o PDF alla misura che chiede il laboratorio, con abbondanza e margini di sicurezza. Per i laboratori più diffusi ci sono formati pronti; per gli altri imposti misure e abbondanza una volta e le salvi.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Come si compra?</summary>
+        <div><p>Scegli la fascia e ci mandi i dati per la fattura; ti rispondiamo con l’importo e paghi con bonifico. La chiave arriva per email entro 2 ore lavorative dal pagamento. Se stai usando la prova, inserisci la chiave e continui con lo stesso album.</p></div>
+      </details>
+      <details class="domanda">
+        <summary>Su quali sistemi funziona?</summary>
+        <div><p data-cfg="requisiti">macOS (Apple Silicon e Intel), Windows 10 e 11, Linux a 64 bit. Requisiti minimi di memoria e disco: da definire con le prove sui tre sistemi.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="finale" aria-labelledby="titolo-finale">
+  <div class="pagina">
+    <h2 id="titolo-finale" class="payoff">Resta tuo.</h2>
+    <p class="attacco">L’album lo impagini sul tuo computer, la licenza la paghi una volta.</p>
+    <div class="fila">
+      <a class="pulsante primario grande" href="#lista" data-se-non="in_vendita">Avvisami al lancio</a>
+      <a class="pulsante primario grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Scarica la prova gratuita</a>
+      <a class="pulsante grande" href="prezzi.html">Prezzi e fasce</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="piede">
+  <div class="pagina">
+    <div class="colonne">
+      <div>
+        <picture><source srcset="img/marca/impaginatore-logotipo-negativo.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="img/marca/impaginatore-logotipo.svg" alt="Impaginatore" width="149" height="24" loading="lazy"></picture>
+        <p class="payoff">Resta tuo.</p>
+        <p>Programma per impaginare album fotografici. Questo sito non usa cookie né strumenti di statistica.</p>
+      </div>
+      <nav aria-labelledby="piede-prodotto">
+        <h2 id="piede-prodotto">Prodotto</h2>
+        <ul>
+          <li><a href="prezzi.html">Prezzi</a></li>
+          <li><a href="installa.html">Installazione</a></li>
+          <li><a href="#laboratori">Laboratori</a></li>
+          <li><a href="#domande">Domande</a></li>
+          <li><a href="en/index.html" hreflang="en" lang="en">English</a></li>
+        </ul>
+      </nav>
+      <nav aria-labelledby="piede-legale">
+        <h2 id="piede-legale">Note legali</h2>
+        <ul>
+          <li><a data-link="privacy" href="legale.html#privacy">Privacy</a></li>
+          <li><a data-link="termini" href="legale.html#condizioni">Condizioni di vendita</a></li>
+          <li><a data-link="licenza" href="legale.html#licenza">Licenza d’uso</a></li>
+          <li><a data-link="condizioni_assistenza" href="legale.html#assistenza">Condizioni dell’assistenza</a></li>
+          <li><a data-link="terze_parti" href="legale.html#terze-parti">Licenze di terze parti</a></li>
+          <li><a href="legale.html#crediti">Crediti delle foto</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h2>Contatti</h2>
+        <ul>
+          <li><a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a></li>
+          <li><a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="titolare">
+      <p><span data-cfg="titolare">{{titolare}}</span> · P. IVA <span data-cfg="partita_iva">{{partita_iva}}</span> · <span data-cfg="sede">{{sede}}</span></p>
+      <p>Foto dimostrative da Pexels: <a href="legale.html#crediti">autori</a>.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

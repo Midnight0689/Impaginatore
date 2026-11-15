@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="post">
+<meta name="uso" content="Citazione o consiglio di bottega: una frase in Newsreader, chi la dice, un disegno tecnico piccolo. Esempio: U09, i volti lontani dalla piega. Numera i consigli (Consiglio 01, 02…).">
+<title>Consiglio di bottega</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .virgolette { font: 400 220px/0.6 var(--imp-font-titoli); color: var(--imp-accento); height: 110px; margin: 0; }
+  .frase { font: 440 76px/1.1 var(--imp-font-titoli); letter-spacing: -.016em; font-variation-settings: "opsz" 72; margin: 0; text-wrap: balance; }
+  .chi { display: flex; align-items: center; gap: 20px; margin-top: 44px; }
+  .chi .filetto { width: 64px; background: var(--imp-testo-tenue); }
+  .schema { position: relative; flex: none; height: 250px; margin-bottom: 56px; }
+  .schema .pg { position: absolute; top: 30px; width: 360px; height: 170px; background: var(--imp-superficie); box-shadow: inset 0 0 0 2px var(--imp-filetto); }
+  .schema .pg.s { right: calc(50% + 7px); } .schema .pg.d { left: calc(50% + 7px); }
+  .schema .zona { position: absolute; top: 30px; height: 170px; left: calc(50% - 7px - 80px); width: calc(160px + 14px);
+    background: repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--imp-attenzione) 35%, transparent) 10px 13px); }
+  .schema .piega { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14px; height: 230px; }
+  .schema .piega::before, .schema .piega::after { content: ""; position: absolute; left: 0; width: 14px; height: 22px; background: var(--imp-accento); }
+  .schema .piega::before { top: 0; } .schema .piega::after { bottom: 0; }
+  .schema .leg { position: absolute; top: 212px; left: calc(50% + 30px); font: 500 26px/1.2 var(--imp-font-numeri); color: var(--imp-attenzione); }
+  [data-theme="dark"] .schema .leg { color: var(--imp-ocra-300); }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <p class="etichetta"><span lang="it">Consiglio di bottega · 01</span><span lang="en">Workshop tip · 01</span></p>
+    <p class="virgolette" style="margin-top:40px">«</p>
+    <p class="frase">
+      <span lang="it">Tieni i volti lontani dalla piega. Quanto lontano lo decide la rilegatura: chiedilo al laboratorio, poi impostalo una volta.</span>
+      <span lang="en">Keep faces away from the gutter. How far depends on the binding: ask your lab, then set it once.</span>
+    </p>
+    <div class="chi"><hr class="filetto"><span class="etichetta"><span lang="it">Dal banco di lavoro</span><span lang="en">From the workbench</span></span></div>
+    <div class="spinta"></div>
+    <div class="schema" aria-hidden="true">
+      <div class="pg s"></div><div class="pg d"></div><div class="zona"></div><div class="piega"></div>
+      <span class="leg"><span lang="it">zona da evitare</span><span lang="en">keep-clear zone</span></span>
+    </div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

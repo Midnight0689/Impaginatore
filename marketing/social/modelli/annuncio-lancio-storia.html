@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1920">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="storia">
+<meta name="gruppo" content="lancio">
+<meta name="uso" content="Annuncio di lancio come storia 9:16 (U16). Aggiungi l'adesivo «link» di Instagram sopra la zona vuota sotto il prezzo, verso {{link_prova}} o {{link_prezzi}}.">
+<title>Annuncio di lancio, storia</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .prezzo { display: grid; gap: 14px; padding: 44px 0; border-top: 2px solid var(--imp-filetto); border-bottom: 2px solid var(--imp-filetto); }
+  .prezzo .chi { font: 600 40px/1.1 var(--imp-font-testo); }
+  .prezzo .poi { font-size: 36px; line-height: 1.3; color: var(--imp-testo-secondario); }
+  .spazio-adesivo { height: 150px; border: 3px dashed var(--imp-filetto); border-radius: 8px; display: grid; place-items: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="tela" style="--l:1080px;--a:1920px">
+  <div class="gabbia" style="--alto:300px;--basso:390px">
+    <p class="etichetta accento"><span data-valore="data.lancio">martedì 23 febbraio</span></p>
+    <h1 class="titolo grande" style="margin-top:30px">
+      <span lang="it">Impaginatore è pronto.</span>
+      <span lang="en">Impaginatore is ready.</span>
+    </h1>
+    <p class="attacco" style="margin-top:34px">
+      <span lang="it">Sul tuo computer, con le tue foto. Paghi una volta.</span>
+      <span lang="en">On your computer, with your photos. Pay once.</span>
+    </p>
+    <div class="spinta"></div>
+    <div class="prezzo">
+      <span class="cifra" data-valore="pro.lancio">79 €</span>
+      <span class="chi">Pro · <span lang="it">una volta</span><span lang="en">one-time</span></span>
+      <span class="poi"><span lang="it">fino al <span data-valore="data.fine_lancio">23 aprile</span>, poi <span data-valore="pro.listino">99 €</span>. IVA esclusa. Prova di <span data-valore="prova.giorni">30</span> giorni senza carta.</span><span lang="en">until <span data-valore="data.fine_lancio">23 April</span>, then <span data-valore="pro.listino">€99</span>. VAT excluded. <span data-valore="prova.giorni">30</span>-day trial, no card.</span></span>
+    </div>
+    <div class="spazio-adesivo"><span class="nota"><span lang="it">qui l’adesivo «link»</span><span lang="en">link sticker here</span></span></div>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

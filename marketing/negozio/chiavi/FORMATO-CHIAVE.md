@@ -42,7 +42,7 @@ Il prefisso `IMP1-` distingue queste chiavi da quelle Polar (`IMP-` seguito da u
 
 Non serve la rete. **Il numero di computer non viene contato**: senza un server non si può. Il limite vale per contratto (EULA) ed è reso visibile dall'intestatario mostrato nell'app. È coerente con il prezzo d'impulso: costa meno comprare una seconda licenza che aggirarla. Se un giorno si vorrà contarli, si attiva l'attivazione online con Polar (`polar/API-LICENZE.md`) o con il proxy nostro.
 
-Nota per il titolare: in `tier.json` `politica_aggiornamenti.attivazione_online_una_tantum_per_computer` vale `true`, ma il percorso predefinito **non** fa attivazioni online. Va deciso quale delle due cose resta.
+Decisione del titolare (15/11/2026): in `tier.json` `politica_aggiornamenti.attivazione_online_una_tantum_per_computer` vale `false`. Non ci sono attivazioni online: il numero di computer è un limite contrattuale.
 
 ## 3. Che cosa garantisce la firma, e che cosa no
 

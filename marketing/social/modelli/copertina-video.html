@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1920x1080">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="miniatura">
+<meta name="gruppo" content="video">
+<meta name="uso" content="Copertina (miniatura) di un video YouTube, 16:9 a 1920 × 1080 (YouTube accetta da 640 px di larghezza, fino a 3840 × 2160). In basso a destra YouTube mette la durata: lì niente. Esempio: U12, installazione. Il riquadro a destra è un segnaposto per un fotogramma del video.">
+<title>Copertina video</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .sinistra { position: absolute; left: 110px; top: 110px; bottom: 110px; width: 860px; display: flex; flex-direction: column; }
+  .sinistra .titolo { font-size: 128px; }
+  .fotogramma { position: absolute; right: 110px; top: 140px; width: 760px; height: 640px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1920px;--a:1080px">
+  <div class="sinistra">
+    <p class="etichetta accento"><span lang="it">Guida · 1 minuto</span><span lang="en">Guide · 1 minute</span></p>
+    <h1 class="titolo" style="margin-top:30px">
+      <span lang="it">Si installa con una riga.</span>
+      <span lang="en">It installs with one line.</span>
+    </h1>
+    <p class="attacco" style="margin-top:34px;font-size:48px"><span lang="it">Mac, Windows e Linux. Cosa fa il comando, passo per passo.</span><span lang="en">Mac, Windows and Linux. What the command does, step by step.</span></p>
+    <div class="spinta"></div>
+    <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore" style="height:76px;align-self:flex-start">
+    <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore" style="height:76px;align-self:flex-start">
+  </div>
+  <div class="segnaposto fotogramma">
+    <p class="etichetta">Segnaposto · fotogramma da sostituire</p>
+    <p class="titolo">Il Terminale con il comando incollato</p>
+    <p class="nota">760 × 640 px · schermate/video-installa.png</p>
+  </div>
+</div>
+</body>
+</html>

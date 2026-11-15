@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="prezzi">
+<meta name="uso" content="Assistenza a ore (U23, U46). Tre pacchetti da tier.json, presentati come comodità: nessun prezzo per ora a confronto, nessun «risparmi». Mai «una volta» accanto alle ore.">
+<title>Assistenza a ore</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .pacchetti { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pacchetto { padding: 34px 30px; border-radius: 12px; background: var(--imp-superficie); box-shadow: inset 0 0 0 2px var(--imp-filetto); display: grid; gap: 16px; }
+  .pacchetto .cifra { font-size: 88px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <p class="etichetta">Assistenza a ore</p>
+    <h1 class="titolo medio" style="margin-top:28px">Un’ora con una persona, quando ti serve.</h1>
+    <p class="attacco" style="margin-top:30px">In videochiamata o da remoto: installazione, primo album, formati del tuo laboratorio, Photoshop.</p>
+    <div class="spinta"></div>
+    <div class="pacchetti">
+      <div class="pacchetto"><span class="etichetta">1 ora</span><span class="cifra" data-valore="ore.1">49 €</span></div>
+      <div class="pacchetto"><span class="etichetta">5 ore</span><span class="cifra" data-valore="ore.5">249 €</span></div>
+      <div class="pacchetto"><span class="etichetta">10 ore</span><span class="cifra" data-valore="ore.10">499 €</span></div>
+    </div>
+    <p class="testo" style="margin-top:34px">Un solo pagamento, in anticipo. Le ore valgono 12 mesi e si usano a blocchi di 30 minuti. IVA esclusa.</p>
+    <p class="nota" style="margin-top:20px">Gratis per tutti: manuale, guide video e correzione dei difetti. Se il problema è del programma, non paghi.</p>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff">Resta tuo.</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

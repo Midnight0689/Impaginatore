@@ -37,6 +37,7 @@ Fable 5.2 fa da orchestratore: decide l'architettura, scrive i mandati, controll
 | Release Engineer | Pipeline, compilazione, installer, firma |
 | Analista di mercato, Go-to-market | Concorrenti, lead, prezzi, canale di vendita |
 | Brand & Design Director | Identità, manuale di stile |
+| Progettista UI/UX | Analisi dei flussi, proposte di semplificazione, struttura dell'interfaccia |
 | Autori | Documentazione, sito, email, social |
 
 ## Fasi e compiti
@@ -73,7 +74,8 @@ Un compito parte quando sono chiusi quelli da cui dipende. Compiti senza dipende
 | T-202 | Licenze, fasce e prova gratuita | Le funzioni seguono `tier.json`; chiave contraffatta rifiutata; funziona senza rete dopo l'attivazione |
 | T-203 | Server MCP | Claude crea un progetto, importa foto, impagina ed esporta senza toccare l'editor |
 | T-204 | Strumentazione: registro strutturato, diagnostica, telemetria solo con consenso | Nessun dato inviato senza consenso esplicito; mai contenuto o nomi delle foto |
-| T-205 | Interfaccia ridisegnata con la marca | Chiusi i rilievi `LEG` sull'interfaccia |
+| T-209 | Analisi UI/UX e proposte di semplificazione (richiesta del titolare: azioni «un pulsante») | `docs/prodotto/ux/`: analisi dei flussi misurati, proposte numerate, gruppo «entro la 2.0» |
+| T-205 | Interfaccia ridisegnata con la marca, secondo le proposte di T-209 «entro la 2.0» | Chiusi i rilievi `LEG` sull'interfaccia; le azioni «un pulsante» approvate funzionano |
 | T-206 | Italiano e inglese | Nessun testo fisso nel codice dell'interfaccia |
 | T-207 | Aggiornamenti dalle release | Avviso di nuova versione, scaricamento verificato con firma |
 | T-208 | Pacchetti catalogo per i laboratori | Un file descrive formati, abbondanze e copertine; un esempio incluso |

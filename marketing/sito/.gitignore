@@ -1,0 +1,8 @@
+# Originali grandi delle schermate (oltre 1 MB): si rigenerano con strumenti/schermate.py, si pubblicano i WebP ricavati da sito.py
+img/originali/
+# Copie di lavoro delle istantanee prima della compressione
+anteprime/.grezze/
+# Cache di Python degli strumenti
+strumenti/__pycache__/
+# Istantanee di controllo (circa 21 MB): si rigenerano con strumenti/sito.py istantanee
+anteprime/

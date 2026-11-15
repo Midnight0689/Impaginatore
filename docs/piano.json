@@ -13,15 +13,16 @@
     {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
     {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
     {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
-    {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+    {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "in_corso"},
     {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
-    {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+    {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "fatto", "nota": "15 nuovi rilievi VER-001…015 da chiudere prima di chiudere la Fase 1"},
 
     {"id": "T-201", "fase": 2, "titolo": "Finestra desktop con pywebview", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
     {"id": "T-202", "fase": 2, "titolo": "Licenze, fasce e prova gratuita", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102", "T-004"], "stato": "da_fare"},
     {"id": "T-203", "fase": 2, "titolo": "Server MCP", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
     {"id": "T-204", "fase": 2, "titolo": "Strumentazione e telemetria con consenso", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
-    {"id": "T-205", "fase": 2, "titolo": "Interfaccia ridisegnata con la marca", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-005", "T-105"], "stato": "da_fare"},
+    {"id": "T-209", "fase": 2, "titolo": "Analisi UI/UX e proposte di semplificazione", "ruolo": "Progettista UI/UX", "dipende_da": ["T-102"], "stato": "in_corso", "nota": "Richiesta del titolare (16/11/2026): azioni «un pulsante», da fare prima di chiudere la 2.0"},
+    {"id": "T-205", "fase": 2, "titolo": "Interfaccia ridisegnata con la marca", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-005", "T-105", "T-209"], "stato": "da_fare"},
     {"id": "T-206", "fase": 2, "titolo": "Italiano e inglese", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-207", "fase": 2, "titolo": "Aggiornamenti dalle release", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-201"], "stato": "da_fare"},
     {"id": "T-208", "fase": 2, "titolo": "Pacchetti catalogo per i laboratori", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-101"], "stato": "da_fare"},
@@ -39,9 +40,9 @@
     {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "fatto", "nota": "Da far rivedere a un legale"},
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
-    {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
+    {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "in_verifica"},
     {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "fatto"},
-    {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
+    {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "in_verifica"},
     {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "fatto"},
     {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "fatto"}
   ]

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="prezzi">
+<meta name="uso" content="U37, offerta «Rosetta / macOS 28» (PIANO-90-GIORNI §3.2). Si pubblica solo dopo la revisione del legale e con i prezzi approvati in costanti.json (prezzo_rosetta_pro, prezzo_rosetta_studio): finché sono vuoti la grafica mostra il segnaposto. Nessun marchio di concorrenti.">
+<title>U37, offerta Rosetta</title>
+<link rel="stylesheet" href="../social.css">
+<style>
+  .offerta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+  .offerta > div { padding: 30px 32px; border-radius: 12px; background: var(--imp-superficie); box-shadow: inset 0 0 0 2px var(--imp-filetto); display: grid; gap: 12px; }
+  .offerta .cifra { font-size: 96px; white-space: nowrap; }
+  .offerta h2 { margin: 0; font: 500 52px/1 var(--imp-font-titoli); }
+  .passi { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; counter-reset: p; }
+  .passi li { display: grid; grid-template-columns: 52px 1fr; align-items: baseline; counter-increment: p; }
+  .passi li::before { content: counter(p, decimal-leading-zero); font: 500 30px/1 var(--imp-font-numeri); color: var(--imp-accento); }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <p class="etichetta accento"><span lang="it">Offerta macOS 28 · fino al {{data_fine_rosetta}}</span><span lang="en">macOS 28 offer · until {{data_fine_rosetta}}</span></p>
+    <h1 class="titolo medio" style="margin-top:26px">
+      <span lang="it">Hai un vecchio software per album con licenza perpetua che su macOS 28 non si aprirà più?</span>
+      <span lang="en">Do you own an old perpetual-licence album app that won’t open on macOS 28?</span>
+    </h1>
+    <div class="spinta"></div>
+    <div class="offerta">
+      <div><h2>Pro</h2><span class="cifra" data-valore="prezzo_rosetta_pro">49 €</span><span class="etichetta"><span lang="it">una volta</span><span lang="en">one-time</span></span></div>
+      <div><h2>Studio</h2><span class="cifra" data-valore="prezzo_rosetta_studio">99 €</span><span class="etichetta"><span lang="it">una volta</span><span lang="en">one-time</span></span></div>
+    </div>
+    <ol class="passi testo" style="margin-top:36px">
+      <li><span lang="it">Mandaci la licenza o la fattura del vecchio programma.</span><span lang="en">Send us the licence or invoice of your old app.</span></li>
+      <li><span lang="it">Ricevi la chiave di Impaginatore entro due ore lavorative.</span><span lang="en">Get your Impaginatore key within two working hours.</span></li>
+    </ol>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="nota"><span lang="it">IVA esclusa · link nella bio</span><span lang="en">VAT excluded · link in bio</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

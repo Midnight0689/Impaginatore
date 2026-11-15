@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- Modello dell'immagine Open Graph (1200 × 630). Non è una pagina pubblicata: «sito.py immagini» lo apre in Chrome
+     con ?it oppure ?en, lo fotografa e salva img/og/og-it.jpg e og-en.jpg. Niente prezzi qui: cambiano, l'immagine resta. -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Modello Open Graph</title>
+<link rel="stylesheet" href="../../css/font.css">
+<link rel="stylesheet" href="../../css/token.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { background: var(--imp-fondo); color: var(--imp-testo); font-family: var(--imp-font-testo); position: relative; }
+  .testo { position: absolute; left: 72px; top: 64px; width: 560px; }
+  .testo img { width: 224px; height: 36px; }
+  h1 { font: 480 62px/1.04 var(--imp-font-titoli); font-variation-settings: "opsz" 72; letter-spacing: -.022em; margin: 56px 0 20px; text-wrap: balance; }
+  .payoff { color: var(--imp-accento); }
+  .etichetta { position: absolute; left: 72px; bottom: 60px; font: 500 15px/1.3 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; color: var(--imp-testo-secondario); }
+  .schermata { position: absolute; left: 676px; top: 92px; width: 760px; border-radius: 10px; overflow: hidden; border: 1px solid var(--imp-filetto); box-shadow: var(--imp-ombra-sollevato); }
+  .schermata img { display: block; width: 760px; height: 475px; }
+  .crocini i { position: absolute; background: var(--imp-testo-tenue); }
+</style>
+</head>
+<body>
+  <div class="testo">
+    <img src="../../img/marca/impaginatore-logotipo.svg" alt="" width="224" height="36">
+    <h1 id="titolo">Impagina l’album sul tuo computer. <span class="payoff">Resta tuo.</span></h1>
+  </div>
+  <div class="etichetta" id="sotto">Licenza perpetua · macOS, Windows e Linux</div>
+  <div class="schermata"><img src="../../img/schermate/editor-album-1600.webp" alt="" width="1600" height="1000"></div>
+  <div class="crocini" aria-hidden="true">
+    <i style="left:40px;top:24px;width:1px;height:12px"></i><i style="left:28px;top:36px;width:12px;height:1px"></i>
+    <i style="left:40px;bottom:24px;width:1px;height:12px"></i><i style="left:28px;bottom:36px;width:12px;height:1px"></i>
+  </div>
+  <script>
+    if (location.search.indexOf("en") >= 0) {
+      document.documentElement.lang = "en";
+      document.getElementById("titolo").innerHTML = 'Lay out the album on your computer. <span class="payoff">Yours to keep.</span>';
+      document.getElementById("sotto").textContent = "Perpetual licence · macOS, Windows and Linux";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="prezzi">
+<meta name="uso" content="U10, «Fare i conti su tre anni». Confronto per categoria, senza marchi: importi e data in costanti.json (confronto.*), fonte docs/mercato/prezzi.md §1; da rileggere prima di pubblicare e va mostrata nella pagina prezzi. Da far vedere al legale prima di pubblicarla (pubblicità comparativa).">
+<title>U10, tre anni</title>
+<link rel="stylesheet" href="../social.css">
+<style>
+  .mesi { position: relative; height: 92px; border-radius: 6px; box-shadow: inset 0 0 0 2px var(--imp-bordo-campo);
+    background: repeating-linear-gradient(90deg, transparent 0 calc(100% / 36 - 2px), var(--imp-filetto) calc(100% / 36 - 2px) calc(100% / 36)); }
+  .mesi .pro { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--n) / 36 * 100%); background: var(--imp-accento-fondo); border-radius: 6px 0 0 6px; }
+  .legenda { display: flex; justify-content: space-between; margin-top: 16px; }
+  .scala { display: flex; justify-content: space-between; margin-top: 10px; }
+  .chiave { display: grid; grid-template-columns: 40px 1fr; gap: 18px; align-items: center; margin-top: 34px; }
+  .chiave i { width: 40px; height: 40px; border-radius: 4px; background: var(--imp-accento-fondo); }
+  .chiave i.vuoto { background: transparent; box-shadow: inset 0 0 0 2px var(--imp-bordo-campo); }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <p class="etichetta"><span lang="it">Fare i conti su tre anni</span><span lang="en">Doing the maths over three years</span></p>
+    <h1 class="titolo medio" style="margin-top:28px">
+      <span lang="it">Un abbonamento a un software per album costa circa {{confronto.abbonamento_mese}} € al mese. Pro costa <span data-valore="pro.listino">99 €</span>, una volta.</span>
+      <span lang="en">An album software subscription costs about €{{confronto.abbonamento_mese}} a month. Pro costs <span data-valore="pro.listino">€99</span>, one-time.</span>
+    </h1>
+    <div class="spinta"></div>
+    <div class="mesi" style="--n:{{confronto.mesi_pro}}"><span class="pro"></span></div>
+    <div class="scala"><span class="etichetta num">1</span><span class="etichetta num">12</span><span class="etichetta num">24</span><span class="etichetta num">36</span></div>
+    <div class="chiave"><i></i><p class="testo"><span lang="it">Pro a listino vale circa <b>{{confronto.mesi_pro}} mesi</b> di abbonamento.</span><span lang="en">Pro at list price is worth about <b>{{confronto.mesi_pro}} months</b> of subscription.</span></p></div>
+    <div class="chiave" style="margin-top:18px"><i class="vuoto"></i><p class="testo"><span lang="it">Gli altri mesi non li paghi. Il programma resta tuo.</span><span lang="en">You don’t pay for the other months. The software is yours to keep.</span></p></div>
+    <div class="spinta"></div>
+    <p class="nota"><span lang="it">Pro: <span data-valore="frase.pro">79 € fino al 23 aprile, poi 99 €</span>, IVA esclusa. Abbonamenti annuali a software per album: da {{confronto.dollari_min}} a {{confronto.dollari_max}} $ l’anno, circa {{confronto.euro_mese_min}}–{{confronto.euro_mese_max}} € al mese al cambio BCE, prezzi pubblici al {{confronto.data}}; fonti nella pagina prezzi.</span><span lang="en">Pro: <span data-valore="frase.pro">€79 until 23 April, then €99</span>, VAT excluded. Annual album software subscriptions: ${{confronto.dollari_min}} to ${{confronto.dollari_max}} a year, about €{{confronto.euro_mese_min}}–{{confronto.euro_mese_max}} a month at the ECB rate, public prices on {{confronto.data}}; sources on our pricing page.</span></p>
+    <div class="piede" style="margin-top:40px">
+      <img class="logotipo solo-chiaro" src="../../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

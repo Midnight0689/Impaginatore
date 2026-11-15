@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="lancio">
+<meta name="uso" content="Annuncio di lancio, 4:5 (U15, 23 febbraio). Prezzi e date arrivano da tier.json e costanti.json. Da fissare in cima al profilo per tutto il periodo di lancio.">
+<title>Annuncio di lancio</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .prezzo { display: grid; grid-template-columns: auto 1fr; gap: 8px 36px; align-items: end; padding: 40px 0; border-top: 2px solid var(--imp-filetto); border-bottom: 2px solid var(--imp-filetto); }
+  .prezzo .cifra { grid-row: span 2; }
+  .prezzo .chi { font: 600 40px/1.1 var(--imp-font-testo); color: var(--imp-testo); }
+  .prezzo .poi { font-size: 34px; line-height: 1.3; color: var(--imp-testo-secondario); }
+  .riga-sotto { display: flex; gap: 20px; align-items: center; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <p class="etichetta accento"><span data-valore="data.lancio">martedì 23 febbraio</span></p>
+    <h1 class="titolo grande" style="margin-top:30px">
+      <span lang="it">Impaginatore è pronto.</span>
+      <span lang="en">Impaginatore is ready.</span>
+    </h1>
+    <p class="attacco" style="margin-top:30px">
+      <span lang="it">Impagini l’album sul tuo computer, le foto non escono dal disco. Paghi una volta: niente abbonamento.</span>
+      <span lang="en">You lay out the album on your computer; the photos never leave your disk. Pay once: no subscription.</span>
+    </p>
+    <div class="spinta"></div>
+    <div class="prezzo">
+      <span class="cifra" data-valore="pro.lancio">79 €</span>
+      <span class="chi">Pro · <span lang="it">una volta</span><span lang="en">one-time</span></span>
+      <span class="poi"><span lang="it">fino al <span data-valore="data.fine_lancio">23 aprile</span>, poi <span data-valore="pro.listino">99 €</span>. IVA esclusa.</span><span lang="en">until <span data-valore="data.fine_lancio">23 April</span>, then <span data-valore="pro.listino">€99</span>. VAT excluded.</span></span>
+    </div>
+    <div class="riga-sotto">
+      <span class="badge verde"><span lang="it">Prova <span data-valore="prova.giorni">30</span> giorni</span><span lang="en"><span data-valore="prova.giorni">30</span>-day trial</span></span>
+      <span class="nota"><span lang="it">senza carta · Mac, Windows, Linux</span><span lang="en">no card · Mac, Windows, Linux</span></span>
+    </div>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
