@@ -2,13 +2,12 @@
 import json
 import os
 import re
-import runpy
 import shutil
 import subprocess
 import sys
 
 import pytest
-from aiuti import crea_foto
+from aiuti import come_script, crea_foto
 
 from impaginatore import formato
 from impaginatore.motore import album, genera_psd_angolo
@@ -114,9 +113,7 @@ class PhotoshopFinto:
 
 def test_registro_dei_psd_letto_e_scritto(prj, monkeypatch):
     """BUG-007: il registro dei PSD generati (psd_generati.json) si legge e si scrive con file chiusi. modifica_psd segna i PSD
-    cambiati a mano dopo la generazione (genera_psd non li sovrascrive più); genera_psd salta quelli segnati.
-    Sta prima di test_genera_psd_con_photoshop_finto: quella esegue genera_psd.py con exec e senza __spec__, e da lì in poi
-    coverage non segue più quel file in questo processo (la prova passa comunque, cambia solo la misura)"""
+    cambiati a mano dopo la generazione (genera_psd non li sovrascrive più); genera_psd salta quelli segnati"""
     import time
 
     from impaginatore.piattaforma import photoshop
@@ -126,17 +123,15 @@ def test_registro_dei_psd_letto_e_scritto(prj, monkeypatch):
         with open(os.path.join(out, n), "wb") as f: f.write(b"8BPS")
         os.utime(os.path.join(out, n), (t, t))
     os.utime(os.path.join(out, "Spread_02.psd"), (t + 60, t + 60))                       # toccato a mano dopo la generazione
-    monkeypatch.setattr(sys, "argv", ["modifica_psd", "--progetto", prj, "nessun-comando"])
-    runpy.run_module("impaginatore.motore.modifica_psd", run_name="__main__")
+    come_script(monkeypatch, "modifica_psd", "--progetto", prj, "nessun-comando")
     with open(reg, encoding="utf-8") as f: assert json.load(f) == {}, "senza registro: uno vuoto (PSD non generati da qui)"
     with open(reg, "w", encoding="utf-8") as f: json.dump({"Spread_01.psd": t, "Spread_02.psd": t}, f)
-    runpy.run_module("impaginatore.motore.modifica_psd", run_name="__main__")
+    come_script(monkeypatch, "modifica_psd", "--progetto", prj, "nessun-comando")
     with open(reg, encoding="utf-8") as f: assert json.load(f) == {"Spread_01.psd": t, "Spread_02.psd": 0}
     ps = PhotoshopFinto()
     for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
-    album.carica_progetto(prj)
-    monkeypatch.setattr(sys, "argv", ["genera_psd", "--progetto", prj, "--spread", "1,2"])
-    runpy.run_module("impaginatore.motore.genera_psd", run_name="__main__")
+    from impaginatore.motore import genera_psd
+    assert genera_psd.main(["--progetto", prj, "--spread", "1,2"]) == 0
     assert '"n": 1' in ps.script[-1] and '"n": 2' not in ps.script[-1], "il PSD toccato a mano non si rigenera"
 
 
@@ -145,18 +140,14 @@ def test_genera_psd_con_photoshop_finto(prj, monkeypatch):
     from impaginatore.piattaforma import photoshop
     ps = PhotoshopFinto()
     for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
-    monkeypatch.setattr(sys, "argv", ["genera_psd_angolo", "--progetto", prj, "--spread", "1,2,4"])
-    monkeypatch.delitem(sys.modules, "impaginatore.motore.genera_psd_angolo", raising=False)
-    runpy.run_module("impaginatore.motore.genera_psd_angolo", run_name="__main__")
+    assert genera_psd_angolo.main(["--progetto", prj, "--spread", "1,2,4"]) == 0
     js = "\n".join(ps.script)
     assert "rotAround(L,it.ang" in js and '"ang": 7.5' in js and "sRGB IEC61966-2.1" in js and "addTextX" in js
     assert sorted(f for f in os.listdir(os.path.join(prj, "PSD"))) == ["Spread_01.psd", "Spread_02.psd", "Spread_04.psd"]
     with open(os.path.join(prj, "_cache", "psd_generati.json"), encoding="utf-8") as f: assert set(json.load(f)) == {"Spread_01.psd", "Spread_02.psd", "Spread_04.psd"}
     # seconda volta: i PSD esistono e non sono stati toccati a mano -> rigenerati; uno modificato dopo -> saltato
     p4 = os.path.join(prj, "PSD", "Spread_04.psd"); os.utime(p4, (os.path.getmtime(p4) + 60, os.path.getmtime(p4) + 60))
-    album.carica_progetto(prj)
-    monkeypatch.setattr(sys, "argv", ["genera_psd_angolo", "--progetto", prj, "--spread", "1,4"])
-    runpy.run_module("impaginatore.motore.genera_psd_angolo", run_name="__main__")
+    assert genera_psd_angolo.main(["--progetto", prj, "--spread", "1,4"]) == 0
     assert '"n": 4' not in ps.script[-1]
 
 
