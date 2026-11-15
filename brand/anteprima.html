@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impaginatore — Manuale di marca</title>
+<meta name="description" content="Il manuale di marca di Impaginatore applicato: logo, colori, tipografia, componenti, chiaro e scuro.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%20width%3D%2232%22%20height%3D%2232%22%3E%3Ctitle%3EImpaginatore%3C/title%3E%3Cpath%20d%3D%22M20.2%201c3.78%200%205.67%200%207.11%200.74a6.75%206.75%200%200%201%202.95%202.95c0.74%201.44%200.74%203.33%200.74%207.11L31%2020.2c0%203.78%200%205.67%20-0.74%207.11a6.75%206.75%200%200%201%20-2.95%202.95c-1.44%200.74%20-3.33%200.74%20-7.11%200.74L11.8%2031c-3.78%200%20-5.67%200%20-7.11%20-0.74a6.75%206.75%200%200%201%20-2.95%20-2.95c-0.74%20-1.44%20-0.74%20-3.33%20-0.74%20-7.11L1%2011.8c0%20-3.78%200%20-5.67%200.74%20-7.11a6.75%206.75%200%200%201%202.95%20-2.95c1.44%20-0.74%203.33%20-0.74%207.11%20-0.74Z%22%20fill%3D%22%23236743%22/%3E%3Cpath%20fill%3D%22%23F6F3EC%22%20d%3D%22M5%2011h10v10h-10zM17%2011h10v10h-10z%22/%3E%3Cpath%20fill%3D%22%23F6F3EC%22%20d%3D%22M15%207h2v3h-2zM15%2022h2v3h-2z%22/%3E%3C/svg%3E" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Impaginatore — design token. Generato da strumenti/genera_token.py: non modificare a mano. */
+/* Font: Newsreader, Instrument Sans, IBM Plex Mono (SIL OFL 1.1) — file in brand/font/. */
+
+:root {
+  /* Primitivi: colori (OKLCH con HEX di riserva) */
+  --imp-carta-0: #FDFCF9; /* Bianco carta */
+  --imp-carta-50: #F6F3EC; /* Carta */
+  --imp-carta-100: #EDE9E1; /* Velina */
+  --imp-carta-200: #DEDAD2; /* Cartoncino */
+  --imp-carta-300: #C7C4BC; /* Feltro */
+  --imp-carta-400: #A19E98; /* Cenere */
+  --imp-carta-500: #6B6964; /* Piombo */
+  --imp-carta-600: #54524E; /* Ardesia */
+  --imp-carta-700: #3E3D3A; /* Grafite */
+  --imp-carta-800: #292725; /* Fumo */
+  --imp-carta-900: #181715; /* Inchiostro */
+  --imp-carta-950: #0F0E0C; /* Nero seppia */
+  --imp-verde-50: #ECF9F0; /* Verde velina */
+  --imp-verde-100: #D3F0DD;
+  --imp-verde-200: #AFE3C2;
+  --imp-verde-300: #7BCC9C; /* Verde Bottega chiaro */
+  --imp-verde-400: #5AB481;
+  --imp-verde-500: #378E60;
+  --imp-verde-600: #236743; /* Verde Bottega */
+  --imp-verde-700: #195436;
+  --imp-verde-800: #123F28;
+  --imp-verde-900: #0B2B1A; /* Verde profondo */
+  --imp-ocra-50: #FBF3E1;
+  --imp-ocra-300: #EABC6E;
+  --imp-ocra-500: #C78B28; /* Ocra */
+  --imp-ocra-600: #845A0F; /* Ocra scura */
+  --imp-cinabro-50: #FFEDEA;
+  --imp-cinabro-300: #F2897C;
+  --imp-cinabro-600: #B6322B; /* Cinabro */
+  --imp-blu-50: #ECF5FD;
+  --imp-blu-300: #88B9EC;
+  --imp-blu-600: #2A669F; /* Blu di Prussia */
+  --imp-grigio-50: #F5F5F5;
+  --imp-grigio-100: #E8E8E8;
+  --imp-grigio-200: #D4D4D4;
+  --imp-grigio-300: #B7B7B7;
+  --imp-grigio-400: #989898;
+  --imp-grigio-500: #747474; /* Grigio medio */
+  --imp-grigio-600: #5B5B5B;
+  --imp-grigio-700: #424242;
+  --imp-grigio-800: #303030;
+  --imp-grigio-850: #262626;
+  --imp-grigio-900: #1E1E1E;
+  --imp-grigio-950: #141414;
+  --imp-bianco: #FFFFFF;
+
+  /* Font */
+  --imp-font-titoli: Newsreader, "Iowan Old Style", Georgia, serif;
+  --imp-font-testo: "Instrument Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --imp-font-numeri: "IBM Plex Mono", SFMono-Regular, Consolas, monospace;
+
+  /* Scala tipografica: dimensione / interlinea / peso / spaziatura */
+  --imp-tipo-display-dimensione: 4.5rem; --imp-tipo-display-interlinea: 1.02; --imp-tipo-display-peso: 480; --imp-tipo-display-spaziatura: -0.022em;
+  --imp-tipo-titolo-1-dimensione: 3.25rem; --imp-tipo-titolo-1-interlinea: 1.06; --imp-tipo-titolo-1-peso: 480; --imp-tipo-titolo-1-spaziatura: -0.018em;
+  --imp-tipo-titolo-2-dimensione: 2.375rem; --imp-tipo-titolo-2-interlinea: 1.12; --imp-tipo-titolo-2-peso: 500; --imp-tipo-titolo-2-spaziatura: -0.012em;
+  --imp-tipo-titolo-3-dimensione: 1.75rem; --imp-tipo-titolo-3-interlinea: 1.2; --imp-tipo-titolo-3-peso: 500; --imp-tipo-titolo-3-spaziatura: -0.008em;
+  --imp-tipo-titolo-4-dimensione: 1.25rem; --imp-tipo-titolo-4-interlinea: 1.3; --imp-tipo-titolo-4-peso: 600; --imp-tipo-titolo-4-spaziatura: -0.006em;
+  --imp-tipo-attacco-dimensione: 1.1875rem; --imp-tipo-attacco-interlinea: 1.5; --imp-tipo-attacco-peso: 400; --imp-tipo-attacco-spaziatura: -0.004em;
+  --imp-tipo-testo-dimensione: 1rem; --imp-tipo-testo-interlinea: 1.6; --imp-tipo-testo-peso: 400; --imp-tipo-testo-spaziatura: 0em;
+  --imp-tipo-testo-piccolo-dimensione: 0.875rem; --imp-tipo-testo-piccolo-interlinea: 1.5; --imp-tipo-testo-piccolo-peso: 400; --imp-tipo-testo-piccolo-spaziatura: 0em;
+  --imp-tipo-didascalia-dimensione: 0.78125rem; --imp-tipo-didascalia-interlinea: 1.4; --imp-tipo-didascalia-peso: 400; --imp-tipo-didascalia-spaziatura: 0.004em;
+  --imp-tipo-etichetta-dimensione: 0.71875rem; --imp-tipo-etichetta-interlinea: 1.3; --imp-tipo-etichetta-peso: 500; --imp-tipo-etichetta-spaziatura: 0.06em;
+  --imp-tipo-misura-dimensione: 0.8125rem; --imp-tipo-misura-interlinea: 1.3; --imp-tipo-misura-peso: 400; --imp-tipo-misura-spaziatura: 0em;
+  --imp-tipo-app-testo-dimensione: 0.8125rem; --imp-tipo-app-testo-interlinea: 1.4; --imp-tipo-app-testo-peso: 400; --imp-tipo-app-testo-spaziatura: 0em;
+  --imp-tipo-app-etichetta-dimensione: 0.6875rem; --imp-tipo-app-etichetta-interlinea: 1.3; --imp-tipo-app-etichetta-peso: 600; --imp-tipo-app-etichetta-spaziatura: 0.02em;
+  --imp-tipo-app-misura-dimensione: 0.75rem; --imp-tipo-app-misura-interlinea: 1.3; --imp-tipo-app-misura-peso: 400; --imp-tipo-app-misura-spaziatura: 0em;
+
+  /* Spazi (base 4 px), raggi, bordi */
+  --imp-spazio-0: 0px; --imp-spazio-1: 2px; --imp-spazio-2: 4px; --imp-spazio-3: 8px; --imp-spazio-4: 12px; --imp-spazio-5: 16px; --imp-spazio-6: 24px; --imp-spazio-7: 32px; --imp-spazio-8: 48px; --imp-spazio-9: 64px; --imp-spazio-10: 96px; --imp-spazio-11: 128px;
+  --imp-raggio-nessuno: 0px; --imp-raggio-piccolo: 2px; --imp-raggio-medio: 4px; --imp-raggio-grande: 8px; --imp-raggio-pillola: 999px;
+  --imp-bordo-sottile: 1px; --imp-bordo-fuoco: 2px;
+
+  /* Movimento */
+  --imp-durata-istante: 90ms; --imp-durata-breve: 160ms; --imp-durata-medio: 240ms; --imp-durata-lungo: 400ms;
+  --imp-curva-esce: cubic-bezier(0.2, 0, 0, 1); --imp-curva-entra: cubic-bezier(0.4, 0, 1, 1); --imp-curva-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Griglia */
+  --imp-griglia-colonne: 12; --imp-griglia-larghezza: 1200px; --imp-griglia-canale: 24px; --imp-griglia-margine: clamp(16px, 5vw, 64px); --imp-linea-di-base: 8px;
+
+  /* Tema chiaro (predefinito) */
+  color-scheme: light;
+  --imp-fondo: var(--imp-carta-50);
+  --imp-fondo-tenue: var(--imp-carta-100);
+  --imp-superficie: var(--imp-carta-0);
+  --imp-testo: var(--imp-carta-900);
+  --imp-testo-secondario: var(--imp-carta-600);
+  --imp-testo-tenue: var(--imp-carta-500);
+  --imp-filetto: var(--imp-carta-200);
+  --imp-bordo-campo: var(--imp-carta-500);
+  --imp-accento: var(--imp-verde-600);
+  --imp-accento-fondo: var(--imp-verde-600);
+  --imp-accento-fondo-premuto: var(--imp-verde-700);
+  --imp-su-accento: var(--imp-carta-50);
+  --imp-accento-tenue: var(--imp-verde-50);
+  --imp-successo: var(--imp-verde-600);
+  --imp-attenzione: var(--imp-ocra-600);
+  --imp-attenzione-segno: var(--imp-ocra-500);
+  --imp-errore: var(--imp-cinabro-600);
+  --imp-info: var(--imp-blu-600);
+  --imp-inverso-fondo: var(--imp-carta-900);
+  --imp-inverso-testo: var(--imp-carta-50);
+  --imp-app-tela: var(--imp-grigio-100);
+  --imp-app-pannello: var(--imp-grigio-50);
+  --imp-app-barra: var(--imp-bianco);
+  --imp-app-sollevato: var(--imp-bianco);
+  --imp-app-bordo: var(--imp-grigio-200);
+  --imp-app-testo: var(--imp-carta-900);
+  --imp-app-testo-tenue: var(--imp-grigio-600);
+  --imp-app-selezione: var(--imp-carta-900);
+  --imp-app-accento: var(--imp-verde-600);
+  --imp-ombra-appoggio: 0 1px 2px rgb(21 20 18 / .06), 0 4px 12px -4px rgb(21 20 18 / .08);
+  --imp-ombra-sollevato: 0 2px 6px rgb(21 20 18 / .08), 0 16px 40px -12px rgb(21 20 18 / .22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --imp-fondo: var(--imp-carta-900);
+    --imp-fondo-tenue: var(--imp-carta-950);
+    --imp-superficie: var(--imp-carta-800);
+    --imp-testo: var(--imp-carta-50);
+    --imp-testo-secondario: var(--imp-carta-300);
+    --imp-testo-tenue: var(--imp-carta-400);
+    --imp-filetto: var(--imp-carta-700);
+    --imp-bordo-campo: var(--imp-carta-400);
+    --imp-accento: var(--imp-verde-300);
+    --imp-accento-fondo: var(--imp-verde-400);
+    --imp-accento-fondo-premuto: var(--imp-verde-300);
+    --imp-su-accento: var(--imp-carta-950);
+    --imp-accento-tenue: var(--imp-verde-900);
+    --imp-successo: var(--imp-verde-300);
+    --imp-attenzione: var(--imp-ocra-300);
+    --imp-attenzione-segno: var(--imp-ocra-300);
+    --imp-errore: var(--imp-cinabro-300);
+    --imp-info: var(--imp-blu-300);
+    --imp-inverso-fondo: var(--imp-carta-50);
+    --imp-inverso-testo: var(--imp-carta-900);
+    --imp-app-tela: var(--imp-grigio-900);
+    --imp-app-pannello: var(--imp-grigio-850);
+    --imp-app-barra: var(--imp-grigio-950);
+    --imp-app-sollevato: var(--imp-grigio-800);
+    --imp-app-bordo: var(--imp-grigio-700);
+    --imp-app-testo: var(--imp-grigio-50);
+    --imp-app-testo-tenue: var(--imp-grigio-400);
+    --imp-app-selezione: var(--imp-bianco);
+    --imp-app-accento: var(--imp-verde-300);
+    --imp-ombra-appoggio: 0 0 0 1px rgb(255 255 255 / .06), 0 1px 2px rgb(0 0 0 / .4);
+    --imp-ombra-sollevato: 0 0 0 1px rgb(255 255 255 / .08), 0 16px 40px -12px rgb(0 0 0 / .6);
+  }
+}
+
+:root[data-theme="dark"], [data-theme="dark"] {
+  color-scheme: dark;
+  --imp-fondo: var(--imp-carta-900);
+  --imp-fondo-tenue: var(--imp-carta-950);
+  --imp-superficie: var(--imp-carta-800);
+  --imp-testo: var(--imp-carta-50);
+  --imp-testo-secondario: var(--imp-carta-300);
+  --imp-testo-tenue: var(--imp-carta-400);
+  --imp-filetto: var(--imp-carta-700);
+  --imp-bordo-campo: var(--imp-carta-400);
+  --imp-accento: var(--imp-verde-300);
+  --imp-accento-fondo: var(--imp-verde-400);
+  --imp-accento-fondo-premuto: var(--imp-verde-300);
+  --imp-su-accento: var(--imp-carta-950);
+  --imp-accento-tenue: var(--imp-verde-900);
+  --imp-successo: var(--imp-verde-300);
+  --imp-attenzione: var(--imp-ocra-300);
+  --imp-attenzione-segno: var(--imp-ocra-300);
+  --imp-errore: var(--imp-cinabro-300);
+  --imp-info: var(--imp-blu-300);
+  --imp-inverso-fondo: var(--imp-carta-50);
+  --imp-inverso-testo: var(--imp-carta-900);
+  --imp-app-tela: var(--imp-grigio-900);
+  --imp-app-pannello: var(--imp-grigio-850);
+  --imp-app-barra: var(--imp-grigio-950);
+  --imp-app-sollevato: var(--imp-grigio-800);
+  --imp-app-bordo: var(--imp-grigio-700);
+  --imp-app-testo: var(--imp-grigio-50);
+  --imp-app-testo-tenue: var(--imp-grigio-400);
+  --imp-app-selezione: var(--imp-bianco);
+  --imp-app-accento: var(--imp-verde-300);
+  --imp-ombra-appoggio: 0 0 0 1px rgb(255 255 255 / .06), 0 1px 2px rgb(0 0 0 / .4);
+  --imp-ombra-sollevato: 0 0 0 1px rgb(255 255 255 / .08), 0 16px 40px -12px rgb(0 0 0 / .6);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --imp-fondo: var(--imp-carta-50);
+  --imp-fondo-tenue: var(--imp-carta-100);
+  --imp-superficie: var(--imp-carta-0);
+  --imp-testo: var(--imp-carta-900);
+  --imp-testo-secondario: var(--imp-carta-600);
+  --imp-testo-tenue: var(--imp-carta-500);
+  --imp-filetto: var(--imp-carta-200);
+  --imp-bordo-campo: var(--imp-carta-500);
+  --imp-accento: var(--imp-verde-600);
+  --imp-accento-fondo: var(--imp-verde-600);
+  --imp-accento-fondo-premuto: var(--imp-verde-700);
+  --imp-su-accento: var(--imp-carta-50);
+  --imp-accento-tenue: var(--imp-verde-50);
+  --imp-successo: var(--imp-verde-600);
+  --imp-attenzione: var(--imp-ocra-600);
+  --imp-attenzione-segno: var(--imp-ocra-500);
+  --imp-errore: var(--imp-cinabro-600);
+  --imp-info: var(--imp-blu-600);
+  --imp-inverso-fondo: var(--imp-carta-900);
+  --imp-inverso-testo: var(--imp-carta-50);
+  --imp-app-tela: var(--imp-grigio-100);
+  --imp-app-pannello: var(--imp-grigio-50);
+  --imp-app-barra: var(--imp-bianco);
+  --imp-app-sollevato: var(--imp-bianco);
+  --imp-app-bordo: var(--imp-grigio-200);
+  --imp-app-testo: var(--imp-carta-900);
+  --imp-app-testo-tenue: var(--imp-grigio-600);
+  --imp-app-selezione: var(--imp-carta-900);
+  --imp-app-accento: var(--imp-verde-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --imp-durata-istante: 0ms; --imp-durata-breve: 0ms; --imp-durata-medio: 0ms; --imp-durata-lungo: 0ms; }
+}
+
+
+/* ------------------------------------------------------------------ base */
+*, *::before, *::after { box-sizing: border-box; }
+.griglia > *, .copertina > *, .primari > *, .concept > *, .prezzi > * { min-width: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--imp-fondo); color: var(--imp-testo);
+  font: var(--imp-tipo-testo-peso) 16px/var(--imp-tipo-testo-interlinea) var(--imp-font-testo);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  transition: background-color var(--imp-durata-medio) var(--imp-curva-standard), color var(--imp-durata-medio) var(--imp-curva-standard);
+}
+img, svg { display: block; }
+a { color: var(--imp-accento); text-decoration-thickness: 1px; text-underline-offset: .18em; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: var(--imp-bordo-fuoco) solid var(--imp-accento); outline-offset: 2px; }
+p { margin: 0 0 var(--imp-spazio-5); max-width: 62ch; }
+.pagina { max-width: calc(var(--imp-griglia-larghezza) + 2 * var(--imp-griglia-margine)); margin: 0 auto; padding: 0 var(--imp-griglia-margine); }
+.titoli, h1, h2, h3 { font-family: var(--imp-font-titoli); font-weight: 480; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(44px, 7vw, var(--imp-tipo-display-dimensione)); line-height: var(--imp-tipo-display-interlinea); letter-spacing: var(--imp-tipo-display-spaziatura); font-variation-settings: "opsz" 72; }
+h2 { font-size: clamp(32px, 4.4vw, var(--imp-tipo-titolo-1-dimensione)); line-height: var(--imp-tipo-titolo-1-interlinea); letter-spacing: var(--imp-tipo-titolo-1-spaziatura); font-variation-settings: "opsz" 60; }
+h3 { font-size: var(--imp-tipo-titolo-3-dimensione); line-height: var(--imp-tipo-titolo-3-interlinea); letter-spacing: var(--imp-tipo-titolo-3-spaziatura); font-weight: 500; font-variation-settings: "opsz" 32; }
+h4 { font: 600 var(--imp-tipo-titolo-4-dimensione)/var(--imp-tipo-titolo-4-interlinea) var(--imp-font-testo); letter-spacing: var(--imp-tipo-titolo-4-spaziatura); margin: 0 0 var(--imp-spazio-3); }
+.attacco { font-size: var(--imp-tipo-attacco-dimensione); line-height: var(--imp-tipo-attacco-interlinea); color: var(--imp-testo-secondario); }
+.etichetta { font: 500 var(--imp-tipo-etichetta-dimensione)/var(--imp-tipo-etichetta-interlinea) var(--imp-font-numeri); letter-spacing: var(--imp-tipo-etichetta-spaziatura); text-transform: uppercase; color: var(--imp-testo-tenue); }
+.misura, .num { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; }
+.piccolo { font-size: var(--imp-tipo-testo-piccolo-dimensione); line-height: var(--imp-tipo-testo-piccolo-interlinea); }
+.tenue { color: var(--imp-testo-tenue); }
+.secondario { color: var(--imp-testo-secondario); }
+hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
+
+/* ------------------------------------------------------------------ segni del mestiere */
+/* Crocini: segni di taglio fuori dagli angoli. Il contenitore ha 16 px di abbondanza. */
+.crocini {
+  --c: var(--imp-testo-tenue); --l: 10px; --o: 16px;
+  position: relative; padding: var(--o);
+  background:
+    linear-gradient(var(--c), var(--c)) var(--o) 0 / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 var(--o) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 0 / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% var(--o) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) var(--o) 100% / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 calc(100% - var(--o)) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 100% / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% calc(100% - var(--o)) / var(--l) 1px no-repeat;
+}
+/* Quota: linea di misura con i terminali e il valore in carattere dei numeri */
+.quota { position: relative; height: 1px; background: currentColor; color: var(--imp-accento); }
+.quota::before, .quota::after { content: ""; position: absolute; top: -4px; width: 1px; height: 9px; background: currentColor; }
+.quota::before { left: 0; } .quota::after { right: 0; }
+.quota > span { position: absolute; left: 50%; top: -9px; transform: translate(-50%, -50%); font: 500 11px/1 var(--imp-font-numeri); background: var(--q-fondo, var(--imp-fondo)); padding: 0 4px; white-space: nowrap; }
+.quota.v { width: 1px; height: auto; }
+.quota.v::before, .quota.v::after { left: -4px; width: 9px; height: 1px; top: auto; }
+.quota.v::before { top: 0; } .quota.v::after { bottom: 0; }
+.quota.v > span { top: 50%; left: 8px; transform: translateY(-50%); }
+
+/* ------------------------------------------------------------------ testata del manuale */
+.testata { position: sticky; top: 0; z-index: 10; background: color-mix(in oklab, var(--imp-fondo) 88%, transparent); backdrop-filter: saturate(1.2) blur(10px); -webkit-backdrop-filter: saturate(1.2) blur(10px); border-bottom: 1px solid var(--imp-filetto); }
+.testata .pagina { display: flex; align-items: center; gap: var(--imp-spazio-6); height: 60px; }
+.testata nav { display: flex; gap: var(--imp-spazio-5); margin-left: auto; font-size: 14px; }
+.testata nav a { color: var(--imp-testo-secondario); text-decoration: none; }
+.testata nav a:hover { color: var(--imp-testo); }
+.logo { color: var(--imp-testo); --segno: var(--imp-accento); }
+.logo use { fill: currentColor; }
+.tema { display: inline-flex; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-medio); padding: 2px; gap: 2px; }
+.tema button { font: 500 12px/1 var(--imp-font-testo); color: var(--imp-testo-secondario); background: none; border: 0; padding: 6px 9px; border-radius: 3px; cursor: pointer; }
+.tema button[aria-pressed="true"] { background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+
+/* ------------------------------------------------------------------ copertina */
+.copertina { padding-top: var(--imp-spazio-10); padding-bottom: var(--imp-spazio-9); display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); align-items: end; }
+.copertina .titolo { grid-column: 1 / span 8; }
+.copertina .titolo h1 { margin: var(--imp-spazio-5) 0 var(--imp-spazio-6); }
+.copertina .scheda { grid-column: 9 / span 4; border-top: 1px solid var(--imp-testo); padding-top: var(--imp-spazio-4); }
+.copertina dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
+.copertina dt { color: var(--imp-testo-tenue); }
+.copertina dd { margin: 0; }
+.payoff { font-family: var(--imp-font-titoli); font-style: normal; font-weight: 480; font-variation-settings: "opsz" 72; color: var(--imp-accento); }
+
+/* ------------------------------------------------------------------ sezioni */
+.sezione { padding: var(--imp-spazio-9) 0; border-top: 1px solid var(--imp-filetto); }
+.sezione > .pagina > header { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); margin-bottom: var(--imp-spazio-8); }
+.sezione > .pagina > header .etichetta { grid-column: 1 / span 3; padding-top: 14px; }
+.sezione > .pagina > header .testo { grid-column: 4 / span 9; }
+.sezione > .pagina > header h2 { margin-bottom: var(--imp-spazio-5); }
+.blocco { margin-top: var(--imp-spazio-8); }
+.blocco > .etichetta { display: block; margin-bottom: var(--imp-spazio-4); }
+.griglia { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); }
+.c3 { grid-column: span 3; } .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; } .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+
+/* tavole del marchio */
+.tavola { border-radius: var(--imp-raggio-grande); min-height: 240px; display: grid; place-items: center; padding: var(--imp-spazio-8) var(--imp-spazio-6); position: relative; }
+.tavola .etichetta { position: absolute; left: 16px; top: 14px; }
+.tavola.carta { background: var(--imp-carta-50); color: var(--imp-carta-900); --segno: var(--imp-verde-600); }
+.tavola.carta .etichetta { color: var(--imp-carta-500); }
+.tavola.inchiostro { background: var(--imp-carta-900); color: var(--imp-carta-50); --segno: var(--imp-verde-300); }
+.tavola.inchiostro .etichetta { color: var(--imp-carta-400); }
+.tavola.verde { background: var(--imp-verde-600); color: var(--imp-carta-50); --segno: var(--imp-carta-50); }
+.tavola.verde .etichetta { color: var(--imp-verde-200); }
+.tavola.mono-scuro { background: var(--imp-carta-0); color: var(--imp-carta-900); --segno: var(--imp-carta-900); }
+.tavola.mono-chiaro { background: linear-gradient(135deg, #3a332c, #6b5a4a 55%, #2a2622); color: #fff; --segno: #fff; }
+.tavola.mono-chiaro .etichetta { color: rgb(255 255 255 / .7); }
+.tavola.bordo { box-shadow: inset 0 0 0 1px var(--imp-filetto); }
+.tavola svg use { fill: currentColor; }
+
+.misure-minime { display: flex; align-items: end; gap: var(--imp-spazio-7); flex-wrap: wrap; }
+.misure-minime figure { margin: 0; display: grid; gap: 8px; justify-items: start; }
+.misure-minime figcaption { font: 500 11px/1.3 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.pixel { image-rendering: pixelated; }
+
+.costruzione { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); }
+.costruzione svg { width: 100%; height: auto; }
+
+.scorretti { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--imp-spazio-4); }
+.scorretti figure { margin: 0; }
+.scorretti .riquadro { height: 120px; border-radius: var(--imp-raggio-grande); background: var(--imp-carta-50); color: var(--imp-carta-900); --segno: var(--imp-verde-600); display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 1px var(--imp-filetto); position: relative; }
+.scorretti .riquadro::after { content: ""; position: absolute; right: 10px; top: 10px; width: 16px; height: 16px; background: linear-gradient(45deg, transparent 45%, var(--imp-errore) 45% 55%, transparent 55%), linear-gradient(-45deg, transparent 45%, var(--imp-errore) 45% 55%, transparent 55%); }
+.scorretti figcaption { font-size: 13px; color: var(--imp-testo-secondario); margin-top: 8px; }
+
+.concept { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--imp-griglia-canale); }
+.concept figure { margin: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); background: var(--imp-superficie); display: grid; gap: var(--imp-spazio-4); align-content: start; }
+.concept figure.scelto { box-shadow: inset 0 0 0 2px var(--imp-accento); border-color: transparent; }
+.concept .disegno { height: 150px; display: grid; place-items: center; background: var(--imp-carta-50); border-radius: var(--imp-raggio-medio); }
+.concept .disegno svg { height: 96px; width: auto; }
+.concept .piccoli { display: flex; gap: 12px; align-items: center; }
+.concept h3 { font-size: 24px; }
+
+/* ------------------------------------------------------------------ colore */
+.campioni { display: grid; grid-template-columns: repeat(9, 1fr); gap: var(--imp-spazio-3); }
+.campioni .tinta { height: 72px; font-size: 10.5px; }
+.campioni .dati { font-size: 10.5px; padding: 8px 10px 10px; }
+.campioni .dati b { font-size: 13px; }
+.campione { border-radius: var(--imp-raggio-grande); overflow: hidden; border: 1px solid var(--imp-filetto); background: var(--imp-superficie); }
+.campione .tinta { height: 96px; padding: 10px 12px; display: flex; align-items: end; font: 500 12px/1 var(--imp-font-numeri); }
+.campione.grande .tinta { height: 180px; align-items: end; }
+.campione .dati { padding: 10px 12px 12px; font: 400 11.5px/1.55 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.campione .dati b { display: block; font: 600 14px/1.3 var(--imp-font-testo); color: var(--imp-testo); margin-bottom: 4px; }
+.primari { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: var(--imp-spazio-4); }
+.scala { display: grid; grid-template-columns: repeat(var(--n, 12), 1fr); border-radius: var(--imp-raggio-grande); overflow: hidden; border: 1px solid var(--imp-filetto); }
+.scala div { height: 88px; padding: 8px; font: 500 10.5px/1.25 var(--imp-font-numeri); display: flex; flex-direction: column; justify-content: space-between; }
+.tabella { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.contrasti { display: grid; grid-template-columns: 1fr 1fr; gap: var(--imp-spazio-6) var(--imp-griglia-canale); align-items: start; }
+.contrasti h4 { font: 600 15px/1.3 var(--imp-font-testo); margin: 0 0 4px; }
+.tabella .coppia { font: 400 11.5px/1.35 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.tabella th { text-align: left; font: 500 10.5px/1.3 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; color: var(--imp-testo-tenue); padding: 8px 10px; border-bottom: 1px solid var(--imp-testo); }
+.tabella td { padding: 6px 10px; border-bottom: 1px solid var(--imp-filetto); vertical-align: middle; }
+.tabella td.num, .tabella .num { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prova { display: inline-grid; place-items: center; min-width: 54px; height: 30px; padding: 0 8px; border-radius: var(--imp-raggio-piccolo); font: 600 14px/1 var(--imp-font-testo); box-shadow: inset 0 0 0 1px rgb(127 127 127 / .25); }
+.esito { font: 500 11px/1 var(--imp-font-numeri); padding: 4px 6px; border-radius: var(--imp-raggio-piccolo); background: var(--imp-accento-tenue); color: var(--imp-accento); }
+
+/* ------------------------------------------------------------------ tipografia */
+.famiglia { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); padding: var(--imp-spazio-6) 0; border-bottom: 1px solid var(--imp-filetto); align-items: baseline; }
+.famiglia .nome { grid-column: span 3; }
+.famiglia .nome b { display: block; font-weight: 600; }
+.famiglia .esempio { grid-column: span 9; }
+.scala-tipo { display: grid; gap: 0; }
+.scala-tipo .riga { display: grid; grid-template-columns: 180px 1fr; gap: var(--imp-spazio-6); align-items: baseline; padding: var(--imp-spazio-4) 0; border-bottom: 1px solid var(--imp-filetto); }
+.scala-tipo .riga .etichetta { line-height: 1.6; }
+
+/* ------------------------------------------------------------------ spazi, raggi, ombre, icone */
+.barre { display: grid; gap: 8px; }
+.barre div { display: grid; grid-template-columns: 70px 60px 1fr; align-items: center; gap: 12px; font: 400 12px/1 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.barre i { display: block; height: 12px; background: var(--imp-accento); }
+.raggi { display: flex; gap: var(--imp-spazio-5); flex-wrap: wrap; }
+.raggi div { width: 96px; height: 72px; border: 1.5px solid var(--imp-testo); display: grid; place-items: end start; padding: 8px; font: 400 11px/1 var(--imp-font-numeri); }
+.ombre { display: flex; gap: var(--imp-spazio-6); flex-wrap: wrap; }
+.ombre div { width: 200px; height: 120px; background: var(--imp-superficie); border-radius: var(--imp-raggio-grande); display: grid; place-items: end start; padding: 12px; font: 400 11px/1 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.icone { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--imp-spazio-3); }
+.icone figure { margin: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: 18px 10px 12px; display: grid; justify-items: center; gap: 12px; background: var(--imp-superficie); }
+.icone svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
+.icone figcaption { font: 400 11px/1.2 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.icona-griglia { background-image: linear-gradient(var(--imp-filetto) 1px, transparent 1px), linear-gradient(90deg, var(--imp-filetto) 1px, transparent 1px); background-size: 8px 8px; background-position: -0.5px -0.5px; }
+
+/* ------------------------------------------------------------------ componenti */
+.pulsante {
+  --pf: var(--imp-superficie); --pt: var(--imp-testo); --pb: var(--imp-bordo-campo);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px;
+  font: 600 14.5px/1 var(--imp-font-testo); letter-spacing: .005em; color: var(--pt); background: var(--pf);
+  border: 1px solid var(--pb); border-radius: var(--imp-raggio-medio); cursor: pointer; text-decoration: none;
+  transition: background-color var(--imp-durata-istante) var(--imp-curva-esce), border-color var(--imp-durata-istante) var(--imp-curva-esce), transform var(--imp-durata-istante) var(--imp-curva-esce);
+}
+.pulsante:hover { --pb: var(--imp-testo); }
+.pulsante:active { transform: translateY(1px); }
+.pulsante svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.pulsante.primario { --pf: var(--imp-accento-fondo); --pt: var(--imp-su-accento); --pb: var(--imp-accento-fondo); }
+.pulsante.primario:hover { --pf: var(--imp-accento-fondo-premuto); --pb: var(--imp-accento-fondo-premuto); }
+.pulsante.pieno { --pf: var(--imp-inverso-fondo); --pt: var(--imp-inverso-testo); --pb: var(--imp-inverso-fondo); }
+.pulsante.testo { --pf: transparent; --pb: transparent; padding: 0 6px; color: var(--imp-accento); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.pulsante.distruttivo { --pt: var(--imp-errore); --pb: var(--imp-errore); --pf: transparent; }
+.pulsante.grande { height: 48px; padding: 0 24px; font-size: 16px; }
+.pulsante.piccolo { height: 32px; padding: 0 12px; font-size: 13px; }
+.pulsante[disabled] { opacity: .45; cursor: not-allowed; }
+.pulsante.fuoco { outline: 2px solid var(--imp-accento); outline-offset: 2px; }
+.fila { display: flex; flex-wrap: wrap; gap: var(--imp-spazio-4); align-items: center; }
+.campo { display: grid; gap: 6px; }
+.campo label { font: 600 13px/1.2 var(--imp-font-testo); }
+.campo .aiuto { font-size: 12.5px; color: var(--imp-testo-tenue); }
+.campo .aiuto.errore { color: var(--imp-errore); }
+.input { display: flex; align-items: center; height: 40px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-piccolo); background: var(--imp-superficie); padding: 0 12px; gap: 8px; font-size: 15px; color: var(--imp-testo); }
+.input input { all: unset; flex: 1; min-width: 0; }
+.input input::placeholder { color: var(--imp-testo-tenue); }
+.input .unita { font: 400 13px/1 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.input.num input { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; text-align: right; }
+.input.attivo { border-color: var(--imp-accento); box-shadow: 0 0 0 1px var(--imp-accento); }
+.input.sbagliato { border-color: var(--imp-errore); box-shadow: 0 0 0 1px var(--imp-errore); }
+.selettore { display: inline-flex; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); overflow: hidden; }
+.selettore button { all: unset; padding: 8px 14px; font: 500 13.5px/1 var(--imp-font-testo); cursor: pointer; color: var(--imp-testo-secondario); }
+.selettore button + button { border-left: 1px solid var(--imp-bordo-campo); }
+.selettore button[aria-pressed="true"] { background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+.spunta { display: inline-flex; align-items: center; gap: 10px; font-size: 14.5px; }
+.spunta i { width: 18px; height: 18px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-piccolo); display: grid; place-items: center; background: var(--imp-superficie); }
+.spunta i.on { background: var(--imp-accento-fondo); border-color: var(--imp-accento-fondo); }
+.spunta i.on::after { content: ""; width: 9px; height: 5px; border-left: 2px solid var(--imp-su-accento); border-bottom: 2px solid var(--imp-su-accento); transform: translateY(-1px) rotate(-45deg); }
+.interruttore { width: 36px; height: 20px; border-radius: 999px; background: var(--imp-filetto); position: relative; display: inline-block; }
+.interruttore::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--imp-superficie); box-shadow: 0 1px 2px rgb(0 0 0 / .2); transition: transform var(--imp-durata-breve) var(--imp-curva-esce); }
+.interruttore.on { background: var(--imp-accento-fondo); }
+.interruttore.on::after { transform: translateX(16px); }
+.card { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); box-shadow: var(--imp-ombra-appoggio); }
+.card h4 { margin-top: var(--imp-spazio-4); }
+.card .icona-card { width: 40px; height: 40px; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-medio); display: grid; place-items: center; color: var(--imp-accento); }
+.card .icona-card svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: var(--imp-raggio-piccolo); font: 500 11.5px/1 var(--imp-font-numeri); letter-spacing: .04em; text-transform: uppercase; background: var(--imp-fondo-tenue); color: var(--imp-testo-secondario); box-shadow: inset 0 0 0 1px var(--imp-filetto); }
+.badge.verde { background: var(--imp-accento-tenue); color: var(--imp-accento); box-shadow: none; }
+.badge.prezzo { height: 32px; padding: 0 0 0 12px; gap: 0; text-transform: none; letter-spacing: 0; font-size: 14px; background: var(--imp-superficie); color: var(--imp-testo); box-shadow: inset 0 0 0 1px var(--imp-testo); }
+.badge.prezzo b { font-weight: 500; padding-right: 10px; }
+.badge.prezzo span { height: 100%; display: grid; place-items: center; padding: 0 10px; background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); font: 600 12px/1 var(--imp-font-testo); border-radius: 0 var(--imp-raggio-piccolo) var(--imp-raggio-piccolo) 0; }
+.avviso { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 12px 14px; border-radius: var(--imp-raggio-medio); font-size: 14px; border-left: 3px solid var(--a); background: color-mix(in oklab, var(--a) 9%, var(--imp-superficie)); }
+.avviso svg { width: 20px; height: 20px; fill: none; stroke: var(--a); stroke-width: 1.5; stroke-linecap: square; }
+.avviso b { color: var(--a); font-weight: 600; }
+
+/* card prezzo */
+.prezzi { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--imp-griglia-canale); align-items: stretch; }
+.card-prezzo { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-7) var(--imp-spazio-6) var(--imp-spazio-6); display: flex; flex-direction: column; gap: var(--imp-spazio-5); position: relative; }
+.card-prezzo.consigliata { border-color: var(--imp-testo); box-shadow: var(--imp-ombra-sollevato); }
+.card-prezzo .nastro { position: absolute; top: -1px; right: 24px; transform: translateY(-50%); }
+.card-prezzo h3 { font-size: 30px; }
+.card-prezzo .cifra { display: flex; align-items: baseline; gap: 10px; }
+.card-prezzo .cifra strong { font: 480 64px/1 var(--imp-font-titoli); font-variation-settings: "opsz" 72; letter-spacing: -.03em; font-variant-numeric: lining-nums; }
+.card-prezzo .cifra span { color: var(--imp-testo-secondario); font-size: 15px; }
+.card-prezzo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 14.5px; }
+.card-prezzo li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; }
+.card-prezzo li svg { width: 18px; height: 18px; fill: none; stroke: var(--imp-accento); stroke-width: 1.75; stroke-linecap: square; margin-top: 2px; }
+.card-prezzo .pulsante { width: 100%; margin-top: auto; }
+.card-prezzo .nota { font-size: 12.5px; color: var(--imp-testo-tenue); text-align: center; margin: -8px 0 0; }
+.fascia-lab { margin-top: var(--imp-griglia-canale); display: flex; align-items: center; justify-content: space-between; gap: var(--imp-spazio-6); padding: var(--imp-spazio-6); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); background: var(--imp-superficie); }
+.fascia-lab h3 { font-size: 24px; margin: 8px 0 6px; }
+.fascia-lab p { margin: 0; max-width: 62ch; }
+.fascia-lab .pulsante { flex: none; }
+
+/* ------------------------------------------------------------------ foto segnaposto */
+.foto { background: #8a7a6a; position: relative; overflow: hidden; }
+.foto::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / .28)); }
+.f1 { background: linear-gradient(165deg, #e9dccb 0%, #c7a888 38%, #7d5f48 72%, #3d2f26 100%); }
+.f2 { background: radial-gradient(70% 60% at 35% 35%, #f4ead9 0%, #cdb79c 40%, #7a6654 80%, #4a3d33 100%); }
+.f3 { background: linear-gradient(180deg, #ededeb 0%, #b3b3b0 45%, #5b5b59 80%, #262625 100%); }
+.f4 { background: linear-gradient(200deg, #d7dcc4 0%, #9aa77f 40%, #5d6b49 75%, #2f3826 100%); }
+.f5 { background: linear-gradient(170deg, #f6d9b8 0%, #dba27f 35%, #9d6b63 70%, #4b3842 100%); }
+.f6 { background: radial-gradient(80% 70% at 60% 30%, #d9d4cc 0%, #a39b90 45%, #5f584f 85%); }
+.f7 { background: linear-gradient(150deg, #4a4642 0%, #8f8579 40%, #d8cbb8 75%, #efe6d6 100%); }
+
+/* ------------------------------------------------------------------ landing */
+.sito { border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); overflow: hidden; background: var(--imp-fondo); box-shadow: var(--imp-ombra-sollevato); }
+.sito .barra { display: flex; align-items: center; gap: var(--imp-spazio-6); padding: 18px 40px; border-bottom: 1px solid var(--imp-filetto); }
+.sito .barra nav { display: flex; gap: 22px; font-size: 14px; color: var(--imp-testo-secondario); margin-left: auto; }
+.sito .eroe { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; padding: 72px 40px 64px; align-items: center; }
+.sito .eroe h1 { font-size: clamp(40px, 5.2vw, 64px); margin: 18px 0 20px; }
+.sito .eroe .attacco { margin-bottom: 28px; }
+.sito .punti { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 28px; font-size: 13.5px; color: var(--imp-testo-secondario); }
+.sito .punti span { display: inline-flex; gap: 8px; align-items: center; }
+.sito .punti svg { width: 16px; height: 16px; fill: none; stroke: var(--imp-accento); stroke-width: 1.75; stroke-linecap: square; }
+.album { position: relative; padding: 40px 44px 46px 28px; }
+.album .spread { display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 2 / 1; box-shadow: 0 1px 0 rgb(0 0 0 / .05), 0 30px 50px -24px rgb(30 24 18 / .5); position: relative; }
+.album .spread::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 28px; transform: translateX(-50%); background: linear-gradient(90deg, transparent, rgb(0 0 0 / .14) 45%, rgb(255 255 255 / .08) 52%, transparent); }
+.album .pag { background: #fbfaf7; position: relative; }
+.album .pag.sinistra .foto { position: absolute; inset: 0; }
+.album .pag.destra .foto { position: absolute; left: 16%; right: 16%; top: 16%; bottom: 16%; }
+.album .q-alto { position: absolute; left: 28px; right: 44px; top: 10px; }
+.album .q-lato { position: absolute; right: 24px; top: 40px; bottom: 46px; }
+.album .segni { position: absolute; left: 50%; width: 2px; height: 10px; background: var(--imp-accento); transform: translateX(-50%); z-index: 1; }
+.album .segni.su { top: -14px; } .album .segni.giu { bottom: -14px; }
+.album .didascalia { position: absolute; left: 28px; bottom: 12px; font: 500 11px/1 var(--imp-font-numeri); color: var(--imp-testo-tenue); letter-spacing: .04em; }
+
+/* ------------------------------------------------------------------ app */
+.app { --q-fondo: var(--imp-app-tela); border-radius: 10px; overflow: hidden; border: 1px solid var(--imp-app-bordo); box-shadow: var(--imp-ombra-sollevato); background: var(--imp-app-tela); color: var(--imp-app-testo); font: 400 13px/1.4 var(--imp-font-testo); display: grid; grid-template-columns: 188px 1fr 268px; grid-template-rows: 48px 1fr 104px; height: 640px; }
+.app .a-barra { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: var(--imp-app-barra); border-bottom: 1px solid var(--imp-app-bordo); }
+.app .a-barra .progetto { font-weight: 600; }
+.app .a-barra .progetto span { font-weight: 400; color: var(--imp-app-testo-tenue); margin-left: 6px; }
+.app .a-barra .centro { margin: 0 auto; }
+.app .selettore { border-color: var(--imp-app-bordo); }
+.app .selettore button { padding: 6px 12px; font-size: 12.5px; color: var(--imp-app-testo-tenue); }
+.app .selettore button + button { border-color: var(--imp-app-bordo); }
+.app .selettore button[aria-pressed="true"] { background: var(--imp-app-sollevato); color: var(--imp-app-testo); box-shadow: inset 0 -2px 0 var(--imp-app-accento); }
+.app .pulsante { height: 30px; font-size: 13px; padding: 0 12px; }
+.app .pulsante.app-sec { --pf: transparent; --pt: var(--imp-app-testo); --pb: var(--imp-app-bordo); }
+.app .a-lista { grid-column: 1; grid-row: 2 / 4; background: var(--imp-app-pannello); border-right: 1px solid var(--imp-app-bordo); padding: 12px; display: grid; gap: 12px; align-content: start; overflow: hidden; }
+.app .mini { display: grid; gap: 5px; }
+.app .mini .s { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; aspect-ratio: 2 / 1; background: #fff; padding: 0; outline: 1px solid var(--imp-app-bordo); }
+.app .mini .s > div { position: relative; }
+.app .mini .s > div:not(.foto) { background: #f4f4f2; }
+.app .mini .s .foto::after { display: none; }
+.app .mini.attiva .s { outline: 2px solid var(--imp-app-selezione); outline-offset: 2px; }
+.app .mini span { font: 400 11px/1 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); }
+.app .mini.attiva span { color: var(--imp-app-testo); }
+.app .a-tela { grid-column: 2; grid-row: 2; position: relative; display: grid; place-items: center; overflow: hidden; }
+.app .a-spread { position: relative; width: 78%; aspect-ratio: 2 / 1; background: #fff; display: grid; grid-template-columns: 1fr 1fr; box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+.app .a-spread .abb { position: absolute; inset: -10px; border: 1px dashed rgb(182 50 43 / .55); pointer-events: none; }
+.app .a-spread .piega { position: absolute; left: 50%; top: -18px; bottom: -18px; border-left: 1px dashed var(--imp-app-testo-tenue); opacity: .6; }
+.app .a-spread .piega::before, .app .a-spread .piega::after { content: ""; position: absolute; left: -2px; width: 3px; height: 8px; background: var(--imp-app-accento); }
+.app .a-spread .piega::before { top: 0; } .app .a-spread .piega::after { bottom: 0; }
+.app .slot { position: absolute; }
+.app .slot.sel { outline: 1.5px solid var(--imp-app-selezione); outline-offset: 0; box-shadow: 0 0 0 3px rgb(0 0 0 / .25); }
+.app .slot.sel i { position: absolute; width: 7px; height: 7px; background: var(--imp-app-selezione); border: 1px solid rgb(0 0 0 / .5); }
+.app .slot.sel i:nth-child(1) { left: -4px; top: -4px; } .app .slot.sel i:nth-child(2) { right: -4px; top: -4px; } .app .slot.sel i:nth-child(3) { left: -4px; bottom: -4px; } .app .slot.sel i:nth-child(4) { right: -4px; bottom: -4px; }
+.app .qa { position: absolute; color: var(--imp-app-accento); }
+.app .qa.att { color: var(--imp-attenzione-segno); }
+.app .qa > span { background: var(--imp-app-tela); }
+.app .a-lato { grid-column: 3; grid-row: 2 / 4; background: var(--imp-app-pannello); border-left: 1px solid var(--imp-app-bordo); padding: 14px; display: grid; gap: 16px; align-content: start; }
+.app .a-lato h5 { margin: 0 0 8px; font: 600 11px/1.3 var(--imp-font-testo); letter-spacing: .02em; color: var(--imp-app-testo-tenue); text-transform: uppercase; }
+.app .riga-m { display: grid; grid-template-columns: 1fr 92px; align-items: center; gap: 8px; margin-bottom: 6px; }
+.app .riga-m .valore { display: flex; align-items: center; justify-content: space-between; height: 28px; padding: 0 8px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-piccolo); background: var(--imp-app-tela); font: 400 12px/1 var(--imp-font-numeri); }
+.app .riga-m .valore em { font-style: normal; color: var(--imp-app-testo-tenue); }
+.app .riga-m .valore.uguale { border-color: var(--imp-app-accento); }
+.app .stato { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--imp-app-testo-tenue); }
+.app .stato i { width: 8px; height: 8px; border-radius: 1px; background: var(--imp-app-accento); }
+.app .livello { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--imp-app-bordo); font-size: 12.5px; }
+.app .livello span:last-child { font: 400 11px/1.4 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); }
+.app .assistente { border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-medio); padding: 10px; background: var(--imp-app-tela); font-size: 12.5px; }
+.app .assistente b { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 4px; }
+.app .assistente svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.app .a-foto { grid-column: 2; grid-row: 3; border-top: 1px solid var(--imp-app-bordo); background: var(--imp-app-pannello); display: flex; gap: 8px; padding: 12px 14px; align-items: center; overflow: hidden; }
+.app .a-foto .t { width: 92px; height: 66px; flex: none; position: relative; }
+.app .a-foto .t.usata::before { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .45); z-index: 1; }
+.app .a-foto .t.usata::after { content: "1"; position: absolute; right: 4px; bottom: 4px; z-index: 2; font: 500 10px/1 var(--imp-font-numeri); color: #fff; background: none; inset: auto 4px 4px auto; }
+
+/* ------------------------------------------------------------------ tono */
+.tono { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); overflow: hidden; }
+.tono > div { padding: 14px 18px; border-bottom: 1px solid var(--imp-filetto); font-size: 15px; }
+.tono > div:nth-child(odd) { border-right: 1px solid var(--imp-filetto); }
+.tono .th { font: 500 11px/1.3 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; background: var(--imp-fondo-tenue); }
+.tono .no { color: var(--imp-testo-secondario); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--imp-errore) 60%, transparent); }
+
+.piede { padding: var(--imp-spazio-9) 0 var(--imp-spazio-10); border-top: 1px solid var(--imp-filetto); }
+.piede .pagina { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+
+/* ------------------------------------------------------------------ adattamento */
+@media (max-width: 1024px) {
+  .app { grid-template-columns: 150px 1fr 220px; }
+  .sito .eroe { grid-template-columns: 1fr; }
+  .prezzi, .concept { grid-template-columns: 1fr; }
+  .fascia-lab { flex-direction: column; align-items: flex-start; }
+  .scorretti { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .testata nav { display: none; }
+  .copertina .titolo, .copertina .scheda, .sezione > .pagina > header .etichetta, .sezione > .pagina > header .testo { grid-column: 1 / -1; }
+  .c3, .c4, .c5, .c6, .c7, .c8 { grid-column: 1 / -1; }
+  .primari { grid-template-columns: 1fr; }
+  .scala { grid-template-columns: repeat(4, 1fr); }
+  .griglia > *, .copertina > *, .primari > *, .scorretti > * { min-width: 0; }
+  .tavola svg { max-width: 100%; }
+  .album { padding-right: 36px; }
+  .famiglia .nome, .famiglia .esempio { grid-column: 1 / -1; }
+  .scala-tipo .riga { grid-template-columns: 1fr; gap: 4px; }
+  .app { grid-template-columns: 1fr; grid-template-rows: 48px 360px auto; height: auto; }
+  .app .a-lista, .app .a-foto { display: none; }
+  .app > * { grid-column: 1 !important; grid-row: auto !important; }
+  .app .a-tela { min-height: 260px; }
+  .app .a-barra .centro { display: none; }
+  .sito .barra nav { display: none; }
+  .sito .eroe { padding: 40px 20px; }
+  .tono { grid-template-columns: 1fr; }
+  .tono > div:nth-child(odd) { border-right: 0; }
+  .tabella { font-size: 12px; }
+  .contrasti { grid-template-columns: 1fr; }
+  .campioni { grid-template-columns: repeat(3, 1fr); }
+  .contrasti-avvolgi { overflow-x: auto; }
+}
+@media (max-width: 400px) {
+  .testata .pagina { gap: var(--imp-spazio-3); }
+  .tema button { padding: 6px 6px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="imp-logotipo" viewBox="0 0 1366.78 220"><path  d="M0 50h120v120h-120zM140 50h120v120h-120z"/><path style="fill:var(--segno,currentColor)" d="M120 0h20v35h-20zM120 185h20v35h-20z"/><path  d="M382.95 167.31V170H330V167.31L344.1 163.71V56.21L330 52.69V50H382.95V52.69L368.77 56.21V163.71ZM422.39 99.34V165.05L432.46 167.57V170H390.17V167.57L400.74 164.97V101.02Q399.4 99.85 396.88 97.75Q394.36 95.65 389.5 92.13V90.28L421.47 81.47H422.39ZM474.08 107.48V165.05L484.15 167.57V170H442.28V167.57L452.43 165.05V111.01Q452.43 106.31 450.88 103.24Q449.33 100.18 446.14 98.71Q442.95 97.24 437.92 97.24Q432.97 97.24 428.27 98.59Q423.57 99.93 419.79 101.78L419.12 99.68Q425.33 94.06 429.86 90.66Q434.39 87.26 437.92 85.45Q441.44 83.65 444.76 83.02Q448.07 82.39 451.93 82.39Q459.48 82.39 464.39 85.12Q469.3 87.85 471.69 93.43Q474.08 99.01 474.08 107.48ZM525.78 107.48V164.97L536.35 167.57V170H493.97V167.57L504.13 165.05V111.01Q504.13 106.31 502.57 103.24Q501.02 100.18 497.83 98.71Q494.64 97.24 489.61 97.24Q484.66 97.24 479.96 98.59Q475.26 99.93 471.48 101.78L470.81 99.68Q477.02 94.06 481.55 90.66Q486.08 87.26 489.61 85.45Q493.13 83.65 496.45 83.02Q499.76 82.39 503.62 82.39Q514.95 82.39 520.36 88.56Q525.78 94.73 525.78 107.48ZM611.62 129.3Q611.62 111.68 606.04 103.58Q600.46 95.48 588.8 95.48Q584.77 95.48 581.16 96.36Q577.55 97.24 574.24 99.17Q570.92 101.1 567.9 104.21L566.98 102.11Q572.6 96.15 577.22 92.25Q581.83 88.35 585.78 86.13Q589.72 83.9 593.29 83.02Q596.85 82.14 600.46 82.14Q611.2 82.14 618.76 87.05Q626.31 91.96 630.25 100.9Q634.2 109.83 634.2 122.25Q634.2 138.03 628.24 149.15Q622.28 160.27 611.75 166.1Q601.22 171.93 587.62 171.93Q582.67 171.93 577.64 171.22Q572.6 170.5 567.82 169.03Q563.03 167.57 558.76 165.22H572.43V202.06L584.77 204.66V207.09H540.21V204.66L550.87 202.06V101.02Q549.78 100.1 548.35 99.05Q546.92 98 544.83 96.32Q542.73 94.64 539.62 92.13V90.28L571.51 81.47H572.43V96.49V150.36Q572.43 155.4 574.66 159.22Q576.88 163.03 580.83 165.17Q584.77 167.31 589.72 167.31Q596.69 167.31 601.59 163.2Q606.5 159.09 609.06 150.7Q611.62 142.31 611.62 129.3ZM696.04 114.78 696.55 118.64Q686.73 121.83 680.64 124.81Q674.56 127.79 671.33 130.81Q668.1 133.83 666.92 137.27Q665.75 140.71 665.75 144.91Q665.75 151.96 669.27 155.31Q672.8 158.67 678.17 158.67Q682.11 158.67 685.05 157.12Q687.99 155.57 689.62 152.42Q691.26 149.27 691.26 144.57V105.47Q691.26 97.66 687.31 93.51Q683.37 89.36 675.23 89.36Q671.29 89.36 667.59 89.86Q663.9 90.36 661.64 91.29L665.66 87.17Q665.24 91.45 664.66 94.98Q664.07 98.5 663.27 101.06Q662.48 103.62 661.38 104.97Q660.21 106.56 657.78 107.48Q655.34 108.41 652.49 108.41Q648.88 108.41 646.95 107.1Q645.02 105.8 645.02 103.2Q645.02 99.51 648.59 95.82Q652.15 92.13 657.99 89.02Q663.82 85.92 670.78 84.03Q677.75 82.14 684.55 82.14Q694.87 82.14 701.08 85.12Q707.29 88.1 710.1 93.55Q712.91 99.01 712.91 106.39V154.06Q712.91 156.49 713.66 158.04Q714.42 159.59 715.89 160.31Q717.36 161.02 719.29 161.02Q721.8 161.02 724.28 160.27Q726.76 159.51 729.36 157.83V160.94Q723.06 167.73 717.86 169.83Q712.66 171.93 706.62 171.93Q700.99 171.93 697.68 169.62Q694.36 167.31 692.9 162.74Q691.43 158.17 691.17 151.37L691.85 151.71Q690.25 158 687.02 162.49Q683.79 166.98 679.22 169.41Q674.64 171.85 669.02 171.85Q657.78 171.85 651.02 166.1Q644.27 160.35 644.27 149.94Q644.27 144.57 646.15 140.34Q648.04 136.1 653.37 132.32Q658.7 128.55 668.98 124.35Q679.26 120.15 696.04 114.78ZM764.35 209.02Q754.03 209.02 746.85 207.59Q739.68 206.17 735.27 203.61Q730.87 201.05 728.9 197.69Q726.92 194.34 726.92 190.56Q726.92 187.45 728.69 184.64Q730.45 181.83 734.39 179.4Q738.34 176.97 744.84 174.83Q751.34 172.69 760.83 170.92H767.71V172.18Q758.06 173.44 752.56 175.75Q747.06 178.06 744.8 181.2Q742.53 184.35 742.53 188.13Q742.53 193.24 745.85 196.9Q749.16 200.55 755.24 202.52Q761.33 204.49 769.64 204.49Q778.95 204.49 784.99 202.39Q791.03 200.29 794.01 196.73Q796.99 193.16 796.99 188.71Q796.99 185.19 795.06 182.88Q793.13 180.57 788.94 179.02Q784.74 177.47 778.15 176.46Q771.57 175.45 762.17 174.87Q754.2 174.11 748.83 172.52Q743.45 170.92 740.27 168.45Q737.08 165.97 735.69 162.7Q734.31 159.43 734.31 155.4Q734.31 148.52 740.6 143.61Q746.9 138.7 758.31 136.43L759.4 138.53Q753.52 138.95 751.22 141.13Q748.91 143.31 748.91 145.92Q748.91 148.1 749.92 149.69Q750.92 151.29 753.69 152.38Q756.46 153.47 761.66 154.27Q766.87 155.06 775.34 155.82Q785.08 156.66 792 158.55Q798.92 160.43 803.33 163.41Q807.73 166.39 809.79 170.42Q811.85 174.45 811.85 179.73Q811.85 187.45 806.73 194.13Q801.61 200.8 791.12 204.91Q780.63 209.02 764.35 209.02ZM766.2 139.71Q756.29 139.71 748.62 136.06Q740.94 132.41 736.57 125.94Q732.21 119.48 732.21 111.01Q732.21 102.53 736.62 96.03Q741.02 89.52 748.7 85.83Q756.38 82.14 766.03 82.14Q773.66 82.14 779.96 84.24Q786.25 86.34 790.83 90.2Q795.4 94.06 797.87 99.3Q800.35 104.55 800.35 110.92Q800.35 119.31 795.94 125.82Q791.54 132.32 783.86 136.01Q776.18 139.71 766.2 139.71ZM768.38 135.85Q774.92 135.17 777.82 128.55Q780.71 121.92 779.79 111.59Q778.95 99.09 774.84 92.29Q770.73 85.5 763.93 86Q757.8 86.5 754.87 93.22Q751.93 99.93 752.69 110.08Q753.44 122.42 757.59 129.38Q761.75 136.35 768.38 135.85ZM777.44 85.58 773.41 82.81Q785.16 83.57 792.38 83.31Q799.59 83.06 803.62 82.35Q807.65 81.64 809.66 81.05Q811.68 80.46 813.02 80.46Q814.62 80.46 815.71 81.59Q816.8 82.73 816.8 85.5Q816.8 90.62 814.11 93.85Q811.43 97.08 808.07 97.08Q805.89 97.08 803.62 95.48Q801.36 93.89 798.13 91.75Q794.9 89.61 789.94 87.8Q784.99 86 777.44 85.58ZM850.2 81.47V98.42V165.05L860.52 167.57V170H817.97V167.57L828.63 164.97V101.02Q827.62 100.27 825.99 98.97Q824.35 97.66 822.13 95.94Q819.9 94.22 817.3 92.13V90.28L849.27 81.47ZM898.2 99.59V165.05L908.52 167.57V170H865.97V167.57L876.55 164.97V101.02Q875.2 99.85 872.69 97.75Q870.17 95.65 865.3 92.13V90.28L897.27 81.47H898.2ZM920.85 167.57 931.26 165.05V112.27Q931.26 107.15 929.58 103.79Q927.9 100.43 924.42 98.84Q920.94 97.24 915.48 97.24Q909.94 97.24 904.83 98.76Q899.71 100.27 895.68 102.2L894.92 100.52Q901.38 94.73 906.13 91.12Q910.87 87.51 914.64 85.62Q918.42 83.73 921.9 83.06Q925.38 82.39 929.58 82.39Q941.58 82.39 947.24 88.94Q952.91 95.48 952.91 108.83V164.97L963.48 167.57V170H920.85ZM1021.97 114.78 1022.48 118.64Q1012.66 121.83 1006.57 124.81Q1000.49 127.79 997.26 130.81Q994.03 133.83 992.85 137.27Q991.68 140.71 991.68 144.91Q991.68 151.96 995.2 155.31Q998.73 158.67 1004.1 158.67Q1008.04 158.67 1010.98 157.12Q1013.92 155.57 1015.55 152.42Q1017.19 149.27 1017.19 144.57V105.47Q1017.19 97.66 1013.24 93.51Q1009.3 89.36 1001.16 89.36Q997.22 89.36 993.52 89.86Q989.83 90.36 987.57 91.29L991.59 87.17Q991.17 91.45 990.59 94.98Q990 98.5 989.2 101.06Q988.41 103.62 987.31 104.97Q986.14 106.56 983.71 107.48Q981.27 108.41 978.42 108.41Q974.81 108.41 972.88 107.1Q970.95 105.8 970.95 103.2Q970.95 99.51 974.52 95.82Q978.08 92.13 983.92 89.02Q989.75 85.92 996.71 84.03Q1003.68 82.14 1010.48 82.14Q1020.8 82.14 1027.01 85.12Q1033.22 88.1 1036.03 93.55Q1038.84 99.01 1038.84 106.39V154.06Q1038.84 156.49 1039.59 158.04Q1040.35 159.59 1041.82 160.31Q1043.29 161.02 1045.22 161.02Q1047.73 161.02 1050.21 160.27Q1052.69 159.51 1055.29 157.83V160.94Q1048.99 167.73 1043.79 169.83Q1038.59 171.93 1032.55 171.93Q1026.92 171.93 1023.61 169.62Q1020.29 167.31 1018.83 162.74Q1017.36 158.17 1017.1 151.37L1017.78 151.71Q1016.18 158 1012.95 162.49Q1009.72 166.98 1005.15 169.41Q1000.57 171.85 994.95 171.85Q983.71 171.85 976.95 166.1Q970.2 160.35 970.2 149.94Q970.2 144.57 972.08 140.34Q973.97 136.1 979.3 132.32Q984.63 128.55 994.91 124.35Q1005.19 120.15 1021.97 114.78ZM1087.01 146.34Q1087.01 152.29 1090.7 155.23Q1094.39 158.17 1100.94 158.17Q1104.71 158.17 1108.87 157.54Q1113.02 156.91 1118.56 155.4V158.34Q1110.34 163.71 1104.88 166.64Q1099.43 169.58 1095.36 170.8Q1091.29 172.01 1086.92 172.01Q1080.88 172.01 1076.01 169.58Q1071.15 167.15 1068.29 161.94Q1065.44 156.74 1065.44 148.43V97.33L1053.78 89.1V87.51Q1054.62 86.92 1056.92 85.58Q1059.23 84.24 1062.46 82.31Q1065.69 80.38 1069.59 78.07Q1073.5 75.76 1077.69 73.24Q1081.89 70.73 1085.92 68.29H1087.01V86.76ZM1079.12 94.9V84.07H1115.96L1114.45 94.9ZM1163.54 167.4Q1170.42 167.4 1174.91 163.12Q1179.4 158.84 1181.58 150.11Q1183.76 141.38 1183.76 128.13Q1183.76 114.45 1181.62 105.26Q1179.48 96.07 1175.08 91.41Q1170.67 86.76 1163.71 86.76Q1156.83 86.76 1152.34 90.99Q1147.85 95.23 1145.66 103.96Q1143.48 112.69 1143.48 125.94Q1143.48 139.62 1145.62 148.81Q1147.76 158 1152.17 162.7Q1156.57 167.4 1163.54 167.4ZM1162.95 171.93Q1150.78 171.93 1141.17 166.22Q1131.57 160.52 1125.99 150.41Q1120.41 140.29 1120.41 127.12Q1120.41 113.86 1126.24 103.71Q1132.07 93.55 1142.01 87.85Q1151.96 82.14 1164.29 82.14Q1176.71 82.14 1186.28 87.85Q1195.85 93.55 1201.34 103.62Q1206.84 113.69 1206.84 126.95Q1206.84 140.21 1200.92 150.36Q1195.01 160.52 1185.06 166.22Q1175.12 171.93 1162.95 171.93ZM1274.48 82.48Q1278.67 82.48 1281.1 84.91Q1283.54 87.34 1283.54 91.54Q1283.54 96.66 1280.27 100.1Q1276.99 103.54 1272.13 103.54Q1269.44 103.54 1267.26 102.99Q1265.08 102.45 1262.81 101.9Q1260.55 101.36 1257.69 101.36Q1255.17 101.36 1253.08 102.11Q1250.98 102.87 1249.05 104.21Q1247.12 105.55 1245.1 107.57L1245.02 103.79Q1251.73 96.49 1256.27 92.21Q1260.8 87.93 1263.99 85.83Q1267.17 83.73 1269.61 83.1Q1272.04 82.48 1274.48 82.48ZM1246.95 98.42V164.97L1259.2 167.57V170H1214.73V167.57L1225.3 164.97V101.02Q1224.21 100.18 1222.78 99.09Q1221.36 98 1219.26 96.32Q1217.16 94.64 1214.06 92.13V90.28L1246.03 81.47H1246.95ZM1327.43 82.14Q1337.08 82.14 1344.04 86.04Q1351.01 89.94 1355.03 97.37Q1359.06 104.8 1359.82 115.54H1303.68V109.83H1349.08L1339.51 113.61Q1338.76 103.96 1336.95 98.13Q1335.15 92.29 1332.17 89.65Q1329.19 87.01 1324.83 87.01Q1319.03 87.01 1314.97 90.41Q1310.9 93.8 1308.76 100.81Q1306.62 107.82 1306.62 118.64Q1306.62 132.24 1310.01 140.63Q1313.41 149.02 1319.96 152.88Q1326.5 156.74 1335.99 156.74Q1340.6 156.74 1344.84 155.57Q1349.08 154.39 1352.9 151.96Q1356.71 149.52 1359.9 145.66L1361.58 146.92Q1356.04 156.24 1350.5 161.69Q1344.97 167.15 1338.88 169.54Q1332.8 171.93 1325.58 171.93Q1313.92 171.93 1304.85 166.94Q1295.79 161.94 1290.63 152.25Q1285.47 142.56 1285.47 128.63Q1285.47 116.13 1290.34 105.55Q1295.2 94.98 1304.6 88.56Q1314 82.14 1327.43 82.14ZM827.14 47.59h21.94v21.94h-21.94z"/></symbol><symbol id="imp-simbolo" viewBox="0 0 260 220"><path  d="M0 50h120v120h-120zM140 50h120v120h-120z"/><path style="fill:var(--segno,currentColor)" d="M120 0h20v35h-20zM120 185h20v35h-20z"/></symbol><symbol id="imp-verticale" viewBox="0 0 1031.58 719.02"><path  d="M255.79 100h240v240h-240zM535.79 100h240v240h-240z"/><path style="fill:var(--segno,currentColor)" d="M495.79 0h40v70h-40zM495.79 370h40v70h-40z"/><path  d="M52.95 677.31V680H0V677.31L14.1 673.71V566.21L0 562.69V560H52.95V562.69L38.77 566.21V673.71ZM92.39 609.34V675.05L102.46 677.57V680H60.17V677.57L70.74 674.97V611.02Q69.4 609.85 66.88 607.75Q64.36 605.65 59.5 602.13V600.28L91.47 591.47H92.39ZM144.08 617.48V675.05L154.15 677.57V680H112.28V677.57L122.43 675.05V621.01Q122.43 616.31 120.88 613.24Q119.33 610.18 116.14 608.71Q112.95 607.24 107.92 607.24Q102.97 607.24 98.27 608.59Q93.57 609.93 89.79 611.78L89.12 609.68Q95.33 604.06 99.86 600.66Q104.39 597.26 107.92 595.45Q111.44 593.65 114.76 593.02Q118.07 592.39 121.93 592.39Q129.48 592.39 134.39 595.12Q139.3 597.85 141.69 603.43Q144.08 609.01 144.08 617.48ZM195.78 617.48V674.97L206.35 677.57V680H163.97V677.57L174.13 675.05V621.01Q174.13 616.31 172.57 613.24Q171.02 610.18 167.83 608.71Q164.64 607.24 159.61 607.24Q154.66 607.24 149.96 608.59Q145.26 609.93 141.48 611.78L140.81 609.68Q147.02 604.06 151.55 600.66Q156.08 597.26 159.61 595.45Q163.13 593.65 166.45 593.02Q169.76 592.39 173.62 592.39Q184.95 592.39 190.36 598.56Q195.78 604.73 195.78 617.48ZM281.62 639.3Q281.62 621.68 276.04 613.58Q270.46 605.48 258.8 605.48Q254.77 605.48 251.16 606.36Q247.55 607.24 244.24 609.17Q240.92 611.1 237.9 614.21L236.98 612.11Q242.6 606.15 247.22 602.25Q251.83 598.35 255.78 596.13Q259.72 593.9 263.29 593.02Q266.85 592.14 270.46 592.14Q281.2 592.14 288.76 597.05Q296.31 601.96 300.25 610.9Q304.2 619.83 304.2 632.25Q304.2 648.03 298.24 659.15Q292.28 670.27 281.75 676.1Q271.22 681.93 257.62 681.93Q252.67 681.93 247.64 681.22Q242.6 680.5 237.82 679.03Q233.03 677.57 228.76 675.22H242.43V712.06L254.77 714.66V717.09H210.21V714.66L220.87 712.06V611.02Q219.78 610.1 218.35 609.05Q216.92 608 214.83 606.32Q212.73 604.64 209.62 602.13V600.28L241.51 591.47H242.43V606.49V660.36Q242.43 665.4 244.66 669.22Q246.88 673.03 250.83 675.17Q254.77 677.31 259.72 677.31Q266.69 677.31 271.59 673.2Q276.5 669.09 279.06 660.7Q281.62 652.31 281.62 639.3ZM366.04 624.78 366.55 628.64Q356.73 631.83 350.64 634.81Q344.56 637.79 341.33 640.81Q338.1 643.83 336.92 647.27Q335.75 650.71 335.75 654.91Q335.75 661.96 339.27 665.31Q342.8 668.67 348.17 668.67Q352.11 668.67 355.05 667.12Q357.99 665.57 359.62 662.42Q361.26 659.27 361.26 654.57V615.47Q361.26 607.66 357.31 603.51Q353.37 599.36 345.23 599.36Q341.29 599.36 337.59 599.86Q333.9 600.36 331.64 601.29L335.66 597.17Q335.24 601.45 334.66 604.98Q334.07 608.5 333.27 611.06Q332.48 613.62 331.38 614.97Q330.21 616.56 327.78 617.48Q325.34 618.41 322.49 618.41Q318.88 618.41 316.95 617.1Q315.02 615.8 315.02 613.2Q315.02 609.51 318.59 605.82Q322.15 602.13 327.99 599.02Q333.82 595.92 340.78 594.03Q347.75 592.14 354.55 592.14Q364.87 592.14 371.08 595.12Q377.29 598.1 380.1 603.55Q382.91 609.01 382.91 616.39V664.06Q382.91 666.49 383.66 668.04Q384.42 669.59 385.89 670.31Q387.36 671.02 389.29 671.02Q391.8 671.02 394.28 670.27Q396.76 669.51 399.36 667.83V670.94Q393.06 677.73 387.86 679.83Q382.66 681.93 376.62 681.93Q370.99 681.93 367.68 679.62Q364.36 677.31 362.9 672.74Q361.43 668.17 361.17 661.37L361.85 661.71Q360.25 668 357.02 672.49Q353.79 676.98 349.22 679.41Q344.64 681.85 339.02 681.85Q327.78 681.85 321.02 676.1Q314.27 670.35 314.27 659.94Q314.27 654.57 316.15 650.34Q318.04 646.1 323.37 642.32Q328.7 638.55 338.98 634.35Q349.26 630.15 366.04 624.78ZM434.35 719.02Q424.03 719.02 416.85 717.59Q409.68 716.17 405.27 713.61Q400.87 711.05 398.9 707.69Q396.92 704.34 396.92 700.56Q396.92 697.45 398.69 694.64Q400.45 691.83 404.39 689.4Q408.34 686.97 414.84 684.83Q421.34 682.69 430.83 680.92H437.71V682.18Q428.06 683.44 422.56 685.75Q417.06 688.06 414.8 691.2Q412.53 694.35 412.53 698.13Q412.53 703.24 415.85 706.9Q419.16 710.55 425.24 712.52Q431.33 714.49 439.64 714.49Q448.95 714.49 454.99 712.39Q461.03 710.29 464.01 706.73Q466.99 703.16 466.99 698.71Q466.99 695.19 465.06 692.88Q463.13 690.57 458.94 689.02Q454.74 687.47 448.15 686.46Q441.57 685.45 432.17 684.87Q424.2 684.11 418.83 682.52Q413.45 680.92 410.27 678.45Q407.08 675.97 405.69 672.7Q404.31 669.43 404.31 665.4Q404.31 658.52 410.6 653.61Q416.9 648.7 428.31 646.43L429.4 648.53Q423.52 648.95 421.22 651.13Q418.91 653.31 418.91 655.92Q418.91 658.1 419.92 659.69Q420.92 661.29 423.69 662.38Q426.46 663.47 431.66 664.27Q436.87 665.06 445.34 665.82Q455.08 666.66 462 668.55Q468.92 670.43 473.33 673.41Q477.73 676.39 479.79 680.42Q481.85 684.45 481.85 689.73Q481.85 697.45 476.73 704.13Q471.61 710.8 461.12 714.91Q450.63 719.02 434.35 719.02ZM436.2 649.71Q426.29 649.71 418.62 646.06Q410.94 642.41 406.57 635.94Q402.21 629.48 402.21 621.01Q402.21 612.53 406.62 606.03Q411.02 599.52 418.7 595.83Q426.38 592.14 436.03 592.14Q443.66 592.14 449.96 594.24Q456.25 596.34 460.83 600.2Q465.4 604.06 467.87 609.3Q470.35 614.55 470.35 620.92Q470.35 629.31 465.94 635.82Q461.54 642.32 453.86 646.01Q446.18 649.71 436.2 649.71ZM438.38 645.85Q444.92 645.17 447.82 638.55Q450.71 631.92 449.79 621.59Q448.95 609.09 444.84 602.29Q440.73 595.5 433.93 596Q427.8 596.5 424.87 603.22Q421.93 609.93 422.69 620.08Q423.44 632.42 427.59 639.38Q431.75 646.35 438.38 645.85ZM447.44 595.58 443.41 592.81Q455.16 593.57 462.38 593.31Q469.59 593.06 473.62 592.35Q477.65 591.64 479.66 591.05Q481.68 590.46 483.02 590.46Q484.62 590.46 485.71 591.59Q486.8 592.73 486.8 595.5Q486.8 600.62 484.11 603.85Q481.43 607.08 478.07 607.08Q475.89 607.08 473.62 605.48Q471.36 603.89 468.13 601.75Q464.9 599.61 459.94 597.8Q454.99 596 447.44 595.58ZM520.2 591.47V608.42V675.05L530.52 677.57V680H487.97V677.57L498.63 674.97V611.02Q497.62 610.27 495.99 608.97Q494.35 607.66 492.13 605.94Q489.9 604.22 487.3 602.13V600.28L519.27 591.47ZM568.2 609.59V675.05L578.52 677.57V680H535.97V677.57L546.55 674.97V611.02Q545.2 609.85 542.69 607.75Q540.17 605.65 535.3 602.13V600.28L567.27 591.47H568.2ZM590.85 677.57 601.26 675.05V622.27Q601.26 617.15 599.58 613.79Q597.9 610.43 594.42 608.84Q590.94 607.24 585.48 607.24Q579.94 607.24 574.83 608.76Q569.71 610.27 565.68 612.2L564.92 610.52Q571.38 604.73 576.13 601.12Q580.87 597.51 584.64 595.62Q588.42 593.73 591.9 593.06Q595.38 592.39 599.58 592.39Q611.58 592.39 617.24 598.94Q622.91 605.48 622.91 618.83V674.97L633.48 677.57V680H590.85ZM691.97 624.78 692.48 628.64Q682.66 631.83 676.57 634.81Q670.49 637.79 667.26 640.81Q664.03 643.83 662.85 647.27Q661.68 650.71 661.68 654.91Q661.68 661.96 665.2 665.31Q668.73 668.67 674.1 668.67Q678.04 668.67 680.98 667.12Q683.92 665.57 685.55 662.42Q687.19 659.27 687.19 654.57V615.47Q687.19 607.66 683.24 603.51Q679.3 599.36 671.16 599.36Q667.22 599.36 663.52 599.86Q659.83 600.36 657.57 601.29L661.59 597.17Q661.17 601.45 660.59 604.98Q660 608.5 659.2 611.06Q658.41 613.62 657.31 614.97Q656.14 616.56 653.71 617.48Q651.27 618.41 648.42 618.41Q644.81 618.41 642.88 617.1Q640.95 615.8 640.95 613.2Q640.95 609.51 644.52 605.82Q648.08 602.13 653.92 599.02Q659.75 595.92 666.71 594.03Q673.68 592.14 680.48 592.14Q690.8 592.14 697.01 595.12Q703.22 598.1 706.03 603.55Q708.84 609.01 708.84 616.39V664.06Q708.84 666.49 709.59 668.04Q710.35 669.59 711.82 670.31Q713.29 671.02 715.22 671.02Q717.73 671.02 720.21 670.27Q722.69 669.51 725.29 667.83V670.94Q718.99 677.73 713.79 679.83Q708.59 681.93 702.55 681.93Q696.92 681.93 693.61 679.62Q690.29 677.31 688.83 672.74Q687.36 668.17 687.1 661.37L687.78 661.71Q686.18 668 682.95 672.49Q679.72 676.98 675.15 679.41Q670.57 681.85 664.95 681.85Q653.71 681.85 646.95 676.1Q640.2 670.35 640.2 659.94Q640.2 654.57 642.08 650.34Q643.97 646.1 649.3 642.32Q654.63 638.55 664.91 634.35Q675.19 630.15 691.97 624.78ZM757.01 656.34Q757.01 662.29 760.7 665.23Q764.39 668.17 770.94 668.17Q774.71 668.17 778.87 667.54Q783.02 666.91 788.56 665.4V668.34Q780.34 673.71 774.88 676.64Q769.43 679.58 765.36 680.8Q761.29 682.01 756.92 682.01Q750.88 682.01 746.01 679.58Q741.15 677.15 738.29 671.94Q735.44 666.74 735.44 658.43V607.33L723.78 599.1V597.51Q724.62 596.92 726.92 595.58Q729.23 594.24 732.46 592.31Q735.69 590.38 739.59 588.07Q743.5 585.76 747.69 583.24Q751.89 580.73 755.92 578.29H757.01V596.76ZM749.12 604.9V594.07H785.96L784.45 604.9ZM833.54 677.4Q840.42 677.4 844.91 673.12Q849.4 668.84 851.58 660.11Q853.76 651.38 853.76 638.13Q853.76 624.45 851.62 615.26Q849.48 606.07 845.08 601.41Q840.67 596.76 833.71 596.76Q826.83 596.76 822.34 600.99Q817.85 605.23 815.66 613.96Q813.48 622.69 813.48 635.94Q813.48 649.62 815.62 658.81Q817.76 668 822.17 672.7Q826.57 677.4 833.54 677.4ZM832.95 681.93Q820.78 681.93 811.17 676.22Q801.57 670.52 795.99 660.41Q790.41 650.29 790.41 637.12Q790.41 623.86 796.24 613.71Q802.07 603.55 812.01 597.85Q821.96 592.14 834.29 592.14Q846.71 592.14 856.28 597.85Q865.85 603.55 871.34 613.62Q876.84 623.69 876.84 636.95Q876.84 650.21 870.92 660.36Q865.01 670.52 855.06 676.22Q845.12 681.93 832.95 681.93ZM944.48 592.48Q948.67 592.48 951.1 594.91Q953.54 597.34 953.54 601.54Q953.54 606.66 950.27 610.1Q946.99 613.54 942.13 613.54Q939.44 613.54 937.26 612.99Q935.08 612.45 932.81 611.9Q930.55 611.36 927.69 611.36Q925.17 611.36 923.08 612.11Q920.98 612.87 919.05 614.21Q917.12 615.55 915.1 617.57L915.02 613.79Q921.73 606.49 926.27 602.21Q930.8 597.93 933.99 595.83Q937.17 593.73 939.61 593.1Q942.04 592.48 944.48 592.48ZM916.95 608.42V674.97L929.2 677.57V680H884.73V677.57L895.3 674.97V611.02Q894.21 610.18 892.78 609.09Q891.36 608 889.26 606.32Q887.16 604.64 884.06 602.13V600.28L916.03 591.47H916.95ZM997.43 592.14Q1007.08 592.14 1014.04 596.04Q1021.01 599.94 1025.03 607.37Q1029.06 614.8 1029.82 625.54H973.68V619.83H1019.08L1009.51 623.61Q1008.76 613.96 1006.95 608.13Q1005.15 602.29 1002.17 599.65Q999.19 597.01 994.83 597.01Q989.03 597.01 984.97 600.41Q980.9 603.8 978.76 610.81Q976.62 617.82 976.62 628.64Q976.62 642.24 980.01 650.63Q983.41 659.02 989.96 662.88Q996.5 666.74 1005.99 666.74Q1010.6 666.74 1014.84 665.57Q1019.08 664.39 1022.9 661.96Q1026.71 659.52 1029.9 655.66L1031.58 656.92Q1026.04 666.24 1020.5 671.69Q1014.97 677.15 1008.88 679.54Q1002.8 681.93 995.58 681.93Q983.92 681.93 974.85 676.94Q965.79 671.94 960.63 662.25Q955.47 652.56 955.47 638.63Q955.47 626.13 960.34 615.55Q965.2 604.98 974.6 598.56Q984 592.14 997.43 592.14ZM497.14 557.59h21.94v21.94h-21.94z"/></symbol></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-spread" viewBox="0 0 24 24"><path d="M3 6.5h8v11H3zM13 6.5h8v11h-8z"/></symbol>
+    <symbol id="i-piega" viewBox="0 0 24 24"><path d="M3 8h8v8H3zM13 8h8v8h-8zM12 2v3M12 19v3"/></symbol>
+    <symbol id="i-abbondanza" viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 3h18v18H3z" stroke-dasharray="2.5 2"/></symbol>
+    <symbol id="i-margine" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 7h10v10H8z"/><path d="M3.5 12H8" stroke-dasharray="1.5 1.5"/></symbol>
+    <symbol id="i-livelli" viewBox="0 0 24 24"><path d="M3 10h11v10H3z"/><path d="M6.5 7H17v10"/><path d="M10 4h11v10"/></symbol>
+    <symbol id="i-bozza" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8.5 11h7M8.5 14h7M8.5 17h4"/></symbol>
+    <symbol id="i-locale" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/><path d="M10 9.5h4v3.5h-4zM11 9.5V8h2v1.5"/></symbol>
+    <symbol id="i-licenza" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9.5M18 12v3.5M21 12v3"/></symbol>
+    <symbol id="i-esporta" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3.5V15M7.5 8 12 3.5 16.5 8"/></symbol>
+    <symbol id="i-modelli" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></symbol>
+    <symbol id="i-misura" viewBox="0 0 24 24"><path d="M2 8h20v8H2zM6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></symbol>
+    <symbol id="i-testo" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M9 19h6"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></symbol>
+    <symbol id="i-attenzione" viewBox="0 0 24 24"><path d="M12 3 22 20H2zM12 9.5v5M12 16.5v1.5"/></symbol>
+    <symbol id="i-errore" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 8l8 8M16 8l-8 8"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5V17M12 7v1.5"/></symbol>
+    <symbol id="i-scarica" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3v12M7.5 10.5 12 15l4.5-4.5"/></symbol>
+  </defs>
+</svg>
+
+<header class="testata">
+  <div class="pagina">
+    <a href="#" aria-label="Impaginatore"><svg class="logo" viewBox="0 0 1366.78 220" height="26" style="width:auto"><use href="#imp-logotipo"/></svg></a>
+    <nav aria-label="Sezioni">
+      <a href="#marchio">Marchio</a><a href="#colore">Colore</a><a href="#tipografia">Tipografia</a><a href="#componenti">Componenti</a><a href="#applicazioni">Applicazioni</a>
+    </nav>
+    <div class="tema" role="group" aria-label="Tema">
+      <button type="button" data-t="sistema">Sistema</button><button type="button" data-t="light">Chiaro</button><button type="button" data-t="dark">Scuro</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="pagina copertina">
+  <div class="titolo">
+    <span class="etichetta">Manuale di marca · versione 1.0 · novembre 2026</span>
+    <h1>Impaginare è un mestiere. <span class="payoff">Resta tuo.</span></h1>
+    <p class="attacco">Impaginatore è il programma per impaginare album di matrimonio e cerimonia sul proprio computer. Questa pagina mostra la marca applicata: segno, colore, caratteri, componenti, in chiaro e in scuro.</p>
+  </div>
+  <div class="scheda">
+    <dl>
+      <dt>Promessa</dt><dd>Album rifiniti al decimo di millimetro, senza cedere né le foto né il lavoro.</dd>
+      <dt>Payoff</dt><dd><b>Resta tuo.</b> · <i>Yours to keep.</i></dd>
+      <dt>Simbolo</dt><dd>La Piega</dd>
+      <dt>Colori</dt><dd>Carta, Inchiostro, Verde Bottega</dd>
+      <dt>Caratteri</dt><dd>Newsreader, Instrument Sans, IBM Plex Mono</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================================================ MARCHIO -->
+<section class="sezione" id="marchio">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">01 — Marchio</span>
+      <div class="testo">
+        <h2>La Piega</h2>
+        <p class="attacco">Uno spread visto dall’alto: due pagine quadrate e, sopra e sotto la piega, i segni che il tipografo stampa fuori dal formato per dire «qui si piega». La linea che li unisce attraversa il simbolo come la I di Impaginatore.</p>
+        <p class="secondario">La piega è il punto in cui un album si fa o si rovina: nessun volto ci deve cadere dentro, i margini ai due lati devono tornare. È lì che si vede il mestiere, ed è lì che sta il nostro segno. Il logotipo è composto in Newsreader e convertito in tracciati; il punto della «i» è un quadrato, come le pagine.</p>
+      </div>
+    </header>
+
+    <div class="griglia">
+      <div class="tavola carta bordo c8"><span class="etichetta">Logotipo · colore</span><svg viewBox="0 0 1366.78 220" style="width:min(560px,90%);height:auto"><use href="#imp-logotipo"/></svg></div>
+      <div class="tavola carta bordo c4"><span class="etichetta">Simbolo</span><svg viewBox="0 0 260 220" style="width:120px;height:auto"><use href="#imp-simbolo"/></svg></div>
+      <div class="tavola inchiostro c8"><span class="etichetta">Logotipo · negativo</span><svg viewBox="0 0 1366.78 220" style="width:min(560px,90%);height:auto"><use href="#imp-logotipo"/></svg></div>
+      <div class="tavola verde c4"><span class="etichetta">Su Verde Bottega</span><svg viewBox="0 0 260 220" style="width:120px;height:auto"><use href="#imp-simbolo"/></svg></div>
+      <div class="tavola mono-scuro bordo c4"><span class="etichetta">Monocromo scuro</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+      <div class="tavola mono-chiaro c4"><span class="etichetta">Monocromo chiaro · su foto</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+      <div class="tavola carta bordo c4"><span class="etichetta">Verticale · colore</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+    </div>
+
+    <div class="blocco griglia">
+      <div class="c7">
+        <span class="etichetta">Costruzione e area di rispetto</span>
+        <div class="costruzione" style="margin-top:16px">
+          <svg viewBox="-70 -40 950 780" role="img" aria-label="Costruzione del simbolo su griglia di unità"><path d="M20 0V720M40 0V720M60 0V720M80 0V720M100 0V720M120 0V720M140 0V720M160 0V720M180 0V720M200 0V720M220 0V720M240 0V720M260 0V720M280 0V720M300 0V720M320 0V720M340 0V720M360 0V720M380 0V720M400 0V720M420 0V720M440 0V720M460 0V720M480 0V720M500 0V720M520 0V720M540 0V720M560 0V720M580 0V720M600 0V720M620 0V720M640 0V720M660 0V720M680 0V720M700 0V720M720 0V720M740 0V720M760 0V720M780 0V720M0 20H800M0 40H800M0 60H800M0 80H800M0 100H800M0 120H800M0 140H800M0 160H800M0 180H800M0 200H800M0 220H800M0 240H800M0 260H800M0 280H800M0 300H800M0 320H800M0 340H800M0 360H800M0 380H800M0 400H800M0 420H800M0 440H800M0 460H800M0 480H800M0 500H800M0 520H800M0 540H800M0 560H800M0 580H800M0 600H800M0 620H800M0 640H800M0 660H800M0 680H800M0 700H800" style="stroke:var(--imp-filetto)" stroke-width="1" fill="none"/><rect x="20" y="20" width="760" height="680" fill="none" style="stroke:var(--imp-errore)" stroke-width="1.5" stroke-dasharray="6 5"/><path d="M140 240.0h240v240h-240zM420 240.0h240v240h-240z" style="fill:var(--imp-testo)" fill-opacity=".92"/><path d="M380 140h40v70.0h-40zM380 510.0h40v70.0h-40z" style="fill:var(--imp-accento)"/><path d="M140 620.0H380M140 615.0v10M380 615.0v10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="260.0" y="608.0" text-anchor="middle" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">12u</text><path d="M380 620.0H420M380 615.0v10M420 615.0v10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="400.0" y="608.0" text-anchor="middle" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">2u</text><path d="M682 140V210.0M677 140h10M677 210.0h10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="694" y="182.0" text-anchor="start" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">3,5u</text><path d="M682 210.0V240.0M677 210.0h10M677 240.0h10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="694" y="232.0" text-anchor="start" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">1,5u</text><path d="M682 240.0V480.0M677 240.0h10M677 480.0h10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="694" y="367.0" text-anchor="start" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">12u</text><path d="M6 20V140M1 20h10M1 140h10" style="stroke:var(--imp-accento)" stroke-width="1.5"/><text x="-6" y="87.0" text-anchor="end" style="fill:var(--imp-accento);font:500 22px var(--imp-font-numeri)">6u</text><text x="28" y="10" style="fill:var(--imp-errore);font:500 18px var(--imp-font-numeri);letter-spacing:.06em">AREA DI RISPETTO = 6u (MEZZA PAGINA)</text></svg>
+        </div>
+      </div>
+      <div class="c5">
+        <span class="etichetta">Dimensioni minime</span>
+        <div class="misure-minime" style="margin-top:16px">
+          <figure><svg viewBox="0 0 260 220" height="16" width="19" style="color:var(--imp-testo);--segno:var(--imp-accento)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><figcaption>Simbolo<br>16 px · 5 mm</figcaption></figure>
+          <figure><svg class="logo" viewBox="0 0 1366.78 220" height="24" width="149"><use href="#imp-logotipo"/></svg><figcaption>Logotipo<br>24 px · 7 mm di altezza</figcaption></figure>
+          <figure><svg class="logo" viewBox="0 0 1031.58 719.02" height="64" width="92"><use href="#imp-verticale"/></svg><figcaption>Verticale<br>64 px · 18 mm</figcaption></figure>
+        </div>
+        <p class="piccolo secondario" style="margin-top:24px">Sotto i 24 px il logotipo non si usa: resta il simbolo. Per favicon e icone a 16 e 32 px esistono disegni allineati ai pixel (<span class="misura">icona/icona-16.svg</span>, <span class="misura">icona/icona-piccola.svg</span>).</p>
+        <div class="misure-minime" style="margin-top:8px">
+          <figure><img class="pixel" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAAyElEQVQ4je2SsQ7BYBSFv/vXKGnSrWya2LwBC1azzUT6Ap0wNCQS0TfwBH0O3sDKUEkZTaaGGnRs/VKrb7/nnHvvEXxfOZfdDGEC1AHFZx5ADLI92e2V4TSNOcICMAHRDJMZmEDXukeJypxzOQQhhyAslkplrAD7C9ciauK4vSffRc/NUAGkKGbLGwIUrtHyhqK7uJa/APz8RsW727lomwiJAq4l3UkhFsftzyFdlhEQmBq3wWhv3aMEpAFU0R82SeGsYHO0O+sXeDQ1CcRhH/MAAAAASUVORK5CYII=" width="48" height="48" alt="Icona a 16 px ingrandita"><figcaption>16 px ×3</figcaption></figure>
+          <figure><img class="pixel" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAABn0lEQVRYhe2XvUoDQRSFvzsbLYUQrNTG2IlYJI2dEt/BF1AUbG0E0cLCQmsx+gSCFvYGm6BVBBG1SVTQTkgghaAJcy2ymx/Bv1mSWOSUl+Wcb+7M7N2FLks+F8YWZsbxZNmqTInoECpRIOLoX0W0hMqzwoWxdjd/cHbzJUB8cXYNdCNE4I9AAuv5dGYrKHifwjcB06ZwfO9UNBF/K+Xus+B3YGxhZlyNuWoGarOqApP5dOa2tlpPljsYDhBRdAn8dluVqQ6G+6plGgCBYReL651DrncOXQlG6gDAgKtLCA00A7Tr2n2n/uZgp6s3sTIXBsA0A7Tot/saAPz1eV9Sp+imegA9gB5AD0AA4osp7UK2FtIZE3TAujiEHMcWGltQcXUJofcGgGi5CwBlCKahyjMw+FeHkOP4CfwOKFyEcXKScF4HMNbuAtUOxleMkT3wP8WLl48vseRoFUh1JF5lNb93elIHACjmHrLRRPxNhGna94KqoLJa2D/dDgotPyOl3H02lhw9BrUgHrVDKkCfY+ArUALuEI6MJ/PByv+NPgB6ZnUsi87+lQAAAABJRU5ErkJggg==" width="64" height="64" alt="Icona a 32 px ingrandita"><figcaption>32 px ×2</figcaption></figure>
+          <figure><img src="data:image/png;base64,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" width="96" height="96" alt="Icona dell'app"><figcaption>Icona app</figcaption></figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Usi scorretti</span>
+      <div class="scorretti">
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;transform:scaleX(1.35)"><use href="#imp-logotipo"/></svg></div><figcaption>Non deformare né comprimere.</figcaption></figure>
+        <figure><div class="riquadro"><svg viewBox="0 0 1366.78 220" style="width:200px;height:auto;color:#7b4ee8;--segno:#e84ec5"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non cambiare i colori, niente sfumature.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;transform:rotate(-10deg)"><use href="#imp-logotipo"/></svg></div><figcaption>Non ruotare, non inclinare.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;filter:drop-shadow(0 4px 6px rgb(0 0 0 / .5)) drop-shadow(0 0 10px #ffd400)"><use href="#imp-logotipo"/></svg></div><figcaption>Niente ombre, bagliori, rilievi.</figcaption></figure>
+        <figure><div class="riquadro" style="gap:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 260 220" style="width:70px;height:auto;color:var(--imp-carta-900);--segno:var(--imp-verde-600)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><span style="font:italic 400 30px/1 var(--imp-font-titoli);margin-left:10px">impaginatore</span></div><figcaption>Non ricomporre il nome con un altro carattere.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;--segno:var(--imp-carta-900)"><use href="#imp-logotipo"/></svg></div><figcaption>A colori i segni di piega sono sempre verdi.</figcaption></figure>
+        <figure><div class="riquadro" style="background:linear-gradient(200deg,#d7dcc4 0%,#9aa77f 40%,#5d6b49 75%,#2f3826 100%)"><svg viewBox="0 0 1366.78 220" style="width:200px;height:auto;color:#3b4a30;--segno:#3b4a30"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non su foto senza contrasto: usa il negativo.</figcaption></figure>
+        <figure><div class="riquadro" style="display:flex;align-items:center;justify-content:center;gap:4px"><svg viewBox="0 0 260 220" style="width:96px;height:auto;color:var(--imp-carta-900);--segno:var(--imp-verde-600)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><svg viewBox="270 0 1096.78 220" style="width:110px;height:auto;color:var(--imp-carta-900)"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non alterare proporzioni e distanze.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">I tre concept</span>
+      <div class="concept">
+        <figure class="scelto"><div class="disegno"><svg viewBox="0 0 260 220"><path fill="#181715" d="M0 50h120v120H0zM140 50h120v120H140z"/><path fill="#236743" d="M120 0h20v35h-20zM120 185h20v35h-20z"/></svg></div><div class="piccoli"><svg viewBox="0 0 260 220" style="height:32px;width:auto"><path fill="#181715" d="M0 50h120v120H0zM140 50h120v120H140z"/><path fill="#236743" d="M120 0h20v35h-20zM120 185h20v35h-20z"/></svg><svg viewBox="0 0 260 220" style="height:16px;width:auto"><path fill="#181715" d="M0 50h120v120H0zM140 50h120v120H140z"/><path fill="#236743" d="M120 0h20v35h-20zM120 185h20v35h-20z"/></svg><span style="margin-left:auto"><span class="badge verde">Scelto</span></span></div><h3>1 · La Piega</h3><p class="piccolo secondario" style="margin:0">Lo spread visto dall’alto con i segni di piega del tipografo. Racconta il punto più delicato di un album, contiene la I, si legge a 16 px. Nessun concorrente usa le pagine piene o i segni di stampa.</p></figure><figure><div class="disegno"><svg viewBox="0 0 240 240"><path fill="none" stroke="#181715" stroke-width="12" d="M60 0v40M180 0v40M60 200v40M180 200v40M0 60h40M0 180h40M200 60h40M200 180h40"/><path fill="#236743" d="M90 72h60v16h-20v64h20v16H90v-16h20V88H90z"/></svg></div><div class="piccoli"><svg viewBox="0 0 240 240" style="height:32px;width:auto"><path fill="none" stroke="#181715" stroke-width="12" d="M60 0v40M180 0v40M60 200v40M180 200v40M0 60h40M0 180h40M200 60h40M200 180h40"/><path fill="#236743" d="M90 72h60v16h-20v64h20v16H90v-16h20V88H90z"/></svg><svg viewBox="0 0 240 240" style="height:16px;width:auto"><path fill="none" stroke="#181715" stroke-width="12" d="M60 0v40M180 0v40M60 200v40M180 200v40M0 60h40M0 180h40M200 60h40M200 180h40"/><path fill="#236743" d="M90 72h60v16h-20v64h20v16H90v-16h20V88H90z"/></svg><span style="margin-left:auto"><span class="badge">Scartato</span></span></div><h3>2 · Il Crocino</h3><p class="piccolo secondario" style="margin:0">I segni di taglio attorno a una I: precisione di stampa e mirino della fotocamera nello stesso segno. Bello in grande, ma sotto i 32 px diventa polvere e ricorda l’icona «cattura schermo».</p></figure><figure><div class="disegno"><svg viewBox="0 0 240 240"><path fill="#181715" d="M30 30h180v180H30z"/><path fill="#236743" stroke="#F6F3EC" stroke-width="12" paint-order="stroke" d="M6 6h104L6 110zM234 234H130l104-104z"/></svg></div><div class="piccoli"><svg viewBox="0 0 240 240" style="height:32px;width:auto"><path fill="#181715" d="M30 30h180v180H30z"/><path fill="#236743" stroke="#F6F3EC" stroke-width="12" paint-order="stroke" d="M6 6h104L6 110zM234 234H130l104-104z"/></svg><svg viewBox="0 0 240 240" style="height:16px;width:auto"><path fill="#181715" d="M30 30h180v180H30z"/><path fill="#236743" stroke="#F6F3EC" stroke-width="12" paint-order="stroke" d="M6 6h104L6 110zM234 234H130l104-104z"/></svg><span style="margin-left:auto"><span class="badge">Scartato</span></span></div><h3>3 · L’Angolino</h3><p class="piccolo secondario" style="margin:0">Gli angoli portafoto degli album di una volta. Caldo e riconoscibile per chi fa matrimoni, ma guarda indietro: parla di album incollati, non di impaginazione né di precisione.</p></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COLORE -->
+<section class="sezione" id="colore">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">02 — Colore</span>
+      <div class="testo">
+        <h2>Carta, Inchiostro e un verde da bottega</h2>
+        <p class="attacco">Il colore lo portano le foto. La marca resta sul bianco e nero di una bozza di stampa, con un solo accento: il verde del tappetino da taglio che sta su ogni banco da lavoro.</p>
+        <p class="secondario">Proporzioni indicative: 70 % Carta, 25 % Inchiostro, 5 % Verde Bottega. Il verde segna ciò che si può fare (un pulsante, un link, il fuoco) e ciò che è a posto (una misura giusta). Nell’app, attorno alle foto, si usano solo grigi neutri: nessuna tinta deve alterare il giudizio sul colore.</p>
+      </div>
+    </header>
+    <div class="blocco" style="margin-top:0"><span class="etichetta">Primari</span><div class="primari"><div class="campione grande"><div class="tinta" style="background:#F6F3EC;color:#181715">--imp-carta-50</div><div class="dati"><b>Carta</b>#F6F3EC<br>RGB 246 243 236<br>oklch(96.5% 0.010 85)<br>Fondo, superfici, pagine del simbolo in negativo</div></div><div class="campione grande"><div class="tinta" style="background:#181715;color:#FFFFFF">--imp-carta-900</div><div class="dati"><b>Inchiostro</b>#181715<br>RGB 24 23 21<br>oklch(20.5% 0.005 85)<br>Testo, logo, fondo del tema scuro</div></div><div class="campione grande"><div class="tinta" style="background:#236743;color:#FFFFFF">--imp-verde-600</div><div class="dati"><b>Verde Bottega</b>#236743<br>RGB 35 103 67<br>oklch(46.0% 0.090 157)<br>Accento: azione principale, link, fuoco, segni di piega</div></div></div></div><div class="blocco"><span class="etichetta">Neutri caldi · scala Carta (sito, stampa, materiali)</span><div class="scala" style="--n:12"><div style="background:#FDFCF9;color:#181715"><span>0</span><span>Bianco carta<br>#FDFCF9</span></div><div style="background:#F6F3EC;color:#181715"><span>50</span><span>Carta<br>#F6F3EC</span></div><div style="background:#EDE9E1;color:#181715"><span>100</span><span>Velina<br>#EDE9E1</span></div><div style="background:#DEDAD2;color:#181715"><span>200</span><span>Cartoncino<br>#DEDAD2</span></div><div style="background:#C7C4BC;color:#181715"><span>300</span><span>Feltro<br>#C7C4BC</span></div><div style="background:#A19E98;color:#181715"><span>400</span><span>Cenere<br>#A19E98</span></div><div style="background:#6B6964;color:#FFFFFF"><span>500</span><span>Piombo<br>#6B6964</span></div><div style="background:#54524E;color:#FFFFFF"><span>600</span><span>Ardesia<br>#54524E</span></div><div style="background:#3E3D3A;color:#FFFFFF"><span>700</span><span>Grafite<br>#3E3D3A</span></div><div style="background:#292725;color:#FFFFFF"><span>800</span><span>Fumo<br>#292725</span></div><div style="background:#181715;color:#FFFFFF"><span>900</span><span>Inchiostro<br>#181715</span></div><div style="background:#0F0E0C;color:#FFFFFF"><span>950</span><span>Nero seppia<br>#0F0E0C</span></div></div></div><div class="blocco"><span class="etichetta">Accento · scala Verde Bottega</span><div class="scala" style="--n:10"><div style="background:#ECF9F0;color:#181715"><span>50</span><span>Verde velina<br>#ECF9F0</span></div><div style="background:#D3F0DD;color:#181715"><span>100</span><span><br>#D3F0DD</span></div><div style="background:#AFE3C2;color:#181715"><span>200</span><span><br>#AFE3C2</span></div><div style="background:#7BCC9C;color:#181715"><span>300</span><span>Verde Bottega chiaro<br>#7BCC9C</span></div><div style="background:#5AB481;color:#181715"><span>400</span><span><br>#5AB481</span></div><div style="background:#378E60;color:#FFFFFF"><span>500</span><span><br>#378E60</span></div><div style="background:#236743;color:#FFFFFF"><span>600</span><span>Verde Bottega<br>#236743</span></div><div style="background:#195436;color:#FFFFFF"><span>700</span><span><br>#195436</span></div><div style="background:#123F28;color:#FFFFFF"><span>800</span><span><br>#123F28</span></div><div style="background:#0B2B1A;color:#FFFFFF"><span>900</span><span>Verde profondo<br>#0B2B1A</span></div></div></div><div class="blocco"><span class="etichetta">Semantici · chiaro e scuro</span><div class="campioni"><div class="campione"><div class="tinta" style="background:#236743;color:#FFFFFF">--imp-verde-600</div><div class="dati"><b>Successo</b>#236743<br>RGB 35 103 67<br>oklch(46.0% 0.090 157)</div></div><div class="campione"><div class="tinta" style="background:#7BCC9C;color:#181715">--imp-verde-300</div><div class="dati"><b>Successo · scuro</b>#7BCC9C<br>RGB 123 204 156<br>oklch(78.0% 0.105 157)</div></div><div class="campione"><div class="tinta" style="background:#845A0F;color:#FFFFFF">--imp-ocra-600</div><div class="dati"><b>Attenzione</b>#845A0F<br>RGB 132 90 15<br>oklch(50.0% 0.100 75)</div></div><div class="campione"><div class="tinta" style="background:#EABC6E;color:#181715">--imp-ocra-300</div><div class="dati"><b>Attenzione · scuro</b>#EABC6E<br>RGB 234 188 110<br>oklch(82.0% 0.110 80)</div></div><div class="campione"><div class="tinta" style="background:#B6322B;color:#FFFFFF">--imp-cinabro-600</div><div class="dati"><b>Errore · Cinabro</b>#B6322B<br>RGB 182 50 43<br>oklch(52.0% 0.170 28)</div></div><div class="campione"><div class="tinta" style="background:#F2897C;color:#181715">--imp-cinabro-300</div><div class="dati"><b>Errore · scuro</b>#F2897C<br>RGB 242 137 124<br>oklch(74.0% 0.130 28)</div></div><div class="campione"><div class="tinta" style="background:#2A669F;color:#FFFFFF">--imp-blu-600</div><div class="dati"><b>Info · Blu di Prussia</b>#2A669F<br>RGB 42 102 159<br>oklch(50.0% 0.110 250)</div></div><div class="campione"><div class="tinta" style="background:#88B9EC;color:#181715">--imp-blu-300</div><div class="dati"><b>Info · scuro</b>#88B9EC<br>RGB 136 185 236<br>oklch(77.0% 0.090 250)</div></div><div class="campione"><div class="tinta" style="background:#C78B28;color:#181715">--imp-ocra-500</div><div class="dati"><b>Ocra · segni e guide</b>#C78B28<br>RGB 199 139 40<br>oklch(68.0% 0.130 75)</div></div></div></div><div class="blocco"><span class="etichetta">Grigi neutri (C = 0) · solo per l’area di lavoro dell’app</span><div class="scala" style="--n:12"><div style="background:#F5F5F5;color:#181715"><span>50</span><span><br>#F5F5F5</span></div><div style="background:#E8E8E8;color:#181715"><span>100</span><span><br>#E8E8E8</span></div><div style="background:#D4D4D4;color:#181715"><span>200</span><span><br>#D4D4D4</span></div><div style="background:#B7B7B7;color:#181715"><span>300</span><span><br>#B7B7B7</span></div><div style="background:#989898;color:#181715"><span>400</span><span><br>#989898</span></div><div style="background:#747474;color:#FFFFFF"><span>500</span><span>Grigio medio<br>#747474</span></div><div style="background:#5B5B5B;color:#FFFFFF"><span>600</span><span><br>#5B5B5B</span></div><div style="background:#424242;color:#FFFFFF"><span>700</span><span><br>#424242</span></div><div style="background:#303030;color:#FFFFFF"><span>800</span><span><br>#303030</span></div><div style="background:#262626;color:#FFFFFF"><span>850</span><span><br>#262626</span></div><div style="background:#1E1E1E;color:#FFFFFF"><span>900</span><span><br>#1E1E1E</span></div><div style="background:#141414;color:#FFFFFF"><span>950</span><span><br>#141414</span></div></div></div>
+    <div class="blocco">
+      <span class="etichetta">Contrasti WCAG 2.2 · calcolati da strumenti/genera_token.py</span>
+      <div class="contrasti-avvolgi"><div class="contrasti"><div><h4>Tema chiaro</h4><table class="tabella"><thead><tr><th>Prova</th><th>Coppia</th><th>Uso</th><th>Rapporto</th><th>Esito</th></tr></thead><tbody><tr><td><span class="prova" style="color:#181715;background:#F6F3EC">Aa</span></td><td class="coppia">#181715<br>su #F6F3EC</td><td>Testo su Carta</td><td class="num"><b>16,17:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#181715;background:#FDFCF9">Aa</span></td><td class="coppia">#181715<br>su #FDFCF9</td><td>Testo su card</td><td class="num"><b>17,46:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#54524E;background:#F6F3EC">Aa</span></td><td class="coppia">#54524E<br>su #F6F3EC</td><td>Testo secondario su Carta</td><td class="num"><b>7,03:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#6B6964;background:#F6F3EC">Aa</span></td><td class="coppia">#6B6964<br>su #F6F3EC</td><td>Testo tenue su Carta</td><td class="num"><b>4,95:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#6B6964;background:#EDE9E1">Aa</span></td><td class="coppia">#6B6964<br>su #EDE9E1</td><td>Testo tenue su Velina</td><td class="num"><b>4,53:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#236743;background:#F6F3EC">Aa</span></td><td class="coppia">#236743<br>su #F6F3EC</td><td>Link verde su Carta</td><td class="num"><b>6,13:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#F6F3EC;background:#236743">Aa</span></td><td class="coppia">#F6F3EC<br>su #236743</td><td>Testo del pulsante primario</td><td class="num"><b>6,13:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#F6F3EC;background:#195436">Aa</span></td><td class="coppia">#F6F3EC<br>su #195436</td><td>Pulsante primario premuto</td><td class="num"><b>8,02:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#236743;background:#ECF9F0">Aa</span></td><td class="coppia">#236743<br>su #ECF9F0</td><td>Badge positivo</td><td class="num"><b>6,26:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#845A0F;background:#F6F3EC">Aa</span></td><td class="coppia">#845A0F<br>su #F6F3EC</td><td>Attenzione su Carta</td><td class="num"><b>5,49:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#845A0F;background:#FBF3E1">Aa</span></td><td class="coppia">#845A0F<br>su #FBF3E1</td><td>Avviso di attenzione</td><td class="num"><b>5,51:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#B6322B;background:#F6F3EC">Aa</span></td><td class="coppia">#B6322B<br>su #F6F3EC</td><td>Errore su Carta</td><td class="num"><b>5,45:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#F6F3EC;background:#B6322B">Aa</span></td><td class="coppia">#F6F3EC<br>su #B6322B</td><td>Pulsante distruttivo</td><td class="num"><b>5,45:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#2A669F;background:#F6F3EC">Aa</span></td><td class="coppia">#2A669F<br>su #F6F3EC</td><td>Informazione su Carta</td><td class="num"><b>5,41:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#6B6964;background:#FDFCF9">Aa</span></td><td class="coppia">#6B6964<br>su #FDFCF9</td><td>Bordo dei campi (non testo)</td><td class="num"><b>5,34:1</b></td><td><span class="esito">≥ 3:1</span></td></tr><tr><td><span class="prova" style="color:#236743;background:#FDFCF9">Aa</span></td><td class="coppia">#236743<br>su #FDFCF9</td><td>Anello di fuoco (non testo)</td><td class="num"><b>6,62:1</b></td><td><span class="esito">≥ 3:1</span></td></tr></tbody></table></div><div><h4>Tema scuro</h4><table class="tabella"><thead><tr><th>Prova</th><th>Coppia</th><th>Uso</th><th>Rapporto</th><th>Esito</th></tr></thead><tbody><tr><td><span class="prova" style="color:#F6F3EC;background:#181715">Aa</span></td><td class="coppia">#F6F3EC<br>su #181715</td><td>Testo su Inchiostro</td><td class="num"><b>16,17:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#F6F3EC;background:#292725">Aa</span></td><td class="coppia">#F6F3EC<br>su #292725</td><td>Testo su card scura</td><td class="num"><b>13,43:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#C7C4BC;background:#181715">Aa</span></td><td class="coppia">#C7C4BC<br>su #181715</td><td>Testo secondario su Inchiostro</td><td class="num"><b>10,28:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#A19E98;background:#181715">Aa</span></td><td class="coppia">#A19E98<br>su #181715</td><td>Testo tenue su Inchiostro</td><td class="num"><b>6,70:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#A19E98;background:#292725">Aa</span></td><td class="coppia">#A19E98<br>su #292725</td><td>Testo tenue su card scura</td><td class="num"><b>5,57:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#7BCC9C;background:#181715">Aa</span></td><td class="coppia">#7BCC9C<br>su #181715</td><td>Link verde su Inchiostro</td><td class="num"><b>9,35:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#0F0E0C;background:#5AB481">Aa</span></td><td class="coppia">#0F0E0C<br>su #5AB481</td><td>Testo del pulsante primario</td><td class="num"><b>7,61:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#7BCC9C;background:#0B2B1A">Aa</span></td><td class="coppia">#7BCC9C<br>su #0B2B1A</td><td>Badge positivo</td><td class="num"><b>7,97:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#EABC6E;background:#181715">Aa</span></td><td class="coppia">#EABC6E<br>su #181715</td><td>Attenzione su Inchiostro</td><td class="num"><b>10,17:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#F2897C;background:#181715">Aa</span></td><td class="coppia">#F2897C<br>su #181715</td><td>Errore su Inchiostro</td><td class="num"><b>7,37:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#88B9EC;background:#181715">Aa</span></td><td class="coppia">#88B9EC<br>su #181715</td><td>Informazione su Inchiostro</td><td class="num"><b>8,70:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#A19E98;background:#292725">Aa</span></td><td class="coppia">#A19E98<br>su #292725</td><td>Bordo dei campi (non testo)</td><td class="num"><b>5,57:1</b></td><td><span class="esito">≥ 3:1</span></td></tr></tbody></table></div><div><h4>Area di lavoro dell’app</h4><table class="tabella"><thead><tr><th>Prova</th><th>Coppia</th><th>Uso</th><th>Rapporto</th><th>Esito</th></tr></thead><tbody><tr><td><span class="prova" style="color:#F5F5F5;background:#262626">Aa</span></td><td class="coppia">#F5F5F5<br>su #262626</td><td>Testo dei pannelli (app scura)</td><td class="num"><b>13,88:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#989898;background:#262626">Aa</span></td><td class="coppia">#989898<br>su #262626</td><td>Etichette dei pannelli (app scura)</td><td class="num"><b>5,25:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#7BCC9C;background:#262626">Aa</span></td><td class="coppia">#7BCC9C<br>su #262626</td><td>Accento nei pannelli (app scura)</td><td class="num"><b>7,90:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#181715;background:#F5F5F5">Aa</span></td><td class="coppia">#181715<br>su #F5F5F5</td><td>Testo dei pannelli (app chiara)</td><td class="num"><b>16,43:1</b></td><td><span class="esito">AAA</span></td></tr><tr><td><span class="prova" style="color:#5B5B5B;background:#F5F5F5">Aa</span></td><td class="coppia">#5B5B5B<br>su #F5F5F5</td><td>Etichette dei pannelli (app chiara)</td><td class="num"><b>6,23:1</b></td><td><span class="esito">AA</span></td></tr><tr><td><span class="prova" style="color:#FFFFFF;background:#1E1E1E">Aa</span></td><td class="coppia">#FFFFFF<br>su #1E1E1E</td><td>Contorno di selezione su tela (non testo)</td><td class="num"><b>16,67:1</b></td><td><span class="esito">≥ 3:1</span></td></tr></tbody></table></div><div><h4>Marchio e icona</h4><table class="tabella"><thead><tr><th>Prova</th><th>Coppia</th><th>Uso</th><th>Rapporto</th><th>Esito</th></tr></thead><tbody><tr><td><span class="prova" style="color:#181715;background:#F6F3EC">Aa</span></td><td class="coppia">#181715<br>su #F6F3EC</td><td>Logo a colori: pagine su Carta</td><td class="num"><b>16,17:1</b></td><td><span class="esito">≥ 3:1</span></td></tr><tr><td><span class="prova" style="color:#236743;background:#F6F3EC">Aa</span></td><td class="coppia">#236743<br>su #F6F3EC</td><td>Logo a colori: segni di piega su Carta</td><td class="num"><b>6,13:1</b></td><td><span class="esito">≥ 3:1</span></td></tr><tr><td><span class="prova" style="color:#7BCC9C;background:#181715">Aa</span></td><td class="coppia">#7BCC9C<br>su #181715</td><td>Logo negativo: segni su Inchiostro</td><td class="num"><b>9,35:1</b></td><td><span class="esito">≥ 3:1</span></td></tr><tr><td><span class="prova" style="color:#F6F3EC;background:#236743">Aa</span></td><td class="coppia">#F6F3EC<br>su #236743</td><td>Icona: pagine su Verde Bottega</td><td class="num"><b>6,13:1</b></td><td><span class="esito">≥ 3:1</span></td></tr></tbody></table></div></div><p class="piccolo secondario" style="margin-top:16px">Soglie WCAG 2.2: testo normale 4,5:1 (AA) e 7:1 (AAA); elementi grafici e bordi dei controlli 3:1.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TIPOGRAFIA -->
+<section class="sezione" id="tipografia">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">03 — Tipografia</span>
+      <div class="testo">
+        <h2>Tre caratteri, tre compiti</h2>
+        <p class="attacco">Un carattere da libro per i titoli, un lineare chiaro per leggere e usare l’app, un monospaziato per le misure. Tutti con licenza SIL Open Font License 1.1: uso commerciale, incorporazione nell’app e nel sito, nessun costo.</p>
+      </div>
+    </header>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Titoli</span><b>Newsreader</b><span class="piccolo tenue">Production Type · OFL 1.1 · pesi 200–800, dimensione ottica 6–72</span></div>
+      <div class="esempio"><div class="titoli" style="font-size:56px;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'opsz' 72">Il primo spread si decide <i>in silenzio</i>.</div></div>
+    </div>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Testo e interfaccia</span><b>Instrument Sans</b><span class="piccolo tenue">Instrument · OFL 1.1 · pesi 400–700, larghezza 75–100</span></div>
+      <div class="esempio"><p style="font-size:19px;line-height:1.5;margin:0">Le foto restano sul tuo computer: Impaginatore non le carica da nessuna parte. Paghi la licenza una volta e la versione che compri resta tua.</p><p style="font-size:14px;margin:12px 0 0;font-stretch:85%" class="secondario">Larghezza 85 % per i pannelli stretti dell’app: Spaziatura · Abbondanza · Margine interno · Livelli PSD</p></div>
+    </div>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Numeri e misure</span><b>IBM Plex Mono</b><span class="piccolo tenue">IBM · OFL 1.1 · Regular 400, Medium 500</span></div>
+      <div class="esempio"><div class="misura" style="font-size:28px;letter-spacing:-.01em">30 × 30 cm · 3,0 mm · 0,1 mm · 349 €</div><div class="etichetta" style="margin-top:10px">Etichette tecniche · maiuscolo · spaziatura +6 %</div></div>
+    </div>
+    <div class="blocco">
+      <span class="etichetta">Scala tipografica</span>
+      <div class="scala-tipo">
+        <div class="riga"><span class="etichetta">Display · 72/1,02</span><span class="titoli" style="font-size:72px;line-height:1.02;letter-spacing:-.022em;font-variation-settings:'opsz' 72">Resta tuo.</span></div>
+        <div class="riga"><span class="etichetta">Titolo 1 · 52/1,06</span><span class="titoli" style="font-size:52px;line-height:1.06;letter-spacing:-.018em;font-variation-settings:'opsz' 60">Album impaginati come si deve</span></div>
+        <div class="riga"><span class="etichetta">Titolo 2 · 38/1,12</span><span class="titoli" style="font-size:38px;line-height:1.12;letter-spacing:-.012em;font-weight:500;font-variation-settings:'opsz' 48">Le spaziature tornano al decimo</span></div>
+        <div class="riga"><span class="etichetta">Titolo 3 · 28/1,2</span><span class="titoli" style="font-size:28px;line-height:1.2;font-weight:500;font-variation-settings:'opsz' 32">Un PSD a livelli per ogni spread</span></div>
+        <div class="riga"><span class="etichetta">Titolo 4 · 20/1,3 · 600</span><span style="font:600 20px/1.3 var(--imp-font-testo)">Edizione Laboratorio</span></div>
+        <div class="riga"><span class="etichetta">Attacco · 19/1,5</span><span class="attacco" style="color:var(--imp-testo)">Claude prepara la bozza dell’intero album; tu decidi spread per spread.</span></div>
+        <div class="riga"><span class="etichetta">Testo · 16/1,6</span><span>Il programma controlla margini, spazi tra le foto e abbondanza, e segnala in ocra ciò che non torna.</span></div>
+        <div class="riga"><span class="etichetta">Piccolo · 14/1,5</span><span class="piccolo">IVA inclusa. Aggiornamenti della versione 2 compresi.</span></div>
+        <div class="riga"><span class="etichetta">Didascalia · 12,5/1,4</span><span style="font-size:12.5px" class="secondario">Spread 07–08 · Villa Medici, Fiesole · luce naturale</span></div>
+        <div class="riga"><span class="etichetta">Misura · 13 mono</span><span class="misura" style="font-size:13px">Margine 10,0 mm · spazio 5,0 mm · abbondanza 3,0 mm</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SISTEMA -->
+<section class="sezione" id="sistema">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">04 — Griglia, spazi, forme</span>
+      <div class="testo">
+        <h2>Tutto torna al millimetro</h2>
+        <p class="attacco">Base di 4 px, griglia di 12 colonne con canale di 24 px, larghezza massima 1200 px. Angoli appena smussati: la carta si taglia dritta. Le foto e gli spread non hanno mai angoli arrotondati.</p>
+      </div>
+    </header>
+    <div class="griglia">
+      <div class="c4">
+        <span class="etichetta">Spazi</span>
+        <div class="barre" style="margin-top:16px">
+          <div><span>spazio-2</span><span>4 px</span><i style="width:4px"></i></div>
+          <div><span>spazio-3</span><span>8 px</span><i style="width:8px"></i></div>
+          <div><span>spazio-4</span><span>12 px</span><i style="width:12px"></i></div>
+          <div><span>spazio-5</span><span>16 px</span><i style="width:16px"></i></div>
+          <div><span>spazio-6</span><span>24 px</span><i style="width:24px"></i></div>
+          <div><span>spazio-7</span><span>32 px</span><i style="width:32px"></i></div>
+          <div><span>spazio-8</span><span>48 px</span><i style="width:48px"></i></div>
+          <div><span>spazio-9</span><span>64 px</span><i style="width:64px"></i></div>
+          <div><span>spazio-10</span><span>96 px</span><i style="width:96px"></i></div>
+          <div><span>spazio-11</span><span>128 px</span><i style="width:128px"></i></div>
+        </div>
+      </div>
+      <div class="c8">
+        <span class="etichetta">Raggi</span>
+        <div class="raggi" style="margin-top:16px">
+          <div style="border-radius:0">0 · foto</div><div style="border-radius:2px">2 · campi</div><div style="border-radius:4px">4 · pulsanti</div><div style="border-radius:8px">8 · card</div>
+        </div>
+        <span class="etichetta" style="display:block;margin-top:32px">Ombre</span>
+        <div class="ombre" style="margin-top:16px">
+          <div style="box-shadow:var(--imp-ombra-appoggio);border:1px solid var(--imp-filetto)">appoggio</div>
+          <div style="box-shadow:var(--imp-ombra-sollevato)">sollevato</div>
+        </div>
+      </div>
+    </div>
+    <div class="blocco">
+      <span class="etichetta">Icone · griglia 24 px · tratto 1,5 px · terminali e angoli vivi</span>
+      <div class="icone">
+        <figure><svg><use href="#i-spread"/></svg><figcaption>spread</figcaption></figure>
+        <figure><svg><use href="#i-piega"/></svg><figcaption>piega</figcaption></figure>
+        <figure><svg><use href="#i-abbondanza"/></svg><figcaption>abbondanza</figcaption></figure>
+        <figure><svg><use href="#i-margine"/></svg><figcaption>margine</figcaption></figure>
+        <figure><svg><use href="#i-modelli"/></svg><figcaption>modelli</figcaption></figure>
+        <figure><svg><use href="#i-livelli"/></svg><figcaption>livelli PSD</figcaption></figure>
+        <figure><svg><use href="#i-bozza"/></svg><figcaption>bozza</figcaption></figure>
+        <figure><svg><use href="#i-locale"/></svg><figcaption>sul computer</figcaption></figure>
+        <figure><svg><use href="#i-licenza"/></svg><figcaption>licenza</figcaption></figure>
+        <figure><svg><use href="#i-misura"/></svg><figcaption>misura</figcaption></figure>
+        <figure><svg><use href="#i-testo"/></svg><figcaption>testo</figcaption></figure>
+        <figure><svg><use href="#i-esporta"/></svg><figcaption>esporta</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COMPONENTI -->
+<section class="sezione" id="componenti">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">05 — Componenti</span>
+      <div class="testo">
+        <h2>Pochi pezzi, fatti bene</h2>
+        <p class="attacco">Gli stessi componenti per il sito e per l’app. Un solo pulsante verde per schermata: è l’azione che conta.</p>
+      </div>
+    </header>
+    <div class="griglia">
+      <div class="c7">
+        <span class="etichetta">Pulsanti</span>
+        <div class="fila" style="margin-top:16px">
+          <a class="pulsante primario" href="#"><svg><use href="#i-scarica"/></svg>Scarica la prova</a>
+          <a class="pulsante pieno" href="#">Acquista la licenza</a>
+          <a class="pulsante" href="#">Vedi i modelli</a>
+          <a class="pulsante testo" href="#">Leggi il manuale</a>
+        </div>
+        <div class="fila" style="margin-top:16px">
+          <span class="pulsante primario fuoco">Con fuoco</span>
+          <span class="pulsante primario" disabled>Disattivato</span>
+          <span class="pulsante distruttivo">Elimina lo spread</span>
+          <span class="pulsante piccolo">Piccolo</span>
+          <span class="pulsante primario grande">Grande</span>
+        </div>
+      </div>
+      <div class="c5">
+        <span class="etichetta">Selettore, spunte, interruttore</span>
+        <div class="fila" style="margin-top:16px"><div class="selettore" role="group"><button aria-pressed="true">Spread</button><button>Modelli</button><button>Testi</button></div></div>
+        <div class="fila" style="margin-top:16px;gap:24px"><span class="spunta"><i class="on"></i>Abbondanza 3 mm</span><span class="spunta"><i></i>Segni di taglio</span><span class="spunta"><span class="interruttore on"></span>PSD a livelli</span></div>
+      </div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c4 campo"><label for="c1">Nome del progetto</label><div class="input"><input id="c1" placeholder="Rossi – Bianchi, 14 giugno"></div><span class="aiuto">Compare nel nome dei file esportati.</span></div>
+      <div class="c4 campo"><label for="c2">Spazio tra le foto</label><div class="input num attivo"><input id="c2" value="5,0"><span class="unita">mm</span></div><span class="aiuto">Uguale su tutti gli spread.</span></div>
+      <div class="c4 campo"><label for="c3">Abbondanza</label><div class="input num sbagliato"><input id="c3" value="0,5"><span class="unita">mm</span></div><span class="aiuto errore">Il laboratorio chiede almeno 3,0 mm.</span></div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-locale"/></svg></div><h4>Sul tuo computer</h4><p class="piccolo secondario" style="margin:0">Le foto non lasciano mai il disco. Si lavora anche senza connessione.</p></div>
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-bozza"/></svg></div><h4>La bozza la prepara Claude</h4><p class="piccolo secondario" style="margin:0">L’assistente costruisce l’album dentro l’editor. Ogni spread resta modificabile a mano.</p></div>
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-livelli"/></svg></div><h4>PSD a livelli</h4><p class="piccolo secondario" style="margin:0">Ogni spread esce anche come file di Photoshop, con foto, testi e guide su livelli separati.</p></div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c6" style="display:grid;gap:12px">
+        <span class="etichetta">Avvisi</span>
+        <div class="avviso" style="--a:var(--imp-successo)"><svg><use href="#i-ok"/></svg><div><b>Spaziature corrette.</b> Tutti i 24 spread hanno margini e spazi uguali.</div></div>
+        <div class="avviso" style="--a:var(--imp-attenzione)"><svg><use href="#i-attenzione"/></svg><div><b>Da controllare.</b> Nello spread 07–08 un volto cade a 4 mm dalla piega.</div></div>
+        <div class="avviso" style="--a:var(--imp-errore)"><svg><use href="#i-errore"/></svg><div><b>Non esportabile.</b> La foto 112 è sotto i 200 dpi al formato di stampa.</div></div>
+        <div class="avviso" style="--a:var(--imp-info)"><svg><use href="#i-info"/></svg><div><b>Modelli del laboratorio aggiornati.</b> 3 nuove copertine nel catalogo.</div></div>
+      </div>
+      <div class="c6">
+        <span class="etichetta">Badge</span>
+        <div class="fila" style="margin-top:16px">
+          <span class="badge verde">Licenza perpetua</span><span class="badge">macOS · Windows</span><span class="badge">Novità</span>
+          <span class="badge prezzo"><b class="num">349 €</b><span>una volta</span></span>
+        </div>
+        <p class="piccolo secondario" style="margin-top:20px">Il badge prezzo dice sempre due cose: la cifra, in carattere dei numeri, e il fatto che si paga una volta. Le cifre di questa pagina sono quelle del listino (<span class="num">docs/mercato/tier.json</span>), IVA esclusa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ APPLICAZIONI -->
+<section class="sezione" id="applicazioni">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">06 — Applicazioni</span>
+      <div class="testo">
+        <h2>Il sito, il prezzo, l’editor</h2>
+        <p class="attacco">Tre esempi che usano solo i token di questa pagina. L’editor qui sotto è la direzione per ridisegnare l’interfaccia: neutra attorno alle foto, misure in vista, un solo accento.</p>
+      </div>
+    </header>
+
+    <span class="etichetta">Intestazione della landing</span>
+    <div class="sito" style="margin-top:16px">
+      <div class="barra">
+        <svg class="logo" viewBox="0 0 1366.78 220" height="24" style="width:auto"><use href="#imp-logotipo"/></svg>
+        <nav><span>Come funziona</span><span>Laboratori</span><span>Prezzi</span><span>Manuale</span></nav>
+        <a class="pulsante piccolo" href="#">Accedi</a>
+      </div>
+      <div class="eroe">
+        <div>
+          <span class="etichetta">Album di matrimonio · macOS e Windows</span>
+          <h1>Il tuo album, impaginato come si deve.</h1>
+          <p class="attacco">Claude prepara la bozza di tutto l’album; tu rifinisci spread per spread, con spazi esatti al decimo di millimetro. Le foto restano sul tuo computer e la licenza si paga una volta.</p>
+          <div class="fila"><a class="pulsante primario grande" href="#"><svg><use href="#i-scarica"/></svg>Scarica la prova</a><a class="pulsante grande" href="#">Vedi i prezzi</a></div>
+          <div class="punti"><span><svg><use href="#i-ok"/></svg>Licenza perpetua</span><span><svg><use href="#i-ok"/></svg>Nessun caricamento</span><span><svg><use href="#i-ok"/></svg>PSD a livelli</span></div>
+        </div>
+        <div class="album" aria-label="Spread d'esempio con le misure">
+          <div class="quota q-alto"><span>600 mm</span></div>
+          <div class="spread">
+            <div class="pag sinistra"><div class="foto f5"></div></div>
+            <div class="pag destra"><div class="foto f3"></div></div>
+            <div class="segni su"></div><div class="segni giu"></div>
+          </div>
+          <div class="quota v q-lato"><span>300</span></div>
+          <span class="didascalia">SPREAD 07–08 · 30 × 30 CM · SEGNAPOSTO FOTO</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Card prezzo · listino di docs/mercato/tier.json</span>
+      <div class="prezzi" style="margin-top:28px">
+        <div class="card-prezzo">
+          <div><span class="etichetta">Pochi album</span><h3 style="margin-top:8px">Essenziale</h3></div>
+          <div class="cifra"><strong>199 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Editor completo, spread per spread</li><li><svg><use href="#i-ok"/></svg>30 modelli d’autore, 5 tuoi</li><li><svg><use href="#i-ok"/></svg>Esportazione JPG e PDF</li><li><svg><use href="#i-ok"/></svg>Formati dei laboratori</li><li><svg><use href="#i-ok"/></svg>1 computer</li></ul>
+          <a class="pulsante" href="#">Acquista Essenziale</a>
+          <p class="nota">IVA esclusa · 242,78 € con IVA al 22 %</p>
+        </div>
+        <div class="card-prezzo consigliata">
+          <span class="nastro badge verde">Consigliato</span>
+          <div><span class="etichetta">Professionista</span><h3 style="margin-top:8px">Pro</h3></div>
+          <div class="cifra"><strong>349 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Essenziale</li><li><svg><use href="#i-ok"/></svg>Bozza dell’intero album con Claude</li><li><svg><use href="#i-ok"/></svg>PSD a livelli per Photoshop</li><li><svg><use href="#i-ok"/></svg>Spazi e tono uniformi su tutto l’album</li><li><svg><use href="#i-ok"/></svg>Tutti i modelli · 2 computer</li></ul>
+          <a class="pulsante primario" href="#">Acquista Pro</a>
+          <p class="nota">IVA esclusa · 425,78 € con IVA al 22 %</p>
+        </div>
+        <div class="card-prezzo">
+          <div><span class="etichetta">Più postazioni</span><h3 style="margin-top:8px">Studio</h3></div>
+          <div class="cifra"><strong>699 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Pro</li><li><svg><use href="#i-ok"/></svg>5 computer, più operatori</li><li><svg><use href="#i-ok"/></svg>Risposta entro 1 giorno lavorativo</li><li><svg><use href="#i-ok"/></svg>30 minuti di avvio guidato</li><li><svg><use href="#i-ok"/></svg>Prossima versione maggiore inclusa</li></ul>
+          <a class="pulsante" href="#">Acquista Studio</a>
+          <p class="nota">IVA esclusa · 852,78 € con IVA al 22 %</p>
+        </div>
+      </div>
+      <div class="fascia-lab">
+        <div>
+          <span class="etichetta">Laboratori</span>
+          <h3>Edizione Laboratorio</h3>
+          <p class="secondario">Il tuo catalogo dentro il programma: formati, copertine, abbondanze, profili ICC e controlli di prestampa. I fotografi ti mandano file già conformi.</p>
+        </div>
+        <a class="pulsante pieno" href="#">Parliamone</a>
+      </div>
+      <p class="piccolo secondario" style="margin-top:20px">Durante il lancio la cifra grande è il prezzo di lancio e il listino va accanto, con la data di fine, per esempio «249 € fino al 15 gennaio, poi 349 €». Mai il prezzo barrato prima che il listino sia stato applicato davvero.</p>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Editor · direzione per l’interfaccia (segue il tema: provalo in chiaro e in scuro)</span>
+      <div class="app" style="margin-top:16px">
+        <div class="a-barra">
+          <svg viewBox="0 0 260 220" width="22" height="19" style="color:var(--imp-app-testo);--segno:var(--imp-app-accento)"><use href="#imp-simbolo" style="fill:currentColor"/></svg>
+          <span class="progetto">Rossi – Bianchi<span class="num">30 × 30 · 24 spread</span></span>
+          <div class="centro selettore" role="group"><button aria-pressed="true">Spread</button><button>Modelli</button><button>Testi</button><button>Controllo</button></div>
+          <span class="stato"><i></i>Salvato</span>
+          <span class="pulsante app-sec">Anteprima</span>
+          <span class="pulsante primario"><svg><use href="#i-esporta"/></svg>Esporta</span>
+        </div>
+        <div class="a-lista">
+          <div class="mini"><div class="s"><div class="foto f1"></div><div style="padding:14%"><div class="foto f6" style="height:100%"></div></div></div><span>01–02</span></div>
+          <div class="mini"><div class="s"><div style="display:grid;grid-template-rows:1fr 1fr;gap:1px"><div class="foto f2"></div><div class="foto f7"></div></div><div class="foto f4"></div></div><span>03–04</span></div>
+          <div class="mini attiva"><div class="s"><div class="foto f5"></div><div style="padding:16%"><div class="foto f3" style="height:100%"></div></div></div><span>07–08</span></div>
+          <div class="mini"><div class="s"><div class="foto f6"></div><div class="foto f1"></div></div><span>09–10</span></div>
+          <div class="mini"><div class="s"><div style="padding:12%"><div class="foto f7" style="height:100%"></div></div><div class="foto f2"></div></div><span>11–12</span></div>
+        </div>
+        <div class="a-tela">
+          <div class="a-spread">
+            <div class="abb"></div>
+            <div style="position:relative"><div class="slot foto f5" style="inset:0"></div></div>
+            <div style="position:relative">
+              <div class="slot foto f3 sel" style="left:16%;right:16%;top:16%;bottom:16%"><i></i><i></i><i></i><i></i></div>
+              <div class="qa quota" style="left:84%;right:0;top:50%"><span>48,0</span></div>
+              <div class="qa quota" style="left:0;right:84%;top:50%"><span>48,0</span></div>
+              <div class="qa quota v att" style="top:0;bottom:84%;left:50%"><span>47,6</span></div>
+            </div>
+            <div class="piega"></div>
+          </div>
+        </div>
+        <div class="a-lato">
+          <div>
+            <h5>Spaziatura</h5>
+            <div class="riga-m"><span>Margine esterno</span><span class="valore uguale">48,0<em>mm</em></span></div>
+            <div class="riga-m"><span>Margine in alto</span><span class="valore" style="border-color:var(--imp-attenzione-segno)">47,6<em>mm</em></span></div>
+            <div class="riga-m"><span>Spazio tra foto</span><span class="valore">5,0<em>mm</em></span></div>
+            <div class="riga-m"><span>Abbondanza</span><span class="valore">3,0<em>mm</em></span></div>
+          </div>
+          <div>
+            <h5>Livelli PSD</h5>
+            <div class="livello"><span>Foto 112</span><span>1 840 × 1 840</span></div>
+            <div class="livello"><span>Foto 087</span><span>3 543 × 3 543</span></div>
+            <div class="livello"><span>Guide e piega</span><span>nascosto</span></div>
+          </div>
+          <div class="assistente">
+            <b><svg><use href="#i-bozza"/></svg>Bozza di Claude</b>
+            <span style="color:var(--imp-app-testo-tenue)">24 spread proposti da 312 foto. Gli spread rifiniti a mano non vengono più toccati.</span>
+          </div>
+        </div>
+        <div class="a-foto">
+          <div class="t foto f1 usata"></div><div class="t foto f2"></div><div class="t foto f3 usata"></div><div class="t foto f4"></div><div class="t foto f5 usata"></div><div class="t foto f6"></div><div class="t foto f7"></div><div class="t foto f2"></div><div class="t foto f4"></div>
+        </div>
+      </div>
+      <p class="piccolo secondario" style="margin-top:16px">Cosa cambia rispetto all’editor di oggi: niente giallo-oro né rosa come accento; selezione neutra (bianca in scuro, inchiostro in chiaro); misure in IBM Plex Mono accanto agli elementi; verde = misura uguale, ocra = da controllare, cinabro = errore; segni di piega e abbondanza disegnati come in tipografia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TONO -->
+<section class="sezione" id="tono">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">07 — Tono di voce</span>
+      <div class="testo">
+        <h2>Parla come un collega esperto</h2>
+        <p class="attacco">Calmo, preciso, concreto. Diamo del tu. Frasi brevi, verbi attivi, misure vere. Niente punti esclamativi, niente emoji, niente magia.</p>
+      </div>
+    </header>
+    <div class="tono">
+      <div class="th">Si dice</div><div class="th">Non si dice</div>
+      <div class="si">Le foto restano sul tuo computer.</div><div class="no">Privacy-first, 100% sicuro, cloud-free!</div>
+      <div class="si">Paghi una volta. La versione che compri resta tua.</div><div class="no">Offerta lifetime imperdibile 🔥</div>
+      <div class="si">Claude prepara la bozza; tu decidi ogni spread.</div><div class="no">La nostra AI rivoluzionaria crea album magici in un click ✨</div>
+      <div class="si">Spazi uguali al decimo di millimetro.</div><div class="no">Layout pixel-perfect da sogno.</div>
+      <div class="si">Un modello d’autore per lo spread di apertura.</div><div class="no">Template stunning per il giorno più bello della loro vita.</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="piede">
+  <div class="pagina">
+    <div>
+      <svg class="logo" viewBox="0 0 1031.58 719.02" height="72" style="width:auto"><use href="#imp-verticale"/></svg>
+    </div>
+    <div style="text-align:right">
+      <div class="titoli" style="font-size:40px;line-height:1;font-variation-settings:'opsz' 72"><span class="payoff">Resta tuo.</span></div>
+      <div class="etichetta" style="margin-top:12px">Fatto in Italia, da un fotografo per i fotografi</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var bottoni = document.querySelectorAll('.tema button');
+  function imposta(t) {
+    if (t === 'sistema') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+    bottoni.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.t === t)); });
+    try { localStorage.setItem('imp-tema', t); } catch (e) {}
+  }
+  var iniziale = 'sistema';
+  if (location.hash === '#scuro') iniziale = 'dark';
+  else if (location.hash === '#chiaro') iniziale = 'light';
+  else { try { iniziale = localStorage.getItem('imp-tema') || 'sistema'; } catch (e) {} }
+  imposta(iniziale);
+  bottoni.forEach(function (b) { b.addEventListener('click', function () { imposta(b.dataset.t); }); });
+})();
+</script>
+</body>
+</html>

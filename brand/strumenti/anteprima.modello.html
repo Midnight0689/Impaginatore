@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impaginatore — Manuale di marca</title>
+<meta name="description" content="Il manuale di marca di Impaginatore applicato: logo, colori, tipografia, componenti, chiaro e scuro.">
+<link rel="icon" href="icona/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*@@TOKENS@@*/
+
+/* ------------------------------------------------------------------ base */
+*, *::before, *::after { box-sizing: border-box; }
+.griglia > *, .copertina > *, .primari > *, .concept > *, .prezzi > * { min-width: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--imp-fondo); color: var(--imp-testo);
+  font: var(--imp-tipo-testo-peso) 16px/var(--imp-tipo-testo-interlinea) var(--imp-font-testo);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  transition: background-color var(--imp-durata-medio) var(--imp-curva-standard), color var(--imp-durata-medio) var(--imp-curva-standard);
+}
+img, svg { display: block; }
+a { color: var(--imp-accento); text-decoration-thickness: 1px; text-underline-offset: .18em; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: var(--imp-bordo-fuoco) solid var(--imp-accento); outline-offset: 2px; }
+p { margin: 0 0 var(--imp-spazio-5); max-width: 62ch; }
+.pagina { max-width: calc(var(--imp-griglia-larghezza) + 2 * var(--imp-griglia-margine)); margin: 0 auto; padding: 0 var(--imp-griglia-margine); }
+.titoli, h1, h2, h3 { font-family: var(--imp-font-titoli); font-weight: 480; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(44px, 7vw, var(--imp-tipo-display-dimensione)); line-height: var(--imp-tipo-display-interlinea); letter-spacing: var(--imp-tipo-display-spaziatura); font-variation-settings: "opsz" 72; }
+h2 { font-size: clamp(32px, 4.4vw, var(--imp-tipo-titolo-1-dimensione)); line-height: var(--imp-tipo-titolo-1-interlinea); letter-spacing: var(--imp-tipo-titolo-1-spaziatura); font-variation-settings: "opsz" 60; }
+h3 { font-size: var(--imp-tipo-titolo-3-dimensione); line-height: var(--imp-tipo-titolo-3-interlinea); letter-spacing: var(--imp-tipo-titolo-3-spaziatura); font-weight: 500; font-variation-settings: "opsz" 32; }
+h4 { font: 600 var(--imp-tipo-titolo-4-dimensione)/var(--imp-tipo-titolo-4-interlinea) var(--imp-font-testo); letter-spacing: var(--imp-tipo-titolo-4-spaziatura); margin: 0 0 var(--imp-spazio-3); }
+.attacco { font-size: var(--imp-tipo-attacco-dimensione); line-height: var(--imp-tipo-attacco-interlinea); color: var(--imp-testo-secondario); }
+.etichetta { font: 500 var(--imp-tipo-etichetta-dimensione)/var(--imp-tipo-etichetta-interlinea) var(--imp-font-numeri); letter-spacing: var(--imp-tipo-etichetta-spaziatura); text-transform: uppercase; color: var(--imp-testo-tenue); }
+.misura, .num { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; }
+.piccolo { font-size: var(--imp-tipo-testo-piccolo-dimensione); line-height: var(--imp-tipo-testo-piccolo-interlinea); }
+.tenue { color: var(--imp-testo-tenue); }
+.secondario { color: var(--imp-testo-secondario); }
+hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
+
+/* ------------------------------------------------------------------ segni del mestiere */
+/* Crocini: segni di taglio fuori dagli angoli. Il contenitore ha 16 px di abbondanza. */
+.crocini {
+  --c: var(--imp-testo-tenue); --l: 10px; --o: 16px;
+  position: relative; padding: var(--o);
+  background:
+    linear-gradient(var(--c), var(--c)) var(--o) 0 / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 var(--o) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 0 / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% var(--o) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) var(--o) 100% / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 calc(100% - var(--o)) / var(--l) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 100% / 1px var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% calc(100% - var(--o)) / var(--l) 1px no-repeat;
+}
+/* Quota: linea di misura con i terminali e il valore in carattere dei numeri */
+.quota { position: relative; height: 1px; background: currentColor; color: var(--imp-accento); }
+.quota::before, .quota::after { content: ""; position: absolute; top: -4px; width: 1px; height: 9px; background: currentColor; }
+.quota::before { left: 0; } .quota::after { right: 0; }
+.quota > span { position: absolute; left: 50%; top: -9px; transform: translate(-50%, -50%); font: 500 11px/1 var(--imp-font-numeri); background: var(--q-fondo, var(--imp-fondo)); padding: 0 4px; white-space: nowrap; }
+.quota.v { width: 1px; height: auto; }
+.quota.v::before, .quota.v::after { left: -4px; width: 9px; height: 1px; top: auto; }
+.quota.v::before { top: 0; } .quota.v::after { bottom: 0; }
+.quota.v > span { top: 50%; left: 8px; transform: translateY(-50%); }
+
+/* ------------------------------------------------------------------ testata del manuale */
+.testata { position: sticky; top: 0; z-index: 10; background: color-mix(in oklab, var(--imp-fondo) 88%, transparent); backdrop-filter: saturate(1.2) blur(10px); -webkit-backdrop-filter: saturate(1.2) blur(10px); border-bottom: 1px solid var(--imp-filetto); }
+.testata .pagina { display: flex; align-items: center; gap: var(--imp-spazio-6); height: 60px; }
+.testata nav { display: flex; gap: var(--imp-spazio-5); margin-left: auto; font-size: 14px; }
+.testata nav a { color: var(--imp-testo-secondario); text-decoration: none; }
+.testata nav a:hover { color: var(--imp-testo); }
+.logo { color: var(--imp-testo); --segno: var(--imp-accento); }
+.logo use { fill: currentColor; }
+.tema { display: inline-flex; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-medio); padding: 2px; gap: 2px; }
+.tema button { font: 500 12px/1 var(--imp-font-testo); color: var(--imp-testo-secondario); background: none; border: 0; padding: 6px 9px; border-radius: 3px; cursor: pointer; }
+.tema button[aria-pressed="true"] { background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+
+/* ------------------------------------------------------------------ copertina */
+.copertina { padding-top: var(--imp-spazio-10); padding-bottom: var(--imp-spazio-9); display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); align-items: end; }
+.copertina .titolo { grid-column: 1 / span 8; }
+.copertina .titolo h1 { margin: var(--imp-spazio-5) 0 var(--imp-spazio-6); }
+.copertina .scheda { grid-column: 9 / span 4; border-top: 1px solid var(--imp-testo); padding-top: var(--imp-spazio-4); }
+.copertina dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
+.copertina dt { color: var(--imp-testo-tenue); }
+.copertina dd { margin: 0; }
+.payoff { font-family: var(--imp-font-titoli); font-style: normal; font-weight: 480; font-variation-settings: "opsz" 72; color: var(--imp-accento); }
+
+/* ------------------------------------------------------------------ sezioni */
+.sezione { padding: var(--imp-spazio-9) 0; border-top: 1px solid var(--imp-filetto); }
+.sezione > .pagina > header { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); margin-bottom: var(--imp-spazio-8); }
+.sezione > .pagina > header .etichetta { grid-column: 1 / span 3; padding-top: 14px; }
+.sezione > .pagina > header .testo { grid-column: 4 / span 9; }
+.sezione > .pagina > header h2 { margin-bottom: var(--imp-spazio-5); }
+.blocco { margin-top: var(--imp-spazio-8); }
+.blocco > .etichetta { display: block; margin-bottom: var(--imp-spazio-4); }
+.griglia { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); }
+.c3 { grid-column: span 3; } .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; } .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+
+/* tavole del marchio */
+.tavola { border-radius: var(--imp-raggio-grande); min-height: 240px; display: grid; place-items: center; padding: var(--imp-spazio-8) var(--imp-spazio-6); position: relative; }
+.tavola .etichetta { position: absolute; left: 16px; top: 14px; }
+.tavola.carta { background: var(--imp-carta-50); color: var(--imp-carta-900); --segno: var(--imp-verde-600); }
+.tavola.carta .etichetta { color: var(--imp-carta-500); }
+.tavola.inchiostro { background: var(--imp-carta-900); color: var(--imp-carta-50); --segno: var(--imp-verde-300); }
+.tavola.inchiostro .etichetta { color: var(--imp-carta-400); }
+.tavola.verde { background: var(--imp-verde-600); color: var(--imp-carta-50); --segno: var(--imp-carta-50); }
+.tavola.verde .etichetta { color: var(--imp-verde-200); }
+.tavola.mono-scuro { background: var(--imp-carta-0); color: var(--imp-carta-900); --segno: var(--imp-carta-900); }
+.tavola.mono-chiaro { background: linear-gradient(135deg, #3a332c, #6b5a4a 55%, #2a2622); color: #fff; --segno: #fff; }
+.tavola.mono-chiaro .etichetta { color: rgb(255 255 255 / .7); }
+.tavola.bordo { box-shadow: inset 0 0 0 1px var(--imp-filetto); }
+.tavola svg use { fill: currentColor; }
+
+.misure-minime { display: flex; align-items: end; gap: var(--imp-spazio-7); flex-wrap: wrap; }
+.misure-minime figure { margin: 0; display: grid; gap: 8px; justify-items: start; }
+.misure-minime figcaption { font: 500 11px/1.3 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.pixel { image-rendering: pixelated; }
+
+.costruzione { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); }
+.costruzione svg { width: 100%; height: auto; }
+
+.scorretti { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--imp-spazio-4); }
+.scorretti figure { margin: 0; }
+.scorretti .riquadro { height: 120px; border-radius: var(--imp-raggio-grande); background: var(--imp-carta-50); color: var(--imp-carta-900); --segno: var(--imp-verde-600); display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 1px var(--imp-filetto); position: relative; }
+.scorretti .riquadro::after { content: ""; position: absolute; right: 10px; top: 10px; width: 16px; height: 16px; background: linear-gradient(45deg, transparent 45%, var(--imp-errore) 45% 55%, transparent 55%), linear-gradient(-45deg, transparent 45%, var(--imp-errore) 45% 55%, transparent 55%); }
+.scorretti figcaption { font-size: 13px; color: var(--imp-testo-secondario); margin-top: 8px; }
+
+.concept { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--imp-griglia-canale); }
+.concept figure { margin: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); background: var(--imp-superficie); display: grid; gap: var(--imp-spazio-4); align-content: start; }
+.concept figure.scelto { box-shadow: inset 0 0 0 2px var(--imp-accento); border-color: transparent; }
+.concept .disegno { height: 150px; display: grid; place-items: center; background: var(--imp-carta-50); border-radius: var(--imp-raggio-medio); }
+.concept .disegno svg { height: 96px; width: auto; }
+.concept .piccoli { display: flex; gap: 12px; align-items: center; }
+.concept h3 { font-size: 24px; }
+
+/* ------------------------------------------------------------------ colore */
+.campioni { display: grid; grid-template-columns: repeat(9, 1fr); gap: var(--imp-spazio-3); }
+.campioni .tinta { height: 72px; font-size: 10.5px; }
+.campioni .dati { font-size: 10.5px; padding: 8px 10px 10px; }
+.campioni .dati b { font-size: 13px; }
+.campione { border-radius: var(--imp-raggio-grande); overflow: hidden; border: 1px solid var(--imp-filetto); background: var(--imp-superficie); }
+.campione .tinta { height: 96px; padding: 10px 12px; display: flex; align-items: end; font: 500 12px/1 var(--imp-font-numeri); }
+.campione.grande .tinta { height: 180px; align-items: end; }
+.campione .dati { padding: 10px 12px 12px; font: 400 11.5px/1.55 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.campione .dati b { display: block; font: 600 14px/1.3 var(--imp-font-testo); color: var(--imp-testo); margin-bottom: 4px; }
+.primari { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: var(--imp-spazio-4); }
+.scala { display: grid; grid-template-columns: repeat(var(--n, 12), 1fr); border-radius: var(--imp-raggio-grande); overflow: hidden; border: 1px solid var(--imp-filetto); }
+.scala div { height: 88px; padding: 8px; font: 500 10.5px/1.25 var(--imp-font-numeri); display: flex; flex-direction: column; justify-content: space-between; }
+.tabella { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.contrasti { display: grid; grid-template-columns: 1fr 1fr; gap: var(--imp-spazio-6) var(--imp-griglia-canale); align-items: start; }
+.contrasti h4 { font: 600 15px/1.3 var(--imp-font-testo); margin: 0 0 4px; }
+.tabella .coppia { font: 400 11.5px/1.35 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.tabella th { text-align: left; font: 500 10.5px/1.3 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; color: var(--imp-testo-tenue); padding: 8px 10px; border-bottom: 1px solid var(--imp-testo); }
+.tabella td { padding: 6px 10px; border-bottom: 1px solid var(--imp-filetto); vertical-align: middle; }
+.tabella td.num, .tabella .num { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prova { display: inline-grid; place-items: center; min-width: 54px; height: 30px; padding: 0 8px; border-radius: var(--imp-raggio-piccolo); font: 600 14px/1 var(--imp-font-testo); box-shadow: inset 0 0 0 1px rgb(127 127 127 / .25); }
+.esito { font: 500 11px/1 var(--imp-font-numeri); padding: 4px 6px; border-radius: var(--imp-raggio-piccolo); background: var(--imp-accento-tenue); color: var(--imp-accento); }
+
+/* ------------------------------------------------------------------ tipografia */
+.famiglia { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--imp-griglia-canale); padding: var(--imp-spazio-6) 0; border-bottom: 1px solid var(--imp-filetto); align-items: baseline; }
+.famiglia .nome { grid-column: span 3; }
+.famiglia .nome b { display: block; font-weight: 600; }
+.famiglia .esempio { grid-column: span 9; }
+.scala-tipo { display: grid; gap: 0; }
+.scala-tipo .riga { display: grid; grid-template-columns: 180px 1fr; gap: var(--imp-spazio-6); align-items: baseline; padding: var(--imp-spazio-4) 0; border-bottom: 1px solid var(--imp-filetto); }
+.scala-tipo .riga .etichetta { line-height: 1.6; }
+
+/* ------------------------------------------------------------------ spazi, raggi, ombre, icone */
+.barre { display: grid; gap: 8px; }
+.barre div { display: grid; grid-template-columns: 70px 60px 1fr; align-items: center; gap: 12px; font: 400 12px/1 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.barre i { display: block; height: 12px; background: var(--imp-accento); }
+.raggi { display: flex; gap: var(--imp-spazio-5); flex-wrap: wrap; }
+.raggi div { width: 96px; height: 72px; border: 1.5px solid var(--imp-testo); display: grid; place-items: end start; padding: 8px; font: 400 11px/1 var(--imp-font-numeri); }
+.ombre { display: flex; gap: var(--imp-spazio-6); flex-wrap: wrap; }
+.ombre div { width: 200px; height: 120px; background: var(--imp-superficie); border-radius: var(--imp-raggio-grande); display: grid; place-items: end start; padding: 12px; font: 400 11px/1 var(--imp-font-numeri); color: var(--imp-testo-secondario); }
+.icone { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--imp-spazio-3); }
+.icone figure { margin: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: 18px 10px 12px; display: grid; justify-items: center; gap: 12px; background: var(--imp-superficie); }
+.icone svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
+.icone figcaption { font: 400 11px/1.2 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.icona-griglia { background-image: linear-gradient(var(--imp-filetto) 1px, transparent 1px), linear-gradient(90deg, var(--imp-filetto) 1px, transparent 1px); background-size: 8px 8px; background-position: -0.5px -0.5px; }
+
+/* ------------------------------------------------------------------ componenti */
+.pulsante {
+  --pf: var(--imp-superficie); --pt: var(--imp-testo); --pb: var(--imp-bordo-campo);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px;
+  font: 600 14.5px/1 var(--imp-font-testo); letter-spacing: .005em; color: var(--pt); background: var(--pf);
+  border: 1px solid var(--pb); border-radius: var(--imp-raggio-medio); cursor: pointer; text-decoration: none;
+  transition: background-color var(--imp-durata-istante) var(--imp-curva-esce), border-color var(--imp-durata-istante) var(--imp-curva-esce), transform var(--imp-durata-istante) var(--imp-curva-esce);
+}
+.pulsante:hover { --pb: var(--imp-testo); }
+.pulsante:active { transform: translateY(1px); }
+.pulsante svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.pulsante.primario { --pf: var(--imp-accento-fondo); --pt: var(--imp-su-accento); --pb: var(--imp-accento-fondo); }
+.pulsante.primario:hover { --pf: var(--imp-accento-fondo-premuto); --pb: var(--imp-accento-fondo-premuto); }
+.pulsante.pieno { --pf: var(--imp-inverso-fondo); --pt: var(--imp-inverso-testo); --pb: var(--imp-inverso-fondo); }
+.pulsante.testo { --pf: transparent; --pb: transparent; padding: 0 6px; color: var(--imp-accento); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.pulsante.distruttivo { --pt: var(--imp-errore); --pb: var(--imp-errore); --pf: transparent; }
+.pulsante.grande { height: 48px; padding: 0 24px; font-size: 16px; }
+.pulsante.piccolo { height: 32px; padding: 0 12px; font-size: 13px; }
+.pulsante[disabled] { opacity: .45; cursor: not-allowed; }
+.pulsante.fuoco { outline: 2px solid var(--imp-accento); outline-offset: 2px; }
+.fila { display: flex; flex-wrap: wrap; gap: var(--imp-spazio-4); align-items: center; }
+.campo { display: grid; gap: 6px; }
+.campo label { font: 600 13px/1.2 var(--imp-font-testo); }
+.campo .aiuto { font-size: 12.5px; color: var(--imp-testo-tenue); }
+.campo .aiuto.errore { color: var(--imp-errore); }
+.input { display: flex; align-items: center; height: 40px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-piccolo); background: var(--imp-superficie); padding: 0 12px; gap: 8px; font-size: 15px; color: var(--imp-testo); }
+.input input { all: unset; flex: 1; min-width: 0; }
+.input input::placeholder { color: var(--imp-testo-tenue); }
+.input .unita { font: 400 13px/1 var(--imp-font-numeri); color: var(--imp-testo-tenue); }
+.input.num input { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; text-align: right; }
+.input.attivo { border-color: var(--imp-accento); box-shadow: 0 0 0 1px var(--imp-accento); }
+.input.sbagliato { border-color: var(--imp-errore); box-shadow: 0 0 0 1px var(--imp-errore); }
+.selettore { display: inline-flex; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); overflow: hidden; }
+.selettore button { all: unset; padding: 8px 14px; font: 500 13.5px/1 var(--imp-font-testo); cursor: pointer; color: var(--imp-testo-secondario); }
+.selettore button + button { border-left: 1px solid var(--imp-bordo-campo); }
+.selettore button[aria-pressed="true"] { background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+.spunta { display: inline-flex; align-items: center; gap: 10px; font-size: 14.5px; }
+.spunta i { width: 18px; height: 18px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-piccolo); display: grid; place-items: center; background: var(--imp-superficie); }
+.spunta i.on { background: var(--imp-accento-fondo); border-color: var(--imp-accento-fondo); }
+.spunta i.on::after { content: ""; width: 9px; height: 5px; border-left: 2px solid var(--imp-su-accento); border-bottom: 2px solid var(--imp-su-accento); transform: translateY(-1px) rotate(-45deg); }
+.interruttore { width: 36px; height: 20px; border-radius: 999px; background: var(--imp-filetto); position: relative; display: inline-block; }
+.interruttore::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--imp-superficie); box-shadow: 0 1px 2px rgb(0 0 0 / .2); transition: transform var(--imp-durata-breve) var(--imp-curva-esce); }
+.interruttore.on { background: var(--imp-accento-fondo); }
+.interruttore.on::after { transform: translateX(16px); }
+.card { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-6); box-shadow: var(--imp-ombra-appoggio); }
+.card h4 { margin-top: var(--imp-spazio-4); }
+.card .icona-card { width: 40px; height: 40px; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-medio); display: grid; place-items: center; color: var(--imp-accento); }
+.card .icona-card svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: var(--imp-raggio-piccolo); font: 500 11.5px/1 var(--imp-font-numeri); letter-spacing: .04em; text-transform: uppercase; background: var(--imp-fondo-tenue); color: var(--imp-testo-secondario); box-shadow: inset 0 0 0 1px var(--imp-filetto); }
+.badge.verde { background: var(--imp-accento-tenue); color: var(--imp-accento); box-shadow: none; }
+.badge.prezzo { height: 32px; padding: 0 0 0 12px; gap: 0; text-transform: none; letter-spacing: 0; font-size: 14px; background: var(--imp-superficie); color: var(--imp-testo); box-shadow: inset 0 0 0 1px var(--imp-testo); }
+.badge.prezzo b { font-weight: 500; padding-right: 10px; }
+.badge.prezzo span { height: 100%; display: grid; place-items: center; padding: 0 10px; background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); font: 600 12px/1 var(--imp-font-testo); border-radius: 0 var(--imp-raggio-piccolo) var(--imp-raggio-piccolo) 0; }
+.avviso { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 12px 14px; border-radius: var(--imp-raggio-medio); font-size: 14px; border-left: 3px solid var(--a); background: color-mix(in oklab, var(--a) 9%, var(--imp-superficie)); }
+.avviso svg { width: 20px; height: 20px; fill: none; stroke: var(--a); stroke-width: 1.5; stroke-linecap: square; }
+.avviso b { color: var(--a); font-weight: 600; }
+
+/* card prezzo */
+.prezzi { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--imp-griglia-canale); align-items: stretch; }
+.card-prezzo { background: var(--imp-superficie); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); padding: var(--imp-spazio-7) var(--imp-spazio-6) var(--imp-spazio-6); display: flex; flex-direction: column; gap: var(--imp-spazio-5); position: relative; }
+.card-prezzo.consigliata { border-color: var(--imp-testo); box-shadow: var(--imp-ombra-sollevato); }
+.card-prezzo .nastro { position: absolute; top: -1px; right: 24px; transform: translateY(-50%); }
+.card-prezzo h3 { font-size: 30px; }
+.card-prezzo .cifra { display: flex; align-items: baseline; gap: 10px; }
+.card-prezzo .cifra strong { font: 480 64px/1 var(--imp-font-titoli); font-variation-settings: "opsz" 72; letter-spacing: -.03em; font-variant-numeric: lining-nums; }
+.card-prezzo .cifra span { color: var(--imp-testo-secondario); font-size: 15px; }
+.card-prezzo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 14.5px; }
+.card-prezzo li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; }
+.card-prezzo li svg { width: 18px; height: 18px; fill: none; stroke: var(--imp-accento); stroke-width: 1.75; stroke-linecap: square; margin-top: 2px; }
+.card-prezzo .pulsante { width: 100%; margin-top: auto; }
+.card-prezzo .nota { font-size: 12.5px; color: var(--imp-testo-tenue); text-align: center; margin: -8px 0 0; }
+.fascia-lab { margin-top: var(--imp-griglia-canale); display: flex; align-items: center; justify-content: space-between; gap: var(--imp-spazio-6); padding: var(--imp-spazio-6); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); background: var(--imp-superficie); }
+.fascia-lab h3 { font-size: 24px; margin: 8px 0 6px; }
+.fascia-lab p { margin: 0; max-width: 62ch; }
+.fascia-lab .pulsante { flex: none; }
+
+/* ------------------------------------------------------------------ foto segnaposto */
+.foto { background: #8a7a6a; position: relative; overflow: hidden; }
+.foto::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / .28)); }
+.f1 { background: linear-gradient(165deg, #e9dccb 0%, #c7a888 38%, #7d5f48 72%, #3d2f26 100%); }
+.f2 { background: radial-gradient(70% 60% at 35% 35%, #f4ead9 0%, #cdb79c 40%, #7a6654 80%, #4a3d33 100%); }
+.f3 { background: linear-gradient(180deg, #ededeb 0%, #b3b3b0 45%, #5b5b59 80%, #262625 100%); }
+.f4 { background: linear-gradient(200deg, #d7dcc4 0%, #9aa77f 40%, #5d6b49 75%, #2f3826 100%); }
+.f5 { background: linear-gradient(170deg, #f6d9b8 0%, #dba27f 35%, #9d6b63 70%, #4b3842 100%); }
+.f6 { background: radial-gradient(80% 70% at 60% 30%, #d9d4cc 0%, #a39b90 45%, #5f584f 85%); }
+.f7 { background: linear-gradient(150deg, #4a4642 0%, #8f8579 40%, #d8cbb8 75%, #efe6d6 100%); }
+
+/* ------------------------------------------------------------------ landing */
+.sito { border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); overflow: hidden; background: var(--imp-fondo); box-shadow: var(--imp-ombra-sollevato); }
+.sito .barra { display: flex; align-items: center; gap: var(--imp-spazio-6); padding: 18px 40px; border-bottom: 1px solid var(--imp-filetto); }
+.sito .barra nav { display: flex; gap: 22px; font-size: 14px; color: var(--imp-testo-secondario); margin-left: auto; }
+.sito .eroe { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; padding: 72px 40px 64px; align-items: center; }
+.sito .eroe h1 { font-size: clamp(40px, 5.2vw, 64px); margin: 18px 0 20px; }
+.sito .eroe .attacco { margin-bottom: 28px; }
+.sito .punti { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 28px; font-size: 13.5px; color: var(--imp-testo-secondario); }
+.sito .punti span { display: inline-flex; gap: 8px; align-items: center; }
+.sito .punti svg { width: 16px; height: 16px; fill: none; stroke: var(--imp-accento); stroke-width: 1.75; stroke-linecap: square; }
+.album { position: relative; padding: 40px 44px 46px 28px; }
+.album .spread { display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 2 / 1; box-shadow: 0 1px 0 rgb(0 0 0 / .05), 0 30px 50px -24px rgb(30 24 18 / .5); position: relative; }
+.album .spread::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 28px; transform: translateX(-50%); background: linear-gradient(90deg, transparent, rgb(0 0 0 / .14) 45%, rgb(255 255 255 / .08) 52%, transparent); }
+.album .pag { background: #fbfaf7; position: relative; }
+.album .pag.sinistra .foto { position: absolute; inset: 0; }
+.album .pag.destra .foto { position: absolute; left: 16%; right: 16%; top: 16%; bottom: 16%; }
+.album .q-alto { position: absolute; left: 28px; right: 44px; top: 10px; }
+.album .q-lato { position: absolute; right: 24px; top: 40px; bottom: 46px; }
+.album .segni { position: absolute; left: 50%; width: 2px; height: 10px; background: var(--imp-accento); transform: translateX(-50%); z-index: 1; }
+.album .segni.su { top: -14px; } .album .segni.giu { bottom: -14px; }
+.album .didascalia { position: absolute; left: 28px; bottom: 12px; font: 500 11px/1 var(--imp-font-numeri); color: var(--imp-testo-tenue); letter-spacing: .04em; }
+
+/* ------------------------------------------------------------------ app */
+.app { --q-fondo: var(--imp-app-tela); border-radius: 10px; overflow: hidden; border: 1px solid var(--imp-app-bordo); box-shadow: var(--imp-ombra-sollevato); background: var(--imp-app-tela); color: var(--imp-app-testo); font: 400 13px/1.4 var(--imp-font-testo); display: grid; grid-template-columns: 188px 1fr 268px; grid-template-rows: 48px 1fr 104px; height: 640px; }
+.app .a-barra { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: var(--imp-app-barra); border-bottom: 1px solid var(--imp-app-bordo); }
+.app .a-barra .progetto { font-weight: 600; }
+.app .a-barra .progetto span { font-weight: 400; color: var(--imp-app-testo-tenue); margin-left: 6px; }
+.app .a-barra .centro { margin: 0 auto; }
+.app .selettore { border-color: var(--imp-app-bordo); }
+.app .selettore button { padding: 6px 12px; font-size: 12.5px; color: var(--imp-app-testo-tenue); }
+.app .selettore button + button { border-color: var(--imp-app-bordo); }
+.app .selettore button[aria-pressed="true"] { background: var(--imp-app-sollevato); color: var(--imp-app-testo); box-shadow: inset 0 -2px 0 var(--imp-app-accento); }
+.app .pulsante { height: 30px; font-size: 13px; padding: 0 12px; }
+.app .pulsante.app-sec { --pf: transparent; --pt: var(--imp-app-testo); --pb: var(--imp-app-bordo); }
+.app .a-lista { grid-column: 1; grid-row: 2 / 4; background: var(--imp-app-pannello); border-right: 1px solid var(--imp-app-bordo); padding: 12px; display: grid; gap: 12px; align-content: start; overflow: hidden; }
+.app .mini { display: grid; gap: 5px; }
+.app .mini .s { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; aspect-ratio: 2 / 1; background: #fff; padding: 0; outline: 1px solid var(--imp-app-bordo); }
+.app .mini .s > div { position: relative; }
+.app .mini .s > div:not(.foto) { background: #f4f4f2; }
+.app .mini .s .foto::after { display: none; }
+.app .mini.attiva .s { outline: 2px solid var(--imp-app-selezione); outline-offset: 2px; }
+.app .mini span { font: 400 11px/1 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); }
+.app .mini.attiva span { color: var(--imp-app-testo); }
+.app .a-tela { grid-column: 2; grid-row: 2; position: relative; display: grid; place-items: center; overflow: hidden; }
+.app .a-spread { position: relative; width: 78%; aspect-ratio: 2 / 1; background: #fff; display: grid; grid-template-columns: 1fr 1fr; box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+.app .a-spread .abb { position: absolute; inset: -10px; border: 1px dashed rgb(182 50 43 / .55); pointer-events: none; }
+.app .a-spread .piega { position: absolute; left: 50%; top: -18px; bottom: -18px; border-left: 1px dashed var(--imp-app-testo-tenue); opacity: .6; }
+.app .a-spread .piega::before, .app .a-spread .piega::after { content: ""; position: absolute; left: -2px; width: 3px; height: 8px; background: var(--imp-app-accento); }
+.app .a-spread .piega::before { top: 0; } .app .a-spread .piega::after { bottom: 0; }
+.app .slot { position: absolute; }
+.app .slot.sel { outline: 1.5px solid var(--imp-app-selezione); outline-offset: 0; box-shadow: 0 0 0 3px rgb(0 0 0 / .25); }
+.app .slot.sel i { position: absolute; width: 7px; height: 7px; background: var(--imp-app-selezione); border: 1px solid rgb(0 0 0 / .5); }
+.app .slot.sel i:nth-child(1) { left: -4px; top: -4px; } .app .slot.sel i:nth-child(2) { right: -4px; top: -4px; } .app .slot.sel i:nth-child(3) { left: -4px; bottom: -4px; } .app .slot.sel i:nth-child(4) { right: -4px; bottom: -4px; }
+.app .qa { position: absolute; color: var(--imp-app-accento); }
+.app .qa.att { color: var(--imp-attenzione-segno); }
+.app .qa > span { background: var(--imp-app-tela); }
+.app .a-lato { grid-column: 3; grid-row: 2 / 4; background: var(--imp-app-pannello); border-left: 1px solid var(--imp-app-bordo); padding: 14px; display: grid; gap: 16px; align-content: start; }
+.app .a-lato h5 { margin: 0 0 8px; font: 600 11px/1.3 var(--imp-font-testo); letter-spacing: .02em; color: var(--imp-app-testo-tenue); text-transform: uppercase; }
+.app .riga-m { display: grid; grid-template-columns: 1fr 92px; align-items: center; gap: 8px; margin-bottom: 6px; }
+.app .riga-m .valore { display: flex; align-items: center; justify-content: space-between; height: 28px; padding: 0 8px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-piccolo); background: var(--imp-app-tela); font: 400 12px/1 var(--imp-font-numeri); }
+.app .riga-m .valore em { font-style: normal; color: var(--imp-app-testo-tenue); }
+.app .riga-m .valore.uguale { border-color: var(--imp-app-accento); }
+.app .stato { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--imp-app-testo-tenue); }
+.app .stato i { width: 8px; height: 8px; border-radius: 1px; background: var(--imp-app-accento); }
+.app .livello { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--imp-app-bordo); font-size: 12.5px; }
+.app .livello span:last-child { font: 400 11px/1.4 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); }
+.app .assistente { border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-medio); padding: 10px; background: var(--imp-app-tela); font-size: 12.5px; }
+.app .assistente b { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 4px; }
+.app .assistente svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+.app .a-foto { grid-column: 2; grid-row: 3; border-top: 1px solid var(--imp-app-bordo); background: var(--imp-app-pannello); display: flex; gap: 8px; padding: 12px 14px; align-items: center; overflow: hidden; }
+.app .a-foto .t { width: 92px; height: 66px; flex: none; position: relative; }
+.app .a-foto .t.usata::before { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .45); z-index: 1; }
+.app .a-foto .t.usata::after { content: "1"; position: absolute; right: 4px; bottom: 4px; z-index: 2; font: 500 10px/1 var(--imp-font-numeri); color: #fff; background: none; inset: auto 4px 4px auto; }
+
+/* ------------------------------------------------------------------ tono */
+.tono { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); overflow: hidden; }
+.tono > div { padding: 14px 18px; border-bottom: 1px solid var(--imp-filetto); font-size: 15px; }
+.tono > div:nth-child(odd) { border-right: 1px solid var(--imp-filetto); }
+.tono .th { font: 500 11px/1.3 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase; background: var(--imp-fondo-tenue); }
+.tono .no { color: var(--imp-testo-secondario); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--imp-errore) 60%, transparent); }
+
+.piede { padding: var(--imp-spazio-9) 0 var(--imp-spazio-10); border-top: 1px solid var(--imp-filetto); }
+.piede .pagina { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+
+/* ------------------------------------------------------------------ adattamento */
+@media (max-width: 1024px) {
+  .app { grid-template-columns: 150px 1fr 220px; }
+  .sito .eroe { grid-template-columns: 1fr; }
+  .prezzi, .concept { grid-template-columns: 1fr; }
+  .fascia-lab { flex-direction: column; align-items: flex-start; }
+  .scorretti { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .testata nav { display: none; }
+  .copertina .titolo, .copertina .scheda, .sezione > .pagina > header .etichetta, .sezione > .pagina > header .testo { grid-column: 1 / -1; }
+  .c3, .c4, .c5, .c6, .c7, .c8 { grid-column: 1 / -1; }
+  .primari { grid-template-columns: 1fr; }
+  .scala { grid-template-columns: repeat(4, 1fr); }
+  .griglia > *, .copertina > *, .primari > *, .scorretti > * { min-width: 0; }
+  .tavola svg { max-width: 100%; }
+  .album { padding-right: 36px; }
+  .famiglia .nome, .famiglia .esempio { grid-column: 1 / -1; }
+  .scala-tipo .riga { grid-template-columns: 1fr; gap: 4px; }
+  .app { grid-template-columns: 1fr; grid-template-rows: 48px 360px auto; height: auto; }
+  .app .a-lista, .app .a-foto { display: none; }
+  .app > * { grid-column: 1 !important; grid-row: auto !important; }
+  .app .a-tela { min-height: 260px; }
+  .app .a-barra .centro { display: none; }
+  .sito .barra nav { display: none; }
+  .sito .eroe { padding: 40px 20px; }
+  .tono { grid-template-columns: 1fr; }
+  .tono > div:nth-child(odd) { border-right: 0; }
+  .tabella { font-size: 12px; }
+  .contrasti { grid-template-columns: 1fr; }
+  .campioni { grid-template-columns: repeat(3, 1fr); }
+  .contrasti-avvolgi { overflow-x: auto; }
+}
+@media (max-width: 400px) {
+  .testata .pagina { gap: var(--imp-spazio-3); }
+  .tema button { padding: 6px 6px; }
+}
+</style>
+</head>
+<body>
+<!--@@SPRITE@@-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-spread" viewBox="0 0 24 24"><path d="M3 6.5h8v11H3zM13 6.5h8v11h-8z"/></symbol>
+    <symbol id="i-piega" viewBox="0 0 24 24"><path d="M3 8h8v8H3zM13 8h8v8h-8zM12 2v3M12 19v3"/></symbol>
+    <symbol id="i-abbondanza" viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 3h18v18H3z" stroke-dasharray="2.5 2"/></symbol>
+    <symbol id="i-margine" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 7h10v10H8z"/><path d="M3.5 12H8" stroke-dasharray="1.5 1.5"/></symbol>
+    <symbol id="i-livelli" viewBox="0 0 24 24"><path d="M3 10h11v10H3z"/><path d="M6.5 7H17v10"/><path d="M10 4h11v10"/></symbol>
+    <symbol id="i-bozza" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8.5 11h7M8.5 14h7M8.5 17h4"/></symbol>
+    <symbol id="i-locale" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/><path d="M10 9.5h4v3.5h-4zM11 9.5V8h2v1.5"/></symbol>
+    <symbol id="i-licenza" viewBox="0 0 24 24"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12h9.5M18 12v3.5M21 12v3"/></symbol>
+    <symbol id="i-esporta" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3.5V15M7.5 8 12 3.5 16.5 8"/></symbol>
+    <symbol id="i-modelli" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></symbol>
+    <symbol id="i-misura" viewBox="0 0 24 24"><path d="M2 8h20v8H2zM6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></symbol>
+    <symbol id="i-testo" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M9 19h6"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></symbol>
+    <symbol id="i-attenzione" viewBox="0 0 24 24"><path d="M12 3 22 20H2zM12 9.5v5M12 16.5v1.5"/></symbol>
+    <symbol id="i-errore" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM8 8l8 8M16 8l-8 8"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5V17M12 7v1.5"/></symbol>
+    <symbol id="i-scarica" viewBox="0 0 24 24"><path d="M4 14v6h16v-6M12 3v12M7.5 10.5 12 15l4.5-4.5"/></symbol>
+  </defs>
+</svg>
+
+<header class="testata">
+  <div class="pagina">
+    <a href="#" aria-label="Impaginatore"><svg class="logo" viewBox="0 0 1366.78 220" height="26" style="width:auto"><use href="#imp-logotipo"/></svg></a>
+    <nav aria-label="Sezioni">
+      <a href="#marchio">Marchio</a><a href="#colore">Colore</a><a href="#tipografia">Tipografia</a><a href="#componenti">Componenti</a><a href="#applicazioni">Applicazioni</a>
+    </nav>
+    <div class="tema" role="group" aria-label="Tema">
+      <button type="button" data-t="sistema">Sistema</button><button type="button" data-t="light">Chiaro</button><button type="button" data-t="dark">Scuro</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="pagina copertina">
+  <div class="titolo">
+    <span class="etichetta">Manuale di marca · versione 1.0 · novembre 2026</span>
+    <h1>Impaginare è un mestiere. <span class="payoff">Resta tuo.</span></h1>
+    <p class="attacco">Impaginatore è il programma per impaginare album di matrimonio e cerimonia sul proprio computer. Questa pagina mostra la marca applicata: segno, colore, caratteri, componenti, in chiaro e in scuro.</p>
+  </div>
+  <div class="scheda">
+    <dl>
+      <dt>Promessa</dt><dd>Album rifiniti al decimo di millimetro, senza cedere né le foto né il lavoro.</dd>
+      <dt>Payoff</dt><dd><b>Resta tuo.</b> · <i>Yours to keep.</i></dd>
+      <dt>Simbolo</dt><dd>La Piega</dd>
+      <dt>Colori</dt><dd>Carta, Inchiostro, Verde Bottega</dd>
+      <dt>Caratteri</dt><dd>Newsreader, Instrument Sans, IBM Plex Mono</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================================================ MARCHIO -->
+<section class="sezione" id="marchio">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">01 — Marchio</span>
+      <div class="testo">
+        <h2>La Piega</h2>
+        <p class="attacco">Uno spread visto dall'alto: due pagine quadrate e, sopra e sotto la piega, i segni che il tipografo stampa fuori dal formato per dire «qui si piega». La linea che li unisce attraversa il simbolo come la I di Impaginatore.</p>
+        <p class="secondario">La piega è il punto in cui un album si fa o si rovina: nessun volto ci deve cadere dentro, i margini ai due lati devono tornare. È lì che si vede il mestiere, ed è lì che sta il nostro segno. Il logotipo è composto in Newsreader e convertito in tracciati; il punto della «i» è un quadrato, come le pagine.</p>
+      </div>
+    </header>
+
+    <div class="griglia">
+      <div class="tavola carta bordo c8"><span class="etichetta">Logotipo · colore</span><svg viewBox="0 0 1366.78 220" style="width:min(560px,90%);height:auto"><use href="#imp-logotipo"/></svg></div>
+      <div class="tavola carta bordo c4"><span class="etichetta">Simbolo</span><svg viewBox="0 0 260 220" style="width:120px;height:auto"><use href="#imp-simbolo"/></svg></div>
+      <div class="tavola inchiostro c8"><span class="etichetta">Logotipo · negativo</span><svg viewBox="0 0 1366.78 220" style="width:min(560px,90%);height:auto"><use href="#imp-logotipo"/></svg></div>
+      <div class="tavola verde c4"><span class="etichetta">Su Verde Bottega</span><svg viewBox="0 0 260 220" style="width:120px;height:auto"><use href="#imp-simbolo"/></svg></div>
+      <div class="tavola mono-scuro bordo c4"><span class="etichetta">Monocromo scuro</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+      <div class="tavola mono-chiaro c4"><span class="etichetta">Monocromo chiaro · su foto</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+      <div class="tavola carta bordo c4"><span class="etichetta">Verticale · colore</span><svg viewBox="0 0 1031.58 719.02" style="width:200px;height:auto"><use href="#imp-verticale"/></svg></div>
+    </div>
+
+    <div class="blocco griglia">
+      <div class="c7">
+        <span class="etichetta">Costruzione e area di rispetto</span>
+        <div class="costruzione" style="margin-top:16px">
+          <!--@@COSTRUZIONE@@-->
+        </div>
+      </div>
+      <div class="c5">
+        <span class="etichetta">Dimensioni minime</span>
+        <div class="misure-minime" style="margin-top:16px">
+          <figure><svg viewBox="0 0 260 220" height="16" width="19" style="color:var(--imp-testo);--segno:var(--imp-accento)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><figcaption>Simbolo<br>16 px · 5 mm</figcaption></figure>
+          <figure><svg class="logo" viewBox="0 0 1366.78 220" height="24" width="149"><use href="#imp-logotipo"/></svg><figcaption>Logotipo<br>24 px · 7 mm di altezza</figcaption></figure>
+          <figure><svg class="logo" viewBox="0 0 1031.58 719.02" height="64" width="92"><use href="#imp-verticale"/></svg><figcaption>Verticale<br>64 px · 18 mm</figcaption></figure>
+        </div>
+        <p class="piccolo secondario" style="margin-top:24px">Sotto i 24 px il logotipo non si usa: resta il simbolo. Per favicon e icone a 16 e 32 px esistono disegni allineati ai pixel (<span class="misura">icona/icona-16.svg</span>, <span class="misura">icona/icona-piccola.svg</span>).</p>
+        <div class="misure-minime" style="margin-top:8px">
+          <figure><img class="pixel" src="icona/icona-16.png" width="48" height="48" alt="Icona a 16 px ingrandita"><figcaption>16 px ×3</figcaption></figure>
+          <figure><img class="pixel" src="icona/icona-32.png" width="64" height="64" alt="Icona a 32 px ingrandita"><figcaption>32 px ×2</figcaption></figure>
+          <figure><img src="icona/icona-128.png" width="96" height="96" alt="Icona dell'app"><figcaption>Icona app</figcaption></figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Usi scorretti</span>
+      <div class="scorretti">
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;transform:scaleX(1.35)"><use href="#imp-logotipo"/></svg></div><figcaption>Non deformare né comprimere.</figcaption></figure>
+        <figure><div class="riquadro"><svg viewBox="0 0 1366.78 220" style="width:200px;height:auto;color:#7b4ee8;--segno:#e84ec5"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non cambiare i colori, niente sfumature.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;transform:rotate(-10deg)"><use href="#imp-logotipo"/></svg></div><figcaption>Non ruotare, non inclinare.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;filter:drop-shadow(0 4px 6px rgb(0 0 0 / .5)) drop-shadow(0 0 10px #ffd400)"><use href="#imp-logotipo"/></svg></div><figcaption>Niente ombre, bagliori, rilievi.</figcaption></figure>
+        <figure><div class="riquadro" style="gap:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 260 220" style="width:70px;height:auto;color:var(--imp-carta-900);--segno:var(--imp-verde-600)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><span style="font:italic 400 30px/1 var(--imp-font-titoli);margin-left:10px">impaginatore</span></div><figcaption>Non ricomporre il nome con un altro carattere.</figcaption></figure>
+        <figure><div class="riquadro"><svg class="logo" viewBox="0 0 1366.78 220" style="width:200px;height:auto;--segno:var(--imp-carta-900)"><use href="#imp-logotipo"/></svg></div><figcaption>A colori i segni di piega sono sempre verdi.</figcaption></figure>
+        <figure><div class="riquadro" style="background:linear-gradient(200deg,#d7dcc4 0%,#9aa77f 40%,#5d6b49 75%,#2f3826 100%)"><svg viewBox="0 0 1366.78 220" style="width:200px;height:auto;color:#3b4a30;--segno:#3b4a30"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non su foto senza contrasto: usa il negativo.</figcaption></figure>
+        <figure><div class="riquadro" style="display:flex;align-items:center;justify-content:center;gap:4px"><svg viewBox="0 0 260 220" style="width:96px;height:auto;color:var(--imp-carta-900);--segno:var(--imp-verde-600)"><use href="#imp-simbolo" style="fill:currentColor"/></svg><svg viewBox="270 0 1096.78 220" style="width:110px;height:auto;color:var(--imp-carta-900)"><use href="#imp-logotipo" style="fill:currentColor"/></svg></div><figcaption>Non alterare proporzioni e distanze.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">I tre concept</span>
+      <div class="concept">
+        <!--@@CONCEPT@@-->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COLORE -->
+<section class="sezione" id="colore">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">02 — Colore</span>
+      <div class="testo">
+        <h2>Carta, Inchiostro e un verde da bottega</h2>
+        <p class="attacco">Il colore lo portano le foto. La marca resta sul bianco e nero di una bozza di stampa, con un solo accento: il verde del tappetino da taglio che sta su ogni banco da lavoro.</p>
+        <p class="secondario">Proporzioni indicative: 70 % Carta, 25 % Inchiostro, 5 % Verde Bottega. Il verde segna ciò che si può fare (un pulsante, un link, il fuoco) e ciò che è a posto (una misura giusta). Nell'app, attorno alle foto, si usano solo grigi neutri: nessuna tinta deve alterare il giudizio sul colore.</p>
+      </div>
+    </header>
+    <!--@@PALETTE@@-->
+    <div class="blocco">
+      <span class="etichetta">Contrasti WCAG 2.2 · calcolati da strumenti/genera_token.py</span>
+      <div class="contrasti-avvolgi"><!--@@CONTRASTI@@--></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TIPOGRAFIA -->
+<section class="sezione" id="tipografia">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">03 — Tipografia</span>
+      <div class="testo">
+        <h2>Tre caratteri, tre compiti</h2>
+        <p class="attacco">Un carattere da libro per i titoli, un lineare chiaro per leggere e usare l'app, un monospaziato per le misure. Tutti con licenza SIL Open Font License 1.1: uso commerciale, incorporazione nell'app e nel sito, nessun costo.</p>
+      </div>
+    </header>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Titoli</span><b>Newsreader</b><span class="piccolo tenue">Production Type · OFL 1.1 · pesi 200–800, dimensione ottica 6–72</span></div>
+      <div class="esempio"><div class="titoli" style="font-size:56px;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'opsz' 72">Il primo spread si decide <i>in silenzio</i>.</div></div>
+    </div>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Testo e interfaccia</span><b>Instrument Sans</b><span class="piccolo tenue">Instrument · OFL 1.1 · pesi 400–700, larghezza 75–100</span></div>
+      <div class="esempio"><p style="font-size:19px;line-height:1.5;margin:0">Le foto restano sul tuo computer: Impaginatore non le carica da nessuna parte. Paghi la licenza una volta e la versione che compri resta tua.</p><p style="font-size:14px;margin:12px 0 0;font-stretch:85%" class="secondario">Larghezza 85 % per i pannelli stretti dell'app: Spaziatura · Abbondanza · Margine interno · Livelli PSD</p></div>
+    </div>
+    <div class="famiglia">
+      <div class="nome"><span class="etichetta">Numeri e misure</span><b>IBM Plex Mono</b><span class="piccolo tenue">IBM · OFL 1.1 · Regular 400, Medium 500</span></div>
+      <div class="esempio"><div class="misura" style="font-size:28px;letter-spacing:-.01em">30 × 30 cm · 3,0 mm · 0,1 mm · 349 €</div><div class="etichetta" style="margin-top:10px">Etichette tecniche · maiuscolo · spaziatura +6 %</div></div>
+    </div>
+    <div class="blocco">
+      <span class="etichetta">Scala tipografica</span>
+      <div class="scala-tipo">
+        <div class="riga"><span class="etichetta">Display · 72/1,02</span><span class="titoli" style="font-size:72px;line-height:1.02;letter-spacing:-.022em;font-variation-settings:'opsz' 72">Resta tuo.</span></div>
+        <div class="riga"><span class="etichetta">Titolo 1 · 52/1,06</span><span class="titoli" style="font-size:52px;line-height:1.06;letter-spacing:-.018em;font-variation-settings:'opsz' 60">Album impaginati come si deve</span></div>
+        <div class="riga"><span class="etichetta">Titolo 2 · 38/1,12</span><span class="titoli" style="font-size:38px;line-height:1.12;letter-spacing:-.012em;font-weight:500;font-variation-settings:'opsz' 48">Le spaziature tornano al decimo</span></div>
+        <div class="riga"><span class="etichetta">Titolo 3 · 28/1,2</span><span class="titoli" style="font-size:28px;line-height:1.2;font-weight:500;font-variation-settings:'opsz' 32">Un PSD a livelli per ogni spread</span></div>
+        <div class="riga"><span class="etichetta">Titolo 4 · 20/1,3 · 600</span><span style="font:600 20px/1.3 var(--imp-font-testo)">Edizione Laboratorio</span></div>
+        <div class="riga"><span class="etichetta">Attacco · 19/1,5</span><span class="attacco" style="color:var(--imp-testo)">Claude prepara la bozza dell'intero album; tu decidi spread per spread.</span></div>
+        <div class="riga"><span class="etichetta">Testo · 16/1,6</span><span>Il programma controlla margini, spazi tra le foto e abbondanza, e segnala in ocra ciò che non torna.</span></div>
+        <div class="riga"><span class="etichetta">Piccolo · 14/1,5</span><span class="piccolo">IVA inclusa. Aggiornamenti della versione 2 compresi.</span></div>
+        <div class="riga"><span class="etichetta">Didascalia · 12,5/1,4</span><span style="font-size:12.5px" class="secondario">Spread 07–08 · Villa Medici, Fiesole · luce naturale</span></div>
+        <div class="riga"><span class="etichetta">Misura · 13 mono</span><span class="misura" style="font-size:13px">Margine 10,0 mm · spazio 5,0 mm · abbondanza 3,0 mm</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SISTEMA -->
+<section class="sezione" id="sistema">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">04 — Griglia, spazi, forme</span>
+      <div class="testo">
+        <h2>Tutto torna al millimetro</h2>
+        <p class="attacco">Base di 4 px, griglia di 12 colonne con canale di 24 px, larghezza massima 1200 px. Angoli appena smussati: la carta si taglia dritta. Le foto e gli spread non hanno mai angoli arrotondati.</p>
+      </div>
+    </header>
+    <div class="griglia">
+      <div class="c4">
+        <span class="etichetta">Spazi</span>
+        <div class="barre" style="margin-top:16px">
+          <div><span>spazio-2</span><span>4 px</span><i style="width:4px"></i></div>
+          <div><span>spazio-3</span><span>8 px</span><i style="width:8px"></i></div>
+          <div><span>spazio-4</span><span>12 px</span><i style="width:12px"></i></div>
+          <div><span>spazio-5</span><span>16 px</span><i style="width:16px"></i></div>
+          <div><span>spazio-6</span><span>24 px</span><i style="width:24px"></i></div>
+          <div><span>spazio-7</span><span>32 px</span><i style="width:32px"></i></div>
+          <div><span>spazio-8</span><span>48 px</span><i style="width:48px"></i></div>
+          <div><span>spazio-9</span><span>64 px</span><i style="width:64px"></i></div>
+          <div><span>spazio-10</span><span>96 px</span><i style="width:96px"></i></div>
+          <div><span>spazio-11</span><span>128 px</span><i style="width:128px"></i></div>
+        </div>
+      </div>
+      <div class="c8">
+        <span class="etichetta">Raggi</span>
+        <div class="raggi" style="margin-top:16px">
+          <div style="border-radius:0">0 · foto</div><div style="border-radius:2px">2 · campi</div><div style="border-radius:4px">4 · pulsanti</div><div style="border-radius:8px">8 · card</div>
+        </div>
+        <span class="etichetta" style="display:block;margin-top:32px">Ombre</span>
+        <div class="ombre" style="margin-top:16px">
+          <div style="box-shadow:var(--imp-ombra-appoggio);border:1px solid var(--imp-filetto)">appoggio</div>
+          <div style="box-shadow:var(--imp-ombra-sollevato)">sollevato</div>
+        </div>
+      </div>
+    </div>
+    <div class="blocco">
+      <span class="etichetta">Icone · griglia 24 px · tratto 1,5 px · terminali e angoli vivi</span>
+      <div class="icone">
+        <figure><svg><use href="#i-spread"/></svg><figcaption>spread</figcaption></figure>
+        <figure><svg><use href="#i-piega"/></svg><figcaption>piega</figcaption></figure>
+        <figure><svg><use href="#i-abbondanza"/></svg><figcaption>abbondanza</figcaption></figure>
+        <figure><svg><use href="#i-margine"/></svg><figcaption>margine</figcaption></figure>
+        <figure><svg><use href="#i-modelli"/></svg><figcaption>modelli</figcaption></figure>
+        <figure><svg><use href="#i-livelli"/></svg><figcaption>livelli PSD</figcaption></figure>
+        <figure><svg><use href="#i-bozza"/></svg><figcaption>bozza</figcaption></figure>
+        <figure><svg><use href="#i-locale"/></svg><figcaption>sul computer</figcaption></figure>
+        <figure><svg><use href="#i-licenza"/></svg><figcaption>licenza</figcaption></figure>
+        <figure><svg><use href="#i-misura"/></svg><figcaption>misura</figcaption></figure>
+        <figure><svg><use href="#i-testo"/></svg><figcaption>testo</figcaption></figure>
+        <figure><svg><use href="#i-esporta"/></svg><figcaption>esporta</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ COMPONENTI -->
+<section class="sezione" id="componenti">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">05 — Componenti</span>
+      <div class="testo">
+        <h2>Pochi pezzi, fatti bene</h2>
+        <p class="attacco">Gli stessi componenti per il sito e per l'app. Un solo pulsante verde per schermata: è l'azione che conta.</p>
+      </div>
+    </header>
+    <div class="griglia">
+      <div class="c7">
+        <span class="etichetta">Pulsanti</span>
+        <div class="fila" style="margin-top:16px">
+          <a class="pulsante primario" href="#"><svg><use href="#i-scarica"/></svg>Scarica la prova</a>
+          <a class="pulsante pieno" href="#">Acquista la licenza</a>
+          <a class="pulsante" href="#">Vedi i modelli</a>
+          <a class="pulsante testo" href="#">Leggi il manuale</a>
+        </div>
+        <div class="fila" style="margin-top:16px">
+          <span class="pulsante primario fuoco">Con fuoco</span>
+          <span class="pulsante primario" disabled>Disattivato</span>
+          <span class="pulsante distruttivo">Elimina lo spread</span>
+          <span class="pulsante piccolo">Piccolo</span>
+          <span class="pulsante primario grande">Grande</span>
+        </div>
+      </div>
+      <div class="c5">
+        <span class="etichetta">Selettore, spunte, interruttore</span>
+        <div class="fila" style="margin-top:16px"><div class="selettore" role="group"><button aria-pressed="true">Spread</button><button>Modelli</button><button>Testi</button></div></div>
+        <div class="fila" style="margin-top:16px;gap:24px"><span class="spunta"><i class="on"></i>Abbondanza 3 mm</span><span class="spunta"><i></i>Segni di taglio</span><span class="spunta"><span class="interruttore on"></span>PSD a livelli</span></div>
+      </div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c4 campo"><label for="c1">Nome del progetto</label><div class="input"><input id="c1" placeholder="Rossi – Bianchi, 14 giugno"></div><span class="aiuto">Compare nel nome dei file esportati.</span></div>
+      <div class="c4 campo"><label for="c2">Spazio tra le foto</label><div class="input num attivo"><input id="c2" value="5,0"><span class="unita">mm</span></div><span class="aiuto">Uguale su tutti gli spread.</span></div>
+      <div class="c4 campo"><label for="c3">Abbondanza</label><div class="input num sbagliato"><input id="c3" value="0,5"><span class="unita">mm</span></div><span class="aiuto errore">Il laboratorio chiede almeno 3,0 mm.</span></div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-locale"/></svg></div><h4>Sul tuo computer</h4><p class="piccolo secondario" style="margin:0">Le foto non lasciano mai il disco. Si lavora anche senza connessione.</p></div>
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-bozza"/></svg></div><h4>La bozza la prepara Claude</h4><p class="piccolo secondario" style="margin:0">L'assistente costruisce l'album dentro l'editor. Ogni spread resta modificabile a mano.</p></div>
+      <div class="c4 card"><div class="icona-card"><svg><use href="#i-livelli"/></svg></div><h4>PSD a livelli</h4><p class="piccolo secondario" style="margin:0">Ogni spread esce anche come file di Photoshop, con foto, testi e guide su livelli separati.</p></div>
+    </div>
+    <div class="blocco griglia">
+      <div class="c6" style="display:grid;gap:12px">
+        <span class="etichetta">Avvisi</span>
+        <div class="avviso" style="--a:var(--imp-successo)"><svg><use href="#i-ok"/></svg><div><b>Spaziature corrette.</b> Tutti i 24 spread hanno margini e spazi uguali.</div></div>
+        <div class="avviso" style="--a:var(--imp-attenzione)"><svg><use href="#i-attenzione"/></svg><div><b>Da controllare.</b> Nello spread 07–08 un volto cade a 4 mm dalla piega.</div></div>
+        <div class="avviso" style="--a:var(--imp-errore)"><svg><use href="#i-errore"/></svg><div><b>Non esportabile.</b> La foto 112 è sotto i 200 dpi al formato di stampa.</div></div>
+        <div class="avviso" style="--a:var(--imp-info)"><svg><use href="#i-info"/></svg><div><b>Modelli del laboratorio aggiornati.</b> 3 nuove copertine nel catalogo.</div></div>
+      </div>
+      <div class="c6">
+        <span class="etichetta">Badge</span>
+        <div class="fila" style="margin-top:16px">
+          <span class="badge verde">Licenza perpetua</span><span class="badge">macOS · Windows</span><span class="badge">Novità</span>
+          <span class="badge prezzo"><b class="num">349 €</b><span>una volta</span></span>
+        </div>
+        <p class="piccolo secondario" style="margin-top:20px">Il badge prezzo dice sempre due cose: la cifra, in carattere dei numeri, e il fatto che si paga una volta. Le cifre di questa pagina sono quelle del listino (<span class="num">docs/mercato/tier.json</span>), IVA esclusa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ APPLICAZIONI -->
+<section class="sezione" id="applicazioni">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">06 — Applicazioni</span>
+      <div class="testo">
+        <h2>Il sito, il prezzo, l'editor</h2>
+        <p class="attacco">Tre esempi che usano solo i token di questa pagina. L'editor qui sotto è la direzione per ridisegnare l'interfaccia: neutra attorno alle foto, misure in vista, un solo accento.</p>
+      </div>
+    </header>
+
+    <span class="etichetta">Intestazione della landing</span>
+    <div class="sito" style="margin-top:16px">
+      <div class="barra">
+        <svg class="logo" viewBox="0 0 1366.78 220" height="24" style="width:auto"><use href="#imp-logotipo"/></svg>
+        <nav><span>Come funziona</span><span>Laboratori</span><span>Prezzi</span><span>Manuale</span></nav>
+        <a class="pulsante piccolo" href="#">Accedi</a>
+      </div>
+      <div class="eroe">
+        <div>
+          <span class="etichetta">Album di matrimonio · macOS e Windows</span>
+          <h1>Il tuo album, impaginato come si deve.</h1>
+          <p class="attacco">Claude prepara la bozza di tutto l'album; tu rifinisci spread per spread, con spazi esatti al decimo di millimetro. Le foto restano sul tuo computer e la licenza si paga una volta.</p>
+          <div class="fila"><a class="pulsante primario grande" href="#"><svg><use href="#i-scarica"/></svg>Scarica la prova</a><a class="pulsante grande" href="#">Vedi i prezzi</a></div>
+          <div class="punti"><span><svg><use href="#i-ok"/></svg>Licenza perpetua</span><span><svg><use href="#i-ok"/></svg>Nessun caricamento</span><span><svg><use href="#i-ok"/></svg>PSD a livelli</span></div>
+        </div>
+        <div class="album" aria-label="Spread d'esempio con le misure">
+          <div class="quota q-alto"><span>600 mm</span></div>
+          <div class="spread">
+            <div class="pag sinistra"><div class="foto f5"></div></div>
+            <div class="pag destra"><div class="foto f3"></div></div>
+            <div class="segni su"></div><div class="segni giu"></div>
+          </div>
+          <div class="quota v q-lato"><span>300</span></div>
+          <span class="didascalia">SPREAD 07–08 · 30 × 30 CM · SEGNAPOSTO FOTO</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Card prezzo · listino di docs/mercato/tier.json</span>
+      <div class="prezzi" style="margin-top:28px">
+        <div class="card-prezzo">
+          <div><span class="etichetta">Pochi album</span><h3 style="margin-top:8px">Essenziale</h3></div>
+          <div class="cifra"><strong>199 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Editor completo, spread per spread</li><li><svg><use href="#i-ok"/></svg>30 modelli d'autore, 5 tuoi</li><li><svg><use href="#i-ok"/></svg>Esportazione JPG e PDF</li><li><svg><use href="#i-ok"/></svg>Formati dei laboratori</li><li><svg><use href="#i-ok"/></svg>1 computer</li></ul>
+          <a class="pulsante" href="#">Acquista Essenziale</a>
+          <p class="nota">IVA esclusa · 242,78 € con IVA al 22 %</p>
+        </div>
+        <div class="card-prezzo consigliata">
+          <span class="nastro badge verde">Consigliato</span>
+          <div><span class="etichetta">Professionista</span><h3 style="margin-top:8px">Pro</h3></div>
+          <div class="cifra"><strong>349 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Essenziale</li><li><svg><use href="#i-ok"/></svg>Bozza dell'intero album con Claude</li><li><svg><use href="#i-ok"/></svg>PSD a livelli per Photoshop</li><li><svg><use href="#i-ok"/></svg>Spazi e tono uniformi su tutto l'album</li><li><svg><use href="#i-ok"/></svg>Tutti i modelli · 2 computer</li></ul>
+          <a class="pulsante primario" href="#">Acquista Pro</a>
+          <p class="nota">IVA esclusa · 425,78 € con IVA al 22 %</p>
+        </div>
+        <div class="card-prezzo">
+          <div><span class="etichetta">Più postazioni</span><h3 style="margin-top:8px">Studio</h3></div>
+          <div class="cifra"><strong>699 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Pro</li><li><svg><use href="#i-ok"/></svg>5 computer, più operatori</li><li><svg><use href="#i-ok"/></svg>Risposta entro 1 giorno lavorativo</li><li><svg><use href="#i-ok"/></svg>30 minuti di avvio guidato</li><li><svg><use href="#i-ok"/></svg>Prossima versione maggiore inclusa</li></ul>
+          <a class="pulsante" href="#">Acquista Studio</a>
+          <p class="nota">IVA esclusa · 852,78 € con IVA al 22 %</p>
+        </div>
+      </div>
+      <div class="fascia-lab">
+        <div>
+          <span class="etichetta">Laboratori</span>
+          <h3>Edizione Laboratorio</h3>
+          <p class="secondario">Il tuo catalogo dentro il programma: formati, copertine, abbondanze, profili ICC e controlli di prestampa. I fotografi ti mandano file già conformi.</p>
+        </div>
+        <a class="pulsante pieno" href="#">Parliamone</a>
+      </div>
+      <p class="piccolo secondario" style="margin-top:20px">Durante il lancio la cifra grande è il prezzo di lancio e il listino va accanto, con la data di fine, per esempio «249 € fino al 15 gennaio, poi 349 €». Mai il prezzo barrato prima che il listino sia stato applicato davvero.</p>
+    </div>
+
+    <div class="blocco">
+      <span class="etichetta">Editor · direzione per l'interfaccia (segue il tema: provalo in chiaro e in scuro)</span>
+      <div class="app" style="margin-top:16px">
+        <div class="a-barra">
+          <svg viewBox="0 0 260 220" width="22" height="19" style="color:var(--imp-app-testo);--segno:var(--imp-app-accento)"><use href="#imp-simbolo" style="fill:currentColor"/></svg>
+          <span class="progetto">Rossi – Bianchi<span class="num">30 × 30 · 24 spread</span></span>
+          <div class="centro selettore" role="group"><button aria-pressed="true">Spread</button><button>Modelli</button><button>Testi</button><button>Controllo</button></div>
+          <span class="stato"><i></i>Salvato</span>
+          <span class="pulsante app-sec">Anteprima</span>
+          <span class="pulsante primario"><svg><use href="#i-esporta"/></svg>Esporta</span>
+        </div>
+        <div class="a-lista">
+          <div class="mini"><div class="s"><div class="foto f1"></div><div style="padding:14%"><div class="foto f6" style="height:100%"></div></div></div><span>01–02</span></div>
+          <div class="mini"><div class="s"><div style="display:grid;grid-template-rows:1fr 1fr;gap:1px"><div class="foto f2"></div><div class="foto f7"></div></div><div class="foto f4"></div></div><span>03–04</span></div>
+          <div class="mini attiva"><div class="s"><div class="foto f5"></div><div style="padding:16%"><div class="foto f3" style="height:100%"></div></div></div><span>07–08</span></div>
+          <div class="mini"><div class="s"><div class="foto f6"></div><div class="foto f1"></div></div><span>09–10</span></div>
+          <div class="mini"><div class="s"><div style="padding:12%"><div class="foto f7" style="height:100%"></div></div><div class="foto f2"></div></div><span>11–12</span></div>
+        </div>
+        <div class="a-tela">
+          <div class="a-spread">
+            <div class="abb"></div>
+            <div style="position:relative"><div class="slot foto f5" style="inset:0"></div></div>
+            <div style="position:relative">
+              <div class="slot foto f3 sel" style="left:16%;right:16%;top:16%;bottom:16%"><i></i><i></i><i></i><i></i></div>
+              <div class="qa quota" style="left:84%;right:0;top:50%"><span>48,0</span></div>
+              <div class="qa quota" style="left:0;right:84%;top:50%"><span>48,0</span></div>
+              <div class="qa quota v att" style="top:0;bottom:84%;left:50%"><span>47,6</span></div>
+            </div>
+            <div class="piega"></div>
+          </div>
+        </div>
+        <div class="a-lato">
+          <div>
+            <h5>Spaziatura</h5>
+            <div class="riga-m"><span>Margine esterno</span><span class="valore uguale">48,0<em>mm</em></span></div>
+            <div class="riga-m"><span>Margine in alto</span><span class="valore" style="border-color:var(--imp-attenzione-segno)">47,6<em>mm</em></span></div>
+            <div class="riga-m"><span>Spazio tra foto</span><span class="valore">5,0<em>mm</em></span></div>
+            <div class="riga-m"><span>Abbondanza</span><span class="valore">3,0<em>mm</em></span></div>
+          </div>
+          <div>
+            <h5>Livelli PSD</h5>
+            <div class="livello"><span>Foto 112</span><span>1 840 × 1 840</span></div>
+            <div class="livello"><span>Foto 087</span><span>3 543 × 3 543</span></div>
+            <div class="livello"><span>Guide e piega</span><span>nascosto</span></div>
+          </div>
+          <div class="assistente">
+            <b><svg><use href="#i-bozza"/></svg>Bozza di Claude</b>
+            <span style="color:var(--imp-app-testo-tenue)">24 spread proposti da 312 foto. Gli spread rifiniti a mano non vengono più toccati.</span>
+          </div>
+        </div>
+        <div class="a-foto">
+          <div class="t foto f1 usata"></div><div class="t foto f2"></div><div class="t foto f3 usata"></div><div class="t foto f4"></div><div class="t foto f5 usata"></div><div class="t foto f6"></div><div class="t foto f7"></div><div class="t foto f2"></div><div class="t foto f4"></div>
+        </div>
+      </div>
+      <p class="piccolo secondario" style="margin-top:16px">Cosa cambia rispetto all'editor di oggi: niente giallo-oro né rosa come accento; selezione neutra (bianca in scuro, inchiostro in chiaro); misure in IBM Plex Mono accanto agli elementi; verde = misura uguale, ocra = da controllare, cinabro = errore; segni di piega e abbondanza disegnati come in tipografia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TONO -->
+<section class="sezione" id="tono">
+  <div class="pagina">
+    <header>
+      <span class="etichetta">07 — Tono di voce</span>
+      <div class="testo">
+        <h2>Parla come un collega esperto</h2>
+        <p class="attacco">Calmo, preciso, concreto. Diamo del tu. Frasi brevi, verbi attivi, misure vere. Niente punti esclamativi, niente emoji, niente magia.</p>
+      </div>
+    </header>
+    <div class="tono">
+      <div class="th">Si dice</div><div class="th">Non si dice</div>
+      <div class="si">Le foto restano sul tuo computer.</div><div class="no">Privacy-first, 100% sicuro, cloud-free!</div>
+      <div class="si">Paghi una volta. La versione che compri resta tua.</div><div class="no">Offerta lifetime imperdibile 🔥</div>
+      <div class="si">Claude prepara la bozza; tu decidi ogni spread.</div><div class="no">La nostra AI rivoluzionaria crea album magici in un click ✨</div>
+      <div class="si">Spazi uguali al decimo di millimetro.</div><div class="no">Layout pixel-perfect da sogno.</div>
+      <div class="si">Un modello d'autore per lo spread di apertura.</div><div class="no">Template stunning per il giorno più bello della loro vita.</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="piede">
+  <div class="pagina">
+    <div>
+      <svg class="logo" viewBox="0 0 1031.58 719.02" height="72" style="width:auto"><use href="#imp-verticale"/></svg>
+    </div>
+    <div style="text-align:right">
+      <div class="titoli" style="font-size:40px;line-height:1;font-variation-settings:'opsz' 72"><span class="payoff">Resta tuo.</span></div>
+      <div class="etichetta" style="margin-top:12px">Fatto in Italia, da un fotografo per i fotografi</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var bottoni = document.querySelectorAll('.tema button');
+  function imposta(t) {
+    if (t === 'sistema') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+    bottoni.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.t === t)); });
+    try { localStorage.setItem('imp-tema', t); } catch (e) {}
+  }
+  var iniziale = 'sistema';
+  if (location.hash === '#scuro') iniziale = 'dark';
+  else if (location.hash === '#chiaro') iniziale = 'light';
+  else { try { iniziale = localStorage.getItem('imp-tema') || 'sistema'; } catch (e) {} }
+  imposta(iniziale);
+  bottoni.forEach(function (b) { b.addEventListener('click', function () { imposta(b.dataset.t); }); });
+})();
+</script>
+</body>
+</html>

@@ -7,7 +7,7 @@
     {"id": "T-002", "fase": 0, "titolo": "Audit sicurezza, bug, portabilità, testabilità, rischi legali", "ruolo": "Security & QA Lead", "dipende_da": [], "stato": "fatto", "consegna": ["docs/audit/AUDIT-2026-11.md", "docs/audit/rilievi.json"]},
     {"id": "T-003", "fase": 0, "titolo": "Profilo dei concorrenti", "ruolo": "Analista di mercato", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/competitor.md", "docs/mercato/competitor.json"]},
     {"id": "T-004", "fase": 0, "titolo": "Lead, prezzi e fasce, canale di vendita", "ruolo": "Go-to-market", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/lead.md", "docs/mercato/lead.csv", "docs/mercato/prezzi.md", "docs/mercato/tier.json", "docs/mercato/canale-vendita.md"]},
-    {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "in_corso", "consegna": ["brand/"]},
+    {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "fatto", "consegna": ["brand/"]},
     {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "in_corso", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
 
     {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
@@ -40,7 +40,7 @@
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
-    {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "da_fare"},
+    {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "in_corso"},
     {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
     {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "in_corso"},
     {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "in_corso"}
