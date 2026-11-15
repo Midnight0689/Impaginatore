@@ -301,6 +301,8 @@ def test_progetto_json_controllato(tmp_path):
         with pytest.raises(validazione.ErroreProgetto, match=msg): validazione.progetto(cfg)
     (tmp_path / "progetto.json").write_text("{", encoding="utf-8")
     with pytest.raises(validazione.ErroreProgetto, match="non è un JSON valido"): formato.leggi_progetto(str(tmp_path))
+    (tmp_path / "progetto.json").write_text("[" * 100000 + "]" * 100000, encoding="utf-8")
+    with pytest.raises(validazione.ErroreProgetto, match="non è un JSON valido"): formato.leggi_progetto(str(tmp_path))
 
 
 def test_cache_delle_foto_controllata():
@@ -330,6 +332,28 @@ def test_scrittura_interrotta_non_rovina_il_file(tmp_path, monkeypatch):
     monkeypatch.setattr(os, "replace", lambda a, b: (_ for _ in ()).throw(OSError(28, "disco pieno")))
     with pytest.raises(OSError): formato.scrivi_json(str(f), [{"n": "c.jpg"}])
     assert formato.leggi_json(str(f)) == [{"n": "a.jpg"}] and os.listdir(d) == ["meta.json"]
+
+
+def test_scrittura_dove_il_sistema_non_collabora(tmp_path, monkeypatch):
+    """la cartella non si apre (Windows) o fsync non riesce: il file si scrive lo stesso; il temporaneo che non si
+    riesce a togliere non nasconde l'errore vero"""
+    vero_open = os.open
+    monkeypatch.setattr(os, "open", lambda p, *a, **k: (_ for _ in ()).throw(PermissionError(13, "cartella")) if os.path.isdir(p) else vero_open(p, *a, **k))
+    formato.scrivi_atomico(str(tmp_path / "a.txt"), "uno"); assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "uno"
+    monkeypatch.setattr(os, "open", vero_open); vero_fsync = os.fsync
+    monkeypatch.setattr(os, "fsync", lambda fd: vero_fsync(fd) if not os.path.isdir(f"/proc/self/fd/{fd}") or os.name == "nt" else (_ for _ in ()).throw(OSError(22, "fsync")))
+    formato.scrivi_atomico(str(tmp_path / "a.txt"), "due"); assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "due"
+    monkeypatch.setattr(os, "fsync", vero_fsync)
+    monkeypatch.setattr(os, "replace", lambda a, b: (_ for _ in ()).throw(OSError(28, "disco pieno")))
+    monkeypatch.setattr(os, "remove", lambda p: (_ for _ in ()).throw(OSError(1, "non si toglie")))
+    with pytest.raises(OSError, match="disco pieno"): formato.scrivi_atomico(str(tmp_path / "a.txt"), "tre")
+
+
+def test_cartella_senza_impaginazione(tmp_path, foto_campione):
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True); shutil.copy(os.path.join(foto_campione, "H01.jpg"), p / "Foto" / "H01.jpg")
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    album.carica_progetto(str(p))
+    assert formato.carica(str(p)) == [] and formato.controlla(str(p)) == 0 and formato.file_album(str(p)) is None
 
 
 def test_copia_atomica(tmp_path):

@@ -306,7 +306,7 @@ def leggi_progetto(cartella):
     """progetto.json controllato (validazione.progetto)"""
     p = os.path.join(cartella, PROGETTO)
     try: cfg = leggi_json(p)
-    except (UnicodeDecodeError, json.JSONDecodeError) as e: raise ErroreProgetto(f"{PROGETTO} non è un JSON valido ({e})") from None
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as e: raise ErroreProgetto(f"{PROGETTO} non è un JSON valido ({e})") from None
     return V.progetto(cfg)
 
 
