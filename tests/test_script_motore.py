@@ -125,6 +125,8 @@ def test_analizza_colore(prj, monkeypatch, capsys):
     g = json.loads(righe["V10"].split("guadagni proposti ")[1])
     assert g[2] > g[0], "una foto calda: più blu che rosso"
     assert righe["H06"].startswith("H06: EV +0.25 |") and "neutri a*=" in righe["H06"]
+    come_script(monkeypatch, "analizza", "--progetto", prj, "colore", "2")
+    assert [r.split(":")[0] for r in capsys.readouterr().out.splitlines()] == ["H02", "H01"], "il testo dello spread 2 non è una foto"
 
 
 def test_analizza_comando_sconosciuto(prj, monkeypatch, capsys):
