@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.5.0 — Nuovo spread trascinando le foto sulla fila degli spread
+- Una o più foto (dalla galleria o selezionate nello spread) si trascinano sulla fila degli spread a sinistra: una linea blu mostra dove nasce il nuovo spread, gli altri scalano di uno. Il nuovo spread usa il modello che rispetta meglio le proporzioni. Le foto prese da un altro spread escono da lì. Un solo annulla. — `editor.py` (op `newspreadsel`), `index.html` (`thumbDrop`, `tline`, `newSpreadFrom`, `startPhotoDrag`, `startFree`).
+
 ## Versione 1.4.9 — Numero semplice sotto lo spread 1
 - Tolta la scritta «Copertina 1» dalla fila degli spread (andava scritta sul foglio, non sotto la miniatura). — `index.html`.
 
