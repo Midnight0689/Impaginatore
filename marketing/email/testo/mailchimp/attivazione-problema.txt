@@ -21,7 +21,7 @@ Con l’installer classico, il sistema mostra un avviso perché non è firmato c
 Prima di fidarti, puoi leggere cosa fa il comando, riga per riga, con l’impronta dei file da confrontare: *|L_COMANDO|*
 *|END:IF|**|IF:P_COMPUT|*
 TI SERVE SU PIÙ COMPUTER
-La tua licenza *|FASCIA|* vale per *|COMPUTER|* computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 80 € dal Pro o 120 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 40 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.
+La tua licenza *|FASCIA|* vale per *|COMPUTER|* computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 50 € dal Pro o 100 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 50 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.
 *|END:IF|*
 Se non basta, rispondi con uno screenshot di quello che vedi e il sistema che usi. Per i problemi di attivazione ti rispondiamo per email, senza costi. Se preferisci farlo insieme in videochiamata, c’è l’assistenza a ore: *|L_ASSIST|*
 

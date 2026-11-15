@@ -55,7 +55,7 @@ DA SAPERE
 - La licenza non scade. È intestata a «{{ params.intestatario }}» e vale per {{ params.computer }} computer. Se cambi computer, installa Impaginatore su quello nuovo e usa la stessa chiave.
 - Gli aggiornamenti della versione 2 sono inclusi. Una nuova versione maggiore non uscirà prima di 18 mesi; se esce entro 90 giorni dal tuo acquisto, la ricevi gratis. Studio include già la prossima; per le altre fasce l’upgrade costa la metà.
 - Hai 30 giorni per il rimborso completo, senza dover spiegare perché: rispondi a questa email. Il bonifico torna sul tuo conto e la chiave viene disattivata.
-- Manuale, guide video e correzione dei difetti sono gratuiti. L’assistenza personale, in videochiamata o da remoto, si compra a ore: 1 ora 60 €, 5 ore 250 €, 10 ore 450 €, IVA esclusa. {% if params.ore_incluse %}La tua licenza Studio ne include già una, valida 12 mesi: rispondi con due o tre orari che ti vanno bene.{% else %}Come funziona: {{ params.link_assistenza }}{% endif %}
+- Manuale, guide video e correzione dei difetti sono gratuiti. L’assistenza personale, in videochiamata o da remoto, si compra a ore: 1 ora 49 €, 5 ore 249 €, 10 ore 499 €, IVA esclusa. {% if params.ore_incluse %}La tua licenza Studio ne include già una, valida 12 mesi: rispondi con due o tre orari che ti vanno bene.{% else %}Come funziona: {{ params.link_assistenza }}{% endif %}
 
 Conserva questa email: la chiave serve se reinstalli. Se qualcosa non torna, rispondi: la legge una persona.
 

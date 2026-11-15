@@ -9,12 +9,12 @@ PAGHI UNA VOLTA · IVA ESCLUSA
 [[se data_fine_lancio]]Prezzi di lancio fino al [[data_fine_lancio]], o fino alle prime 300 licenze; poi quelli di listino.
 
 - Essenziale: 39 € fino al [[data_fine_lancio]], poi 49 €. 30 modelli d’autore, JPG e PDF, 1 computer.
-- Pro, consigliato: 69 € fino al [[data_fine_lancio]], poi 89 €. Quello che hai provato, più il PSD a livelli, 2 computer.
-- Studio: 129 € fino al [[data_fine_lancio]], poi 169 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.[[altrimenti]]La licenza non scade e include gli aggiornamenti della versione 2.
+- Pro, consigliato: 79 € fino al [[data_fine_lancio]], poi 99 €. Quello che hai provato, più il PSD a livelli, 2 computer.
+- Studio: 119 € fino al [[data_fine_lancio]], poi 149 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.[[altrimenti]]La licenza non scade e include gli aggiornamenti della versione 2.
 
 - Essenziale: 49 €. 30 modelli d’autore, JPG e PDF, 1 computer.
-- Pro, consigliato: 89 €. Quello che hai provato, più il PSD a livelli, 2 computer.
-- Studio: 169 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.[[fine]]
+- Pro, consigliato: 99 €. Quello che hai provato, più il PSD a livelli, 2 computer.
+- Studio: 149 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.[[fine]]
 
 Acquista Pro: [[link_acquisto_pro]]
 

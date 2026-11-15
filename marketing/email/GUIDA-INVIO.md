@@ -2,7 +2,7 @@
 
 Questa cartella contiene i modelli delle email di Impaginatore e gli strumenti per prepararli. La guida spiega come metterli online, con quale servizio, con quali permessi e in che ordine.
 
-Fonti dei contenuti: listino `docs/mercato/tier.json` (versione 2026-11-15b), `marketing/negozio/FLUSSO-ACQUISTO.md`, `marketing/lancio/PIANO-90-GIORNI.md`, `docs/legale/PRIVACY.md`, `brand/STYLEBOOK.md`. Se cambiano quelle, si cambiano queste.
+Fonti dei contenuti: listino `docs/mercato/tier.json` (versione 2026-11-15d), `marketing/negozio/FLUSSO-ACQUISTO.md`, `marketing/lancio/PIANO-90-GIORNI.md`, `docs/legale/PRIVACY.md`, `brand/STYLEBOOK.md`. Se cambiano quelle, si cambiano queste.
 
 Legenda: **[V]** verificato su fonte pubblica il 15/11/2026; **[NV]** da verificare prima di usarlo; **[L]** da far vedere al legale.
 
@@ -191,7 +191,7 @@ Testo del consenso per la lista d’attesa (proposta): «Voglio ricevere per ema
 - Identità del mittente, indirizzo e partita IVA in ogni piè di pagina, e natura commerciale riconoscibile (D.Lgs. 70/2003, art. 9).
 - Una riga «Ricevi questa email perché…» in ogni email.
 - Disiscrizione con un clic e pagina delle preferenze in ogni campagna.
-- Prezzi di lancio senza prezzo barrato: «69 € fino al {{data}}, poi 89 €». Il prezzo «prima» di uno sconto deve essere il più basso dei 30 giorni precedenti (art. 17-bis Codice del consumo); una lettura prudente esclude il barrato su un prodotto mai venduto [L].
+- Prezzi di lancio senza prezzo barrato: «79 € fino al {{data}}, poi 99 €». Il prezzo «prima» di uno sconto deve essere il più basso dei 30 giorni precedenti (art. 17-bis Codice del consumo); una lettura prudente esclude il barrato su un prodotto mai venduto [L].
 - Assistente AI: sempre «abbonamento a parte» e «riceve i dati dell’album, non le foto, salvo consenso», come in `PRIVACY.md` §6.
 - Nessun «unico», «il primo», nessun concorrente definito superato: `compila.py` lo controlla.
 
@@ -259,7 +259,7 @@ Regole: PNG o JPG sotto i 200 KB l’uno; foto dell’album dimostrativo con lic
 ## 8. Prima di ogni invio
 
 **Contenuti**
-- [ ] Prezzi uguali a `docs/mercato/tier.json` (oggi 49/89/169 €, lancio 39/69/129 €, ore 60/250/450 €) e scritti «X € fino al …, poi Y €».
+- [ ] Prezzi uguali a `docs/mercato/tier.json` (oggi 49/99/149 €, lancio 39/79/119 €, ore 49/249/499 € senza sconto a quantità) e scritti «X € fino al …, poi Y €».
 - [ ] `data_fine_lancio` vera: 23 aprile 2027, o la data in cui si arriva a 300 licenze. Dopo, si riconverte con `dopo-il-lancio.json`.
 - [ ] `mcp_disponibile` vuoto finché il server MCP non è rilasciato.
 - [ ] `lancio`: nota sul confronto con gli abbonamenti ricontrollata (prezzi e data; nel 2027 un concorrente ha annunciato 320 $) e vista dal legale.

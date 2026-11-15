@@ -55,7 +55,7 @@ GOOD TO KNOW
 - Your licence never expires. It’s registered to “*|INTESTATAR|*” and you can use it on up to *|COMPUTER|* of your computers. If you change computer, install Impaginatore on the new one and use the same key.
 - All version 2 updates are included. No new major version for at least 18 months; if one comes out within 90 days of your purchase, you get it free. Studio already includes the next one; for the other tiers the upgrade is half price.
 - You have 30 days for a full refund, no reason needed: just reply to this email. We transfer the money back and the key is deactivated.
-- The manual, video guides and bug fixes are free. Personal support, by video call or remote session, is sold by the hour: 1 hour €60, 5 hours €250, 10 hours €450, excluding VAT. *|IF:ORE_INCL|*Your Studio licence already includes one, valid for 12 months: reply with two or three times that suit you.*|ELSE:|*How it works: *|L_ASSIST|**|END:IF|*
+- The manual, video guides and bug fixes are free. Personal support, by video call or remote session, is sold by the hour: 1 hour €49, 5 hours €249, 10 hours €499, excluding VAT. *|IF:ORE_INCL|*Your Studio licence already includes one, valid for 12 months: reply with two or three times that suit you.*|ELSE:|*How it works: *|L_ASSIST|**|END:IF|*
 
 Keep this email: you need the key if you reinstall. If something doesn’t add up, reply: a person reads it.
 

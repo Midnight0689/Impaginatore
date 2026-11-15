@@ -75,7 +75,7 @@
       <mj-column>
         <mj-text mj-class="titolo2">Ti serve su più computer</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>La tua licenza {{fascia}} vale per {{computer}} computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 80 € dal Pro o 120 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 40 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.</mj-text>
+        <mj-text>La tua licenza {{fascia}} vale per {{computer}} computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 50 € dal Pro o 100 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 50 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.</mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>{{/if}}</mj-raw>

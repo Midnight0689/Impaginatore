@@ -16,7 +16,7 @@ THREE LICENCES, NO SUBSCRIPTION
 Launch price for 60 days, until [[data_fine_lancio]], or until the first 300 licences if that comes sooner. We won’t extend it. Prices exclude VAT, which is added where due.
 
 PRO · recommended
-€69 until [[data_fine_lancio]], then €89. Once.
+€79 until [[data_fine_lancio]], then €99. Once.
 The full editor, unlimited designer and personal layouts; automatic layout of the whole album; even spacing and tone across the whole album; JPG, PDF and layered PSD export; 2 computers, all version 2 updates included.
 Buy Pro: [[link_acquisto_pro]]
 
@@ -26,17 +26,17 @@ ESSENZIALE
 [[link_acquisto_essenziale]]
 
 STUDIO
-€129 until [[data_fine_lancio]], then €169.
+€119 until [[data_fine_lancio]], then €149.
 Everything in Pro on 5 computers, the next major version and 1 hour of support included.
 [[link_acquisto_studio]]
 
-For private buyers in Italy, with 22% VAT, at the launch price: Essenziale €47.58, Pro €84.18, Studio €157.38.
+For private buyers in Italy, with 22% VAT, at the launch price: Essenziale €47.58, Pro €96.38, Studio €145.18.
 
-An album software subscription costs around €20 a month. Pro at full price costs as much as four or five of those months; at the launch price, just over three. After that you pay nothing more, and the app stays yours.
+An album software subscription costs around €20 a month. Pro at full price costs about as much as five of those months; at the launch price, about as much as four. After that you pay nothing more, and the app stays yours.
 (Three yearly album software subscriptions cost between $250 and $290 a year, excluding VAT: roughly €19 to €22 a month. Public prices on 13 November 2026, ECB rate €1 = $1.1052. Sources on the pricing page: [[link_prezzi]])
 
 SUPPORT BY THE HOUR
-1 hour €60 · 5 hours €250 · 10 hours €450, excluding VAT. By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual, video guides and bug fixes.
+1 hour €49 · 5 hours €249 · 10 hours €499, excluding VAT. By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual, video guides and bug fixes.
 
 HOW BUYING WORKS
 Choose a licence and we send you bank transfer details. Once payment arrives, you get the invoice and your key within 2 business hours. If you change your mind, you have 30 days for a full refund, no questions asked.

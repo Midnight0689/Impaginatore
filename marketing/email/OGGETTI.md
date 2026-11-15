@@ -7,7 +7,7 @@ Regole seguite:
 - **Preheader**: fra 40 e 110 caratteri. Completa l’oggetto, non lo ripete.
 - Niente punti esclamativi, niente emoji, niente maiuscole gridate.
 - Niente parole che i filtri e la marca puniscono: gratis, offerta, sconto, urgente, ultima occasione, garantito, «100%», e le parole vietate di `brand/STYLEBOOK.md` (lo stesso elenco che controlla `strumenti/compila.py`).
-- Prezzi solo nella forma «69 € fino al {{data_fine_lancio}}, poi 89 €», mai barrati.
+- Prezzi solo nella forma «79 € fino al {{data_fine_lancio}}, poi 99 €», mai barrati.
 - Nell’email Rosetta, nessun marchio di concorrenti, né nell’oggetto né nel testo.
 - Per i laboratori l’oggetto è quello di una lettera, non di una newsletter. Il seguito parte come **risposta** al primo messaggio (variante A, «Re: …»), così chi legge ha il contesto.
 
@@ -41,8 +41,8 @@ campagna · 21/02 accesso anticipato (variante C), 23/02 ore 9 apertura (A o B)
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Impaginatore è pronto | 21 | Licenza perpetua: Pro costa 69 € fino al {{data_fine_lancio}}, poi 89 €. Le foto restano sul tuo computer. | 106 |
-| B | Lo paghi una volta, e resta tuo | 31 | Impaginatore è disponibile: tre licenze, nessun abbonamento. Pro 69 € fino al {{data_fine_lancio}}, poi 89 €. | 109 |
+| A | Impaginatore è pronto | 21 | Licenza perpetua: Pro costa 79 € fino al {{data_fine_lancio}}, poi 99 €. Le foto restano sul tuo computer. | 106 |
+| B | Lo paghi una volta, e resta tuo | 31 | Impaginatore è disponibile: tre licenze, nessun abbonamento. Pro 79 € fino al {{data_fine_lancio}}, poi 99 €. | 109 |
 | C | Per te, 48 ore prima: Impaginatore | 34 | Sei nella lista d’attesa: puoi comprarlo da oggi, al prezzo di lancio. Per tutti si apre il {{data_apertura}}. | 110 |
 
 ### lancio.en
@@ -51,8 +51,8 @@ campaign · same dates as the Italian version
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Impaginatore is ready | 21 | A perpetual licence: Pro is €69 until {{data_fine_lancio}}, then €89. Your photos stay on your computer. | 104 |
-| B | Pay once, and it stays yours | 28 | Three licences, no subscription. Pro is €69 until {{data_fine_lancio}}, then €89. | 81 |
+| A | Impaginatore is ready | 21 | A perpetual licence: Pro is €79 until {{data_fine_lancio}}, then €99. Your photos stay on your computer. | 104 |
+| B | Pay once, and it stays yours | 28 | Three licences, no subscription. Pro is €79 until {{data_fine_lancio}}, then €99. | 81 |
 | C | For you, 48 hours early: Impaginatore | 37 | You’re on the waiting list, so you can buy it today at the launch price. It opens to everyone on {{data_apertura}}. | 115 |
 
 ### prova-giorno-1
@@ -83,7 +83,7 @@ campagna automatica · 3 giorni prima della scadenza (C solo durante il lancio)
 |---|---|---|---|---|
 | A | La prova finisce il {{data_scadenza_prova}} | 43 | I tuoi album restano sul computer. Con la licenza riparti da dove sei, senza reinstallare. | 90 |
 | B | Cosa succede ai tuoi album dopo la prova | 40 | Restano sul tuo computer, in sola lettura. Con la chiave riparti da dove sei. | 77 |
-| C | Ultimi giorni di prova | 22 | Pro 69 € fino al {{data_fine_lancio}}, poi 89 €. Paghi una volta, la licenza non scade. | 87 |
+| C | Ultimi giorni di prova | 22 | Pro 79 € fino al {{data_fine_lancio}}, poi 99 €. Paghi una volta, la licenza non scade. | 87 |
 
 ### rosetta
 
