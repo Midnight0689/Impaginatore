@@ -7,6 +7,7 @@ import os
 import re
 
 import numpy as np
+import pytest
 from aiuti import come_script
 from PIL import Image
 
@@ -62,6 +63,14 @@ def test_analizza_luminosita(prj, monkeypatch, capsys):
     assert "fuori tono" not in spread["S03"] and "V03:" in spread["S03"] and "V04:" in spread["S03"]
     assert "V03" not in spread["S04"], "nello spread 4 V03 è in bianco e nero: non conta"
     assert out[-1].startswith("Nota:")
+
+
+def test_analizza_luminosita_senza_volti(prj, monkeypatch, capsys):
+    """senza nessun volto trovato lo dice ed esce senza errore (prima: IndexError di numpy su un elenco vuoto)"""
+    _faces(prj, {})
+    with pytest.raises(SystemExit) as e: come_script(monkeypatch, "analizza", "--progetto", prj, "luminosita")
+    assert e.value.code == 0
+    assert capsys.readouterr().out.strip() == "nessun volto trovato nelle foto: la luminosità della pelle non si può misurare"
 
 
 def test_analizza_luminosita_senza_impaginazione(prj, monkeypatch, capsys):
