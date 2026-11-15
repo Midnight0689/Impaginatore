@@ -3,6 +3,9 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.5.2 — Installa.command ripristinato
+- `Installa.command` era sparito per errore dal commit «Trascinamento fluido»: su un Mac nuovo il programma non poteva partire. Ripristinato (crea l'ambiente Python, collega la skill, controlla Photoshop e font). `Avvia Impaginatore.command` ora rimanda a lui se manca l'ambiente. — `Installa.command`, `Avvia Impaginatore.command`.
+
 ## Versione 1.5.1 — Foto lasciate su uno spread esistente, e spread rimasti senza foto
 - Trascinando foto sulla fila degli spread: tra due miniature nasce uno spread nuovo (come in 1.5.0); **sopra** una miniatura le foto entrano in quello spread, con una finestra che chiede se riorganizzarlo con un altro modello o lasciarlo così (le foto entrano come cornici libere). Esc o clic fuori = non fa niente.
 - Se uno spread da cui hai portato via le foto resta senza foto, si chiede se cancellarlo (se restano solo testi lo dice). Non viene mai creato o lasciato uno spread vuoto senza chiedere.
