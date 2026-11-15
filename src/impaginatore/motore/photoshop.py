@@ -1,33 +1,36 @@
-"""Collegamento con Photoshop via AppleScript + ExtendScript (macOS).
+"""Collegamento con Photoshop: script ExtendScript (.jsx) eseguiti da Photoshop.
+
+Come si raggiunge Photoshop dipende dal sistema (AppleScript sul Mac, COM su Windows, niente su Linux): sta in
+piattaforma/photoshop.py. Qui restano le funzioni usate dagli script del motore e la libreria JS condivisa.
 
 Regole imparate a fatica:
 - `do javascript (POSIX file ...)` dà "errore generale 8800": usare `do javascript "$.evalFile(new File('...'))"`.
 - Lo script .jsx deve essere ASCII puro (Photoshop lo legge nella codifica di sistema: "·" diventava "¬∑").
 - Un "%" dentro il testo JS rompe la formattazione Python con %: evitarlo.
 """
-import os, glob, subprocess, json
+from ..piattaforma import photoshop as _ps
+
 
 def app_name():
-    for p in sorted(glob.glob("/Applications/Adobe Photoshop 20*/Adobe Photoshop 20*.app"), reverse=True):
-        return os.path.basename(p)[:-4]
-    for p in sorted(glob.glob("/Applications/Adobe Photoshop*.app"), reverse=True):
-        if "Beta" not in p: return os.path.basename(p)[:-4]
-    raise SystemExit("Photoshop non trovato in /Applications")
+    """nome dell'applicazione Photoshop; se manca ferma lo script con un messaggio (SystemExit, come nelle 1.x)"""
+    t = _ps.trova()
+    if t is None: raise SystemExit(_ps.motivo_assente())
+    return t["nome"]
+
 
 def write_jsx(path, js):
-    open(path, "w").write(js.encode("ascii", "backslashreplace").decode("ascii"))
+    with open(path, "w", encoding="ascii") as f: f.write(js.encode("ascii", "backslashreplace").decode("ascii"))
+
 
 def run_jsx(path, timeout=3600):
-    app = app_name()
-    r = subprocess.run(["osascript", "-e", f"with timeout of {timeout} seconds",
-                        "-e", f'tell application "{app}" to do javascript "$.evalFile(new File(\'{path}\'))"',
-                        "-e", "end timeout"], capture_output=True, text=True)
-    return (r.stdout + r.stderr).strip()
+    app_name()
+    return _ps.esegui_jsx(path, timeout)
+
 
 def run_js(code):
-    app = app_name()
-    r = subprocess.run(["osascript", "-e", f'tell application "{app}" to do javascript {json.dumps(code)}'], capture_output=True, text=True)
-    return (r.stdout + r.stderr).strip()
+    app_name()
+    return _ps.esegui_js(code)
+
 
 def open_documents():
     """[(nome, salvato?)] dei documenti aperti in Photoshop: non toccare mai documenti con modifiche non salvate dell'utente"""

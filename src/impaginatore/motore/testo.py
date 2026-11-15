@@ -3,12 +3,29 @@
 Un testo è un elemento dello spread:  TEXT("Titolo", fx, fy, fw, fh, font="BodoniModa18pt-Italic", size=170, col=(58,54,51), al="left", tr=0)
 fx, fy, fw, fh = posizione e misura in frazioni dell'area della pagina (come le cornici libere); size in pixel della pagina (come il resto del motore).
 Solo libreria standard + Pillow: i nomi dei font si leggono direttamente dai file (.ttf .otf .ttc).
+Le cartelle dei font e il font di ripiego dipendono dal sistema (piattaforma.font). Come album_libere.py, l'editor ne copia
+una versione nella cartella dei progetti con testi: deve funzionare anche da solo, senza il pacchetto.
 """
 import json, os, struct
 
-DIRS = ["/System/Library/Fonts", "/System/Library/Fonts/Supplemental", "/Library/Fonts", os.path.expanduser("~/Library/Fonts")]
-CACHE = os.path.expanduser("~/.album-tools/font_cache.json")
+try: from ..piattaforma import cartelle as _cartelle, font as _pfont        # dentro il pacchetto impaginatore
+except ImportError: _cartelle = _pfont = None                              # copia in un progetto, letta dagli script 1.x (solo Mac)
+
+DIRS = None           # cartelle dei font (None = quelle del sistema)
+CACHE = None          # file della cache dei nomi dei font (None = nella cache del programma)
 _FONTS = None
+
+
+def _dirs():
+    if DIRS is not None: return DIRS
+    if _pfont: return _pfont.cartelle_font()
+    return ["/System/Library/Fonts", "/System/Library/Fonts/Supplemental", "/Library/Fonts", os.path.expanduser("~/Library/Fonts")]
+
+
+def _cache():
+    if CACHE is not None: return CACHE
+    if _cartelle: return os.path.join(_cartelle.cache(), "font_cache.json")
+    return os.path.expanduser("~/.album-tools/font_cache.json")
 
 
 def _names(path):
@@ -44,12 +61,12 @@ def fonts():
     global _FONTS
     if _FONTS is not None: return _FONTS
     files = []
-    for d in DIRS:
+    for d in _dirs():
         for root, _, fs in os.walk(d):
             files += [os.path.join(root, f) for f in fs if f.lower().endswith((".ttf", ".otf", ".ttc"))]
     stamp = len(files)
     try:
-        c = json.load(open(CACHE))
+        with open(_cache(), encoding="utf-8") as f: c = json.load(f)
         if c.get("n") == stamp: _FONTS = c["fonts"]; return _FONTS
     except Exception: pass
     out, seen = [], set()
@@ -59,7 +76,9 @@ def fonts():
             seen.add(ps); out.append(dict(fam=fam, sty=sty, ps=ps, file=p, idx=idx))
     out.sort(key=lambda x: (x["fam"].lower(), x["sty"]))
     _FONTS = out
-    try: os.makedirs(os.path.dirname(CACHE), exist_ok=True); json.dump(dict(n=stamp, fonts=out), open(CACHE, "w"))
+    try:
+        os.makedirs(os.path.dirname(_cache()), exist_ok=True)
+        with open(_cache(), "w", encoding="utf-8") as f: json.dump(dict(n=stamp, fonts=out), f)
     except Exception: pass
     return out
 
@@ -69,6 +88,9 @@ def font_file(ps):
         if f["ps"] == ps: return f["file"], f["idx"]
     for f in fonts():                                              # ripiego: qualsiasi stile della stessa famiglia o Helvetica
         if ps and ps.split("-")[0] == f["ps"].split("-")[0]: return f["file"], f["idx"]
+    if _pfont:
+        p, idx = _pfont.font_ripiego()
+        if p: return p, idx
     return "/System/Library/Fonts/Helvetica.ttc", 0
 
 

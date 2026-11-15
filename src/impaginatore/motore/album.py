@@ -1,32 +1,91 @@
 """Motore di impaginazione album (stile Stefano).
 
 Uso: ogni album ha una cartella di progetto con `progetto.json` e `spec.py`.
-Gli script trovano il progetto con --progetto <cartella> oppure con la variabile ALBUM_PROGETTO.
-`spec.py` fa `from album import *` e definisce SPREADS (lista di coppie pagina sinistra / destra).
+Il progetto si carica in modo esplicito con carica_progetto(cartella); gli script da riga di comando trovano la cartella con
+--progetto <cartella>, con la variabile ALBUM_PROGETTO o nella cartella corrente (progetto_da_argv).
+`spec.py` fa `from album import *` e definisce SPREADS (lista di coppie pagina sinistra / destra): lo legge formato.carica.
 
 Griglia: ogni pagina 12 colonne x 8 righe, un solo spazio tra le foto (default 2,5 mm) ovunque, anche sulla piega.
 Pagine "I" immersive (la griglia arriva al bordo, look flush) e "W" bianche (margine uguale sui 4 lati, default 10 mm).
 Nessuna foto attraversa la piega: ogni pagina si compone da sola.
+
+Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
+gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
 import os, sys, json, glob
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-Image.MAX_IMAGE_PIXELS = None
+
+from ..piattaforma import font as _pfont
 
 # ---------------- progetto ----------------
-def _project_dir():
-    for k, a in enumerate(sys.argv):
-        if a == "--progetto" and k + 1 < len(sys.argv): return os.path.abspath(sys.argv[k + 1])
+PROJ = CFG = SRC = CACHE = THUMBS = None             # riempiti da carica_progetto()
+CW = CH = PPI = B = G = MG = FOLD = TW = TH = None
+M, F, IDX, ORIGINE, FACE_FIX, WB, _ESP, TXTCFG = [], {}, {}, {}, {}, {}, {}, {}
+TITLE, INK = ("", "", ""), (58, 54, 51)
+SERIF_FILE = SANS_FILE = None
+
+
+def progetto_da_argv(argv=None):
+    """cartella del progetto per gli script: --progetto <cartella> negli argomenti, poi ALBUM_PROGETTO, poi la cartella corrente"""
+    argv = sys.argv if argv is None else argv
+    for k, a in enumerate(argv):
+        if a == "--progetto" and k + 1 < len(argv): return os.path.abspath(argv[k + 1])
     if os.environ.get("ALBUM_PROGETTO"): return os.path.abspath(os.environ["ALBUM_PROGETTO"])
     if os.path.exists("progetto.json"): return os.getcwd()
     raise SystemExit("Progetto non trovato: passa --progetto <cartella con progetto.json> o imposta ALBUM_PROGETTO")
 
-PROJ = _project_dir()
-CFG = json.load(open(os.path.join(PROJ, "progetto.json")))
-SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
-CACHE = os.path.join(PROJ, "_cache"); THUMBS = os.path.join(CACHE, "thumbs")
-os.makedirs(THUMBS, exist_ok=True)
-if PROJ not in sys.path: sys.path.insert(0, PROJ)
+
+def carica_progetto(cartella):
+    """legge progetto.json, aggiorna l'elenco delle foto (metadati, miniature, volti) e prepara geometria, correzioni e testi.
+    Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo)."""
+    global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
+    Image.MAX_IMAGE_PIXELS = None
+    PROJ = os.path.abspath(cartella)
+    CFG = _leggi_json(os.path.join(PROJ, "progetto.json"))
+    SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
+    CACHE = os.path.join(PROJ, "_cache"); THUMBS = os.path.join(CACHE, "thumbs")
+    os.makedirs(THUMBS, exist_ok=True)
+    CW, CH, PPI, B, G, MG = _geometry()
+    FOLD = CW / 2; TW, TH = CW - 2 * B, CH - 2 * B
+    # ---- foto: metadati, miniature, volti
+    mp, fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
+    M = _leggi_json(mp) if os.path.exists(mp) else []
+    known = {m["n"] for m in M}
+    files = sorted(set(glob.glob(os.path.join(SRC, "*.jpg")) + glob.glob(os.path.join(SRC, "*.JPG")) + glob.glob(os.path.join(SRC, "*.jpeg"))))     # set: su Windows *.jpg e *.JPG trovano gli stessi file
+    new = [_meta_one(f) for f in files if os.path.basename(f) not in known]
+    # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
+    new += [_meta_one(f) for f in CFG.get("foto_extra", []) if os.path.basename(f) not in known | {m["n"] for m in new}]
+    if new:
+        first = not M
+        M += sorted(new, key=lambda x: x["dt"]) if first else new
+        _scrivi_json(mp, M)
+    _build_thumbs(M)
+    F = _leggi_json(fp) if os.path.exists(fp) else {}
+    missing = [m for m in M if m["n"] not in F]
+    if missing: F.update(_build_faces(missing)); _scrivi_json(fp, F)
+    IDX = {m["n"].rsplit(".", 1)[0]: k + 1 for k, m in enumerate(M)}      # nome file senza estensione -> numero foto
+    # origine di ogni foto (cartella completa da cui viene): scritta da abbina.py, serve per le correzioni per capitolo
+    ORIGINE = {}
+    for op in (os.path.join(SRC, "origine.json"), os.path.join(CACHE, "origine.json")):
+        if os.path.exists(op): ORIGINE.update(_leggi_json(op))
+    FACE_FIX = {k: tuple(v) for k, v in CFG.get("centri_volto", {}).items()}   # {"_DSC3885": [x, y]} centro a mano (0-1)
+    _ESP = CFG.get("esposizione", {})
+    WB = CFG.get("bilanciamento_bianco", {})     # {"_DSC1406": [r, g, b]} guadagni lineari
+    TXTCFG = CFG.get("testo", {})
+    TITLE = (TXTCFG.get("nome", ""), TXTCFG.get("sottotitolo", ""), TXTCFG.get("data", ""))
+    INK = tuple(TXTCFG.get("colore", [58, 54, 51]))
+    SERIF_FILE, SANS_FILE = _pfont.serif_predefinito(), _pfont.sans_predefinito()      # Didot e Avenir Next sul Mac
+    return sys.modules[__name__]
+
+
+def _leggi_json(p):
+    with open(p, encoding="utf-8") as f: return json.load(f)
+
+
+def _scrivi_json(p, dati):
+    with open(p, "w", encoding="utf-8") as f: json.dump(dati, f)
+
 
 # ---------------- geometria ----------------
 def _geometry():
@@ -43,8 +102,6 @@ def _geometry():
         W, H = round(wcm_t / 2.54 * ppi_target), round(hcm_t / 2.54 * ppi_target); ppi = ppi_target
     mm = lambda v: round(v / 25.4 * ppi)
     return W, H, ppi, mm(bleed_mm), mm(CFG.get("spazio_mm", 2.5)), mm(CFG.get("margine_mm", 10))
-CW, CH, PPI, B, G, MG = _geometry()
-FOLD = CW / 2; TW, TH = CW - 2 * B, CH - 2 * B
 NC, NR = 12, 8
 
 # ---------------- foto: metadati, miniature, volti ----------------
@@ -68,31 +125,9 @@ def _build_faces(meta):
         out[m["n"]] = [[float(x / W), float(y / H), float((x + w) / W), float((y + h) / H)] for x, y, w, h in bx]
     return out
 
-_mp, _fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
-M = json.load(open(_mp)) if os.path.exists(_mp) else []
-_known = {m["n"] for m in M}
-_files = sorted(glob.glob(os.path.join(SRC, "*.jpg")) + glob.glob(os.path.join(SRC, "*.JPG")) + glob.glob(os.path.join(SRC, "*.jpeg")))
-_new = [_meta_one(f) for f in _files if os.path.basename(f) not in _known]
-# foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
-_new += [_meta_one(f) for f in CFG.get("foto_extra", []) if os.path.basename(f) not in _known | {m["n"] for m in _new}]
-if _new:
-    first = not M
-    M += sorted(_new, key=lambda x: x["dt"]) if first else _new
-    json.dump(M, open(_mp, "w"))
-_build_thumbs(M)
-F = json.load(open(_fp)) if os.path.exists(_fp) else {}
-_missing = [m for m in M if m["n"] not in F]
-if _missing: F.update(_build_faces(_missing)); json.dump(F, open(_fp, "w"))
-IDX = {m["n"].rsplit(".", 1)[0]: k + 1 for k, m in enumerate(M)}      # nome file senza estensione -> numero foto
 def name(i): return M[i]["n"].rsplit(".", 1)[0]
 
-# origine di ogni foto (cartella completa da cui viene): scritta da abbina.py, serve per le correzioni per capitolo
-ORIGINE = {}
-for _op in (os.path.join(SRC, "origine.json"), os.path.join(CACHE, "origine.json")):
-    if os.path.exists(_op): ORIGINE.update(json.load(open(_op)))
-
 # ---------------- ritaglio ----------------
-FACE_FIX = {k: tuple(v) for k, v in CFG.get("centri_volto", {}).items()}   # {"_DSC3885": [x, y]} centro a mano (0-1)
 def _faces_center(i):
     if name(i) in FACE_FIX: return FACE_FIX[name(i)]
     fs = F.get(M[i]["n"], [])
@@ -151,7 +186,6 @@ def BAND2(a, b, bw=False): return [P(a, 0, 2, 6, 4, bw), P(b, 6, 2, 6, 4, bw)]
 def STRIP3(a, b, c, bw=False): return [P(a, 0, 1, 4, 6, bw), P(b, 4, 1, 4, 6, bw), P(c, 8, 1, 4, 6, bw)]
 
 # ---------------- correzioni di luminosità e colore ----------------
-_ESP = CFG.get("esposizione", {})
 def ev_for(i):
     """EV totale della foto i: globale + base del capitolo (cartella di origine) + correzione della singola foto"""
     n = name(i); ev = _ESP.get("globale", 0.0)
@@ -159,7 +193,6 @@ def ev_for(i):
     for folder, v in _ESP.get("per_cartella", {}).items():
         if os.path.normpath(orig) == os.path.normpath(folder): ev += v
     return round(ev + _ESP.get("per_foto", {}).get(n, 0.0), 2)
-WB = CFG.get("bilanciamento_bianco", {})     # {"_DSC1406": [r, g, b]} guadagni lineari
 def apply_ev(im, ev, gains=None):
     """esposizione come il livello Esposizione di Photoshop (gamma 2.2, nessuna spalla: identica nel PSD); poi i guadagni del bilanciamento bianco in luce lineare"""
     import numpy as np
@@ -173,14 +206,10 @@ def apply_ev(im, ev, gains=None):
     return Image.fromarray((a * 255 + 0.5).astype(np.uint8))
 
 # ---------------- testi ----------------
-TXTCFG = CFG.get("testo", {})
-TITLE = (TXTCFG.get("nome", ""), TXTCFG.get("sottotitolo", ""), TXTCFG.get("data", ""))
-INK = tuple(TXTCFG.get("colore", [58, 54, 51]))
 def _font(path_key, default, size, index=0):
     p = TXTCFG.get(path_key) or default
     try: return ImageFont.truetype(p, size, index=index)
-    except Exception: return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
-SERIF_FILE = "/System/Library/Fonts/Supplemental/Didot.ttc"; SANS_FILE = "/System/Library/Fonts/Avenir Next.ttc"
+    except Exception: return _pfont.pil_ripiego(size)          # Helvetica sul Mac, Arial su Windows, DejaVu su Linux
 def _spaced(d, xy, text, font, track, center=None):
     w = sum(font.getlength(ch) for ch in text) + track * (len(text) - 1); x, y = xy
     if center is not None: x = center - w / 2
@@ -214,6 +243,6 @@ def render(spread, K, corrected=True):
     return S
 
 def load_spec(modname="spec"):
-    import importlib
-    if modname in sys.modules: del sys.modules[modname]
-    return importlib.import_module(modname).SPREADS
+    """SPREADS dello spec.py del progetto caricato (modname resta per compatibilità con gli script: il file è sempre spec.py)"""
+    from .. import formato
+    return formato.carica(PROJ)

@@ -11,51 +11,54 @@ Controlla, per ogni foto scelta:
 Scrive <dest>/origine.json con la cartella di origine di ogni file: album.py lo legge da lì
 per sapere a quale capitolo appartiene ogni foto (serve per le correzioni di esposizione per cartella).
 """
-import os, sys, argparse, filecmp, shutil, json
+import os, argparse, filecmp, shutil, json
 from PIL import Image, ImageChops, ImageStat
-Image.MAX_IMAGE_PIXELS = None
 
-ap = argparse.ArgumentParser(); ap.add_argument("--web", required=True); ap.add_argument("--originali", nargs="+", required=True)
-ap.add_argument("--dest", required=True); ap.add_argument("--lato-minimo", type=int, default=4000, help="lato lungo minimo in px per considerarla alta risoluzione")
-ap.add_argument("--prova", action="store_true", help="solo controllo, non copia niente")
-a = ap.parse_args()
-EXT = (".jpg", ".jpeg", ".tif", ".tiff", ".png")
-web = sorted(f for f in os.listdir(a.web) if f.lower().endswith(EXT) and not f.startswith("."))
-where = {}
-for d in a.originali:
-    for f in os.listdir(d):
-        if f.lower().endswith(EXT) and not f.startswith("."): where.setdefault(f, []).append(d)
-def thumb(p):
-    im = Image.open(p); im.draft("L", (200, 200)); return im.convert("L").resize((64, 64))
-problems, ok, origine = [], [], {}
-for f in web:
-    pw = os.path.join(a.web, f); cands = where.get(f, [])
-    if not cands: problems.append(f"{f}: NON trovata negli originali"); continue
-    if len(cands) > 1:
-        # stesso nome in più cartelle: scegli quella visivamente uguale alla selezione
-        diffs = sorted((ImageStat.Stat(ImageChops.difference(thumb(pw), thumb(os.path.join(d, f)))).mean[0], d) for d in cands)
-        problems.append(f"{f}: nome presente in {len(cands)} cartelle -> uso {os.path.basename(diffs[0][1])} (differenza {diffs[0][0]:.1f})")
-        src_dir = diffs[0][1]
-    else: src_dir = cands[0]
-    po = os.path.join(src_dir, f); im = Image.open(po); long_side = max(im.size)
-    if filecmp.cmp(pw, po, shallow=False):
-        problems.append(f"{f}: l'originale è IDENTICO alla versione web -> forse non riesportato in alta"); continue
-    if long_side < a.lato_minimo:
-        problems.append(f"{f}: originale piccolo ({im.size[0]}x{im.size[1]}) -> controlla l'esportazione"); continue
-    d = ImageStat.Stat(ImageChops.difference(thumb(pw), thumb(po))).mean[0]
-    if d > 8: problems.append(f"{f}: l'originale è visivamente diverso dalla scelta (differenza {d:.1f}): post-produzione cambiata?")
-    ok.append((f, po)); origine[f] = os.path.abspath(src_dir)
-print(f"selezione: {len(web)} foto | pronte da copiare: {len(ok)} | da controllare: {len(problems)}")
-for p in problems: print("  -", p)
-by = {}
-for f, d in origine.items(): by[os.path.basename(d)] = by.get(os.path.basename(d), 0) + 1
-print("per cartella:", by)
-if not a.prova and ok:
-    os.makedirs(a.dest, exist_ok=True)
-    for f, po in ok:
-        dst = os.path.join(a.dest, f)
-        if os.path.exists(dst) and not filecmp.cmp(dst, po, shallow=False): print("  esiste già diverso, non sovrascrivo:", f); continue
-        shutil.copy2(po, dst)
-    bad = [f for f, po in ok if not filecmp.cmp(os.path.join(a.dest, f), po, shallow=False)]
-    json.dump(origine, open(os.path.join(a.dest, "origine.json"), "w"), indent=1)
-    print(f"copiate e verificate: {len(ok) - len(bad)} | errori di copia: {bad}")
+
+if __name__ == "__main__":
+    Image.MAX_IMAGE_PIXELS = None
+
+    ap = argparse.ArgumentParser(); ap.add_argument("--web", required=True); ap.add_argument("--originali", nargs="+", required=True)
+    ap.add_argument("--dest", required=True); ap.add_argument("--lato-minimo", type=int, default=4000, help="lato lungo minimo in px per considerarla alta risoluzione")
+    ap.add_argument("--prova", action="store_true", help="solo controllo, non copia niente")
+    a = ap.parse_args()
+    EXT = (".jpg", ".jpeg", ".tif", ".tiff", ".png")
+    web = sorted(f for f in os.listdir(a.web) if f.lower().endswith(EXT) and not f.startswith("."))
+    where = {}
+    for d in a.originali:
+        for f in os.listdir(d):
+            if f.lower().endswith(EXT) and not f.startswith("."): where.setdefault(f, []).append(d)
+    def thumb(p):
+        im = Image.open(p); im.draft("L", (200, 200)); return im.convert("L").resize((64, 64))
+    problems, ok, origine = [], [], {}
+    for f in web:
+        pw = os.path.join(a.web, f); cands = where.get(f, [])
+        if not cands: problems.append(f"{f}: NON trovata negli originali"); continue
+        if len(cands) > 1:
+            # stesso nome in più cartelle: scegli quella visivamente uguale alla selezione
+            diffs = sorted((ImageStat.Stat(ImageChops.difference(thumb(pw), thumb(os.path.join(d, f)))).mean[0], d) for d in cands)
+            problems.append(f"{f}: nome presente in {len(cands)} cartelle -> uso {os.path.basename(diffs[0][1])} (differenza {diffs[0][0]:.1f})")
+            src_dir = diffs[0][1]
+        else: src_dir = cands[0]
+        po = os.path.join(src_dir, f); im = Image.open(po); long_side = max(im.size)
+        if filecmp.cmp(pw, po, shallow=False):
+            problems.append(f"{f}: l'originale è IDENTICO alla versione web -> forse non riesportato in alta"); continue
+        if long_side < a.lato_minimo:
+            problems.append(f"{f}: originale piccolo ({im.size[0]}x{im.size[1]}) -> controlla l'esportazione"); continue
+        d = ImageStat.Stat(ImageChops.difference(thumb(pw), thumb(po))).mean[0]
+        if d > 8: problems.append(f"{f}: l'originale è visivamente diverso dalla scelta (differenza {d:.1f}): post-produzione cambiata?")
+        ok.append((f, po)); origine[f] = os.path.abspath(src_dir)
+    print(f"selezione: {len(web)} foto | pronte da copiare: {len(ok)} | da controllare: {len(problems)}")
+    for p in problems: print("  -", p)
+    by = {}
+    for f, d in origine.items(): by[os.path.basename(d)] = by.get(os.path.basename(d), 0) + 1
+    print("per cartella:", by)
+    if not a.prova and ok:
+        os.makedirs(a.dest, exist_ok=True)
+        for f, po in ok:
+            dst = os.path.join(a.dest, f)
+            if os.path.exists(dst) and not filecmp.cmp(dst, po, shallow=False): print("  esiste già diverso, non sovrascrivo:", f); continue
+            shutil.copy2(po, dst)
+        bad = [f for f, po in ok if not filecmp.cmp(os.path.join(a.dest, f), po, shallow=False)]
+        json.dump(origine, open(os.path.join(a.dest, "origine.json"), "w", encoding="utf-8"), indent=1)
+        print(f"copiate e verificate: {len(ok) - len(bad)} | errori di copia: {bad}")

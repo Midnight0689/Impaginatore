@@ -1,9 +1,11 @@
-"""Esegue genera_psd.py della skill aggiungendo l'angolo delle foto (ROT): dopo aver messo la foto nella cornice la ruota attorno al centro della cornice.
-Imposta anche il profilo colore sRGB sul documento (senza, Photoshop può usare il profilo del monitor e i colori cambiano). Non modifica la skill: legge il suo codice e ci applica tre sostituzioni; se la skill è cambiata e non combaciano, genera i PSD senza angoli e lo dice."""
+"""Esegue genera_psd.py aggiungendo l'angolo delle foto (ROT): dopo aver messo la foto nella cornice la ruota attorno al centro della cornice.
+Imposta anche il profilo colore sRGB sul documento (senza, Photoshop può usare il profilo del monitor e i colori cambiano).
+Non modifica genera_psd.py (lo script della skill): legge il suo codice e ci applica delle sostituzioni; se genera_psd.py è
+cambiato e non combaciano, genera i PSD senza angoli e lo dice.
+
+    python -m impaginatore.motore.genera_psd_angolo --progetto <cartella> [--spread 1,2,5 | tutti] [--forza]
+"""
 import os, sys
-SCR = os.environ.get("ALBUM_SCRIPTS") or next((sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == "--scripts"), None) or os.getcwd()
-path = os.path.join(SCR, "genera_psd.py"); src = open(path).read()
-sys.path.insert(0, SCR); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROT_JS = r'''function rotAround(L,deg,fx,fy){ var b=L.bounds, cx=(b[0].as("px")+b[2].as("px"))/2, cy=(b[1].as("px")+b[3].as("px"))/2;
   L.rotate(deg,AnchorPosition.MIDDLECENTER); var r=deg*Math.PI/180, nx=fx+(cx-fx)*Math.cos(r)-(cy-fy)*Math.sin(r), ny=fy+(cx-fx)*Math.sin(r)+(cy-fy)*Math.cos(r);
   var b2=L.bounds, c2x=(b2[0].as("px")+b2[2].as("px"))/2, c2y=(b2[1].as("px")+b2[3].as("px"))/2; L.translate(px(nx-c2x),px(ny-c2y)); }
@@ -62,8 +64,20 @@ reps = [(TXT_OLD, TXT_NEW), ('items.append(dict(txt=it["kind"], x=it["x"],', 'it
         ('g = WB.get(name(it["i"]))', 'g = __import__("album_libere").wb_total(it["i"])'),
         ('fitLayer(L,it.left,it.top,it.width); L.name=it.name;', 'fitLayer(L,it.left,it.top,it.width); if (it.ang) rotAround(L,it.ang,it.x+it.w/2,it.y+it.h/2); L.name=it.name;'),
         ('var log=[]; var STEP="start";', ROT_JS)]
-if all(a in src for a, _ in reps):
+
+
+def sostituzioni(src):
+    """codice di genera_psd.py con le sostituzioni applicate e True, oppure il codice com'era e False"""
+    if not all(a in src for a, _ in reps): return src, False
     for a, b in reps: src = src.replace(a, b, 1)
-else: print("ATTENZIONE: genera_psd.py della skill è cambiato: i PSD vengono generati senza gli angoli delle foto.", flush=True)
-sys.argv[0] = path
-exec(compile(src, path, "exec"), {"__name__": "__main__", "__file__": path})
+    return src, True
+
+
+if __name__ == "__main__":
+    from impaginatore.motore import compat
+    compat.installa()                                   # il codice aggiunto usa __import__("testo") e __import__("album_libere")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "genera_psd.py")
+    with open(path, encoding="utf-8") as f: src, ok = sostituzioni(f.read())
+    if not ok: print("ATTENZIONE: genera_psd.py della skill è cambiato: i PSD vengono generati senza gli angoli delle foto.", flush=True)
+    sys.argv[0] = path
+    exec(compile(src, path, "exec"), {"__name__": "__main__", "__file__": path})

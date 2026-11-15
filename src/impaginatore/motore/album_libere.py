@@ -9,8 +9,13 @@ In spec.py:   from album import *
 
 Importandolo, il motore impara a posizionare le cornici libere: anteprima.py, genera_psd.py, esporta_pdf.py ecc. restano invariati.
 Nota: i controlli di anteprima.py sugli spazi uguali vedono le cornici libere come eccezioni volute e possono segnalarle.
+
+L'editor ne copia una versione nella cartella di ogni progetto che ha cornici libere (fa parte del formato di salvataggio
+1.x): per questo il modulo funziona sia dentro il pacchetto (impaginatore.motore.album_libere) sia da solo, accanto a
+spec.py, con i vecchi script che hanno album.py nel percorso.
 """
-import album as _a
+try: from . import album as _a                   # dentro il pacchetto impaginatore
+except ImportError: import album as _a           # copia nella cartella di un progetto, letta dagli script delle versioni 1.x
 
 
 def FREE(n, x, y, w, h, bw=False, z=1.0, zo=None):
@@ -45,7 +50,8 @@ def TEXT(tx, fx, fy, fw, fh, font="AvenirNext-Regular", size=100, col=(58, 54, 5
 def _text_scaled(_orig):
     def _text(it, K):
         if it.get("kind") == "txt":
-            import testo
+            try: from . import testo
+            except ImportError: import testo
             return testo.render(it, K)
         s = it.get("ts") or 1.0
         return _orig(it, K) if abs(s - 1) < 1e-6 else _orig(dict(it, W=it["W"] / s, H=it["H"] / s), K * s)
@@ -220,7 +226,9 @@ def vib_lut():
     """tabella 3D misurata in Photoshop (livello Vibranza, -100..100, griglia 17x17x17): l'anteprima fa quello che farà il PSD"""
     if _VIB[0] is None:
         import numpy as np, os
-        _VIB[0] = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "vib_lut.npz"))["lut"]
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vib_lut.npz")                       # accanto al modulo: copia in un progetto
+        if not os.path.exists(p): p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "risorse", "vib_lut.npz")     # nel pacchetto
+        _VIB[0] = np.load(p)["lut"]
     return _VIB[0]
 
 
