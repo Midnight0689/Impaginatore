@@ -23,3 +23,4 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `DOC-003` **documenti** — Piano di lavoro: organizzazione, fasi, compiti, dipendenze e criteri di accettazione. _File:_ `docs/PIANO.md`, `docs/piano.json`.
 - `DOC-004` **documenti** — Questo registro, che sostituisce `CAMBIAMENTI.md` per il lavoro nuovo. _File:_ `CHANGELOG.md`.
 - `DOC-005` **mercato** — Profilo di 19 concorrenti con prezzi e fonti al 15/11/2026, tabella comparativa, punti in cui siamo indietro, cinque argomenti di vendita difendibili, brevetti e marchi noti. _File:_ `docs/mercato/competitor.md`, `docs/mercato/competitor.json`. _Rif:_ `T-003`.
+- `DOC-006` **documenti** — Audit della versione 1.5.2: 33 rilievi (10 sicurezza, 7 bug, 6 portabilità, 5 testabilità, 5 legali), 4 critici e 11 alti, 32 riprodotti. _File:_ `docs/audit/AUDIT-2026-11.md`, `docs/audit/rilievi.json`. _Rif:_ `T-002`.
