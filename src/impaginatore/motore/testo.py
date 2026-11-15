@@ -47,11 +47,11 @@ def _names(path):
                     pid, eid, lid, nid, ln, o = struct.unpack(">HHHHHH", data[6 + 12 * i:18 + 12 * i]); raw = data[so + o:so + o + ln]
                     if nid not in (1, 2, 6, 16, 17): continue
                     try: txt = raw.decode("utf-16-be") if pid in (0, 3) else raw.decode("mac_roman")
-                    except Exception: continue
+                    except Exception: continue  # nosec B112  # nome del font non decodificabile: si salta quella voce
                     if pid in (0, 3) or nid not in got: got[nid] = txt
                 fam = got.get(16) or got.get(1); sty = got.get(17) or got.get(2) or "Regular"; ps = got.get(6)
                 if fam and ps: out.append((idx, fam, sty, ps))
-    except Exception:
+    except Exception:  # nosec B110  # file di font rovinato: si salta, gli altri font restano
         pass
     return out
 
@@ -68,7 +68,7 @@ def fonts():
     try:
         with open(_cache(), encoding="utf-8") as f: c = json.load(f)
         if c.get("n") == stamp: _FONTS = c["fonts"]; return _FONTS
-    except Exception: pass
+    except Exception: pass  # nosec B110  # cache dei font assente o rovinata: si rifà l'elenco
     out, seen = [], set()
     for p in sorted(files):
         for idx, fam, sty, ps in _names(p):
@@ -80,7 +80,7 @@ def fonts():
         os.makedirs(os.path.dirname(_cache()), exist_ok=True); tmp = f"{_cache()}.{os.getpid()}.tmp"
         with open(tmp, "w", encoding="utf-8") as f: json.dump(dict(n=stamp, fonts=out), f)
         os.replace(tmp, _cache())                    # mai un elenco a metà: lo leggono anche gli altri processi
-    except Exception: pass
+    except Exception: pass  # nosec B110  # cache dei font non scrivibile: l'elenco vale per questo processo
     return out
 
 

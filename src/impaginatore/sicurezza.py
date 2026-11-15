@@ -158,7 +158,7 @@ def chiedi(porta, percorso, gettone, corpo=None, timeout=3):
     """richiesta JSON a un server locale (GET, o POST se c'è un corpo), con il gettone"""
     dati = None if corpo is None else json.dumps(corpo).encode("utf-8")
     r = urllib.request.Request(f"http://127.0.0.1:{int(porta)}{percorso}", dati, {INTESTAZIONE: gettone or "", "Content-Type": "application/json"})
-    with urllib.request.urlopen(r, timeout=timeout) as f: return json.load(f)
+    with urllib.request.urlopen(r, timeout=timeout) as f: return json.load(f)  # nosec B310  # sempre http://127.0.0.1:<porta> con un percorso fisso del programma: lo schema non viene da fuori
 
 
 def indirizzo_avvio(tipo, porta, timeout=3):

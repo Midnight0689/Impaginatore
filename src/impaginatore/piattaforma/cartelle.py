@@ -84,7 +84,7 @@ def documenti():
             import ctypes
             buf = ctypes.create_unicode_buffer(260)
             if ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, buf) == 0 and buf.value: return buf.value     # CSIDL_PERSONAL: segue OneDrive e le cartelle spostate
-        except Exception:
+        except Exception:  # nosec B110  # Documenti di Windows non letti dal sistema: si usa la cartella predefinita
             pass
         return os.path.join(home(), "Documents")
     if s == "linux": return _xdg_utente("XDG_DOCUMENTS_DIR", "Documents")

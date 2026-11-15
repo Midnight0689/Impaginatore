@@ -11,7 +11,7 @@ dell'applicazione (dal disco) e il percorso dentro il codice JavaScript sono quo
 import glob
 import json
 import os
-import subprocess
+import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import tempfile
 
 from . import sistema
@@ -74,12 +74,12 @@ def esegui_jsx(path, timeout=3600):
     ps = trova()
     if ps is None: raise RuntimeError(motivo_assente())
     if sistema() == "mac":
-        r = subprocess.run(_do_javascript(ps, f"$.evalFile(new File({json.dumps(os.path.abspath(path))}))", timeout), capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(_do_javascript(ps, f"$.evalFile(new File({json.dumps(os.path.abspath(path))}))", timeout), capture_output=True, text=True, encoding="utf-8")  # nosec B603  # osascript con il codice come argomento (SEC-004); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return (r.stdout + r.stderr).strip()
     with tempfile.TemporaryDirectory(prefix="impaginatore_ps_") as d:
         vbs = os.path.join(d, "esegui.vbs")
         with open(vbs, "w", encoding="ascii", newline="") as f: f.write(_VBS)
-        r = subprocess.run(["cscript", "//nologo", vbs, os.path.abspath(path)], capture_output=True, timeout=timeout)
+        r = subprocess.run(["cscript", "//nologo", vbs, os.path.abspath(path)], capture_output=True, timeout=timeout)  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
         return (r.stdout + r.stderr).decode("utf-8", "replace").strip()
 
 
@@ -88,7 +88,7 @@ def esegui_js(codice):
     ps = trova()
     if ps is None: raise RuntimeError(motivo_assente())
     if sistema() == "mac":
-        r = subprocess.run(_do_javascript(ps, codice, 120), capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(_do_javascript(ps, codice, 120), capture_output=True, text=True, encoding="utf-8")  # nosec B603  # osascript con il codice come argomento (SEC-004); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return (r.stdout + r.stderr).strip()
     with tempfile.TemporaryDirectory(prefix="impaginatore_ps_") as d:
         p = os.path.join(d, "codice.jsx")

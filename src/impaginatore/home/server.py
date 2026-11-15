@@ -11,7 +11,7 @@ Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
 Importare il modulo non fa niente: configura() le prepara, crea_server() apre la porta, main() fa tutto.
 """
-import argparse, json, logging, os, shutil, subprocess, sys, threading, time, webbrowser
+import argparse, json, logging, os, shutil, subprocess, sys, threading, time, webbrowser  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, percorsi, piattaforma, sicurezza
@@ -136,7 +136,7 @@ def apri(path):
         if pt: return pt
         pt = porta_libera(porta_stabile(path))
         with open(os.path.join(PROGETTI, "editor.log"), "ab") as log:
-            proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],
+            proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
         EDITORS[path] = (proc, pt); return pt
 
@@ -174,7 +174,7 @@ def riavvia_programma():
         time.sleep(.6)
         for pr, _ in EDITORS.values():
             try: pr.terminate()
-            except Exception: pass
+            except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
         processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
@@ -244,7 +244,7 @@ class H(Gestore):
                 self.send({"ok": True})
                 for pr, _ in EDITORS.values():
                     try: pr.terminate()
-                    except Exception: pass
+                    except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)

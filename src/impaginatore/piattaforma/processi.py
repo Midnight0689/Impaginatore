@@ -1,6 +1,6 @@
 """Processi: come partono i figli (editor, script dei PSD), come si riavvia il programma, come si stacca dal terminale."""
 import os
-import subprocess
+import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 
 from . import sistema
@@ -32,7 +32,7 @@ def riesegui(argv=None):
     argv = list(sys.orig_argv if argv is None else argv)
     if sistema() == "windows":                     # os.execv di Windows non mette tra virgolette gli argomenti con spazi
         argv = [subprocess.list2cmdline([a]) for a in argv]
-    os.execv(sys.executable, argv)
+    os.execv(sys.executable, argv)  # nosec B606  # riparte questo stesso Python (sys.executable) con i suoi argomenti
 
 
 def rilancia_dopo(argv, ritardo=1.5, gettone=None):
@@ -41,7 +41,7 @@ def rilancia_dopo(argv, ritardo=1.5, gettone=None):
     codice = "import subprocess, sys, time; time.sleep(float(sys.argv[1])); subprocess.Popen(sys.argv[2:])"
     env = ambiente_figli()
     if gettone: env["IMPAGINATORE_GETTONE"] = gettone
-    subprocess.Popen([sys.executable, "-c", codice, str(ritardo), *argv], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    subprocess.Popen([sys.executable, "-c", codice, str(ritardo), *argv], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,  # nosec B603  # questo stesso Python con il codice fisso qui sopra; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                      cwd=cartella_pacchetto(), env=env, **opzioni_staccato())
 
 

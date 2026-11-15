@@ -11,7 +11,7 @@ del motore. Importare il modulo non legge niente: inizializza(progetto) carica i
 porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
 main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time
+import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
@@ -818,7 +818,7 @@ def spread_hash(s):
                     {A.name(it["i"]): CFG["tono"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): CFG["ritocco"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): PV.get(A.name(it["i"]), 0) for pg in SP[s] for it in pg[1] if it["k"] != "t"}]], sort_keys=True)
-    return hashlib.md5(d.encode()).hexdigest()[:10]
+    return hashlib.md5(d.encode(), usedforsecurity=False).hexdigest()[:10]          # impronta per la cache delle anteprime, non crittografica
 
 def page_grid(side, mode):
     """linee della griglia di una pagina, in pixel dell'anteprima, identiche a quelle di album._place:
@@ -1492,7 +1492,7 @@ def run_export(o):
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
             else:
                 cmd = [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
-                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
+                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                      env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ)))
                 t0 = time.time() - 2; out = []
                 for line in p.stdout: out.append(line.rstrip()); LOG.append(line.rstrip())
@@ -1672,7 +1672,7 @@ def versioni():
     for f in sorted(os.listdir(bk), reverse=True):
         mf = re.fullmatch(r"(\d{8}-\d{6})_(album\.json|spec\.py)", f)
         if not mf or (out and out[-1]["ts"] == mf.group(1)): continue
-        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
+        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
         if h == prev: continue
         if f.endswith(".json"):
             try: nsp = len(formato.leggi_album(os.path.join(bk, f))["spread"])
@@ -1765,7 +1765,7 @@ class H(Gestore):
             elif u.path == "/api/versioni": self.send(versioni())
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
-                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8")).hexdigest()[:16], w, PV.get(n, 0))
+                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
                 if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
                 elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)

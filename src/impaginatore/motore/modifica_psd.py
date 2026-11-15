@@ -100,7 +100,7 @@ log.join("\n");
         known = {}
         for p in sorted(glob.glob(os.path.join(OUT, "Spread_*.psd"))):
             try: known.update(frames(int(os.path.basename(p)[7:9]))[1])
-            except Exception: pass
+            except Exception: pass  # nosec B110  # un PSD che non si legge non dà esposizioni da riusare
         items = []
         for it in layout(SP[n - 1]):
             if it["side"] != ("L" if side == "sinistra" else "R") or it["k"] == "t": continue

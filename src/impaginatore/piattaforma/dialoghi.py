@@ -14,7 +14,7 @@ Ogni funzione restituisce "" (o []) se l'utente annulla.
 import importlib.util
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 
 from . import sistema
@@ -65,7 +65,7 @@ class Mac(Dialoghi):
         elif tipo == "zip": sc = 'POSIX path of (choose file of type {"public.zip-archive"} with prompt (item 1 of argv))'
         else: sc = ('set fs to choose file with prompt (item 1 of argv) of type {' + ", ".join(f'"{u}"' for u in UTI_FOTO) + '} with multiple selections allowed\nset out to ""\n'
                     'repeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nreturn out')
-        r = subprocess.run(["osascript", "-e", "on run argv\n" + sc + "\nend run", str(messaggio)], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(["osascript", "-e", "on run argv\n" + sc + "\nend run", str(messaggio)], capture_output=True, text=True, encoding="utf-8")  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell; il messaggio è un argomento dello script (SEC-004)
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []        # la cartella arriva con la barra finale di AppleScript, come prima
 
 
@@ -88,7 +88,7 @@ class Tk(Dialoghi):
     nome = "tk"
 
     def _scegli(self, tipo, messaggio):
-        r = subprocess.run([sys.executable, "-c", _TK, tipo, messaggio, " ".join(TIPI_FOTO)], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run([sys.executable, "-c", _TK, tipo, messaggio, " ".join(TIPI_FOTO)], capture_output=True, text=True, encoding="utf-8")  # nosec B603  # questo stesso Python con lo script fisso _TK; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [os.path.normpath(x) for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 
@@ -100,7 +100,7 @@ class Zenity(Dialoghi):
         if tipo == "cartella": cmd.append("--directory")
         elif tipo == "zip": cmd += ["--file-filter", "ZIP | *.zip"]
         else: cmd += ["--multiple", "--separator", "\n", "--file-filter", "Foto | " + " ".join(TIPI_FOTO)]
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")  # nosec B603  # zenity del PATH dell'utente; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 
@@ -112,7 +112,7 @@ class Kdialog(Dialoghi):
         if tipo == "cartella": cmd = ["kdialog", "--title", messaggio, "--getexistingdirectory", base]
         elif tipo == "zip": cmd = ["kdialog", "--title", messaggio, "--getopenfilename", base, "*.zip"]
         else: cmd = ["kdialog", "--title", messaggio, "--getopenfilenames", base, " ".join(TIPI_FOTO), "--separate-output"]
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")  # nosec B603  # kdialog del PATH dell'utente; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 

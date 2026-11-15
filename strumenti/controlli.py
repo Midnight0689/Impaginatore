@@ -44,9 +44,10 @@ BANDIT = "bandit==1.9.4"
 PIP_AUDIT = "pip-audit==2.10.1"
 PIP_LICENSES = "pip-licenses==5.5.5"
 
-# bandit blocca da gravità e confidenza «medium» in su; i rilievi «low» (B404/B603/B607 sui processi, B110 try/except/pass)
-# sono contati nel riepilogo che bandit stampa, ma non bloccano: un programma desktop che lancia Photoshop e il Finder li ha per forza
-BANDIT_SOGLIA = ["--severity-level", "medium", "--confidence-level", "medium"]
+# bandit blocca su ogni rilievo, di qualsiasi gravità. Un falso positivo si annota nel punto esatto, mai con esclusioni
+# globali: «usedforsecurity=False» per gli hash che non proteggono niente, altrimenti «# nosec B603, B607  # motivo».
+# Il motivo va dopo un secondo «#»: bandit legge come nomi di controlli tutte le parole tra «nosec» e il «#» seguente.
+BANDIT_SOGLIA = ["--severity-level", "all", "--confidence-level", "all"]
 
 # gitleaks: binario ufficiale dalle release di GitHub, SHA-256 copiati da gitleaks_8.30.1_checksums.txt
 # (e confrontati con il digest che GitHub mostra per ogni allegato)
