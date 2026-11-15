@@ -10,7 +10,10 @@ isola le differenze tra macOS, Windows e Linux, nessun effetto all'import, una b
 src/impaginatore/
 ├── __init__.py          __version__ (unico posto della versione: lo leggono pyproject, home, editor, aggiornamenti)
 ├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...»
-├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1) e porta_libera()
+├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1), Gestore (controlli di sicurezza di ogni richiesta), porta_libera()
+├── sicurezza.py         gettone di sessione, URL di avvio monouso, file di sessione per i client locali (docs/architettura/SICUREZZA.md)
+├── percorsi.py          radici consentite: i percorsi che arrivano dalla pagina restano nelle cartelle del progetto o scelte dall'utente
+├── giornale.py          registro «impaginatore» su file a rotazione nella cartella dei dati
 ├── formato.py           l'unico modulo che legge e scrive spec.py / progetto.json (carica, salva, testo_spec, conta_spread...)
 ├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti
 ├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni
@@ -30,7 +33,7 @@ src/impaginatore/
 │   ├── font.py          cartelle dei font, font di ripiego, font dei vecchi titoli, profilo sRGB
 │   ├── photoshop.py     dove sta Photoshop e come eseguire un .jsx (osascript sul Mac, COM via cscript su Windows; su Linux no)
 │   └── processi.py      ambiente dei figli (UTF-8), riavvio con gli stessi argomenti, rilancio ritardato, distacco dal terminale
-├── aggiornamenti/       interfaccia Aggiornamenti; git.py (checkout git) e NonDisponibili (installato o spento)
+├── aggiornamenti/       interfaccia Aggiornamenti; git.py (checkout git), NonDisponibili (installato o spento), firmati.py (contratto dei pacchetti firmati)
 └── risorse/             home.html, index.html (interfaccia), vib_lut.npz (vibranza misurata in Photoshop)
 tests/                   pytest; dati/progetto_152 = progetto salvato dalla 1.5.2 (riferimento di parità)
 legacy/macos/            Impaginatore.app (applet compilata), .command, setup.sh; «Editor Album/home.py» è un ponte per l'applet
@@ -41,9 +44,9 @@ skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets
 
 ```
 impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
- └─ home (processo 1) 127.0.0.1:8765  ── apre il browser su http://127.0.0.1:8765/
+ └─ home (processo 1) 127.0.0.1:8765  ── apre il browser su un URL di avvio monouso (http://127.0.0.1:8765/avvio?c=…)
       POST /api/apri {path}
-       ├─ editor già in ascolto per quel progetto? (porta stabile, poi 8801–8899: /api/ping risponde con "path") -> si riusa
+       ├─ editor già in ascolto per quel progetto? (porta stabile, poi 8801–8899: file di sessione + /api/ping con "path") -> si riusa
        └─ altrimenti: python -m impaginatore.editor --progetto P --porta N --home http://127.0.0.1:8765
             N = porta_stabile(P) = 8801 + crc32(P) % 99 se libera, altrimenti la prima libera 8801–8899
             cwd = cartella che contiene il pacchetto, ambiente con PYTHONUTF8=1, uscita in <progetti>/editor.log
@@ -55,9 +58,12 @@ impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
 
 - Porta libera: si prova ad aprirla davvero (bind); su macOS e Linux si controlla anche che nessuno risponda. Niente
   `lsof`, niente `connect_ex` su 99 porte (su Windows costava secondi per porta).
-- Un'istanza sola: se la porta della home risponde a `/api/ping` con `{"ok": true}`, il comando apre solo la pagina.
+- Un'istanza sola: se la porta della home risponde a `/api/ping` (con il gettone del suo file di sessione), il comando apre
+  solo la pagina, con un URL di avvio nuovo.
 - `--porta 0`: porta libera qualsiasi (test, finestra desktop futura); l'indirizzo vero è nella prima riga stampata.
-- La pagina dell'editor chiede `/api/aggiornamento` alla home (CORS `*` su quella risposta, come nella 1.5.2).
+- Ogni richiesta vuole il gettone del suo server (intestazione o, per pagina e immagini, cookie dato dall'URL di avvio):
+  `docs/architettura/SICUREZZA.md`. La pagina dell'editor chiede aggiornamenti (`/api/aggiornamento`) e ritorno ai progetti
+  (`/vai/progetti`) al suo server, che li chiede alla home con il gettone della home (niente più CORS `*`).
 - Uscita: `/api/esci` termina gli editor lanciati da quella home e chiude il processo (`home.server.esci`).
 - Dopo un aggiornamento: la home chiude gli editor, rilancia `python -m impaginatore --porta <stessa> --no-browser` dopo 1,5 s
   (processo staccato) ed esce; la pagina si ricarica da sola.
@@ -84,11 +90,11 @@ progetto salvato dalla 2.0 aperto con l'`album.py` della 1.5.2.
 | `motore/album_libere.py` | sostituisce funzioni di `album` (`_place`, `zcrop.__code__`, `_photo`, `render`, `_text`, `apply_ev`, `layout.__code__`) la prima volta che viene importato; cache `_VIB` | mai (è voluto: vale per tutto il processo) |
 | `motore/testo.py` | `_FONTS` (elenco dei font, una volta per processo), `DIRS`/`CACHE` sovrascrivibili | riavvio |
 | `editor/server.py` | PROJ, HOME, CFG (= `album.CFG`), SP, GD, UNDO/REDO, CLIP, LOG, SAVED, REV, LASTC, BOOT, BL/VW/VH, NPH, UT_FILE, cache (CACHE, TH, INFO, PV, FT, TONO_*), LAST, SAVE_ERR, LASTDIR, AGG, `_ICC` | `inizializza(progetto, home)` |
-| `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli) | `configura(...)`, `crea_server(...)` |
+| `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli), SERVER, RADICI (cartelle scelte) | `configura(...)`, `crea_server(...)`; `RADICI.scelte` vale per la sessione |
 | `piattaforma/dialoghi.py` | implementazione scelta con `imposta()` | `imposta(None)` |
 | `piattaforma/font.py` | `_cerca_linux` in `lru_cache` | riavvio |
 | `motore/compat.py` | cercatore in `sys.meta_path` (installato alla prima lettura di uno spec) | `disinstalla()` |
-| PIL | `Image.MAX_IMAGE_PIXELS = None` (foto enormi), impostato da `carica_progetto` | — |
+| PIL | `Image.MAX_IMAGE_PIXELS` = `album.limite_pixel()` (160 MP, `IMPAGINATORE_MAX_MPIXEL`), impostato da `carica_progetto` e `apri_foto` | — |
 | `formato.carica` | aggiunge per un attimo la cartella del progetto a `sys.path` e spegne la scrittura dei .pyc | lo rimette com'era |
 
 Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor nello stesso processo, uno alla volta.
@@ -122,6 +128,9 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 | `IMPAGINATORE_DIALOGHI` | finestre di scelta per nome (`nessuno` nei test) |
 | `IMPAGINATORE_AGGIORNAMENTI=no` | aggiornamenti spenti |
 | `IMPAGINATORE_SENZA_RIAVVIO` | dopo un aggiornamento non riavvia (prove) |
+| `IMPAGINATORE_GETTONE` | gettone di sessione del server di questo processo (lo scrive il server; resta dopo un riavvio, non passa ai figli) |
+| `IMPAGINATORE_MAX_MPIXEL` | milioni di pixel al massimo per foto (predefinito 160) |
+| `IMPAGINATORE_REGISTRO` | livello del registro (`DEBUG`, `INFO`…; predefinito `INFO`) |
 | `ALBUM_PROGETTO` | cartella del progetto per gli script del motore (come nelle 1.x) |
 
 Cartelle dei dati: macOS `~/Library/Application Support/Impaginatore` (cache `~/Library/Caches/Impaginatore`), Windows

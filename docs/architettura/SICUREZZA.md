@@ -76,7 +76,7 @@ Prima di arrivare a `do_GET`/`do_POST`, nell'ordine:
    massimo `MAX_CORPO` = 4 MB (413, rifiutato dalla sola intestazione, senza leggere il corpo). Il corpo deve essere un
    oggetto JSON (400).
 
-Nessuna richiesta GET cambia lo stato del programma o dei progetti. Ogni connessione si chiude dopo 60 s di silenzio
+Nessuna richiesta GET cambia progetti, impostazioni o programma (al più cache in memoria e l'ultima cartella vista). Ogni connessione si chiude dopo 60 s di silenzio
 (`Gestore.timeout`). I rifiuti vanno nel registro a livello INFO (metodo, percorso senza la query, motivo).
 
 ### Intestazioni di sicurezza
