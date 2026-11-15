@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "impaginatore"
+dynamic = ["version"]
+description = "Impaginare album fotografici (spread, modelli, testi, correzioni) ed esportare JPG, PDF e PSD"
+readme = "LEGGIMI.md"
+requires-python = ">=3.10"
+license = { text = "Proprietario: tutti i diritti riservati" }
+authors = [{ name = "Stefano Imperato" }]
+classifiers = [
+    "Private :: Do Not Upload",
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "pillow>=10.1,<14",
+    "numpy>=1.26,<3",
+    "opencv-python-headless>=4.8,<5",
+    "psd-tools>=1.9,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "coverage[toml]>=7.10", "ruff>=0.6"]
+desktop = []          # finestra desktop (pywebview): fase successiva
+mcp = []              # server MCP per Claude: fase successiva
+
+[project.scripts]
+impaginatore = "impaginatore.cli:main"
+
+[tool.hatch.version]
+path = "src/impaginatore/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/impaginatore"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/impaginatore", "tests", "LEGGIMI.md", "pyproject.toml"]
+
+# ---------------------------------------------------------------- test
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "photoshop: serve Photoshop installato (macOS o Windows); saltato se manca",
+    "browser: serve un Chrome/Chromium senza schermo; saltato se manca",
+    "lento: prova lunga (processi veri, molte foto)",
+]
+filterwarnings = ["error::DeprecationWarning:impaginatore.*"]
+
+[tool.coverage.run]
+source = ["impaginatore"]
+branch = true
+parallel = true
+sigterm = true
+patch = ["subprocess", "execv", "_exit"]
+
+[tool.coverage.paths]
+impaginatore = ["src/impaginatore", "*/site-packages/impaginatore"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 1
+
+# ---------------------------------------------------------------- stile
+[tool.ruff]
+line-length = 400          # il codice esistente usa righe lunghe e più istruzioni per riga: non si riformatta
+target-version = "py310"
+extend-exclude = ["legacy", "tests/dati"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "PLW1514"]       # PLW1514: open() senza encoding (su Windows sarebbe cp1252)
+preview = true
+explicit-preview-rules = true
+ignore = [
+    "E401",   # più import su una riga
+    "E402",   # import non in testa (script)
+    "E701", "E702", "E703",   # più istruzioni su una riga: lo stile del progetto
+    "E501",   # righe lunghe (codice e script JS esistenti)
+    "E731",   # lambda assegnate
+    "E741", "E742", "E743",   # nomi come l, I, O (geometria: l, t, r, b; pagine I() e W() del formato spec.py)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/impaginatore/motore/*.py" = ["F403", "F405"]      # gli script del motore usano «from album import *» (formato 1.x)
+"src/impaginatore/editor/server.py" = ["F841"]       # due variabili inutilizzate della 1.5.2: il codice dell'editor non si tocca in questa fase
+"tests/**" = ["PLW1514"]

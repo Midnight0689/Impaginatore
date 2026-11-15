@@ -4,3 +4,15 @@ __pycache__/
 *.pyc
 .DS_Store
 *.zip
+
+# ambiente e strumenti di sviluppo
+.venv/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/

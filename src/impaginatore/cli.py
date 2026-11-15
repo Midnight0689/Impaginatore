@@ -1,0 +1,19 @@
+"""Comando «impaginatore».
+
+    impaginatore [--porta 8765] [--no-browser] [--progetti CARTELLA] [--versione]    schermata dei progetti (nel browser)
+    impaginatore editor --progetto CARTELLA [--porta N] [--home URL]                  editor di un album (di solito lo apre la schermata)
+"""
+import sys
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["editor"]:
+        from .editor import server
+        return server.main(argv[1:])
+    from .home import server
+    return server.main(argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
