@@ -6,7 +6,7 @@
     {"id": "T-001", "fase": 0, "titolo": "Trascrizione vocali, requisiti e KPI", "ruolo": "Orchestratore", "dipende_da": [], "stato": "fatto", "consegna": ["docs/prodotto/REQUISITI-VOCALI.md"]},
     {"id": "T-002", "fase": 0, "titolo": "Audit sicurezza, bug, portabilità, testabilità, rischi legali", "ruolo": "Security & QA Lead", "dipende_da": [], "stato": "fatto", "consegna": ["docs/audit/AUDIT-2026-11.md", "docs/audit/rilievi.json"]},
     {"id": "T-003", "fase": 0, "titolo": "Profilo dei concorrenti", "ruolo": "Analista di mercato", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/competitor.md", "docs/mercato/competitor.json"]},
-    {"id": "T-004", "fase": 0, "titolo": "Lead, prezzi e fasce, canale di vendita", "ruolo": "Go-to-market", "dipende_da": [], "stato": "in_corso", "consegna": ["docs/mercato/lead.md", "docs/mercato/lead.csv", "docs/mercato/prezzi.md", "docs/mercato/tier.json", "docs/mercato/canale-vendita.md"]},
+    {"id": "T-004", "fase": 0, "titolo": "Lead, prezzi e fasce, canale di vendita", "ruolo": "Go-to-market", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/lead.md", "docs/mercato/lead.csv", "docs/mercato/prezzi.md", "docs/mercato/tier.json", "docs/mercato/canale-vendita.md"]},
     {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "in_corso", "consegna": ["brand/"]},
     {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "in_corso", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
 
@@ -36,13 +36,13 @@
     {"id": "T-402", "fase": 4, "titolo": "Guida di installazione e attivazione", "ruolo": "Autore", "dipende_da": ["T-202", "T-302"], "stato": "da_fare"},
     {"id": "T-403", "fase": 4, "titolo": "Guida al server MCP", "ruolo": "Autore", "dipende_da": ["T-203"], "stato": "da_fare"},
     {"id": "T-404", "fase": 4, "titolo": "Guida per sviluppatori e README", "ruolo": "Autore", "dipende_da": ["T-006"], "stato": "da_fare"},
-    {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "da_fare", "nota": "Da far rivedere a un legale"},
+    {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "in_corso", "nota": "Da far rivedere a un legale"},
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
     {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "da_fare"},
     {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
-    {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "da_fare"},
-    {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "da_fare"}
+    {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "in_corso"},
+    {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "in_corso"}
   ]
 }
