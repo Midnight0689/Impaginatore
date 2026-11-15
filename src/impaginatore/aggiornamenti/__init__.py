@@ -5,11 +5,15 @@ Implementazioni:
                      novità (pull), torna a una versione precedente creando una nuova versione
     NonDisponibili   programma installato (pip / pacchetto) o aggiornamenti spenti: niente rete, niente modifiche
 predefiniti() sceglie: IMPAGINATORE_AGGIORNAMENTI=no (o 0/off/false) li spegne; da un checkout git -> Git; altrimenti
-NonDisponibili. Punto di estensione: un aggiornatore per i pacchetti firmati (fasi successive) implementa la stessa interfaccia.
+NonDisponibili. Punto di estensione: un aggiornatore per i pacchetti firmati (fasi successive) implementa la stessa interfaccia;
+il contratto (manifesto firmato Ed25519) è in firmati.PacchettiFirmati.
 
 Lo stato è il dizionario che la pagina si aspetta (home.html):
-    da_aggiornare, novita [titoli], controllato (epoch), errore (testo, "" se ok),
+    da_aggiornare, novita [titoli], controllato (epoch), errore (testo, "" se ok: solo per i controlli falliti),
+    disponibile (False = questa installazione non si aggiorna da sola; motivo dice perché, e non è un errore),
     attuale / ultima = {n, codice, data, titolo, rel} della versione in uso / di quella disponibile
+Le richieste che cambiano il programma (aggiorna, ripristina) arrivano solo dalla pagina con il gettone della sessione
+(servizio.Gestore): nessun'altra pagina web le può far partire (SEC-007).
 """
 import os
 import shutil
@@ -54,7 +58,7 @@ class NonDisponibili(Aggiornamenti):
         self.motivo = motivo
 
     def stato(self):
-        return dict(da_aggiornare=False, novita=[], controllato=0, errore=self.motivo, disponibile=False, ultima=None,
+        return dict(da_aggiornare=False, novita=[], controllato=0, errore="", disponibile=False, motivo=self.motivo, ultima=None,      # non è un errore: la pagina mostra il motivo
                     attuale=dict(n=__version__, codice="", data="", titolo="versione installata", rel=__version__))
 
     def controlla(self): return self.stato()

@@ -23,7 +23,7 @@ class Git(Aggiornamenti):
     def __init__(self, radice, riavvia=None):
         self.radice = radice
         self.riavvia = riavvia or (lambda: None)
-        self.agg = dict(da_aggiornare=False, novita=[], controllato=0, errore="", attuale=None, ultima=None)
+        self.agg = dict(da_aggiornare=False, novita=[], controllato=0, errore="", disponibile=True, attuale=None, ultima=None)
 
     # ---------------------------------------------------------------- git
     def _git(self, *a, t=30):
