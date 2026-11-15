@@ -1,53 +1,52 @@
-#!/usr/bin/env python
 """Editor leggero per gli album: server locale + pagina nel browser.
 
-    python editor.py --progetto "<cartella con progetto.json e spec.py>" [--scripts <cartella degli script della skill>] [--porta 8765]
+    python -m impaginatore.editor --progetto "<cartella con progetto.json e spec.py>" [--porta 8765] [--home <indirizzo della home>]
 
-Usa il motore di impaginazione della skill (album.py): stessi moduli, stessa griglia, stesse anteprime.
+Usa il motore di impaginazione (impaginatore.motore.album): stessi moduli, stessa griglia, stesse anteprime.
 Le modifiche stanno in memoria (con annulla/ripeti) finché non premi Salva: allora riscrive spec.py e progetto.json,
 dopo aver copiato le versioni precedenti in <progetto>/_backup_editor/.
+
+Stato: un progetto per processo, nelle variabili di questo modulo (SP, CFG, UNDO, cache delle immagini...) e in quelle
+del motore. Importare il modulo non legge niente: inizializza(progetto) carica il progetto, crea_server(porta) apre la
+porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
+main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, glob, hashlib, io, json, os, re, shutil, subprocess, sys, threading, time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import argparse, copy, hashlib, io, json, os, re, shutil, subprocess, sys, threading, time
+from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
-ap = argparse.ArgumentParser()
-ap.add_argument("--progetto", required=True)
-ap.add_argument("--scripts")
-ap.add_argument("--porta", type=int, default=8765)
-ap.add_argument("--home", default="")
-ARGS = ap.parse_args()
-HERE = os.path.dirname(os.path.abspath(__file__))
-PROJ = os.path.abspath(ARGS.progetto)
+from PIL import Image, ImageOps
 
-def _scripts():
-    if ARGS.scripts: return os.path.abspath(ARGS.scripts)
-    inc = os.path.join(os.path.dirname(HERE), "motore", "scripts")                 # il motore incluso nella cartella del programma (stessa versione su ogni Mac)
-    if os.path.exists(os.path.join(inc, "album.py")): return inc
-    base = os.path.expanduser("~/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/*/*/skills/impaginazione-album-stefano/scripts")
-    found = sorted(glob.glob(base), key=os.path.getmtime)
-    if not found: raise SystemExit("Script della skill non trovati: passa --scripts <cartella>")
-    return found[-1]
-SCRIPTS = _scripts()
-sys.path.insert(0, SCRIPTS)
-os.environ["ALBUM_PROGETTO"] = PROJ
+from .. import __version__, formato, risorse
+from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
+from ..motore import testo as TX
+from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
+from ..piattaforma import azioni, cartelle, dialoghi, processi
+from ..piattaforma import font as pfont
+from ..piattaforma import photoshop as pps
+from ..servizio import ServerLocale
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+PROJ = None                                          # cartella del progetto aperto (inizializza)
+HOME = ""                                            # indirizzo della schermata dei progetti: il pulsante «Progetti» torna lì
+
 def _raccogli_foto():                                # foto importate in <progetto>/Foto quando il progetto legge un'altra cartella: le aggiungo, così compaiono sempre
     try:
-        pj = os.path.join(PROJ, "progetto.json"); c = json.load(open(pj)); d = os.path.join(PROJ, "Foto")
+        pj = os.path.join(PROJ, "progetto.json"); c = formato.leggi_json(pj); d = os.path.join(PROJ, "Foto")
         if not os.path.isdir(d) or os.path.abspath(d) == os.path.abspath(c.get("foto", "")): return
         have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith((".jpg", ".jpeg")) and not f.startswith(".") and os.path.join(d, f) not in have]
-        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; json.dump(c, open(pj, "w"), indent=2, ensure_ascii=False)
+        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
     except Exception as e: print("raccogli foto:", e, flush=True)
 def _ripara_percorsi():
     """progetto spostato o copiato (altro Mac, disco esterno): ritrova da solo le cartelle e le foto che stanno dentro la cartella del progetto (…/Foto);
     quelle altrove si ricollegano dal pulsante «Progetto» dell'editor"""
     try:
-        pj = os.path.join(PROJ, "progetto.json"); c = json.load(open(pj)); ch = False; base = os.path.join(PROJ, "Foto"); pc = c.get("esposizione", {}).get("per_cartella", {})
+        pj = os.path.join(PROJ, "progetto.json"); c = formato.leggi_json(pj); ch = False; base = os.path.join(PROJ, "Foto"); pc = c.get("esposizione", {}).get("per_cartella", {})
         foto = c.get("foto")
         if not foto:                                                              # progetto esportato: le foto stanno nella sua cartella Foto
             os.makedirs(base, exist_ok=True); c["foto"] = base; ch = True
         elif not os.path.isdir(foto):
-            for cand in (os.path.join(PROJ, os.path.basename(foto.rstrip("/"))), base):
+            for cand in (os.path.join(PROJ, os.path.basename(foto.rstrip("/\\"))), base):
                 if os.path.isdir(cand):
                     for k in list(pc):
                         if os.path.normpath(k) == os.path.normpath(foto): pc[cand] = pc.pop(k)
@@ -55,30 +54,19 @@ def _ripara_percorsi():
         ex = [p if os.path.exists(p) or not os.path.exists(os.path.join(base, os.path.basename(p))) else os.path.join(base, os.path.basename(p)) for p in c.get("foto_extra", [])]
         if ex != c.get("foto_extra", []): c["foto_extra"] = ex; ch = True
         u = c.get("uscita_psd")
-        if not u or not os.path.isdir(os.path.dirname(u.rstrip("/"))): c["uscita_psd"] = os.path.join(PROJ, "PSD"); ch = True
-        if ch: json.dump(c, open(pj, "w"), indent=2, ensure_ascii=False)
+        if not u or not os.path.isdir(os.path.dirname(u.rstrip("/\\"))): c["uscita_psd"] = os.path.join(PROJ, "PSD"); ch = True
+        if ch: formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
         mp = os.path.join(PROJ, "_cache", "meta.json")
         if os.path.exists(mp):
-            m = json.load(open(mp)); dirs = [d for d in (c.get("foto"), base) if d and os.path.isdir(d)]; mc = False
+            m = formato.leggi_json(mp); dirs = [d for d in (c.get("foto"), base) if d and os.path.isdir(d)]; mc = False
             for x in m:
                 if not os.path.exists(x.get("src", "")):
                     for d in dirs:
                         if os.path.exists(os.path.join(d, x["n"])): x["src"] = os.path.join(d, x["n"]); mc = True; break
-            if mc: json.dump(m, open(mp, "w"))
+            if mc: formato.scrivi_json(mp, m)
     except Exception as ex: print("ripara percorsi:", ex, flush=True)
-_ripara_percorsi()
-_raccogli_foto()
-import album as A                                    # carica progetto.json, foto, miniature, volti
-sys.path.insert(0, HERE)
-import testo as TX
-import album_libere as FL                            # insegna al motore le cornici libere (FREE), senza toccare la skill
-from PIL import Image, ImageOps
-
 LOCK = threading.RLock()
-CFG = A.CFG
-CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
-CFG.setdefault("centri_volto", {})
-CFG.setdefault("tono", {}); CFG.setdefault("tono_escl", []); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+CFG = None                                           # impostazioni del progetto (progetto.json): è A.CFG, la prepara inizializza
 
 # ------------------------------------------------------------------ stato
 NPH = {"BLANK": 0, "FULL": 1, "DUO": 2, "VLL": 3, "V4": 5, "G4": 4, "CV": 1, "SV": 1, "PP": 1, "COL2": 2, "BAND2": 2, "STRIP3": 3,
@@ -147,20 +135,25 @@ for _k in SPM_KEYS:
     for _m in (False, True):
         for _sd in "LR":
             _n = _k + ("M" if _m else "") + _sd; BUILD[_n] = _sp_build(_k, _sd, _m)       # la versione specchiata ha un altro numero di foto per pagina: modulo a parte
-            NPH[_n] = sum(1 for r in _sp_models(A.CW, A.CH, A.G)[_k] if _sp_isL(((A.CW - r[2] + A.CW - r[0]) if _m else (r[0] + r[2])) / 2, A.CW) == (_sd == "L"))
+def _conta_nph():
+    """foto per pagina dei modelli d'autore: dipende dalle proporzioni dell'album (la chiama inizializza)"""
+    for _k in SPM_KEYS:
+        for _m in (False, True):
+            for _sd in "LR":
+                NPH[_k + ("M" if _m else "") + _sd] = sum(1 for r in _sp_models(A.CW, A.CH, A.G)[_k] if _sp_isL(((A.CW - r[2] + A.CW - r[0]) if _m else (r[0] + r[2])) / 2, A.CW) == (_sd == "L"))
 COUPLED = [((k + ("M" if m else "") + "L", "I", False), (k + ("M" if m else "") + "R", "I", False)) for k in SPM_KEYS for m in (False, True)]
 
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
-UT_FILE = os.path.expanduser("~/.album-tools/modelli_utente.json")
+UT_FILE = None                                     # cartelle.file_dati("modelli_utente.json"), in inizializza (prima: ~/.album-tools)
 UT_KEEP = ("k", "c", "r", "w", "h", "x", "y", "a", "zo")          # solo la geometria: foto, zoom e bianco/nero restano quelli della foto che ci va dentro
 
 def ut_load():
-    try: return json.load(open(UT_FILE))
+    try: return formato.leggi_json(UT_FILE)
     except Exception: return []
 
 def ut_save(lst):
     os.makedirs(os.path.dirname(UT_FILE), exist_ok=True); tmp = UT_FILE + ".tmp"
-    json.dump(lst, open(tmp, "w"), ensure_ascii=False, indent=1); os.replace(tmp, UT_FILE)
+    formato.scrivi_json(tmp, lst, ensure_ascii=False, indent=1); os.replace(tmp, UT_FILE)
 
 class _Build(dict):
     def __missing__(self, key):
@@ -178,19 +171,16 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("PANO", "W", False), ("ANG", "W", False), ("ANG", "W", True), ("D2H", "I", False), ("D2H", "W", False), ("D2B", "I", False), ("D2B", "I", True), ("D2B", "W", False),
         ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
-SP = [[[mode, [dict(it) for it in items]] for (mode, items) in sp] for sp in A.load_spec()]
-GD = [dict(v=list(g.get("v", [])), h=list(g.get("h", []))) for g in CFG.get("guide", [])][:len(SP)]       # linee guida di ogni spread (px della vista)
-GD += [dict(v=[], h=[]) for _ in range(len(SP) - len(GD))]
+SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
 UNDO, REDO = [], []
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
-def _ver_programma():       # numero di rilascio (file VERSION nella cartella del programma): serve a vedere quale versione sta girando
-    try: return open(os.path.join(os.path.dirname(HERE), "VERSION")).read().strip()
-    except Exception: return ""
+def _ver_programma():       # numero di rilascio: serve a vedere quale versione sta girando
+    return __version__
 
 def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"]})
-SAVED = snap()                                       # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
+SAVED = None                                         # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
     d = json.loads(s); SP = d["sp"]; GD = d["gd"]
@@ -736,8 +726,7 @@ def do_op(o):
         if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid
 
 # ------------------------------------------------------------------ vista
-BL = round(A.B)
-VW, VH = A.CW - 2 * BL, A.CH - 2 * BL
+BL = VW = VH = None                                  # abbondanza e misura della vista in px (inizializza)
 
 def spread_tuple(s): return tuple((pg[0], pg[1]) for pg in SP[s])
 def spread_hash(s):
@@ -910,7 +899,7 @@ def templates_for(names):
             ph.append(i)
         return tpl_options(ph) if ph else dict(items=[], n=0, tot=0)
 
-BOOT = str(time.time())
+BOOT = ""                                            # cambia a ogni avvio: la pagina capisce che deve ricaricarsi
 COLORI = ("rosso", "arancio", "giallo", "verde", "azzurro", "viola", "rosa")
 def photo_list():
     where = {}
@@ -927,7 +916,7 @@ def state():
     with LOCK:
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
-                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=ARGS.home, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
+                    photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma())
 
 TONO_C = {}; TONO_IM = {}
@@ -1187,7 +1176,7 @@ def aggiorna_foto(idx):
                 tp = os.path.join(A.THUMBS, m["n"])
                 if os.path.exists(tp): os.remove(tp)
                 A._build_thumbs([m])
-                try: A.F.update(A._build_faces([m])); json.dump(A.F, open(os.path.join(A.CACHE, "faces.json"), "w"))
+                try: A.F.update(A._build_faces([m])); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
                 except Exception as ex: LOG.append(f"volti di {m['n']} non rifatti: {ex}")
                 n = A.name(i); PV[n] = PV.get(n, 0) + 1; INFO.pop(n, None)
                 for k in [k for k in TH if k[0] == n]: TH.pop(k)
@@ -1195,15 +1184,14 @@ def aggiorna_foto(idx):
                 if abs(new["ar"] - old_ar) > 0.003: ars.append(m["n"])
             except Exception as ex: ko.append(m["n"]); LOG.append(f"{m['n']}: non aggiornata ({ex})")
         if ok:
-            json.dump(A.M, open(os.path.join(A.CACHE, "meta.json"), "w")); CACHE.clear()
+            formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); CACHE.clear()
             AGG.update(n=AGG["n"] + 1, t=time.time(), nomi=ok, ar=ars)
     return ok, ars, ko
 
-def foto_watch_loop():
+def foto_watch_loop(fermo=None):
     """ogni pochi secondi guarda se qualche originale è cambiato (anche ad editor aperto); aspetta che il file sia fermo da un paio di cicli, poi aggiorna da solo"""
-    seen = {}
-    while True:
-        time.sleep(4)
+    seen = {}; fermo = fermo or threading.Event()
+    while not fermo.wait(4):
         try:
             cand = {i: (_mt(A.M[i]["src"]), os.path.getsize(A.M[i]["src"])) for i in foto_cambiate()}
             pronte = [i for i, v in cand.items() if seen.get(i) == v and time.time() - v[0] > 2]; seen = cand
@@ -1239,29 +1227,15 @@ def photo_info(n):
     INFO[n] = d; return d
 
 # ------------------------------------------------------------------ salvataggio
-def fmt(it):
-    x = fmt0(it)
-    if it["k"] != "t" and (it.get("bd") or it.get("sh") or it.get("oc", 100) < 100): x = f'STY({x}, bd={tuple(it["bd"]) if it.get("bd") else None!r}, sh={int(it.get("sh") or 0)}, oc={int(it.get("oc", 100))})'
-    return f'ROT({x}, {it["a"]})' if it["k"] != "t" and it.get("a") else x
-def fmt0(it):
-    if is_txt(it):
-        return ("TEXT(%r, %s, %s, %s, %s, font=%r, size=%s, col=%r, al=%r, tr=%s, auto=%s" % (it["tx"], it["fx"], it["fy"], it["fw"], it["fh"], it["font"], it["size"], tuple(it["col"]), it["al"], it["tr"], bool(it.get("auto", True)))) + (f', lh={TX.lead(it)}' if TX.lead(it) != 1.2 else "") + (", caps=True" if it.get("caps") else "") + (f', zo={it["zo"]}' if it.get("zo") is not None else "") + (f', stile={it["stile"]!r}' if it.get("stile") else "") + ")"
-    if it["k"] == "t":
-        if "fx" in it: return f'TXTF({it["kind"]!r}, {it["fx"]}, {it["fy"]}, {it["fw"]}, {it["fh"]}, ts={it.get("ts", 1.0)}' + (f', zo={it["zo"]}' if it.get("zo") is not None else "") + ")"
-        return f'TXT({it["kind"]!r}, {it["c"]}, {it["r"]}, {it["w"]}, {it["h"]})'
-    n = A.name(it["i"]); ex = (", bw=True" if it.get("bw") else "") + (f', z={it["z"]}' if it.get("z", 1.0) != 1.0 else "") + (f', zo={it["zo"]}' if it["k"] == "f" and it.get("zo") is not None else "")
-    if it["k"] == "full": return f"FULL({n!r}{ex})"
-    if it["k"] == "f": return f'FREE({n!r}, {it["x"]}, {it["y"]}, {it["w"]}, {it["h"]}{ex})'
-    return f'P({n!r}, {it["c"]}, {it["r"]}, {it["w"]}, {it["h"]}{ex})'
+def fmt(it): return formato.fmt(it, A.name)
+def fmt0(it): return formato.fmt0(it, A.name)
 
 LAST = dict(op=0.0, backup=0.0)
 SAVE_ERR = [""]                                       # ultimo errore di salvataggio (vuoto = tutto a posto): lo mostra la barra in alto
 
 def _scrivi(path, testo):
     """scrive il file in modo sicuro: prima in un file temporaneo, poi lo sostituisce, così un blocco a metà non lo rovina"""
-    tmp = path + ".tmp"
-    with open(tmp, "w") as f: f.write(testo); f.flush(); os.fsync(f.fileno())
-    os.replace(tmp, path)
+    formato.scrivi_atomico(path, testo)
 
 def _pota_backup(bk, tieni=200):
     """tiene le ultime `tieni` copie di sicurezza e toglie le più vecchie"""
@@ -1281,17 +1255,8 @@ def save(backup=True):
             for f in ("spec.py", "progetto.json"):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): shutil.copy2(p, os.path.join(bk, f"{ts}_{f}"))
-        has_free = any(it["k"] == "f" or it.get("a") or it.get("bd") or it.get("sh") or it.get("oc", 100) < 100 or "fx" in it for sp in SP for pg in sp for it in pg[1])
-        if has_free: shutil.copy2(os.path.join(HERE, "album_libere.py"), os.path.join(PROJ, "album_libere.py")); shutil.copy2(os.path.join(HERE, "testo.py"), os.path.join(PROJ, "testo.py")); shutil.copy2(os.path.join(HERE, "vib_lut.npz"), os.path.join(PROJ, "vib_lut.npz"))
-        lines = [f'"""{CFG.get("nome", "Album")}: {len(SP)} spread. Salvato dall\'editor il {time.strftime("%d/%m/%Y %H:%M")}."""', "from album import *"]
-        if has_free: lines.append("from album_libere import *     # cornici libere FREE(...) e angoli ROT(...): serve questo file, sta nella cartella del progetto")
-        lines += ["", "SPREADS = ["]
-        for k, sp in enumerate(SP, 1):
-            pages = [f'{pg[0]}(' + ", ".join(fmt(it) for it in pg[1]) + ")" for pg in sp]
-            lines.append(f"    # {k}\n    ({pages[0]},\n     {pages[1]}),")
-        lines.append("]")
-        _scrivi(os.path.join(PROJ, "spec.py"), "\n".join(lines) + "\n")
-        out = {k: v for k, v in json.load(open(os.path.join(PROJ, "progetto.json"))).items()}
+        formato.salva(PROJ, SP, CFG.get("nome", "Album"), A.name)          # spec.py (e le copie del motore se ci sono cornici libere)
+        out = {k: v for k, v in formato.leggi_json(os.path.join(PROJ, "progetto.json")).items()}
         out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         out.pop("tono_rif", None)
         for k_ in ("tono_L", "tono_Z"):
@@ -1323,8 +1288,9 @@ def srgb_icc():
     """profilo sRGB IEC61966-2.1 vero (quello di sistema, lo stesso delle foto); se manca, quello interno di Pillow"""
     global _ICC
     if _ICC is None:
-        p = "/System/Library/ColorSync/Profiles/sRGB Profile.icc"
-        if os.path.exists(p): _ICC = open(p, "rb").read()
+        p = pfont.profilo_srgb()
+        if p:
+            with open(p, "rb") as f: _ICC = f.read()
         else:
             from PIL import ImageCms
             _ICC = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
@@ -1348,7 +1314,7 @@ def write_pdf(path, jpegs, dpi=150):
     for i, b in enumerate(objs, 1): offs.append(len(out)); out += b"%d 0 obj\n" % i + b + b"\nendobj\n"
     x = len(out); out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1) + b"".join(b"%010d 00000 n \n" % o for o in offs)
     out += b"trailer\n<< /Size %d /Root %d 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, cat, x)
-    open(path, "wb").write(out)
+    with open(path, "wb") as f: f.write(out)
 
 def _spiega(e):
     """errore tecnico -> frase che si capisce"""
@@ -1374,14 +1340,13 @@ def preflight(o, nums, dest, fmt):
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
     if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
     try:
-        t = os.path.join(dest, ".prova_scrittura"); open(t, "w").write("x"); os.remove(t)
+        t = os.path.join(dest, ".prova_scrittura"); open(t, "w", encoding="utf-8").write("x"); os.remove(t)
     except OSError as e: raise ValueError(f"Non posso scrivere in «{dest}»: {e.strerror or e}. Scegli un'altra cartella")
     stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums)}[fmt]
     libero = shutil.disk_usage(dest).free
     if libero < stima * 1.2: raise ValueError(f"Spazio insufficiente: servono circa {stima / 1e9:.1f} GB e ne restano {libero / 1e9:.1f} GB. Libera spazio o scegli un altro disco")
     if fmt == "psd":
-        try: sys.path.insert(0, SCRIPTS); import photoshop as _ps; _ps.app_name()
-        except SystemExit: raise ValueError("Photoshop non è stato trovato in /Applications: serve per creare i PSD (JPG e PDF funzionano anche senza)")
+        if not pps.disponibile(): raise ValueError(pps.motivo_assente())          # sul Mac: «Photoshop non è stato trovato in /Applications…»; su Linux non c'è
 
 def run_export(o):
     """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente) o PSD (Photoshop)"""
@@ -1417,10 +1382,9 @@ def run_export(o):
                 if fatti: LOG.append("RISULTATO:" + dest)
                 if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
             elif fmt == "pdf":
-                from PIL import ImageDraw, ImageFont
+                from PIL import ImageDraw
                 Wp = int(o.get("width", 2000)); K = Wp / VW; pages = []
-                try: font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", max(14, Wp // 80))
-                except Exception: font = ImageFont.load_default()
+                font = pfont.pil_ripiego(max(14, Wp // 80))          # Helvetica sul Mac
                 for k in nums:
                     with LOCK: tup = spread_tuple(k - 1)
                     im = A.render(tup, K, True); b = round(A.B * K)
@@ -1436,8 +1400,9 @@ def run_export(o):
                 if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
             else:
-                cmd = [sys.executable, os.path.join(HERE, "genera_psd_angolo.py"), "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
-                p = subprocess.Popen(cmd, cwd=SCRIPTS, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=dict(os.environ, ALBUM_PROGETTO=PROJ, ALBUM_SCRIPTS=SCRIPTS))
+                cmd = [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
+                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
+                                     env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ)))
                 t0 = time.time() - 2; out = []
                 for line in p.stdout: out.append(line.rstrip()); LOG.append(line.rstrip())
                 rc = p.wait(); testo = "\n".join(out)
@@ -1453,26 +1418,23 @@ def run_export(o):
     threading.Thread(target=go, daemon=True).start()
     return len(nums)
 
-def autosave_loop():
-    """salva da solo 2 secondi dopo l'ultima modifica; copia di sicurezza al massimo ogni 10 minuti"""
-    while True:
-        time.sleep(1)
+def autosave_loop(fermo=None):
+    """salva da solo 2 secondi dopo l'ultima modifica; copia di sicurezza al massimo ogni 10 minuti (finché `fermo` non viene impostato)"""
+    fermo = fermo or threading.Event()
+    while not fermo.wait(1):
         try:
             if time.time() - LAST["op"] > 2 and snap() != SAVED: save(backup=time.time() - LAST["backup"] > 600)
         except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}"); SAVE_ERR[0] = str(e)[:160]
 
 def pick(kind):
-    if kind == "folder": sc = 'POSIX path of (choose folder with prompt "Scegli la cartella")'
-    else: sc = ('set fs to choose file with prompt "Scegli le foto" of type {"public.jpeg"} with multiple selections allowed\nset out to ""\n'
-                'repeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nreturn out')
-    r = subprocess.run(["osascript", "-e", sc], capture_output=True, text=True)
-    return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
+    """finestra di sistema: una cartella (kind="folder") o più foto JPEG; [] se annullata"""
+    return dialoghi.scegli_percorsi(cartella=kind == "folder")
 
 LASTDIR = [None]
 def ls_dir(path):
     """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e JPEG)"""
-    home = os.path.expanduser("~")
-    path = os.path.abspath(os.path.expanduser(path or LASTDIR[0] or os.path.dirname(CFG.get("foto", "")) or home + "/Desktop"))
+    home = cartelle.home()
+    path = os.path.abspath(os.path.expanduser(path or LASTDIR[0] or os.path.dirname(CFG.get("foto", "")) or cartelle.scrivania()))
     if not os.path.isdir(path): path = home
     LASTDIR[0] = path; dirs, files = [], []
     for n in sorted(os.listdir(path), key=str.lower):
@@ -1482,10 +1444,9 @@ def ls_dir(path):
             if os.path.isdir(p): dirs.append(n)
             elif n.lower().endswith((".jpg", ".jpeg")): files.append(dict(n=n, s=os.path.getsize(p)))
         except OSError: pass
-    places = [dict(n=n, p=p) for n, p in (("Scrivania", home + "/Desktop"), ("Documenti", home + "/Documents"), ("Immagini", home + "/Pictures"), ("Download", home + "/Downloads"), ("Home", home)) if os.path.isdir(p)]
-    try: places += [dict(n=v, p="/Volumes/" + v) for v in sorted(os.listdir("/Volumes")) if not v.startswith(".") and os.path.isdir("/Volumes/" + v) and not os.path.islink("/Volumes/" + v)]
-    except OSError: pass
-    return dict(path=path, parent=os.path.dirname(path) if path != "/" else None, dirs=dirs, files=files, places=places)
+    places = [dict(n=n, p=p) for n, p in cartelle.cartelle_utente()] + [dict(n=n, p=p) for n, p in cartelle.volumi()]      # Scrivania, Documenti... e i dischi
+    su = os.path.dirname(path)
+    return dict(path=path, parent=su if su != path else None, dirs=dirs, files=files, places=places)          # la radice ("/", "C:\\") non ha una cartella sopra
 
 FT = {}
 def file_thumb(path, w):
@@ -1544,8 +1505,13 @@ def ricollega(cartella):
                     try: os.remove(p); os.symlink(nuovi[f], p)
                     except OSError: pass
         CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
-        json.dump(A.M, open(os.path.join(A.CACHE, "meta.json"), "w")); save(backup=False)
+        formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
+
+def _file_programma(f):
+    """file del motore che un progetto esportato porta con sé (album_libere.py, testo.py, vib_lut.npz): sempre quelli di questa versione"""
+    if f.endswith(".py"): return os.path.join(os.path.dirname(os.path.abspath(A.__file__)), f)
+    return risorse.percorso(f)
 
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): spec, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura"""
@@ -1553,13 +1519,13 @@ def esporta_progetto(o):
     if not os.path.isdir(dest): raise ValueError("scegli una cartella di destinazione")
     nome = re.sub(r'[\\/:*?"<>|]', "-", CFG.get("nome", "Album")).strip(" .") or "Album"; out = os.path.join(dest, f"{nome} - progetto"); k = 2
     while os.path.exists(out): out = os.path.join(dest, f"{nome} - progetto {k}"); k += 1
-    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = json.load(open(os.path.join(PROJ, "progetto.json")))
+    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
     con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip"))
     def go():
         try:
             LOG.append(f"Esporto il progetto in {out}"); os.makedirs(os.path.join(out, "_cache"))
             for f in ("spec.py", "album_libere.py", "testo.py", "vib_lut.npz"):
-                src = os.path.join(PROJ, f) if f == "spec.py" and os.path.exists(os.path.join(PROJ, f)) else os.path.join(HERE, f)       # i file del programma si prendono sempre dalla versione attuale (una copia vecchia nel progetto darebbe un PSD diverso dall'anteprima)
+                src = os.path.join(PROJ, f) if f == "spec.py" and os.path.exists(os.path.join(PROJ, f)) else _file_programma(f)       # i file del programma si prendono sempre dalla versione attuale (una copia vecchia nel progetto darebbe un PSD diverso dall'anteprima)
                 if os.path.exists(src): shutil.copy2(src, os.path.join(out, f))
             for f in ("faces.json", "origine.json"):
                 if os.path.exists(os.path.join(PROJ, "_cache", f)): shutil.copy2(os.path.join(PROJ, "_cache", f), os.path.join(out, "_cache", f))
@@ -1571,14 +1537,14 @@ def esporta_progetto(o):
                     if os.path.exists(m.get("src", "")): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]                    # relativo: all'apertura diventa quello della cartella dove sta il progetto
                     else: LOG.append(f"  ATTENZIONE: {m['n']} non trovata, non è nel pacchetto")
                     if n % 10 == 0 or n == tot: LOG.append(f"  foto {n} / {tot}")
-            json.dump(metas, open(os.path.join(out, "_cache", "meta.json"), "w"))
+            formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
             cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""             # vuoti = quelli del progetto stesso (Foto, PSD), li riempie l'editor all'apertura
-            json.dump(cfg, open(os.path.join(out, "progetto.json"), "w"), indent=2, ensure_ascii=False)
+            formato.scrivi_json(os.path.join(out, "progetto.json"), cfg, indent=2, ensure_ascii=False)
             if os.path.exists(UT_FILE): shutil.copy2(UT_FILE, os.path.join(out, "modelli_utente.json")); LOG.append("  modelli salvati copiati")
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
-            open(os.path.join(out, "font_usati.txt"), "w").write("Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
-            open(os.path.join(out, "LEGGIMI.txt"), "w").write(f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
+            open(os.path.join(out, "font_usati.txt"), "w", encoding="utf-8").write("Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
+            open(os.path.join(out, "LEGGIMI.txt"), "w", encoding="utf-8").write(f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
                 + (" (o Importa ZIP se hai il file .zip)" if zipf else "") + ".\n" + ("Le foto sono nella cartella Foto: i percorsi si sistemano da soli." if con_foto else "Le foto NON sono incluse: all'apertura premi «Progetto» → «Ricollega foto» e scegli la cartella con gli originali.")
                 + "\nI PSD già generati non sono inclusi: si rigenerano con Esporta → PSD.\nInstalla i font elencati in font_usati.txt.\n")
             res = out
@@ -1600,21 +1566,19 @@ def importa_modelli_progetto():
     try:
         if not os.path.exists(p): return
         mine = ut_load(); ids = {t["id"] for t in mine}; names = {t["nome"].lower() for t in mine}; add = 0
-        for t in json.load(open(p)):
+        for t in formato.leggi_json(p):
             if t["id"] in ids: continue
             if t["nome"].lower() in names: t["nome"] += " (importato)"
             mine.append(t); names.add(t["nome"].lower()); add += 1
         if add: ut_save(mine); print(f"modelli importati dal progetto: {add}", flush=True)
     except Exception as ex: print("importa modelli:", ex, flush=True)
-importa_modelli_progetto()
-
 def versioni():
     """backup di spec.py fatti dall'editor, dal più recente: [{ts, spread, label}] (senza doppioni identici di fila)"""
     bk = os.path.join(PROJ, "_backup_editor"); out = []; prev = None
     if not os.path.isdir(bk): return out
     for f in sorted(os.listdir(bk), reverse=True):
         if not f.endswith("_spec.py"): continue
-        ts = f[:-8]; txt = open(os.path.join(bk, f), errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
+        ts = f[:-8]; txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
         if h == prev: continue
         prev = h; m = re.search(r"(\d+) spread", txt.split("\n", 1)[0])
         try: lab = time.strftime("%d/%m %H:%M:%S", time.strptime(ts, "%Y%m%d-%H%M%S"))
@@ -1631,18 +1595,23 @@ def ripristina(ts):
         save(backup=True)
         shutil.copy2(src, os.path.join(PROJ, "spec.py"))
         if os.path.exists(srcj):
-            old = json.load(open(srcj)); cur = json.load(open(os.path.join(PROJ, "progetto.json")))
+            old = formato.leggi_json(srcj); cur = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
             for k in ("foto", "foto_extra", "uscita_psd"):                       # i percorsi restano quelli di adesso
                 if k in cur: old[k] = cur[k]
-            json.dump(old, open(os.path.join(PROJ, "progetto.json"), "w"), indent=2, ensure_ascii=False)
-    def go(): time.sleep(.6); os.execv(sys.executable, sys.orig_argv)
+            formato.scrivi_json(os.path.join(PROJ, "progetto.json"), old, indent=2, ensure_ascii=False)
+    def go(): time.sleep(.6); riavvia_processo()
     threading.Thread(target=go, daemon=True).start()
+
+def riavvia_processo():
+    """riparte da capo con gli stessi argomenti (il motore rilegge foto e progetto). Chi usa l'editor dentro un altro
+    processo (test, finestra desktop) può sostituire questa funzione"""
+    processi.riesegui()
 
 def restart():
     """riavvia l'editor (il motore legge le foto all'avvio): prima salva"""
     def go():
         time.sleep(.6); save(backup=False)
-        os.execv(sys.executable, sys.orig_argv)
+        riavvia_processo()
     threading.Thread(target=go, daemon=True).start()
 
 # ------------------------------------------------------------------ http
@@ -1657,7 +1626,7 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
-            if u.path == "/": self.send(open(os.path.join(HERE, "index.html"), "rb").read(), "text/html; charset=utf-8")
+            if u.path == "/": self.send(risorse.leggi("index.html"), "text/html; charset=utf-8")
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
@@ -1667,7 +1636,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
             elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": os.path.abspath(ARGS.progetto)})
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
@@ -1703,13 +1672,74 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
             elif u.path == "/api/export": LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": subprocess.run(["open", "-R", body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]]); self.send({"ok": True})
+            elif u.path == "/api/reveal": azioni.mostra(body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
-if __name__ == "__main__":
-    threading.Thread(target=autosave_loop, daemon=True).start(); threading.Thread(target=foto_watch_loop, daemon=True).start()
-    srv = ThreadingHTTPServer(("127.0.0.1", ARGS.porta), H)
-    print(f"Editor album: http://127.0.0.1:{ARGS.porta}  | progetto: {PROJ}  | script: {SCRIPTS}", flush=True)
+# ------------------------------------------------------------------ avvio
+def inizializza(progetto, home=""):
+    """apre il progetto: ripara i percorsi, carica motore, foto e impaginazione, azzera annulla/ripeti e le cache.
+    Si può richiamare per passare a un altro progetto (uno alla volta per processo)."""
+    global PROJ, HOME, CFG, UT_FILE, SP, GD, UNDO, REDO, CLIP, LOG, SAVED, REV, LASTC, BL, VW, VH, BOOT, TONO_C, TONO_IM, CACHE, PV, AGG, TH, INFO, FT
+    with LOCK:
+        PROJ = os.path.abspath(progetto); HOME = home or ""
+        _ripara_percorsi()
+        _raccogli_foto()
+        A.carica_progetto(PROJ)                              # carica progetto.json, foto, miniature, volti
+        CFG = A.CFG
+        CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
+        CFG.setdefault("centri_volto", {})
+        CFG.setdefault("tono", {}); CFG.setdefault("tono_escl", []); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
+        _conta_nph()
+        UT_FILE = cartelle.file_dati("modelli_utente.json")
+        SP = [[[mode, [dict(it) for it in items]] for (mode, items) in sp] for sp in A.load_spec()]
+        GD = [dict(v=list(g.get("v", [])), h=list(g.get("h", []))) for g in CFG.get("guide", [])][:len(SP)]
+        GD += [dict(v=[], h=[]) for _ in range(len(SP) - len(GD))]
+        UNDO, REDO, CLIP, LOG = [], [], [], []
+        SAVED = snap(); REV, LASTC = 0, None
+        BL = round(A.B); VW, VH = A.CW - 2 * BL, A.CH - 2 * BL
+        BOOT = str(time.time())
+        TONO_C, TONO_IM, CACHE, PV, TH, INFO, FT = {}, {}, {}, {}, {}, {}, {}
+        AGG = dict(n=0, t=0, nomi=[], ar=[])
+        LAST.update(op=0.0, backup=0.0); SAVE_ERR[0] = ""; LASTDIR[0] = None
+        importa_modelli_progetto()
+
+
+def crea_server(porta=0):
+    """server HTTP dell'editor su 127.0.0.1 (porta 0 = una libera: si legge da server_address). Non lo avvia: serve_forever()"""
+    return ServerLocale(("127.0.0.1", porta), H)
+
+
+_FERMI = []
+
+
+def avvia_cicli():
+    """autosalvataggio e controllo delle foto modificate, in thread di sottofondo"""
+    fermo = threading.Event(); _FERMI.append(fermo)
+    threading.Thread(target=autosave_loop, args=(fermo,), daemon=True).start(); threading.Thread(target=foto_watch_loop, args=(fermo,), daemon=True).start()
+    return fermo
+
+
+def ferma():
+    """ferma i cicli di sottofondo (il server si chiude con shutdown()/server_close())"""
+    while _FERMI: _FERMI.pop().set()
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="impaginatore editor", description="Editor di un album (di solito lo apre la schermata dei progetti)")
+    ap.add_argument("--progetto", required=True, help="cartella con progetto.json e spec.py")
+    ap.add_argument("--porta", type=int, default=8765)
+    ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
+    ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
+    args = ap.parse_args(argv)
+    inizializza(args.progetto, args.home)
+    avvia_cicli()
+    srv = crea_server(args.porta)
+    print(f"Editor album: http://127.0.0.1:{srv.server_address[1]}  | progetto: {PROJ}", flush=True)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass
+    finally: ferma(); srv.server_close()
+
+
+if __name__ == "__main__":
+    main()
