@@ -28,7 +28,7 @@ Impaginatore è un programma desktop per impaginare album fotografici. Il ramo `
 ```
 
 - `ID`: sigla del tipo più numero progressivo, mai riusato: `AGG` (aggiunto), `MOD` (modificato), `COR` (corretto), `SIC` (sicurezza), `RIM` (rimosso), `DOC` (documenti e contenuti).
-- `area`: una tra `motore`, `editor`, `progetti`, `piattaforma`, `desktop`, `licenze`, `mcp`, `test`, `ci`, `installer`, `documenti`, `brand`, `mercato`, `sito`.
+- `area`: una tra `pacchetto`, `aggiornamenti`, `motore`, `editor`, `progetti`, `piattaforma`, `desktop`, `licenze`, `mcp`, `test`, `ci`, `installer`, `documenti`, `brand`, `mercato`, `sito`.
 - `File` elenca i percorsi principali. `Rif` è facoltativo e rimanda a un rilievo dell'audit o a un compito del piano.
 
 Le voci nuove vanno sotto `## [Non rilasciato]`, nella sezione del loro tipo. `strumenti/controlla_changelog.py` verifica la forma e la CI lo esegue.

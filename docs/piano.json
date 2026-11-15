@@ -8,11 +8,11 @@
     {"id": "T-003", "fase": 0, "titolo": "Profilo dei concorrenti", "ruolo": "Analista di mercato", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/competitor.md", "docs/mercato/competitor.json"]},
     {"id": "T-004", "fase": 0, "titolo": "Lead, prezzi e fasce, canale di vendita", "ruolo": "Go-to-market", "dipende_da": [], "stato": "fatto", "consegna": ["docs/mercato/lead.md", "docs/mercato/lead.csv", "docs/mercato/prezzi.md", "docs/mercato/tier.json", "docs/mercato/canale-vendita.md"]},
     {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "fatto", "consegna": ["brand/"]},
-    {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "in_corso", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
+    {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "fatto", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
 
-    {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
-    {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
-    {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
+    {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
+    {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
+    {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
     {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
     {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
     {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
@@ -26,10 +26,10 @@
     {"id": "T-207", "fase": 2, "titolo": "Aggiornamenti dalle release", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-201"], "stato": "da_fare"},
     {"id": "T-208", "fase": 2, "titolo": "Pacchetti catalogo per i laboratori", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-101"], "stato": "da_fare"},
 
-    {"id": "T-301", "fase": 3, "titolo": "Pipeline di controllo sui tre sistemi", "ruolo": "Release Engineer", "dipende_da": ["T-006"], "stato": "da_fare"},
+    {"id": "T-301", "fase": 3, "titolo": "Pipeline di controllo sui tre sistemi", "ruolo": "Release Engineer", "dipende_da": ["T-006"], "stato": "in_corso"},
     {"id": "T-302", "fase": 3, "titolo": "Compilazione Nuitka e installer", "ruolo": "Release Engineer", "dipende_da": ["T-201", "T-202"], "stato": "da_fare"},
     {"id": "T-303", "fase": 3, "titolo": "Rilascio su tag", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare"},
-    {"id": "T-304", "fase": 3, "titolo": "Sicurezza della filiera", "ruolo": "Release Engineer", "dipende_da": ["T-301"], "stato": "da_fare"},
+    {"id": "T-304", "fase": 3, "titolo": "Sicurezza della filiera", "ruolo": "Release Engineer", "dipende_da": ["T-301"], "stato": "in_corso"},
     {"id": "T-305", "fase": 3, "titolo": "Distribuzione senza certificati: comandi di installazione, firma propria delle release, guide illustrate", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare", "nota": "Decisione del titolare: nessun conto Apple Developer, nessun certificato Windows, nessun push per ora"},
 
     {"id": "T-401", "fase": 4, "titolo": "Manuale d'uso", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},

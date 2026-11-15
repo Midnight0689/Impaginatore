@@ -10,7 +10,7 @@ import re
 import sys
 
 TIPI = {"AGG": "Aggiunto", "MOD": "Modificato", "COR": "Corretto", "SIC": "Sicurezza", "RIM": "Rimosso", "DOC": "Documenti e contenuti"}
-AREE = {"motore", "editor", "progetti", "piattaforma", "desktop", "licenze", "mcp", "test", "ci", "installer", "documenti", "brand", "mercato", "sito"}
+AREE = {"pacchetto", "aggiornamenti", "motore", "editor", "progetti", "piattaforma", "desktop", "licenze", "mcp", "test", "ci", "installer", "documenti", "brand", "mercato", "sito"}
 VOCE = re.compile(r"^- `(?P<id>(?P<tipo>[A-Z]{3})-\d{3,})` \*\*(?P<area>[a-z]+)\*\* — (?P<testo>.+?) _File:_ (?P<file>`[^`]+`(?:, `[^`]+`)*)\.(?: _Rif:_ (?P<rif>`[^`]+`(?:, `[^`]+`)*)\.)?$")
 
 
