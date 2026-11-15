@@ -2,7 +2,7 @@
 
     impaginatore [--porta 8765] [--no-browser] [--progetti <cartella>]      (oppure: python -m impaginatore)
 
-I nuovi progetti stanno in  <cartella dei progetti>/<nome>/  (progetto.json + spec.py + Foto/ + _cache/); la cartella dei
+I nuovi progetti stanno in  <cartella dei progetti>/<nome>/  (progetto.json + album.json + Foto/ + _cache/); la cartella dei
 progetti è --progetti, IMPAGINATORE_PROGETTI, <checkout>/Progetti (come nelle 1.x) o Documenti/Impaginatore/Progetti.
 Quella cartella È il file di salvataggio del progetto: l'editor la salva da solo mentre lavori.
 Progetti che stanno altrove (es. sul Desktop) si aggiungono con «Apri progetto esistente»: restano dove sono.
@@ -11,10 +11,10 @@ Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
 Importare il modulo non fa niente: configura() le prepara, crea_server() apre la porta, main() fa tutto.
 """
-import argparse, json, logging, os, re, shutil, subprocess, sys, threading, time, webbrowser
+import argparse, json, logging, os, shutil, subprocess, sys, threading, time, webbrowser
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, aggiornamenti, formato, giornale, percorsi, piattaforma, sicurezza
+from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, percorsi, piattaforma, sicurezza
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 
@@ -54,7 +54,7 @@ def progetti():
     for p in dict.fromkeys(paths):
         try:
             cfg = formato.leggi_json(os.path.join(p, "progetto.json"))
-            spec = os.path.join(p, "spec.py"); nsp = formato.conta_spread(p)
+            spec = formato.file_album(p) or ""; nsp = formato.conta_spread(p)          # album.json (o spec.py di un progetto 1.x, letto senza eseguirlo)
             meta = os.path.join(p, "_cache", "meta.json"); nf = len(formato.leggi_json(meta)) if os.path.exists(meta) else 0
             cover = None
             if nf:
@@ -75,11 +75,10 @@ def num(v):
 
 
 def nuovo(d):
-    nome = (d.get("nome") or "").strip()
-    if not nome: raise ValueError("Scrivi il nome del progetto")
+    nome = nomi.nome_progetto(d.get("nome"))           # il nome è un dato: si salva in progetto.json, mai dentro codice (SEC-003)
     w, h = num(d.get("w")), num(d.get("h"))
     if not (5 <= w <= 300 and 5 <= h <= 200): raise ValueError("Misure fuori dal normale: larghezza 5–300 cm, altezza 5–200 cm")
-    cartella = re.sub(r'[\\/:*?"<>|]', "-", nome).strip(" .") or "Progetto"
+    cartella = nomi.nome_cartella(nome)                 # valido su macOS, Windows e Linux
     fotodir = dialoghi.senza_barra((d.get("foto") or "").strip())
     if fotodir:                                          # progetto accanto alle foto del cliente: <cartella cliente>/Impaginatore, le foto restano dove sono
         if not os.path.isdir(fotodir): raise ValueError("La cartella delle foto non esiste")
@@ -94,7 +93,7 @@ def nuovo(d):
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
     formato.scrivi_json(os.path.join(p, "progetto.json"), cfg, indent=2, ensure_ascii=False)
     if fotodir: salva_registro(registro() + [p])
-    formato.scrivi_atomico(os.path.join(p, "spec.py"), formato.spec_vuota(nome))
+    formato.scrivi_atomico(os.path.join(p, formato.ALBUM), formato.album_vuoto())
     return p
 
 
@@ -129,6 +128,7 @@ def pronto(pt):
 def apri(path):
     path = os.path.abspath(path)
     if path not in [p["path"] for p in progetti()]: raise ValueError("progetto non in elenco")
+    formato.leggi_progetto(path); formato.controlla(path)          # un progetto non valido si spiega qui, prima di avviare l'editor
     with LOCK:
         e = EDITORS.get(path)
         if e and e[0].poll() is None: return e[1]
@@ -142,17 +142,21 @@ def apri(path):
 
 
 def importa_zip():
-    """sceglie un file .zip di progetto esportato, lo apre in <Progetti>/ e lo mette in elenco; restituisce la cartella ('' se annullato)"""
-    import zipfile
+    """sceglie un file .zip di progetto esportato, lo apre in <Progetti>/ e lo mette in elenco; restituisce la cartella ('' se annullato).
+    Lo ZIP si estrae con archivio.estrai (percorsi, limiti, solo i tipi di file di un progetto) e il progetto si controlla
+    prima di metterlo in elenco: niente del suo contenuto viene eseguito"""
+    import tempfile
     zp = dialoghi.scegli_zip("Scegli il file ZIP del progetto").strip()
     if not zp: return ""
-    tmp = os.path.join(PROGETTI, ".importazione"); shutil.rmtree(tmp, ignore_errors=True); os.makedirs(tmp)
+    tmp = tempfile.mkdtemp(prefix=".importazione-", dir=PROGETTI)
     try:
-        with zipfile.ZipFile(zp) as z: z.extractall(tmp)
+        avvisi = []; archivio.estrai(zp, tmp, avvisi)
         cand = [tmp] + [os.path.join(tmp, d) for d in sorted(os.listdir(tmp)) if os.path.isdir(os.path.join(tmp, d))]
         src = next((c for c in cand if os.path.exists(os.path.join(c, "progetto.json"))), None)
         if not src: raise ValueError("Nel file ZIP non c'è un progetto (manca progetto.json)")
-        nome = re.sub(r'[\\/:*?"<>|]', "-", os.path.basename(src) if src != tmp else os.path.splitext(os.path.basename(zp))[0]).strip(" .") or "Progetto"
+        formato.prepara_importato(src)
+        for a in avvisi: print("importa ZIP:", a, flush=True)
+        nome = nomi.nome_cartella(os.path.basename(src) if src != tmp else os.path.splitext(os.path.basename(zp))[0])
         p = os.path.join(PROGETTI, nome); k = 2
         while os.path.exists(p): p = os.path.join(PROGETTI, f"{nome} {k}"); k += 1
         shutil.move(src, p); return p

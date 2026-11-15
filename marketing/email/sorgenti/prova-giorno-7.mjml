@@ -1,0 +1,66 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Una settimana di prova</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Sequenza della prova, giorno 7. Quasi solo testo: tre funzioni che si scoprono tardi e una domanda. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Spaziature uniformi, tono uniforme, modelli personali: tre cose che fanno risparmiare tempo sull’album intero.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">PROVA · GIORNO 7 DI 30</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Una settimana dopo: come va?</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, è{{else}}È{{/if}} passata una settimana da quando hai installato la prova. Se hai già impaginato qualche spread, ecco tre funzioni che si scoprono tardi e fanno risparmiare tempo sull’album intero.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/misura.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/misura-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Spaziature uniformi su tutto l’album</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Un solo comando allinea spazi e margini di tutti gli spread, al decimo di millimetro. Utile quando hai spostato molte foto a mano.</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/ok.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/ok-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Tono uniforme fra uno spread e l’altro</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Avvicina il tono delle foto scattate con luci diverse, così l’album si sfoglia senza salti.</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 0;"><img class="img-chiaro" src="{{base_immagini}}/icone/spread.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/spread-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 0 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">I tuoi modelli</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Uno spread che ti piace si salva come modello personale e si riusa nel prossimo album, con le stesse misure.</div></td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Come si fa, passo per passo: <a class="lnk" href="{{link_manuale}}">manuale e guide video</a>.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-divider />
+        <mj-spacer height="32px" />
+        <mj-text mj-class="titolo2">Una domanda sola</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Che cosa ti sta frenando, se qualcosa ti frena? Rispondi con una riga. Leggo tutte le risposte, e spesso diventano una pagina del manuale o una correzione nella versione successiva.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Se preferisci impostare il primo album insieme, in videochiamata, c’è l’<a class="lnk" href="{{link_assistenza}}">assistenza a ore</a>: 49 € l’ora, IVA esclusa.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{email}} e hai confermato la richiesta.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.mjml" />
+  </mj-body>
+</mjml>

@@ -1,0 +1,30 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>L’album di prova nel vostro formato</mj-title>
+  </mj-head>
+  <mj-body background-color="#FFFFFF">
+    <!-- Laboratori, seguito (PIANO-90-GIORNI.md §4, G5): l'album dimostrativo e la proposta di pilota.
+         Ultimo tentativo scritto; il terzo e ultimo contatto è la chiamata. Stesse regole del primo contatto. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">L’album di prova esportato secondo le vostre specifiche, e un pilota di 90 giorni.</div></mj-raw>
+    <mj-section padding="32px 40px 0" css-class="sez">
+      <mj-column>
+        <mj-text font-family="Helvetica, Arial, sans-serif" font-size="15px" line-height="23px">
+          <p style="margin:0 0 16px;">Buongiorno,</p>
+          <p style="margin:0 0 16px;">vi riscrivo una volta sola, poi non insisto.</p>
+          <p style="margin:0 0 16px;">Ho esportato un album di prova nel vostro formato {{formato_esempio}}, {{prodotto_esempio}}, seguendo le specifiche pubblicate sul vostro sito. Lo trovate qui: <a class="lnk" href="{{link_album_dimostrativo}}">{{link_album_dimostrativo}}</a>. Se la prestampa trova qualcosa che non va, lo correggo.</p>
+          <p style="margin:0 0 16px;">La proposta è un pilota di 90 giorni. Da 10 a 20 fotografi scelti da voi usano Impaginatore Pro senza costi per tutta la durata del pilota, con il vostro catalogo già impostato. Per i primi tre laboratori la configurazione del catalogo è gratuita. Misuriamo insieme quanti file arrivano conformi al primo invio, il tempo d’impaginazione e gli album ordinati per fotografo.</p>
+          <p style="margin:0 0 16px;">Vi andrebbe una chiamata di 20 minuti con chi segue la prestampa? Ditemi il giorno che vi è più comodo e vi propongo due orari.</p>
+          <p style="margin:0 0 16px;">Se non è il momento, rispondete pure «no»: non vi scriverò più.</p>
+          <p style="margin:0 0 4px;">Un saluto,</p>
+          <p style="margin:0;">{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}} · {{firma_telefono}}</span><br><a class="lnk" href="{{sito}}">{{sito_testo}}</a></p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section padding="32px 40px 40px" css-class="sez">
+      <mj-column>
+        <mj-text mj-class="nota" font-family="Helvetica, Arial, sans-serif">{{titolare}} · P. IVA {{partita_iva}} · <a class="lnk" href="{{link_privacy}}">Informativa privacy</a></mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -11,8 +11,10 @@ Controlla, per ogni foto scelta:
 Scrive <dest>/origine.json con la cartella di origine di ogni file: album.py lo legge da lì
 per sapere a quale capitolo appartiene ogni foto (serve per le correzioni di esposizione per cartella).
 """
-import os, argparse, filecmp, shutil, json
+import os, argparse, filecmp, shutil
 from PIL import Image, ImageChops, ImageStat
+
+from .. import formato
 
 
 if __name__ == "__main__":
@@ -60,5 +62,5 @@ if __name__ == "__main__":
             if os.path.exists(dst) and not filecmp.cmp(dst, po, shallow=False): print("  esiste già diverso, non sovrascrivo:", f); continue
             shutil.copy2(po, dst)
         bad = [f for f, po in ok if not filecmp.cmp(os.path.join(a.dest, f), po, shallow=False)]
-        json.dump(origine, open(os.path.join(a.dest, "origine.json"), "w", encoding="utf-8"), indent=1)
+        formato.scrivi_json(os.path.join(a.dest, "origine.json"), origine, indent=1)          # atomico (BUG-005)
         print(f"copiate e verificate: {len(ok) - len(bad)} | errori di copia: {bad}")

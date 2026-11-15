@@ -1,0 +1,16 @@
+<!-- Testata: logotipo (PNG con fondo pieno e area di rispetto di 6u già inclusa) e filetto.
+     Il logo è spostato di 7 px a sinistra per allineare le pagine del simbolo al testo. -->
+<!-- Riempitivo dopo il preheader: impedisce ai client di mostrare il testo dell'email nell'anteprima. -->
+<mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div></mj-raw>
+<mj-section padding="32px 33px 22px" css-class="sez-logo">
+  <mj-column>
+    <mj-text>
+      <a href="{{sito}}" style="text-decoration:none;"><img class="img-chiaro" src="{{base_immagini}}/logo.png" width="175" height="40" alt="Impaginatore" style="display:block;border:0;outline:none;width:175px;height:40px;font:500 22px/40px Georgia,serif;color:#181715;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/logo-scuro.png" width="175" height="40" alt="Impaginatore" style="display:none;max-height:0;overflow:hidden;border:0;outline:none;width:175px;height:40px;font:500 22px/40px Georgia,serif;color:#F6F3EC;"><!--<![endif]--></a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+<mj-section>
+  <mj-column>
+    <mj-divider />
+  </mj-column>
+</mj-section>

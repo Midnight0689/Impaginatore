@@ -22,7 +22,7 @@ LOGO = BRAND / "logo"
 
 
 def simbolo_sprite(file: Path, ident: str) -> str:
-    s = file.read_text()
+    s = file.read_text(encoding="utf-8")
     vb = re.search(r'viewBox="([^"]+)"', s).group(1)
     corpo = re.sub(r"<title>.*?</title>", "", s.split(">", 1)[1].rsplit("</svg>", 1)[0])
     corpo = corpo.replace('fill="#181715"', "").replace('fill="#236743"', 'style="fill:var(--segno,currentColor)"')

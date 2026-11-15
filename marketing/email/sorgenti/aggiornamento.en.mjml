@@ -1,0 +1,75 @@
+<mjml lang="en" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Impaginatore {{versione}}</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Versione inglese di aggiornamento.mjml. Nuova versione, ai clienti. Novità e correzioni sono dati d'invio (--dati): tre novità, ognuna con
+         una misura o un fatto verificabile, mai aggettivi. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">{{novita_1_titolo}}, {{novita_2_titolo}} and more. Included in your licence: the app offers it to you.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">VERSION {{versione}} · <span style="text-transform:uppercase;">{{data_versione}}</span></mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Impaginatore {{versione}} is out.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Hi {{nome}}, a{{else}}A{{/if}} new version is out. It’s included in your licence, like every version 2 update.</mj-text>
+        <mj-spacer height="24px" />
+        <!-- SEGNAPOSTO: schermata della novità principale. 1040 × 586 px, mostrata a 520 × 293. -->
+        <mj-image src="{{base_immagini}}/segnaposto/aggiornamento-novita.png" width="520px" height="293px" alt="The main new feature in Impaginatore {{versione}}." />
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/spread.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/spread-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_1_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_1_testo}}</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/misura.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/misura-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_2_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_2_testo}}</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 0;"><img class="img-chiaro" src="{{base_immagini}}/icone/esporta.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/esporta-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 0 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_3_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_3_testo}}</div></td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="riga-fil" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:16px 0;">
+            <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">FIXES</div>
+            <div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:6px;">{{correzioni}}</div>
+          </td></tr></table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">HOW TO UPDATE</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>Impaginatore offers the update next time you open it. Projects, layouts and licence stay as they are. If it doesn’t appear, the new version is also on the <a class="lnk" href="{{link_installa}}">Install page</a>.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-button href="{{link_note_versione}}">Read what’s new</mj-button>
+        <mj-spacer height="32px" />
+        <mj-text>If something goes wrong after updating, reply to this email: bug fixes are always free.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.en.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">You’re getting this email because you have an Impaginatore licence registered to {{email}}. We only write when a new version comes out.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.en.mjml" />
+  </mj-body>
+</mjml>

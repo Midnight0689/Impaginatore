@@ -1,0 +1,23 @@
+{% if params.nome %}Ciao {{ params.nome }}, abbiamo{% else %}Abbiamo{% endif %} ricevuto la tua richiesta e il rimborso è già partito, per intero. In allegato trovi la nota di credito.
+
+RIMBORSO · RICHIESTA {{ params.numero_richiesta }}
+Importo: {{ params.importo_rimborso }}
+Bonifico partito il: {{ params.data_rimborso }}
+Sul conto: lo stesso da cui hai pagato
+Licenza: Impaginatore {{ params.fascia }}, revocata
+
+Di solito un bonifico arriva entro uno o due giorni lavorativi; se è istantaneo, in pochi secondi. Se fra cinque giorni lavorativi non lo vedi, rispondi a questa email.
+
+I TUOI ALBUM RESTANO TUOI
+La chiave è revocata e non va più usata. Impaginatore controlla l’elenco delle chiavi revocate quando il computer è collegato a internet, e a quel punto passa in sola lettura. I progetti e le foto restano sul tuo computer e si aprono ancora; quello che hai già esportato resta tuo.
+
+Se ti va, rispondi con una riga su cosa non ha funzionato. Non è obbligatorio, e il rimborso non dipende dalla risposta: ci aiuta a fare meglio.
+
+{{ params.firma_nome }}
+{{ params.firma_ruolo }}
+
+--
+Resta tuo.
+Ricevi questa email perché hai chiesto il rimborso di una licenza Impaginatore acquistata con l’indirizzo {{ params.email }}. È un messaggio di servizio, senza pubblicità.
+{{ params.titolare }} · {{ params.indirizzo }} · P. IVA {{ params.partita_iva }}
+{{ params.sito }} · {{ params.email_supporto }} · Informativa privacy: {{ params.link_privacy }}

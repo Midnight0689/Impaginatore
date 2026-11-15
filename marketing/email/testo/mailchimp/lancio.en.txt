@@ -1,0 +1,57 @@
+*|IF:FNAME|*Hi *|FNAME|*, I*|ELSE:|*I*|END:IF|* promised to write when Impaginatore was ready. It is.
+[[se accesso_anticipato]]
+You’re on the waiting list, so you can buy it today, 48 hours before everyone else, at the same launch price. It opens to everyone on [[data_apertura]].
+[[fine]]
+IMPAGINATORE IS READY. YOU PAY ONCE.
+
+It’s an app for laying out wedding albums on your own computer, on Mac, Windows or Linux. You buy it once, with a licence that never expires: no subscription.
+
+- Your photos stay on your computer. Impaginatore works on the files you already have. You upload nothing, and it works offline too.
+- To a tenth of a millimetre. Your print lab’s sizes, bleed and gutter are already set up. Before export, Impaginatore checks that everything adds up.
+- Layered PSD, if you retouch in Photoshop. With Pro and Studio every spread opens in Photoshop with each photo on its own layer. Photoshop is not included.
+
+
+THREE LICENCES, NO SUBSCRIPTION
+
+Launch price for 60 days, until [[data_fine_lancio]], or until the first 300 licences if that comes sooner. We won’t extend it. Prices exclude VAT, which is added where due.
+
+PRO · recommended
+€79 until [[data_fine_lancio]], then €99. Once.
+The full editor, unlimited designer and personal layouts; automatic layout of the whole album; even spacing and tone across the whole album; JPG, PDF and layered PSD export; 2 computers, all version 2 updates included.
+Buy Pro: [[link_acquisto_pro]]
+
+ESSENZIALE
+€39 until [[data_fine_lancio]], then €49.
+30 designer and 5 personal layouts, JPG and PDF export, 1 computer.
+[[link_acquisto_essenziale]]
+
+STUDIO
+€119 until [[data_fine_lancio]], then €149.
+Everything in Pro on 5 computers, the next major version and 1 hour of support included.
+[[link_acquisto_studio]]
+
+For private buyers in Italy, with 22% VAT, at the launch price: Essenziale €47.58, Pro €96.38, Studio €145.18.
+
+An album software subscription costs around €20 a month. Pro at full price costs about as much as five of those months; at the launch price, about as much as four. After that you pay nothing more, and the app stays yours.
+(Three yearly album software subscriptions cost between $250 and $290 a year, excluding VAT: roughly €19 to €22 a month. Public prices on 13 November 2026, ECB rate €1 = $1.1052. Sources on the pricing page: [[link_prezzi]])
+
+SUPPORT BY THE HOUR
+1 hour €49 · 5 hours €249 · 10 hours €499, excluding VAT. By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual, video guides and bug fixes.
+
+HOW BUYING WORKS
+Choose a licence and we send you bank transfer details. Once payment arrives, you get the invoice and your key within 2 business hours. If you change your mind, you have 30 days for a full refund, no questions asked.
+
+Want to try it first? The trial lasts 30 days, needs no card and has the Pro features except PSD. Exports carry a watermark, which disappears when you activate your licence: [[link_prova]]
+
+Impaginatore is made in Italy by a photographer who lays out albums. If you have a question, reply to this email: I read every one.
+
+[[firma_nome]]
+[[firma_ruolo]]
+
+--
+Yours to keep.
+You’re getting this email because you joined the Impaginatore waiting list as *|EMAIL|* and confirmed your sign-up.
+Don’t want these emails any more? Unsubscribe in one click: *|UNSUB|*
+Choose which ones you get: *|UPDATE_PROFILE|*
+[[titolare]] · [[indirizzo]] · VAT [[partita_iva]]
+[[sito]] · [[email_supporto]] · Privacy notice: [[link_privacy]]

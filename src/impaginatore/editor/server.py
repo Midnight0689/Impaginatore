@@ -1,10 +1,10 @@
 """Editor leggero per gli album: server locale + pagina nel browser.
 
-    python -m impaginatore.editor --progetto "<cartella con progetto.json e spec.py>" [--porta 8765] [--home <indirizzo della home>]
+    python -m impaginatore.editor --progetto "<cartella con progetto.json e album.json>" [--porta 8765] [--home <indirizzo della home>]
 
 Usa il motore di impaginazione (impaginatore.motore.album): stessi moduli, stessa griglia, stesse anteprime.
-Le modifiche stanno in memoria (con annulla/ripeti) finché non premi Salva: allora riscrive spec.py e progetto.json,
-dopo aver copiato le versioni precedenti in <progetto>/_backup_editor/.
+Le modifiche stanno in memoria (con annulla/ripeti) finché non premi Salva: allora riscrive album.json e progetto.json,
+dopo aver copiato le versioni precedenti in <progetto>/_backup_editor/. Un progetto 1.x (spec.py) si converte all'apertura.
 
 Stato: un progetto per processo, nelle variabili di questo modulo (SP, CFG, UNDO, cache delle immagini...) e in quelle
 del motore. Importare il modulo non legge niente: inizializza(progetto) carica il progetto, crea_server(porta) apre la
@@ -16,7 +16,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, giornale, percorsi, piattaforma, risorse, sicurezza
+from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, risorse, sicurezza
+from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import testo as TX
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
@@ -146,19 +147,39 @@ COUPLED = [((k + ("M" if m else "") + "L", "I", False), (k + ("M" if m else "") 
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
 UT_FILE = None                                     # cartelle.file_dati("modelli_utente.json"), in inizializza (prima: ~/.album-tools)
 UT_KEEP = ("k", "c", "r", "w", "h", "x", "y", "a", "zo")          # solo la geometria: foto, zoom e bianco/nero restano quelli della foto che ci va dentro
+UT_PRJ = "modelli_utente.json"                     # modelli arrivati con un progetto esportato: valgono solo per quel progetto (SEC-009)
 
-def ut_load():
-    try: return formato.leggi_json(UT_FILE)
-    except Exception: return []
+def _ut_leggi(path, dove):
+    """(modelli validi, voci non valide) di un file di modelli: ogni modello si controlla come dato (validazione.modello)"""
+    if not path or not os.path.exists(path): return [], []
+    try: lst = V.lista(formato.leggi_json_rigoroso(path, 16 * 2**20), dove, 10**5)
+    except (OSError, V.ErroreProgetto) as ex:
+        LOG.append(f"modelli non letti: {ex}")
+        if path == UT_FILE and isinstance(ex, V.ErroreProgetto): formato.copia_atomica(path, path + ".illeggibile")     # il prossimo salvataggio non deve far perdere niente
+        return [], []
+    ok, ko = [], []
+    for k, t in enumerate(lst[:V.MAX_MODELLI], 1):
+        try: ok.append(V.modello(t, f"{dove}, modello {k}"))
+        except V.ErroreProgetto as ex: ko.append(t); LOG.append(f"modello tralasciato: {ex}")
+    return ok, ko + lst[V.MAX_MODELLI:]
+
+def ut_load(): return _ut_leggi(UT_FILE, "modelli_utente.json")[0]
+
+def ut_progetto():
+    """modelli arrivati con questo progetto (non sono tra i tuoi): si vedono solo qui, finché non li aggiungi ai tuoi"""
+    ids = {t["id"] for t in ut_load()}
+    return [t for t in _ut_leggi(os.path.join(PROJ, UT_PRJ) if PROJ else None, "modelli_utente.json del progetto")[0] if t["id"] not in ids]
+
+def ut_tutti(): return ut_load() + [dict(t, progetto=True) for t in ut_progetto()]
 
 def ut_save(lst):
-    os.makedirs(os.path.dirname(UT_FILE), exist_ok=True); tmp = UT_FILE + ".tmp"
-    formato.scrivi_json(tmp, lst, ensure_ascii=False, indent=1); os.replace(tmp, UT_FILE)
+    os.makedirs(os.path.dirname(UT_FILE), exist_ok=True)
+    formato.scrivi_json(UT_FILE, lst + _ut_leggi(UT_FILE, "modelli_utente.json")[1], ensure_ascii=False, indent=1)      # le voci che questa versione non capisce restano com'erano
 
 class _Build(dict):
     def __missing__(self, key):
         if isinstance(key, str) and key.startswith("U:"):
-            _, tid, side = key.split(":"); t = next((x for x in ut_load() if x["id"] == tid), None)
+            _, tid, side = key.split(":"); t = next((x for x in ut_tutti() if x["id"] == tid), None)
             if not t: raise ValueError("modello non trovato (forse è stato eliminato)")
             items = t["pages"][0 if side == "L" else 1]["items"]
             return lambda p, m: [dict(it, i=p[j] - 1, bw=False, z=1.0) for j, it in enumerate(items)]
@@ -845,7 +866,7 @@ def tpl_options(photos, cur=None, side=None, s=None):
 
     def NPH_(mod):
         if mod in NPH: return NPH[mod]
-        t = next(t for t in ut_load() if t["id"] == mod.split(":")[1]); return len(t["pages"][0 if mod.endswith(":L") else 1]["items"])
+        t = next(t for t in ut_tutti() if t["id"] == mod.split(":")[1]); return len(t["pages"][0 if mod.endswith(":L") else 1]["items"])
 
     def build(a, b=None):
         if side is None: tup = tuple((m, BUILD[mod](list(range(1, NPH_(mod) + 1)), mir)) for (mod, m, mir) in (a, b))
@@ -901,12 +922,12 @@ def tpl_options(photos, cur=None, side=None, s=None):
     piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
     out = buoni
     ut = []
-    for t in ut_load():
+    for t in ut_tutti():
         if t["n"] != N or t.get("lato") != side: continue
         try:
             if side is None: d = build(("U:%s:L" % t["id"], t["pages"][0]["mode"], False), ("U:%s:R" % t["id"], t["pages"][1]["mode"], False))
             else: d = build(("U:%s:%s" % (t["id"], side), t["pages"][0 if side == "L" else 1]["mode"], False))
-            d.update(id=t["id"], nome=t["nome"]); ut.append(d)
+            d.update(id=t["id"], nome=t["nome"], progetto=bool(t.get("progetto"))); ut.append(d)
         except Exception as ex: LOG.append(f"modello «{t.get('nome')}» non applicabile: {ex}")
     return dict(items=out[:90], piu=piu, n=N, tot=len(out), utente=ut, lato=side)
 
@@ -922,10 +943,16 @@ def tpl_from_spread(s):
     return pages, n, lato
 
 def modelli(o):
-    """salva / aggiorna / rinomina / elimina un modello dell'utente (non fa parte di annulla/ripeti)"""
+    """salva / aggiorna / rinomina / elimina un modello dell'utente, o aggiunge ai tuoi un modello arrivato con il progetto
+    (importa: solo su richiesta, SEC-009); non fa parte di annulla/ripeti"""
     with LOCK:
         lst = ut_load(); a = o["azione"]; nome = str(o.get("nome", "")).strip()[:60]
-        if a == "salva":
+        if a == "importa":
+            t = next((x for x in ut_progetto() if x["id"] == o.get("id")), None)
+            if not t: raise ValueError("modello non trovato")
+            if any(x["nome"].lower() == t["nome"].lower() for x in lst): t = dict(t, nome=t["nome"][:48] + " (importato)")
+            lst.append(t)
+        elif a == "salva":
             if not nome: raise ValueError("scrivi un nome per il modello")
             if any(t["nome"].lower() == nome.lower() for t in lst): raise ValueError("esiste già un modello con questo nome: usa «Aggiorna» su quello")
             pages, n, lato = tpl_from_spread(o["s"]); lst.append(dict(id=os.urandom(4).hex(), nome=nome, n=n, lato=lato, pages=pages))
@@ -1292,9 +1319,6 @@ def photo_info(n):
     INFO[n] = d; return d
 
 # ------------------------------------------------------------------ salvataggio
-def fmt(it): return formato.fmt(it, A.name)
-def fmt0(it): return formato.fmt0(it, A.name)
-
 LAST = dict(op=0.0, backup=0.0)
 SAVE_ERR = [""]                                       # ultimo errore di salvataggio (vuoto = tutto a posto): lo mostra la barra in alto
 
@@ -1305,9 +1329,9 @@ def _scrivi(path, testo):
 def _pota_backup(bk, tieni=200):
     """tiene le ultime `tieni` copie di sicurezza e toglie le più vecchie"""
     try:
-        ts = sorted({f.split("_", 1)[0] for f in os.listdir(bk) if re.match(r"^\d{8}-\d{6}_(spec\.py|progetto\.json)$", f)})
+        ts = sorted({f.split("_", 1)[0] for f in os.listdir(bk) if re.match(r"^\d{8}-\d{6}_(album\.json|spec\.py|progetto\.json)$", f)})
         for t in ts[:-tieni]:
-            for f in ("spec.py", "progetto.json"):
+            for f in ("album.json", "spec.py", "progetto.json"):
                 try: os.remove(os.path.join(bk, f"{t}_{f}"))
                 except OSError: pass
     except Exception as e: LOG.append(f"pulizia copie non riuscita: {e}")
@@ -1317,10 +1341,10 @@ def save(backup=True):
         ts = time.strftime("%Y%m%d-%H%M%S"); bk = os.path.join(PROJ, "_backup_editor"); os.makedirs(bk, exist_ok=True)
         if backup:
             LAST["backup"] = time.time()
-            for f in ("spec.py", "progetto.json"):
+            for f in (formato.ALBUM, "progetto.json"):
                 p = os.path.join(PROJ, f)
-                if os.path.exists(p): shutil.copy2(p, os.path.join(bk, f"{ts}_{f}"))
-        formato.salva(PROJ, SP, CFG.get("nome", "Album"), A.name)          # spec.py (e le copie del motore se ci sono cornici libere)
+                if os.path.exists(p): formato.copia_atomica(p, os.path.join(bk, f"{ts}_{f}"))
+        formato.salva(PROJ, SP, A.name)                     # album.json, controllato prima di scriverlo (solo dati, mai codice)
         out = {k: v for k, v in formato.leggi_json(os.path.join(PROJ, "progetto.json")).items()}
         out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
         out.pop("tono_rif", None)
@@ -1595,19 +1619,19 @@ def _file_programma(f):
     return risorse.percorso(f)
 
 def esporta_progetto(o):
-    """pacchetto autonomo del progetto (cartella, e volendo ZIP): spec, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura"""
+    """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
+    v1x=True aggiunge spec.py (e le copie del motore che gli servono) per chi apre il progetto con la versione 1.x"""
     dest = os.path.expanduser(o.get("dest") or "")
     if not os.path.isdir(dest): raise ValueError("scegli una cartella di destinazione")
-    nome = re.sub(r'[\\/:*?"<>|]', "-", CFG.get("nome", "Album")).strip(" .") or "Album"; out = os.path.join(dest, f"{nome} - progetto"); k = 2
+    nome = nomi.nome_cartella(CFG.get("nome", "Album"), "Album"); out = os.path.join(dest, f"{nome} - progetto"); k = 2
     while os.path.exists(out): out = os.path.join(dest, f"{nome} - progetto {k}"); k += 1
-    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
-    con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip"))
+    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto()
+    con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip")); v1x = bool(o.get("v1x"))
     def go():
         try:
             LOG.append(f"Esporto il progetto in {out}"); os.makedirs(os.path.join(out, "_cache"))
-            for f in ("spec.py", "album_libere.py", "testo.py", "vib_lut.npz"):
-                src = os.path.join(PROJ, f) if f == "spec.py" and os.path.exists(os.path.join(PROJ, f)) else _file_programma(f)       # i file del programma si prendono sempre dalla versione attuale (una copia vecchia nel progetto darebbe un PSD diverso dall'anteprima)
-                if os.path.exists(src): shutil.copy2(src, os.path.join(out, f))
+            shutil.copy2(os.path.join(PROJ, formato.ALBUM), os.path.join(out, formato.ALBUM))
+            if v1x: formato_1x.esporta(out, spreads, cfg.get("nome", nome), lambda i: metas[i]["n"].rsplit(".", 1)[0]); LOG.append("  spec.py per la versione 1.x aggiunto")
             for f in ("faces.json", "origine.json"):
                 if os.path.exists(os.path.join(PROJ, "_cache", f)): shutil.copy2(os.path.join(PROJ, "_cache", f), os.path.join(out, "_cache", f))
             if os.path.isdir(os.path.join(PROJ, "_cache", "thumbs")): shutil.copytree(os.path.join(PROJ, "_cache", "thumbs"), os.path.join(out, "_cache", "thumbs"))
@@ -1621,7 +1645,7 @@ def esporta_progetto(o):
             formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
             cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""             # vuoti = quelli del progetto stesso (Foto, PSD), li riempie l'editor all'apertura
             formato.scrivi_json(os.path.join(out, "progetto.json"), cfg, indent=2, ensure_ascii=False)
-            if os.path.exists(UT_FILE): shutil.copy2(UT_FILE, os.path.join(out, "modelli_utente.json")); LOG.append("  modelli salvati copiati")
+            if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  modelli salvati copiati")
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
             open(os.path.join(out, "font_usati.txt"), "w", encoding="utf-8").write("Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
@@ -1641,42 +1665,40 @@ def esporta_progetto(o):
     LOG.clear(); threading.Thread(target=go, daemon=True).start()
     return out
 
-def importa_modelli_progetto():
-    """modelli salvati arrivati insieme a un progetto esportato: si aggiungono ai tuoi (stesso id = già presenti)"""
-    p = os.path.join(PROJ, "modelli_utente.json")
-    try:
-        if not os.path.exists(p): return
-        mine = ut_load(); ids = {t["id"] for t in mine}; names = {t["nome"].lower() for t in mine}; add = 0
-        for t in formato.leggi_json(p):
-            if t["id"] in ids: continue
-            if t["nome"].lower() in names: t["nome"] += " (importato)"
-            mine.append(t); names.add(t["nome"].lower()); add += 1
-        if add: ut_save(mine); print(f"modelli importati dal progetto: {add}", flush=True)
-    except Exception as ex: print("importa modelli:", ex, flush=True)
 def versioni():
-    """backup di spec.py fatti dall'editor, dal più recente: [{ts, spread, label}] (senza doppioni identici di fila)"""
+    """copie dell'impaginazione fatte dall'editor (album.json; spec.py quelle delle versioni 1.x, solo lette come testo), dalla più recente: [{ts, spread, label}] (senza doppioni identici di fila)"""
     bk = os.path.join(PROJ, "_backup_editor"); out = []; prev = None
     if not os.path.isdir(bk): return out
     for f in sorted(os.listdir(bk), reverse=True):
-        if not f.endswith("_spec.py"): continue
-        ts = f[:-8]; txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
+        mf = re.fullmatch(r"(\d{8}-\d{6})_(album\.json|spec\.py)", f)
+        if not mf or (out and out[-1]["ts"] == mf.group(1)): continue
+        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
         if h == prev: continue
-        prev = h; m = re.search(r"(\d+) spread", txt.split("\n", 1)[0])
+        if f.endswith(".json"):
+            try: nsp = len(formato.leggi_album(os.path.join(bk, f))["spread"])
+            except (OSError, V.ErroreProgetto): continue
+        else: m = re.search(r"(\d+) spread", txt.split("\n", 1)[0]); nsp = int(m.group(1)) if m else len(re.findall(r"^\s*# \d+\s*$", txt, re.M))
+        prev = h
         try: lab = time.strftime("%d/%m %H:%M:%S", time.strptime(ts, "%Y%m%d-%H%M%S"))
         except Exception: lab = ts
-        out.append(dict(ts=ts, spread=int(m.group(1)) if m else len(re.findall(r"^\s*# \d+\s*$", txt, re.M)), label=lab))
+        out.append(dict(ts=ts, spread=nsp, label=lab))
         if len(out) >= 80: break
     return out
 
 def ripristina(ts):
-    """rimette la versione ts di spec.py/progetto.json (prima salva lo stato attuale come backup) e riavvia l'editor senza risalvare"""
-    bk = os.path.join(PROJ, "_backup_editor"); src, srcj = os.path.join(bk, f"{ts}_spec.py"), os.path.join(bk, f"{ts}_progetto.json")
-    if not re.fullmatch(r"\d{8}-\d{6}", ts) or not os.path.exists(src): raise ValueError("versione non trovata")
+    """rimette la versione ts dell'impaginazione e di progetto.json (prima salva lo stato attuale come backup) e riavvia l'editor senza risalvare.
+    La copia si controlla prima di toccare il progetto; una copia spec.py (1.x) si converte senza eseguirla"""
+    if not isinstance(ts, str) or not re.fullmatch(r"\d{8}-\d{6}", ts): raise ValueError("versione non trovata")
+    bk = os.path.join(PROJ, "_backup_editor"); srcj = os.path.join(bk, f"{ts}_progetto.json")
+    src = next((p for p in (os.path.join(bk, f"{ts}_{formato.ALBUM}"), os.path.join(bk, f"{ts}_spec.py")) if os.path.exists(p)), None)
+    if not src: raise ValueError("versione non trovata")
     with LOCK:
+        doc = formato.leggi_album(src, set(A.IDX)) if src.endswith(".json") else formato.documento_1x(src)
+        old = V.progetto(formato.leggi_json(srcj)) if os.path.exists(srcj) else None
         save(backup=True)
-        shutil.copy2(src, os.path.join(PROJ, "spec.py"))
-        if os.path.exists(srcj):
-            old = formato.leggi_json(srcj); cur = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
+        formato.scrivi_atomico(os.path.join(PROJ, formato.ALBUM), formato.testo_album(doc))
+        if old is not None:
+            cur = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
             for k in ("foto", "foto_extra", "uscita_psd"):                       # i percorsi restano quelli di adesso
                 if k in cur: old[k] = cur[k]
             formato.scrivi_json(os.path.join(PROJ, "progetto.json"), old, indent=2, ensure_ascii=False)
@@ -1808,7 +1830,6 @@ def inizializza(progetto, home=""):
         TONO_C, TONO_IM, CACHE, PV, TH, INFO, FT = {}, {}, {}, {}, {}, {}, {}
         AGG = dict(n=0, t=0, nomi=[], ar=[])
         LAST.update(op=0.0, backup=0.0); SAVE_ERR[0] = ""; LASTDIR[0] = None
-        importa_modelli_progetto()
 
 
 def crea_server(porta=0, gettone=None):
@@ -1834,7 +1855,7 @@ def ferma():
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="impaginatore editor", description="Editor di un album (di solito lo apre la schermata dei progetti)")
-    ap.add_argument("--progetto", required=True, help="cartella con progetto.json e spec.py")
+    ap.add_argument("--progetto", required=True, help="cartella con progetto.json e album.json")
     ap.add_argument("--porta", type=int, default=8765)
     ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)

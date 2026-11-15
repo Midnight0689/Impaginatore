@@ -1,0 +1,182 @@
+<mjml lang="en" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Your Impaginatore licence</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Transazionale: si manda quando il bonifico è arrivato e la chiave è emessa (chiavi.py emetti),
+         con in allegato la fattura e la chiave in un file .txt. Oggetti e preheader in OGGETTI.md. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Your key, the button to activate it and three steps to your first spread. Keep this email.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta"><span style="text-transform:uppercase;">{{fascia}}</span> LICENCE · COMPUTERS: {{computer}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Impaginatore {{fascia}} is yours.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Hi {{nome}}, your{{else}}Your{{/if}} payment has arrived: thank you. Your key is below. The invoice and the same key, as a text file, are attached.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Riquadro della chiave con i crocini (segni di taglio) agli angoli, come .crocini della marca. -->
+    <mj-section padding="24px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+            <tr>
+              <td width="16" style="width:16px;height:16px;font-size:0;line-height:0;" valign="top">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="16" style="border-collapse:collapse;width:16px;"><tr><td colspan="2" width="15" height="10" style="height:10px;font-size:0;line-height:0;"></td><td class="cro" width="1" height="10" bgcolor="#6B6964" style="width:1px;height:10px;background-color:#6B6964;font-size:0;line-height:0;"></td></tr><tr><td colspan="3" height="5" style="height:5px;font-size:0;line-height:0;"></td></tr><tr><td class="cro" width="10" height="1" bgcolor="#6B6964" style="width:10px;height:1px;background-color:#6B6964;font-size:0;line-height:0;"></td><td colspan="2" width="6" height="1" style="width:6px;height:1px;font-size:0;line-height:0;"></td></tr></table>
+              </td>
+              <td style="font-size:0;line-height:0;height:16px;">&nbsp;</td>
+              <td width="16" style="width:16px;height:16px;font-size:0;line-height:0;" valign="top">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="16" style="border-collapse:collapse;width:16px;"><tr><td class="cro" width="1" height="10" bgcolor="#6B6964" style="width:1px;height:10px;background-color:#6B6964;font-size:0;line-height:0;"></td><td colspan="2" width="15" height="10" style="height:10px;font-size:0;line-height:0;"></td></tr><tr><td colspan="3" height="5" style="height:5px;font-size:0;line-height:0;"></td></tr><tr><td colspan="2" width="6" height="1" style="width:6px;height:1px;font-size:0;line-height:0;"></td><td class="cro" width="10" height="1" bgcolor="#6B6964" style="width:10px;height:1px;background-color:#6B6964;font-size:0;line-height:0;"></td></tr></table>
+              </td>
+            </tr>
+            <tr>
+              <td width="16" style="width:16px;font-size:0;line-height:0;">&nbsp;</td>
+              <td class="f-sup" bgcolor="#FDFCF9" style="background-color:#FDFCF9;padding:20px 24px 22px;">
+                <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">LICENCE KEY</div>
+                <div class="mono selez c-testo" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:14px;line-height:24px;font-weight:500;letter-spacing:0.02em;color:#181715;padding-top:10px;overflow-wrap:anywhere;word-break:break-word;-webkit-user-select:all;user-select:all;">{{chiave_licenza}}</div>
+                <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;padding-top:10px;">Registered to “{{intestatario}}” · computers: {{computer}} · request <span class="mono" style="white-space:nowrap;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:13px;">{{numero_richiesta}}</span></div>
+              </td>
+              <td width="16" style="width:16px;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td width="16" style="width:16px;height:16px;font-size:0;line-height:0;" valign="top">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="16" style="border-collapse:collapse;width:16px;"><tr><td class="cro" width="10" height="1" bgcolor="#6B6964" style="width:10px;height:1px;background-color:#6B6964;font-size:0;line-height:0;"></td><td colspan="2" width="6" height="1" style="width:6px;height:1px;font-size:0;line-height:0;"></td></tr><tr><td colspan="3" height="5" style="height:5px;font-size:0;line-height:0;"></td></tr><tr><td colspan="2" width="15" height="10" style="height:10px;font-size:0;line-height:0;"></td><td class="cro" width="1" height="10" bgcolor="#6B6964" style="width:1px;height:10px;background-color:#6B6964;font-size:0;line-height:0;"></td></tr></table>
+              </td>
+              <td style="font-size:0;line-height:0;height:16px;">&nbsp;</td>
+              <td width="16" style="width:16px;height:16px;font-size:0;line-height:0;" valign="top">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="16" style="border-collapse:collapse;width:16px;"><tr><td colspan="2" width="6" height="1" style="width:6px;height:1px;font-size:0;line-height:0;"></td><td class="cro" width="10" height="1" bgcolor="#6B6964" style="width:10px;height:1px;background-color:#6B6964;font-size:0;line-height:0;"></td></tr><tr><td colspan="3" height="5" style="height:5px;font-size:0;line-height:0;"></td></tr><tr><td class="cro" width="1" height="10" bgcolor="#6B6964" style="width:1px;height:10px;background-color:#6B6964;font-size:0;line-height:0;"></td><td colspan="2" width="15" height="10" style="height:10px;font-size:0;line-height:0;"></td></tr></table>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-button href="{{link_attivazione}}">Activate in Impaginatore</mj-button>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="piccolo">Already have Impaginatore, trial included? The button opens the app with the key filled in, and your album stays where it is, without the watermark. If nothing opens, use <b>License › Activate</b> and paste the key. Activation happens on your computer: no internet needed.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-divider />
+        <mj-spacer height="32px" />
+        <mj-text mj-class="titolo2">Don’t have Impaginatore yet?</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text mj-class="secondario">Three steps, five minutes, and you’re at your first spread.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Passo 01: installare. La via principale è il comando di una riga; l’installer è l’alternativa. -->
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2"><span class="mono c-acc" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:18px;font-weight:500;color:#236743;vertical-align:2px;">01</span>&nbsp;&nbsp;Install</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>A one-line command downloads Impaginatore from our site, checks its integrity and installs it for your user only, with no administrator password.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo"><b class="c-testo" style="color:#181715;">macOS and Linux</b> · open <b>Terminal</b> (on a Mac: Spotlight, then type “Terminal”), paste the line and press Return:</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:4px;padding:12px 16px;"><div class="mono selez cmd c-testo" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:13px;line-height:20px;color:#181715;word-break:break-all;overflow-wrap:anywhere;-webkit-user-select:all;user-select:all;">{{comando_mac}}</div></td></tr></table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo"><b class="c-testo" style="color:#181715;">Windows</b> · open <b>PowerShell</b> from the Start menu, paste the line and press Enter:</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:4px;padding:12px 16px;"><div class="mono selez cmd c-testo" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:13px;line-height:20px;color:#181715;word-break:break-all;overflow-wrap:anywhere;-webkit-user-select:all;user-select:all;">{{comando_windows}}</div></td></tr></table>
+        </mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="nota">Before pasting it, you can read <a class="lnk" href="{{link_cosa_fa_comando}}">what the command does, line by line</a>.</mj-text>
+        <mj-spacer height="20px" />
+        <mj-text mj-class="piccolo">Prefer a classic installer?</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr>
+            <td class="pul-sec" style="border-radius:4px;"><a href="{{link_mac}}" style="display:inline-block;padding:11px 16px;border:1px solid #6B6964;border-radius:4px;background-color:#FDFCF9;color:#181715;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;">macOS</a></td>
+            <td width="8" style="width:8px;font-size:0;">&nbsp;</td>
+            <td class="pul-sec" style="border-radius:4px;"><a href="{{link_windows}}" style="display:inline-block;padding:11px 16px;border:1px solid #6B6964;border-radius:4px;background-color:#FDFCF9;color:#181715;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;">Windows</a></td>
+            <td width="8" style="width:8px;font-size:0;">&nbsp;</td>
+            <td class="pul-sec" style="border-radius:4px;"><a href="{{link_linux}}" style="display:inline-block;padding:11px 16px;border:1px solid #6B6964;border-radius:4px;background-color:#FDFCF9;color:#181715;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;">Linux</a></td>
+          </tr></table>
+        </mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="nota">Our installers are not signed with Apple or Microsoft certificates, so your system shows a warning the first time. On a Mac: System Settings › Privacy &amp; Security › Open Anyway. On Windows: More info › Run anyway. The <a class="lnk" href="{{link_installa}}">Install page</a> shows each step.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Passo 02: attivare. -->
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2"><span class="mono c-acc" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:18px;font-weight:500;color:#236743;vertical-align:2px;">02</span>&nbsp;&nbsp;Activate</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Come back to this email and click <b>Activate in Impaginatore</b>. Or open the app: if you’ve copied the key it spots it; otherwise go to <b>License › Activate</b>, paste and click <b>Activate</b>.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="piccolo">Impaginatore shows the licence tier and owner: check that it says “{{intestatario}}”.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Passo 03: il primo spread. -->
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2"><span class="mono c-acc" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:18px;font-weight:500;color:#236743;vertical-align:2px;">03</span>&nbsp;&nbsp;Your first spread</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Choose <b>Try the sample album</b>: the photos are included. Or drag a folder of your own into the window. Impaginatore suggests a layout for the spread; you move, crop and refine, with gaps and margins to a tenth of a millimetre.</mj-text>
+        <mj-spacer height="20px" />
+        <!-- SEGNAPOSTO: schermata da produrre (T-501). 1040 × 586 px, mostrata a 520 × 293. -->
+        <mj-image src="{{base_immagini}}/segnaposto/benvenuto-primo-spread.png" width="520px" height="293px" alt="The first spread of the sample album open in Impaginatore, with the measurements panel." css-class="img-schermata" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Claude: facoltativo, con i limiti scritti in chiaro. Compare solo con mcp_disponibile (server MCP rilasciato). -->
+    <mj-raw>{{#if mcp_disponibile}}</mj-raw>
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr>
+            <td width="40" valign="top" style="width:40px;padding-top:2px;"><img class="img-chiaro" src="{{base_immagini}}/icone/bozza.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/bozza-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+            <td valign="top" style="padding-left:16px;">
+              <div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">A draft with Claude, if you like</div>
+              <div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:4px;">With Pro and Studio, Claude drafts the whole album inside the editor; spreads you refine by hand stay as you left them. Claude is an Anthropic service and needs your own separate subscription. It receives only album data (file names, proportions, capture date, face positions), not your photos: thumbnails only if you allow it. <a class="lnk" href="{{link_guida_claude}}">How to connect it</a>.</div>
+            </td>
+          </tr></table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
+
+    <!-- Cosa è incluso, assistenza a ore, ricevuta. -->
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">GOOD TO KNOW</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="piccolo">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">Your licence never expires.</b> It’s registered to “{{intestatario}}” and you can use it on up to {{computer}} of your computers. If you change computer, install Impaginatore on the new one and use the same key.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">All version 2 updates are included.</b> No new major version for at least 18 months; if one comes out within 90 days of your purchase, you get it free. Studio already includes the next one; for the other tiers the upgrade is half price.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">You have 30 days for a full refund</b>, no reason needed: just reply to this email. We transfer the money back and the key is deactivated.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">The manual, video guides and bug fixes are free.</b> Personal support, by video call or remote session, is sold by the hour: 1 hour €49, 5 hours €249, 10 hours €499, excluding VAT. {{#if ore_incluse}}Your Studio licence already includes one, valid for 12 months: reply with two or three times that suit you.{{else}}<a class="lnk" href="{{link_assistenza}}">How it works</a>.{{/if}}</td></tr>
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>Keep this email: you need the key if you reinstall. If something doesn’t add up, reply: a person reads it.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.en.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">You’re getting this email because you bought an Impaginatore licence as {{email}}. It’s a service message, with no advertising.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-servizio.en.mjml" />
+  </mj-body>
+</mjml>

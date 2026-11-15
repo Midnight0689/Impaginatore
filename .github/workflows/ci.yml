@@ -1,0 +1,120 @@
+# Controlli di ogni modifica: lint, forma del registro, test sui tre sistemi, copertura con soglia bloccante.
+# Ogni passo chiama strumenti/controlli.py, che in locale esegue gli stessi controlli:
+#     python strumenti/controlli.py lint | test | copertura | tutto   [--python 3.13]
+#
+# Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.10, 3.12 e 3.13
+# (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
+#
+# Consumo stimato per esecuzione, prezzi GitHub di novembre 2026 (Linux 2 core 0,006 $/min, Windows 0,010 $/min,
+# macOS 0,062 $/min; ogni job è arrotondato al minuto intero), con la cache di uv già calda:
+#     lint 1 min + Linux 3+4+3 min                       = 11 min Linux   ~ 0,07 $
+#     Windows ~7 min (processi e file più lenti)          =  7 min Windows ~ 0,07 $
+#     macOS ~4 min                                        =  4 min macOS   ~ 0,25 $
+#     totale ~0,39 $ a esecuzione, cioè ~65 minuti Linux equivalenti, per due terzi macOS.
+# Il piano gratuito include 12 $ al mese (~2.000 minuti Linux): circa 30 esecuzioni al mese, più quelle di sicurezza.yml.
+# Le stime vanno confermate con i tempi reali dopo il primo push: finora il workflow non è mai stato eseguito su GitHub.
+name: CI
+
+on:
+  push:
+    branches: [main, "prodotto/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Python di uv (python-build-standalone) su tutti i sistemi, non quello preinstallato sul runner: stessi interpreti
+  # delle prove locali e degli altri sistemi
+  UV_PYTHON_PREFERENCE: only-managed
+
+defaults:
+  run:
+    # bash anche su Windows (Git Bash): stessi comandi sui tre sistemi, niente differenze di PowerShell
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint e registro
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: ruff e forma del registro
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py lint
+
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }}${{ matrix.comando == 'copertura' && ', copertura' || '' }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, python: "3.10", comando: test }
+          - { os: ubuntu-24.04, python: "3.12", comando: copertura }
+          - { os: ubuntu-24.04, python: "3.13", comando: test }
+          - { os: macos-26, python: "3.12", comando: test }
+          - { os: windows-2025, python: "3.12", comando: test }
+    steps:
+      # git per Windows converte i file di testo in CRLF all'estrazione: i test devono leggere gli stessi byte degli
+      # altri sistemi (progetti di riferimento in tests/dati, risorse dell'interfaccia)
+      - name: Fine riga come nel repository
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv e Python ${{ matrix.python }}
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # «copertura» esegue tutti i test con la misura della copertura e fallisce sotto fail_under (pyproject.toml)
+      - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
+        timeout-minutes: 25
+        run: uv run --no-project strumenti/controlli.py ${{ matrix.comando }}
+
+      - name: Copertura totale nel riepilogo
+        if: ${{ !cancelled() && matrix.comando == 'copertura' }}
+        timeout-minutes: 2
+        run: |
+          if [ -f .coverage ]; then
+            echo "Copertura totale: $(uv run --locked --extra dev coverage report --format=total --fail-under=0) %" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Rapporto di copertura
+        if: ${{ !cancelled() && matrix.comando == 'copertura' }}
+        timeout-minutes: 5
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: copertura
+          path: |
+            coverage.xml
+            htmlcov/
+          if-no-files-found: warn
+          retention-days: 14

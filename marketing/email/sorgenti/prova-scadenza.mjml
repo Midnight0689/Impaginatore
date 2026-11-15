@@ -1,0 +1,76 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>La prova sta per finire</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Sequenza della prova: 3 giorni prima della scadenza. I prezzi dipendono da data_fine_lancio:
+         durante il lancio si converte con --dati che la contiene, dopo il lancio con data_fine_lancio vuota. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">I tuoi album restano sul computer. Con la licenza riparti da dove sei, senza reinstallare.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">PROVA · ULTIMI GIORNI</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">La prova finisce il {{data_scadenza_prova}}.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, mancano{{else}}Mancano{{/if}} pochi giorni. Niente di quello che hai fatto va perso: ecco cosa succede, e cosa puoi fare se vuoi continuare.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="avv-info" bgcolor="#ECF5FD" style="background-color:#ECF5FD;border-left:3px solid #2A669F;padding:16px 20px;font-size:15px;line-height:24px;">
+            <b style="color:#2A669F;">Dopo la scadenza, sola lettura.</b> <span class="c-testo" style="color:#181715;">Impaginatore apre ancora i tuoi album e te li mostra, ma non li modifica. Le foto e i progetti restano sul tuo computer.</span>
+          </td></tr></table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>Con la licenza riparti da dove sei: la chiave si attiva nel programma che hai già, la filigrana sparisce dagli export e, con Pro e Studio, si sblocca il PSD a livelli.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Le tre licenze in forma compatta; il Pro ha l'unico pulsante verde. -->
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">PAGHI UNA VOLTA · IVA ESCLUSA</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text mj-class="piccolo">{{#if data_fine_lancio}}Prezzi di lancio fino al {{data_fine_lancio}}, o fino alle prime 300 licenze; poi quelli di listino.{{else}}La licenza non scade e include gli aggiornamenti della versione 2.{{/if}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td class="riga-fil" valign="top" style="border-top:1px solid #DEDAD2;padding:14px 0;"><div class="c-testo" style="font-size:16px;line-height:24px;font-weight:600;color:#181715;">Essenziale</div><div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">30 modelli d’autore, JPG e PDF, 1&nbsp;computer</div></td>
+              <td class="riga-fil c-testo" valign="top" align="right" style="white-space:nowrap;border-top:1px solid #DEDAD2;padding:14px 0 14px 16px;font-size:15px;line-height:24px;color:#181715;">{{#if data_fine_lancio}}<b>39&nbsp;€</b><br><span class="c-sec" style="font-size:13px;line-height:20px;color:#54524E;">poi 49&nbsp;€</span>{{else}}<b>49&nbsp;€</b>{{/if}}</td>
+            </tr>
+            <tr>
+              <td class="riga-fil" valign="top" style="border-top:1px solid #DEDAD2;padding:14px 0;"><div class="c-testo" style="font-size:16px;line-height:24px;font-weight:600;color:#181715;">Pro <span class="badge-v" style="display:inline-block;background-color:#ECF9F0;color:#236743;font-size:12px;line-height:16px;font-weight:600;padding:2px 8px;border-radius:999px;vertical-align:2px;">Consigliato</span></div><div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">Quello che hai provato, più il PSD a livelli, 2&nbsp;computer</div></td>
+              <td class="riga-fil c-testo" valign="top" align="right" style="white-space:nowrap;border-top:1px solid #DEDAD2;padding:14px 0 14px 16px;font-size:15px;line-height:24px;color:#181715;">{{#if data_fine_lancio}}<b>79&nbsp;€</b><br><span class="c-sec" style="font-size:13px;line-height:20px;color:#54524E;">poi 99&nbsp;€</span>{{else}}<b>99&nbsp;€</b>{{/if}}</td>
+            </tr>
+            <tr>
+              <td class="riga-fil" valign="top" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:14px 0;"><div class="c-testo" style="font-size:16px;line-height:24px;font-weight:600;color:#181715;">Studio</div><div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">Tutto il Pro su 5&nbsp;computer, 1&nbsp;ora di assistenza inclusa</div></td>
+              <td class="riga-fil c-testo" valign="top" align="right" style="white-space:nowrap;border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:14px 0 14px 16px;font-size:15px;line-height:24px;color:#181715;">{{#if data_fine_lancio}}<b>119&nbsp;€</b><br><span class="c-sec" style="font-size:13px;line-height:20px;color:#54524E;">poi 149&nbsp;€</span>{{else}}<b>149&nbsp;€</b>{{/if}}</td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-button href="{{link_acquisto_pro}}">Acquista Pro</mj-button>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Ti mandiamo i dati per il bonifico; ricevuto il pagamento, la chiave arriva entro 2 ore lavorative. Se nel frattempo la prova scade, con la chiave tutto si riattiva. Hai 30 giorni per il rimborso completo. Le tre licenze a confronto sono nella <a class="lnk" href="{{link_prezzi}}">pagina prezzi</a>.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text>Se invece Impaginatore non fa per te, va bene così. Mi aiuterebbe sapere perché: rispondi con una riga, anche solo «troppo complicato» o «mi manca questa cosa».</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{email}} e hai confermato la richiesta. È l’ultima email della prova.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.mjml" />
+  </mj-body>
+</mjml>

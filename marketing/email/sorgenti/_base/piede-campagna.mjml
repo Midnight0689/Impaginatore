@@ -1,0 +1,11 @@
+<!-- Chiusura del piè di pagina per le campagne: identità, disiscrizione con un clic e preferenze.
+     Il link di disiscrizione è obbligatorio (art. 130 Codice privacy, regole di Gmail e Yahoo). -->
+<mj-section padding="12px 40px 48px">
+  <mj-column>
+    <mj-text mj-class="nota">
+      Non vuoi più ricevere queste email? <a class="lnk" href="{{link_disiscrizione}}">Disiscriviti con un clic</a>, oppure <a class="lnk" href="{{link_preferenze}}">scegli quali ricevere</a>.<br>
+      {{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}<br>
+      <a class="lnk" href="{{sito}}">{{sito_testo}}</a> · <a class="lnk" href="mailto:{{email_supporto}}">{{email_supporto}}</a> · <a class="lnk" href="{{link_privacy}}">Informativa privacy</a>
+    </mj-text>
+  </mj-column>
+</mj-section>

@@ -77,8 +77,9 @@ def fonts():
     out.sort(key=lambda x: (x["fam"].lower(), x["sty"]))
     _FONTS = out
     try:
-        os.makedirs(os.path.dirname(_cache()), exist_ok=True)
-        with open(_cache(), "w", encoding="utf-8") as f: json.dump(dict(n=stamp, fonts=out), f)
+        os.makedirs(os.path.dirname(_cache()), exist_ok=True); tmp = f"{_cache()}.{os.getpid()}.tmp"
+        with open(tmp, "w", encoding="utf-8") as f: json.dump(dict(n=stamp, fonts=out), f)
+        os.replace(tmp, _cache())                    # mai un elenco a metà: lo leggono anche gli altri processi
     except Exception: pass
     return out
 

@@ -1,0 +1,24 @@
+{% if contact.FIRSTNAME %}Ciao {{ contact.FIRSTNAME }}, è{% else %}È{% endif %} passata una settimana da quando hai installato la prova. Se hai già impaginato qualche spread, ecco tre funzioni che si scoprono tardi e fanno risparmiare tempo sull’album intero.
+
+- Spaziature uniformi su tutto l’album. Un solo comando allinea spazi e margini di tutti gli spread, al decimo di millimetro. Utile quando hai spostato molte foto a mano.
+- Tono uniforme fra uno spread e l’altro. Avvicina il tono delle foto scattate con luci diverse, così l’album si sfoglia senza salti.
+- I tuoi modelli. Uno spread che ti piace si salva come modello personale e si riusa nel prossimo album, con le stesse misure.
+
+Come si fa, passo per passo: [[link_manuale]]
+
+UNA DOMANDA SOLA
+
+Che cosa ti sta frenando, se qualcosa ti frena? Rispondi con una riga. Leggo tutte le risposte, e spesso diventano una pagina del manuale o una correzione nella versione successiva.
+
+Se preferisci impostare il primo album insieme, in videochiamata, c’è l’assistenza a ore: 49 € l’ora, IVA esclusa. [[link_assistenza]]
+
+[[firma_nome]]
+[[firma_ruolo]]
+
+--
+Resta tuo.
+Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{ contact.EMAIL }} e hai confermato la richiesta.
+Non vuoi più ricevere queste email? Disiscriviti con un clic: {{ unsubscribe }}
+Scegli quali ricevere: {{ update_profile }}
+[[titolare]] · [[indirizzo]] · P. IVA [[partita_iva]]
+[[sito]] · [[email_supporto]] · Informativa privacy: [[link_privacy]]

@@ -29,7 +29,7 @@ def test_editor_nel_browser(editor, tmp_path):
     editor.post("/api/op", dict(cid="b", rev=st["rev"], op="newspread", pos=0, L=t["L"], R=t["R"]))
     html = dom(editor.srv.indirizzo_avvio(), tmp_path)
     assert "/img/spread/0" in html or "/img/thumb/" in html, html[:2000]
-    assert os.path.exists(os.path.join(editor.progetto, "spec.py"))
+    assert os.path.exists(os.path.join(editor.progetto, "album.json"))
 
 
 # ---------------------------------------------------------------- con il protocollo di Chrome (cdp.py): JavaScript nella pagina, errori, CSP

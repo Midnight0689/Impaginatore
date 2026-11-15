@@ -25,6 +25,11 @@ class Finti(dialoghi.Dialoghi):
     def _scegli(self, tipo, messaggio): return [self.risposte.pop(0)] if self.risposte else []
 
 
+def _modello(id_, nome):
+    """un modello come lo scrivono l'editor 1.x e 2.0 (una foto a mezza pagina a sinistra)"""
+    return {"id": id_, "nome": nome, "n": 1, "lato": None, "pages": [{"mode": "I", "items": [{"k": "p", "c": 0, "r": 0, "w": 6, "h": 8}]}, {"mode": "I", "items": []}]}
+
+
 def _due_spread(c):
     st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
     for k in range(2):
@@ -90,6 +95,30 @@ def test_versioni_e_ripristino(editor):
     attendi(lambda: c.riavvii == [1], 10)
 
 
+def test_versioni_della_1x_e_copie_rovinate(editor):
+    """le copie di spec.py fatte dalla 1.x restano tra le versioni (lette come testo) e si ripristinano convertendole senza
+    eseguirle; una copia con codice non si ripristina; una copia di album.json rovinata non compare; le più vecchie si potano"""
+    from impaginatore import formato
+    c = editor; st, names = _due_spread(c)
+    bk = os.path.join(c.progetto, "_backup_editor"); os.makedirs(bk, exist_ok=True)
+    spec = '"""Prova: 1 spread."""\nfrom album import *\n\nSPREADS = [\n    # 1\n    (W(P(%r, 0, 0, 6, 8)),\n     W()),\n]\n' % names[0]
+    for ts, testo in (("20250101-100000", spec), ("20250101-090000", spec.replace("1 spread.", "senza numero.")), ("20250101-080000", "import os\nSPREADS = []\n")):
+        with open(os.path.join(bk, f"{ts}_spec.py"), "w", encoding="utf-8") as fh: fh.write(testo)
+    with open(os.path.join(bk, "20250101-110000_album.json"), "w", encoding="utf-8") as fh: fh.write('{"formato": 2, "rotto"')
+    v = [(x["ts"], x["spread"]) for x in c.get("/api/versioni") if x["ts"].startswith("2025")]
+    assert v == [("20250101-100000", 1), ("20250101-090000", 1), ("20250101-080000", 0)]
+    with open(os.path.join(c.progetto, "album.json"), "rb") as fh: prima = fh.read()
+    ok, r = c.prova("/api/ripristina", {"ts": "20250101-080000"}); assert not ok and "istruzioni non riconosciute" in r["errore"]
+    ok, r = c.prova("/api/ripristina", {"ts": "20000101-000000"}); assert not ok and "versione non trovata" in r["errore"]
+    with open(os.path.join(c.progetto, "album.json"), "rb") as fh: assert c.riavvii == [] and fh.read() == prima, "la copia con codice non tocca il progetto"
+    assert c.post("/api/ripristina", {"ts": "20250101-100000"}) == {"riavvio": True}
+    attendi(lambda: c.riavvii == [1], 10)
+    doc = formato.leggi_album(os.path.join(c.progetto, "album.json"))
+    assert len(doc["spread"]) == 1 and doc["spread"][0]["sinistra"]["elementi"][0]["foto"] == names[0]
+    c.E._pota_backup(bk, tieni=1)
+    assert len({f.split("_", 1)[0] for f in os.listdir(bk)}) == 1, "resta solo la copia più recente"
+
+
 def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     c = editor; st, names = _due_spread(c)
     f = [i for i in st["spreads"][0]["items"] if i["k"] != "t"][0]
@@ -103,7 +132,8 @@ def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     out = c.post("/api/prj_esporta", {"zip": True, "foto": True})["cartella"]; dialoghi.imposta(None)
     assert os.path.dirname(out) == str(dest)
     L = attendi_log(c); assert any(x.startswith("RISULTATO:") for x in L), L
-    nomi = set(os.listdir(out)); assert {"spec.py", "progetto.json", "album_libere.py", "testo.py", "vib_lut.npz", "Foto", "_cache", "LEGGIMI.txt", "font_usati.txt"} <= nomi
+    nomi = set(os.listdir(out)); assert {"album.json", "progetto.json", "Foto", "_cache", "LEGGIMI.txt", "font_usati.txt"} <= nomi
+    assert not nomi & {"spec.py", "album_libere.py", "testo.py", "vib_lut.npz", "modelli_utente.json"}, "la 2.0 esporta solo dati (spec.py solo su richiesta)"
     with open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8") as fh: assert "«Prova»" in fh.read()
     zp = out + ".zip"; assert zipfile.is_zipfile(zp)
     # nella schermata dei progetti: Importa ZIP; poi l'editor lo apre e ritrova da solo le foto nella cartella Foto
@@ -114,6 +144,22 @@ def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     c.E.inizializza(p)
     s2 = c.get("/api/state"); assert len(s2["spreads"]) == 2 and s2["mancanti"] == [] and len(s2["photos"]) == 10
     with open(os.path.join(p, "progetto.json"), encoding="utf-8") as fh: assert json.load(fh)["foto"] == os.path.join(p, "Foto")
+
+
+def test_esporta_per_la_versione_1x(editor, tmp_path):
+    """«Aggiungi spec.py per la versione 1.x»: il pacchetto ha anche spec.py e le copie del motore che gli servono; il
+    progetto resta in album.json e spec.py si rilegge senza eseguirlo"""
+    from impaginatore import formato_1x
+    c = editor; st, names = _due_spread(c)
+    f = [i for i in st["spreads"][0]["items"] if i["k"] != "t"][0]
+    st = _op(c, st, {"op": "free", "at": [0, f["side"], f["idx"]], "x": .1, "y": .1, "w": .5, "h": .5})
+    dest = tmp_path / "uscita"; dest.mkdir()
+    dialoghi.imposta(Finti(str(dest)))               # la destinazione si sceglie con la finestra di sistema (SEC-005)
+    out = c.post("/api/prj_esporta", {"foto": False, "v1x": True})["cartella"]; dialoghi.imposta(None)
+    L = attendi_log(c); assert any("spec.py per la versione 1.x" in x for x in L) and any(x.startswith("RISULTATO:") for x in L), L
+    assert {"album.json", "spec.py", "album_libere.py", "testo.py", "vib_lut.npz"} <= set(os.listdir(out))
+    with open(os.path.join(out, "spec.py"), "rb") as fh: sp = formato_1x.leggi(fh.read(), prova=True)
+    assert len(sp) == 2 and not os.path.exists(os.path.join(c.progetto, "spec.py")), "nel progetto resta solo album.json"
 
 
 def test_modelli_utente(editor, casa):
@@ -134,18 +180,27 @@ def test_modelli_utente(editor, casa):
 
 def test_modelli_migrati_da_album_tools(progetto, apri_editor, casa):
     vecchi = casa / ".album-tools"; vecchi.mkdir()
-    (vecchi / "modelli_utente.json").write_text(json.dumps([{"id": "u1", "nome": "Vecchio", "pages": [{"items": []}, {"items": []}]}]), encoding="utf-8")
+    (vecchi / "modelli_utente.json").write_text(json.dumps([_modello("u1", "Vecchio")]), encoding="utf-8")
     shutil.copy(vecchi / "modelli_utente.json", os.path.join(progetto, "modelli_utente.json"))
     c = apri_editor(progetto)
     assert c.E.ut_load()[0]["nome"] == "Vecchio" and c.E.UT_FILE.startswith(os.environ["IMPAGINATORE_DATI"])
 
 
 def test_modelli_arrivati_con_un_progetto(progetto, apri_editor, casa):
-    (casa / "dati").mkdir(); (casa / "dati" / "modelli_utente.json").write_text(json.dumps([{"id": "a", "nome": "Mio", "pages": []}]), encoding="utf-8")
+    """SEC-009: i modelli arrivati con un progetto valgono solo per quel progetto; entrano tra i tuoi solo se lo chiedi"""
+    (casa / "dati").mkdir(); (casa / "dati" / "modelli_utente.json").write_text(json.dumps([_modello("a", "Mio")]), encoding="utf-8")
     with open(os.path.join(progetto, "modelli_utente.json"), "w", encoding="utf-8") as fh:
-        json.dump([{"id": "a", "nome": "Mio", "pages": []}, {"id": "b", "nome": "mio", "pages": []}, {"id": "c", "nome": "Altro", "pages": []}], fh)
+        json.dump([_modello("a", "Mio"), _modello("b", "mio"), _modello("c", "Altro")], fh)
     c = apri_editor(progetto)
-    assert [t["nome"] for t in c.E.ut_load()] == ["Mio", "mio (importato)", "Altro"]
+    assert [t["nome"] for t in c.E.ut_load()] == ["Mio"], "i tuoi modelli non cambiano aprendo un progetto"
+    assert [t["nome"] for t in c.E.ut_progetto()] == ["mio", "Altro"]
+    st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
+    d = c.post("/api/templates", {"photos": names[:1]})
+    assert {(t["id"], t["progetto"]) for t in d["utente"]} == {("a", False), ("b", True), ("c", True)}
+    ok, r = c.prova("/api/modelli", {"azione": "rinomina", "id": "b", "nome": "X"}); assert not ok, "un modello del progetto non è tuo: non si modifica"
+    c.post("/api/modelli", {"azione": "importa", "id": "b"}); c.post("/api/modelli", {"azione": "importa", "id": "c"})
+    assert [t["nome"] for t in c.E.ut_load()] == ["Mio", "mio (importato)", "Altro"] and c.E.ut_progetto() == []
+    ok, r = c.prova("/api/modelli", {"azione": "importa", "id": "zz"}); assert not ok and "non trovato" in r["errore"]
 
 
 def test_selettore_di_foto(editor, casa, tmp_path, monkeypatch):

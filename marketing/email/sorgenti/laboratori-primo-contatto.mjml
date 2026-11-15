@@ -1,0 +1,31 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Impaginatore per i vostri fotografi</mj-title>
+  </mj-head>
+  <mj-body background-color="#FFFFFF">
+    <!-- Laboratori, primo contatto (PIANO-90-GIORNI.md §4, G1). Da persona a persona: si manda a mano dalla
+         propria casella, uno alla volta, al massimo 3 tentativi per laboratorio, dopo il parere privacy
+         (art. 130 Codice privacy; GUIDA-INVIO.md). Niente logo, niente immagini: deve sembrare ciò che è,
+         una lettera. Si dà del voi al laboratorio. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Un preset con i vostri formati, abbondanze e piega, e un video di 90 secondi.</div></mj-raw>
+    <mj-section padding="32px 40px 0" css-class="sez">
+      <mj-column>
+        <mj-text font-family="Helvetica, Arial, sans-serif" font-size="15px" line-height="23px">
+          <p style="margin:0 0 16px;">Buongiorno,</p>
+          <p style="margin:0 0 16px;">{{#if se_accordo_telefonico}}vi scrivo come d’accordo al telefono. {{/if}}Sono {{firma_nome}}, fotografo di matrimoni, e ho scritto Impaginatore: un programma per impaginare album che i fotografi installano sul proprio computer.</p>
+          <p style="margin:0 0 16px;">Ho preparato un preset con alcuni formati di {{nome_laboratorio}}, fra cui il {{formato_esempio}}, con abbondanze e piega come nelle vostre specifiche pubblicate. L’idea è semplice: i file dei fotografi vi arrivano già conformi.</p>
+          <p style="margin:0 0 16px;">In questo video di 90 secondi si vede come funziona: <a class="lnk" href="{{link_video}}">{{link_video}}</a></p>
+          <p style="margin:0 0 16px;">Se vi interessa, vi mando un album di prova esportato secondo le vostre specifiche, da far controllare alla prestampa. Se non vi interessa, basta rispondere «no» e non vi scriverò più.</p>
+          <p style="margin:0 0 4px;">Grazie dell’attenzione,</p>
+          <p style="margin:0;">{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}} · {{firma_telefono}}</span><br><a class="lnk" href="{{sito}}">{{sito_testo}}</a></p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section padding="32px 40px 40px" css-class="sez">
+      <mj-column>
+        <mj-text mj-class="nota" font-family="Helvetica, Arial, sans-serif">{{#if se_accordo_telefonico}}Vi scrivo dopo la nostra telefonata, a questo indirizzo aziendale.{{else}}Vi scrivo all’indirizzo aziendale pubblicato sul vostro sito.{{/if}} {{titolare}} · P. IVA {{partita_iva}} · <a class="lnk" href="{{link_privacy}}">Informativa privacy</a></mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

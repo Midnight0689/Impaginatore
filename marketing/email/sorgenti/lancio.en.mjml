@@ -1,0 +1,165 @@
+<mjml lang="en" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Impaginatore is ready</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Versione inglese di lancio.mjml. Campagna alla lista d'attesa (consenso con doppia conferma). Due invii dallo stesso modello:
+         accesso anticipato (accesso_anticipato = 1, 48 ore prima) e apertura a tutti (accesso_anticipato vuoto).
+         Prezzi da docs/mercato/tier.json, listino 2026-11-15d: ricontrollarli prima di ogni invio. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">A perpetual licence: Pro is €79 until {{data_fine_lancio}}, then €99. Your photos stay on your computer.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">{{#if accesso_anticipato}}EARLY ACCESS FOR THE LIST · 48 HOURS{{else}}AVAILABLE TODAY{{/if}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Impaginatore is ready. You pay once.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Hi {{nome}}, I{{else}}I{{/if}} promised to write when Impaginatore was ready. It is. {{#if accesso_anticipato}}You’re on the waiting list, so you can buy it today, 48 hours before everyone else, at the same launch price. It opens to everyone on {{data_apertura}}.{{/if}}</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>It’s an app for laying out wedding albums on your own computer, on Mac, Windows or Linux. You buy it once, with a licence that never expires: no subscription.</mj-text>
+        <mj-spacer height="24px" />
+        <!-- SEGNAPOSTO: schermata da produrre. 1040 × 650 px, mostrata a 520 × 325. -->
+        <mj-image src="{{base_immagini}}/segnaposto/lancio-spread.png" width="520px" height="325px" alt="A wedding album spread in Impaginatore, with margin and gutter measurements." />
+      </mj-column>
+    </mj-section>
+
+    <!-- Cosa c'è dentro, nell'ordine dei messaggi della marca. -->
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/locale.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/locale-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Your photos stay on your computer</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Impaginatore works on the files you already have. You upload nothing, and it works offline too.</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/misura.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/misura-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">To a tenth of a millimetre</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Your print lab’s sizes, bleed and gutter are already set up. Before export, Impaginatore checks that everything adds up.</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/livelli.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/livelli-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Layered PSD, if you retouch in Photoshop</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">With Pro and Studio every spread opens in Photoshop with each photo on its own layer. Photoshop is not included.</div></td>
+            </tr>
+            {{#if mcp_disponibile}}<tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/bozza.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/bozza-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Claude drafts the album; you decide every spread</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Optional, with Pro and Studio. It needs your own separate Claude subscription. Claude receives album data (file names, proportions, capture date), not your photos, unless you allow it.</div></td>
+            </tr>{{/if}}
+          </table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Prezzi: Pro in evidenza con l'unico pulsante verde; Essenziale e Studio accanto, in secondo piano. -->
+    <mj-section padding="16px 40px 0">
+      <mj-column>
+        <mj-divider />
+        <mj-spacer height="32px" />
+        <mj-text mj-class="titolo2">Three licences, no subscription</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text mj-class="secondario">Launch price for 60 days, until {{data_fine_lancio}}, or until the first 300 licences if that comes sooner. We won’t extend it.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;">
+            <tr><td class="f-sup b-ink" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:2px solid #181715;border-radius:6px;padding:24px 24px 28px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr>
+                <td class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">PROFESSIONAL</td>
+                <td align="right"><span class="badge-v" style="display:inline-block;background-color:#ECF9F0;color:#236743;font-size:12px;line-height:16px;font-weight:600;padding:4px 10px;border-radius:999px;">Recommended</span></td>
+              </tr></table>
+              <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:30px;line-height:36px;font-weight:500;color:#181715;padding-top:8px;">Pro</div>
+              <div style="padding-top:8px;"><span class="serif c-testo cifra" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:64px;line-height:64px;font-weight:500;color:#181715;">€79</span>&nbsp; <span class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;">once</span></div>
+              <div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:8px;">€79 until {{data_fine_lancio}}, then €99. VAT not included.</div>
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">
+                <tr><td width="18" valign="top" style="width:18px;padding:4px 0 8px;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 8px 10px;font-size:15px;line-height:24px;color:#181715;">The full editor, unlimited designer and personal layouts</td></tr>
+                <tr><td width="18" valign="top" style="width:18px;padding:4px 0 8px;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 8px 10px;font-size:15px;line-height:24px;color:#181715;">Automatic layout of the whole album</td></tr>
+                <tr><td width="18" valign="top" style="width:18px;padding:4px 0 8px;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 8px 10px;font-size:15px;line-height:24px;color:#181715;">Even spacing and tone across the whole album</td></tr>
+                <tr><td width="18" valign="top" style="width:18px;padding:4px 0 8px;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 8px 10px;font-size:15px;line-height:24px;color:#181715;">JPG, PDF and layered PSD export</td></tr>
+                {{#if mcp_disponibile}}<tr><td width="18" valign="top" style="width:18px;padding:4px 0 8px;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 8px 10px;font-size:15px;line-height:24px;color:#181715;">Claude connection (separate subscription)</td></tr>{{/if}}
+                <tr><td width="18" valign="top" style="width:18px;padding:4px 0 0;"><img src="{{base_immagini}}/icone/spunta.png" width="18" height="18" alt="" style="display:block;border:0;width:18px;height:18px;"></td><td class="c-testo" style="padding:0 0 0 10px;font-size:15px;line-height:24px;color:#181715;">2 computers, all version 2 updates included</td></tr>
+              </table>
+              <table role="presentation" class="pul-prim" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px;border-collapse:separate;"><tr><td align="center" bgcolor="#236743" style="background-color:#236743;border-radius:4px;"><a href="{{link_acquisto_pro}}" style="display:block;padding:14px 24px;background-color:#236743;border-radius:4px;color:#F6F3EC;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;font-weight:600;text-decoration:none;">Buy Pro</a></td></tr></table>
+            </td></tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>
+          <table role="presentation" class="stack" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;">
+            <tr>
+              <td class="stack-spazio" width="50%" valign="top" style="width:50%;padding-right:8px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" valign="top" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:6px;padding:20px;">
+                  <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">A FEW ALBUMS</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;font-weight:500;color:#181715;padding-top:6px;">Essenziale</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:36px;line-height:44px;font-weight:500;color:#181715;padding-top:4px;">€39</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">until {{data_fine_lancio}}, then €49</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;padding-top:12px;">30 designer and 5 personal layouts, JPG and PDF export, 1&nbsp;computer.</div>
+                  <table role="presentation" class="pul-sec" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;border-collapse:separate;"><tr><td align="center" style="border-radius:4px;"><a href="{{link_acquisto_essenziale}}" style="display:block;padding:11px 12px;border:1px solid #6B6964;border-radius:4px;background-color:#FDFCF9;color:#181715;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;">Choose Essenziale</a></td></tr></table>
+                </td></tr></table>
+              </td>
+              <td width="50%" valign="top" style="width:50%;padding-left:8px;" class="stack-spazio">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" valign="top" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:6px;padding:20px;">
+                  <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">SEVERAL SEATS</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;font-weight:500;color:#181715;padding-top:6px;">Studio</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:36px;line-height:44px;font-weight:500;color:#181715;padding-top:4px;">€119</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">until {{data_fine_lancio}}, then €149</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;padding-top:12px;">Everything in Pro on 5&nbsp;computers, the next major version and 1&nbsp;hour of support included.</div>
+                  <table role="presentation" class="pul-sec" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;border-collapse:separate;"><tr><td align="center" style="border-radius:4px;"><a href="{{link_acquisto_studio}}" style="display:block;padding:11px 12px;border:1px solid #6B6964;border-radius:4px;background-color:#FDFCF9;color:#181715;font-family:'Instrument Sans','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:600;text-decoration:none;">Choose Studio</a></td></tr></table>
+                </td></tr></table>
+              </td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="nota">Prices exclude VAT, which is added where due. For private buyers in Italy, with 22% VAT, at the launch price: Essenziale €47.58, Pro €96.38, Studio €145.18.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Il prezzo basso è l'argomento centrale: il confronto è con un ordine di grandezza, senza marchi (vedi GUIDA-INVIO.md). -->
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>An album software subscription costs around €20 a month. Pro at full price costs about as much as five of those months; at the launch price, about as much as four. After that you pay nothing more, and the app stays yours.</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text mj-class="nota">Three yearly album software subscriptions cost between $250 and $290 a year, excluding VAT: roughly €19 to €22 a month (public prices on 13 November 2026, ECB rate €1&nbsp;=&nbsp;$1.1052). Sources on the <a class="lnk" href="{{link_prezzi}}">pricing page</a>.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Assistenza a ore (STYLEBOOK §16): mai inclusa nel prezzo, salvo l'ora di Studio. -->
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="riga-fil" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:20px 0;">
+            <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">SUPPORT BY THE HOUR</div>
+            <div class="c-testo" style="font-size:15px;line-height:24px;color:#181715;padding-top:8px;">1 hour €49 · 5 hours €249 · 10 hours €499, excluding VAT</div>
+            <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;padding-top:4px;">By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual, video guides and bug fixes.</div>
+          </td></tr></table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">HOW BUYING WORKS</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>Choose a licence and we send you bank transfer details. Once payment arrives, you get the invoice and your key within 2 business hours. If you change your mind, you have 30 days for a full refund, no questions asked.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>Want to try it first? <a class="lnk" href="{{link_prova}}">The trial</a> lasts 30 days, needs no card and has the Pro features except PSD. Exports carry a watermark, which disappears when you activate your licence.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>Impaginatore is made in Italy by a photographer who lays out albums. If you have a question, reply to this email: I read every one.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.en.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">You’re getting this email because you joined the Impaginatore waiting list as {{email}} and confirmed your sign-up.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.en.mjml" />
+  </mj-body>
+</mjml>

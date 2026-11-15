@@ -1,0 +1,122 @@
+<mjml>
+<mj-head>
+  <!--
+    Base condivisa delle email di Impaginatore: colori, caratteri, componenti, modalità scura, telefono.
+    Colori: token di brand/tokens.css (qui in HEX perché i client di posta non leggono le variabili CSS).
+      Carta #F6F3EC (fondo) · Bianco carta #FDFCF9 (superficie) · Inchiostro #181715 (testo)
+      Ardesia #54524E (secondario) · Piombo #6B6964 (tenue) · Cartoncino #DEDAD2 (filetto)
+      Verde Bottega #236743 (accento, un solo pulsante verde per email)
+      Scuro: Inchiostro #181715 · Fumo #292725 · Carta #F6F3EC · Feltro #C7C4BC · Cenere #A19E98
+             Grafite #3E3D3A · Verde chiaro #7BCC9C · pulsante #5AB481 con testo #0F0E0C
+    Caratteri: Newsreader (titoli), Instrument Sans (testo), IBM Plex Mono (numeri ed etichette),
+    ospitati in {{base_immagini}}/font/ con ripieghi sicuri; Outlook per Windows usa i ripieghi.
+  -->
+  <mj-attributes>
+    <mj-all font-family="'Instrument Sans', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" />
+    <mj-body background-color="#F6F3EC" width="600px" css-class="corpo" />
+    <mj-section padding="0 40px" css-class="sez" text-align="left" />
+    <mj-column padding="0" />
+    <mj-text padding="0" font-size="16px" line-height="26px" color="#181715" css-class="tx" />
+    <mj-image padding="0" align="left" />
+    <mj-divider border-color="#DEDAD2" border-width="1px" padding="0" css-class="fil" />
+    <mj-table padding="0" font-size="16px" line-height="26px" color="#181715" cellpadding="0" cellspacing="0" />
+    <mj-spacer height="24px" />
+    <mj-button background-color="#236743" color="#F6F3EC" font-size="16px" font-weight="600" line-height="20px" inner-padding="14px 24px" border-radius="4px" padding="0" align="left" css-class="pul-prim" />
+
+    <mj-class name="titolo" font-family="Newsreader, 'Iowan Old Style', Georgia, 'Times New Roman', serif" font-size="36px" line-height="42px" font-weight="500" letter-spacing="-0.01em" css-class="tx titolo" />
+    <mj-class name="titolo2" font-family="Newsreader, 'Iowan Old Style', Georgia, 'Times New Roman', serif" font-size="26px" line-height="32px" font-weight="500" letter-spacing="-0.005em" css-class="tx titolo2" />
+    <mj-class name="etichetta" font-family="'IBM Plex Mono', SFMono-Regular, Menlo, Consolas, 'Courier New', monospace" font-size="12px" line-height="16px" font-weight="500" letter-spacing="0.06em" color="#6B6964" css-class="tx-ten" />
+    <mj-class name="attacco" font-size="18px" line-height="28px" css-class="tx" />
+    <mj-class name="secondario" color="#54524E" css-class="tx-sec" />
+    <mj-class name="piccolo" font-size="14px" line-height="22px" color="#54524E" css-class="tx-sec" />
+    <mj-class name="nota" font-size="13px" line-height="20px" color="#6B6964" css-class="tx-ten" />
+    <mj-class name="pul-sec" background-color="#FDFCF9" color="#181715" border="1px solid #6B6964" inner-padding="13px 20px" css-class="pul-sec" />
+  </mj-attributes>
+
+  <mj-raw>
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <!--[if !mso]><!-->
+    <style type="text/css">
+      @font-face { font-family: 'Newsreader'; font-style: normal; font-weight: 500; font-display: swap; src: url('{{base_immagini}}/font/newsreader-email.woff2') format('woff2'); }
+      @font-face { font-family: 'Instrument Sans'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('{{base_immagini}}/font/instrumentsans-email.woff2') format('woff2'); }
+      @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('{{base_immagini}}/font/IBMPlexMono-Regular.woff2') format('woff2'); }
+      @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('{{base_immagini}}/font/IBMPlexMono-Medium.woff2') format('woff2'); }
+    </style>
+    <!--<![endif]-->
+    <!--[if mso]>
+    <style type="text/css">
+      body, table, td, div, p, a, span, li { font-family: 'Segoe UI', Arial, sans-serif !important; }
+      .titolo div, .titolo2 div, .serif { font-family: Georgia, 'Times New Roman', serif !important; }
+      .mono, .mono div, .mono span, .tx-ten.mono div { font-family: Consolas, 'Courier New', monospace !important; }
+    </style>
+    <![endif]-->
+  </mj-raw>
+
+  <!-- Stili messi in linea da MJML: valgono anche dove <style> viene tolto. -->
+  <mj-style inline="inline">
+    .lnk { color: #236743; text-decoration: underline; text-underline-offset: 2px; }
+    .mono { font-family: 'IBM Plex Mono', SFMono-Regular, Menlo, Consolas, 'Courier New', monospace; }
+    .serif { font-family: Newsreader, 'Iowan Old Style', Georgia, 'Times New Roman', serif; }
+  </mj-style>
+
+  <mj-style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font: inherit !important; }
+    .selez { -webkit-user-select: all; user-select: all; }
+    .tx ul, .tx ol { margin: 0; padding: 0 0 0 20px; }
+    .tx li { margin: 0 0 8px; }
+
+    /* Telefono: margini laterali 20 px, titoli più piccoli. */
+    @media only screen and (max-width: 479px) {
+      .sez > table > tbody > tr > td { padding-left: 20px !important; padding-right: 20px !important; }
+      .sez-logo > table > tbody > tr > td { padding-left: 13px !important; padding-right: 13px !important; }
+      .titolo > div { font-size: 30px !important; line-height: 36px !important; }
+      .titolo2 > div { font-size: 23px !important; line-height: 29px !important; }
+      .cifra { font-size: 44px !important; line-height: 44px !important; }
+      .stack, .stack > tbody, .stack > tbody > tr, .stack > tbody > tr > td { display: block !important; width: 100% !important; box-sizing: border-box; }
+      .stack-spazio { padding: 0 0 12px 0 !important; }
+      .cmd { font-size: 12px !important; }
+    }
+
+    /* Modalità scura (Apple Mail, Mail di iOS, Outlook per Mac, Thunderbird).
+       Gmail e Outlook.com non leggono questa media query: invertono da soli i colori; per questo
+       logo e icone sono PNG con fondo pieno, leggibili anche dopo l'inversione. */
+    @media (prefers-color-scheme: dark) {
+      body, .corpo, .f-fondo { background-color: #181715 !important; }
+      .tx > div, .titolo > div, .titolo2 > div { color: #F6F3EC !important; }
+      .tx-sec > div { color: #C7C4BC !important; }
+      .tx-ten > div { color: #A19E98 !important; }
+      .corpo .c-testo { color: #F6F3EC !important; }
+      .corpo .c-sec { color: #C7C4BC !important; }
+      .corpo .c-ten { color: #A19E98 !important; }
+      .corpo .c-acc, .corpo a.lnk { color: #7BCC9C !important; }
+      .corpo .f-sup { background-color: #292725 !important; }
+      .corpo .b-fil { border-color: #3E3D3A !important; }
+      .corpo .b-ink { border-color: #F6F3EC !important; }
+      .corpo .cro { background-color: #A19E98 !important; }
+      .corpo .fil p { border-top-color: #3E3D3A !important; }
+      .corpo .riga-fil { border-color: #3E3D3A !important; }
+      .corpo .inv { background-color: #F6F3EC !important; color: #181715 !important; }
+      .corpo .badge-v { background-color: #0B2B1A !important; color: #7BCC9C !important; }
+      .corpo .avv-att { background-color: #3A342C !important; border-left-color: #EABC6E !important; }
+      .corpo .avv-att > b { color: #EABC6E !important; }
+      .corpo .avv-info { background-color: #323437 !important; border-left-color: #88B9EC !important; }
+      .corpo .avv-info > b { color: #88B9EC !important; }
+      .corpo .avv-ok { background-color: #0B2B1A !important; border-left-color: #7BCC9C !important; }
+      .corpo .avv-ok > b { color: #7BCC9C !important; }
+      .corpo .pul-prim td, .corpo .pul-prim a { background: #5AB481 !important; background-color: #5AB481 !important; color: #0F0E0C !important; }
+      .corpo .pul-sec td { background: #292725 !important; background-color: #292725 !important; border-color: #A19E98 !important; }
+      .corpo .pul-sec a { background: #292725 !important; background-color: #292725 !important; color: #F6F3EC !important; border-color: #A19E98 !important; }
+      .corpo .img-chiaro { display: none !important; }
+      .corpo .img-scuro { display: block !important; max-height: none !important; overflow: visible !important; }
+    }
+    /* Outlook.com e app Outlook: fondo e logo coerenti con la loro inversione parziale. */
+    [data-ogsb] .corpo { background-color: #181715 !important; }
+    [data-ogsc] .img-chiaro { display: none !important; }
+    [data-ogsc] .img-scuro { display: block !important; max-height: none !important; overflow: visible !important; }
+  </mj-style>
+</mj-head>
+</mjml>

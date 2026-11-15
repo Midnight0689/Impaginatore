@@ -1,0 +1,28 @@
+*|IF:FNAME|*Ciao *|FNAME|*, grazie*|ELSE:|*Grazie*|END:IF|* per aver installato la prova di Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.
+
+IL PRIMO SPREAD IN CINQUE MINUTI
+
+01 · Parti dall’album di esempio
+Sulla prima schermata scegli «Prova con l’album di esempio». Le foto sono incluse, quindi puoi sbagliare senza toccare le tue.
+
+02 · Scegli il tuo laboratorio
+Quando crei un album nuovo, scegli laboratorio e formato: abbondanze e piega arrivano già impostate. Se il tuo laboratorio non c’è, inserisci le misure a mano.
+
+03 · Esporta uno spread e guardalo al 100%
+In JPG o PDF: è il modo più rapido per giudicare margini e nitidezza. Durante la prova gli export hanno una filigrana.
+
+Guarda la guida al primo album: [[link_manuale]]
+
+
+Durante la prova ti scrivo altre due volte: fra una settimana e qualche giorno prima della scadenza. Se ti blocchi prima, rispondi a questa email: la leggo io.
+
+[[firma_nome]]
+[[firma_ruolo]]
+
+--
+Resta tuo.
+Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo *|EMAIL|* e hai confermato la richiesta.
+Non vuoi più ricevere queste email? Disiscriviti con un clic: *|UNSUB|*
+Scegli quali ricevere: *|UPDATE_PROFILE|*
+[[titolare]] · [[indirizzo]] · P. IVA [[partita_iva]]
+[[sito]] · [[email_supporto]] · Informativa privacy: [[link_privacy]]

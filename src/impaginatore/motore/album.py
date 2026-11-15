@@ -1,9 +1,10 @@
 """Motore di impaginazione album (stile Stefano).
 
-Uso: ogni album ha una cartella di progetto con `progetto.json` e `spec.py`.
+Uso: ogni album ha una cartella di progetto con `progetto.json` e `album.json` (le 1.x avevano `spec.py`).
 Il progetto si carica in modo esplicito con carica_progetto(cartella); gli script da riga di comando trovano la cartella con
 --progetto <cartella>, con la variabile ALBUM_PROGETTO o nella cartella corrente (progetto_da_argv).
-`spec.py` fa `from album import *` e definisce SPREADS (lista di coppie pagina sinistra / destra): lo legge formato.carica.
+L'impaginazione (SPREADS: lista di coppie pagina sinistra / destra, fatte con i costruttori qui sotto) la legge
+formato.carica: dati JSON, mai codice eseguito.
 
 Griglia: ogni pagina 12 colonne x 8 righe, un solo spazio tra le foto (default 2,5 mm) ovunque, anche sulla piega.
 Pagine "I" immersive (la griglia arriva al bordo, look flush) e "W" bianche (margine uguale sui 4 lati, default 10 mm).
@@ -12,10 +13,12 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import io, logging, os, sys, json, time
+import io, logging, os, sys, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from .. import formato as _formato
+from .. import validazione as _V
 from ..piattaforma import font as _pfont
 
 # ---------------- progetto ----------------
@@ -44,7 +47,7 @@ def carica_progetto(cartella):
     global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
     Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear()
     PROJ = os.path.abspath(cartella)
-    CFG = _leggi_json(os.path.join(PROJ, "progetto.json"))
+    CFG = _V.progetto(_leggi_json(os.path.join(PROJ, "progetto.json")))
     SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
     CACHE = os.path.join(PROJ, "_cache"); THUMBS = os.path.join(CACHE, "thumbs")
     os.makedirs(THUMBS, exist_ok=True)
@@ -52,7 +55,7 @@ def carica_progetto(cartella):
     FOLD = CW / 2; TW, TH = CW - 2 * B, CH - 2 * B
     # ---- foto: metadati, miniature, volti
     mp, fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
-    M = _leggi_json(mp) if os.path.exists(mp) else []
+    M = _cache_valida(mp, _V.meta, [])                  # cache rovinata o non valida: si ricostruisce dalle foto
     _date_mancanti(M)
     new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
@@ -62,14 +65,15 @@ def carica_progetto(cartella):
         M += sorted(new, key=lambda x: x["dt"]) if first else new
         _scrivi_json(mp, M)
     _build_thumbs(M)
-    F = _leggi_json(fp) if os.path.exists(fp) else {}
+    F = _cache_valida(fp, _V.volti, {})
     missing = [m for m in M if m["n"] not in F]
     if missing: F.update(_build_faces(missing)); _scrivi_json(fp, F)
     IDX = {m["n"].rsplit(".", 1)[0]: k + 1 for k, m in enumerate(M)}      # nome file senza estensione -> numero foto
     # origine di ogni foto (cartella completa da cui viene): scritta da abbina.py, serve per le correzioni per capitolo
     ORIGINE = {}
     for op in (os.path.join(SRC, "origine.json"), os.path.join(CACHE, "origine.json")):
-        if os.path.exists(op): ORIGINE.update(_leggi_json(op))
+        o = _cache_valida(op, lambda d: _V.dizionario(d, "origine.json"), {})
+        ORIGINE.update({k: v for k, v in o.items() if isinstance(v, str)})
     FACE_FIX = {k: tuple(v) for k, v in CFG.get("centri_volto", {}).items()}   # {"_DSC3885": [x, y]} centro a mano (0-1)
     _ESP = CFG.get("esposizione", {})
     WB = CFG.get("bilanciamento_bianco", {})     # {"_DSC1406": [r, g, b]} guadagni lineari
@@ -81,11 +85,21 @@ def carica_progetto(cartella):
 
 
 def _leggi_json(p):
-    with open(p, encoding="utf-8") as f: return json.load(f)
+    return _formato.leggi_json(p)
 
 
 def _scrivi_json(p, dati):
-    with open(p, "w", encoding="utf-8") as f: json.dump(dati, f)
+    _formato.scrivi_json(p, dati)                       # atomico: un'interruzione non lascia un JSON troncato
+
+
+def _cache_valida(p, controlla, vuota):
+    """contenuto di un file di cache controllato; se manca, è rovinato o non è valido si riparte da `vuota` (la cache si
+    ricostruisce dalle foto: niente blocca l'apertura del progetto)"""
+    if not os.path.exists(p): return vuota
+    try: return controlla(_leggi_json(p))
+    except (OSError, ValueError, RecursionError) as e:
+        print(f"{os.path.basename(p)} non valido, lo ricostruisco: {e}", flush=True)
+        return vuota
 
 
 # ---------------- geometria ----------------
@@ -337,6 +351,6 @@ def render(spread, K, corrected=True):
     return S
 
 def load_spec(modname="spec"):
-    """SPREADS dello spec.py del progetto caricato (modname resta per compatibilità con gli script: il file è sempre spec.py)"""
-    from .. import formato
-    return formato.carica(PROJ)
+    """SPREADS del progetto caricato, da album.json (un progetto 1.x con spec.py si converte, senza eseguirlo); modname
+    resta per compatibilità con gli script 1.x e non si usa"""
+    return _formato.carica(PROJ)

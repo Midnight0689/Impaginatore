@@ -1,0 +1,97 @@
+name: Segnalazione di un problema
+description: Qualcosa nell'Impaginatore non funziona come dovrebbe.
+title: "[Problema] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie della segnalazione. Prima di inviarla:
+        - **Vulnerabilità di sicurezza**: non aprire una segnalazione, segui le istruzioni di `SECURITY.md`.
+        - **Foto**: non allegare foto di clienti o di persone riconoscibili. Se serve un'immagine, usa una foto di prova.
+
+  - type: input
+    id: versione
+    attributes:
+      label: Versione dell'Impaginatore
+      description: Si legge nel riquadro Versione della schermata dei progetti, oppure con `impaginatore --versione`.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema operativo
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: dettagli-sistema
+    attributes:
+      label: Versione del sistema e processore
+      placeholder: "macOS 26.1 su Apple M2, Windows 11 24H2 su Intel..."
+
+  - type: dropdown
+    id: parte
+    attributes:
+      label: Dove succede
+      options:
+        - Schermata dei progetti
+        - Editor
+        - Esportazione JPG o PDF
+        - Esportazione PSD e Photoshop
+        - Installazione o aggiornamento
+        - Licenza e attivazione
+        - Server MCP e assistenti
+        - Altro
+    validations:
+      required: true
+
+  - type: textarea
+    id: cosa-succede
+    attributes:
+      label: Cosa succede
+      description: Descrivi il problema. Se c'è un messaggio d'errore, copialo così com'è.
+    validations:
+      required: true
+
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Cosa ti aspettavi
+    validations:
+      required: true
+
+  - type: textarea
+    id: passi
+    attributes:
+      label: Come riprodurlo
+      description: I passi a partire da un progetto nuovo o da uno che puoi descrivere (formato, numero di foto, modelli usati).
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: registro
+    attributes:
+      label: Registro
+      description: Le ultime righe di `editor.log`, nella cartella dei progetti. Controlla che non contenga nomi di clienti.
+      render: text
+
+  - type: checkboxes
+    id: verifiche
+    attributes:
+      label: Verifiche
+      options:
+        - label: Ho cercato tra le segnalazioni aperte e non ce n'è una uguale.
+          required: true
+        - label: La segnalazione non contiene foto di clienti né dati personali.
+          required: true

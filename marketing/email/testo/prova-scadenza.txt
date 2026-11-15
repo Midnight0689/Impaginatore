@@ -1,0 +1,34 @@
+{{#if nome}}Ciao {{nome}}, la{{else}}La{{/if}} prova di Impaginatore finisce il {{data_scadenza_prova}}. Niente di quello che hai fatto va perso: ecco cosa succede, e cosa puoi fare se vuoi continuare.
+
+DOPO LA SCADENZA, SOLA LETTURA
+Impaginatore apre ancora i tuoi album e te li mostra, ma non li modifica. Le foto e i progetti restano sul tuo computer.
+
+Con la licenza riparti da dove sei: la chiave si attiva nel programma che hai già, la filigrana sparisce dagli export e, con Pro e Studio, si sblocca il PSD a livelli.
+
+PAGHI UNA VOLTA · IVA ESCLUSA
+{{#if data_fine_lancio}}Prezzi di lancio fino al {{data_fine_lancio}}, o fino alle prime 300 licenze; poi quelli di listino.
+
+- Essenziale: 39 € fino al {{data_fine_lancio}}, poi 49 €. 30 modelli d’autore, JPG e PDF, 1 computer.
+- Pro, consigliato: 79 € fino al {{data_fine_lancio}}, poi 99 €. Quello che hai provato, più il PSD a livelli, 2 computer.
+- Studio: 119 € fino al {{data_fine_lancio}}, poi 149 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.{{else}}La licenza non scade e include gli aggiornamenti della versione 2.
+
+- Essenziale: 49 €. 30 modelli d’autore, JPG e PDF, 1 computer.
+- Pro, consigliato: 99 €. Quello che hai provato, più il PSD a livelli, 2 computer.
+- Studio: 149 €. Tutto il Pro su 5 computer, 1 ora di assistenza inclusa.{{/if}}
+
+Acquista Pro: {{link_acquisto_pro}}
+
+Ti mandiamo i dati per il bonifico; ricevuto il pagamento, la chiave arriva entro 2 ore lavorative. Se nel frattempo la prova scade, con la chiave tutto si riattiva. Hai 30 giorni per il rimborso completo. Le tre licenze a confronto: {{link_prezzi}}
+
+Se invece Impaginatore non fa per te, va bene così. Mi aiuterebbe sapere perché: rispondi con una riga, anche solo «troppo complicato» o «mi manca questa cosa».
+
+{{firma_nome}}
+{{firma_ruolo}}
+
+--
+Resta tuo.
+Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{email}} e hai confermato la richiesta. È l’ultima email della prova.
+Non vuoi più ricevere queste email? Disiscriviti con un clic: {{link_disiscrizione}}
+Scegli quali ricevere: {{link_preferenze}}
+{{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}
+{{sito}} · {{email_supporto}} · Informativa privacy: {{link_privacy}}

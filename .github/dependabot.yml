@@ -1,0 +1,48 @@
+# Aggiornamenti automatici delle dipendenze Python e delle azioni dei workflow, una pull request a settimana per tipo.
+#
+# - Ecosistema «uv» e non «pip»: le versioni esatte stanno in uv.lock e il ramo pip di Dependabot aggiornerebbe solo
+#   pyproject.toml, lasciando il lock indietro (la CI usa «uv run --locked» e fallirebbe a ogni pull request).
+# - Le azioni sono fissate per SHA con la versione in commento: Dependabot aggiorna SHA e commento insieme.
+# - cooldown: una versione nuova si propone dopo qualche giorno dall'uscita, così una release compromessa e ritirata
+#   in fretta non arriva nel lock. Gli aggiornamenti di sicurezza non aspettano.
+# - GitHub legge questo file solo dal ramo predefinito (oggi main): finché sta solo su prodotto/2.0 non è attivo.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        applies-to: version-updates
+        patterns: ["*"]
+      python-sicurezza:
+        applies-to: security-updates
+        patterns: ["*"]
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    cooldown:
+      default-days: 7
+    groups:
+      azioni:
+        applies-to: version-updates
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    open-pull-requests-limit: 5

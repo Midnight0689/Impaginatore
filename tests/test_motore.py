@@ -31,13 +31,14 @@ def _script(nome, *args, cwd=None, env=None):
     return subprocess.run([sys.executable, "-m", f"impaginatore.motore.{nome}", *args], capture_output=True, text=True, encoding="utf-8", cwd=cwd, env=env)
 
 
-def test_sostituzioni_di_genera_psd_combaciano():
-    """genera_psd_angolo modifica genera_psd.py per testo: se qualcuno cambia genera_psd.py, i PSD perdono gli angoli"""
-    with open(os.path.join(os.path.dirname(genera_psd_angolo.__file__), "genera_psd.py"), encoding="utf-8") as f: src = f.read()
-    nuovo, ok = genera_psd_angolo.sostituzioni(src)
-    assert ok and "rotAround(L,it.ang" in nuovo and "BitsPerChannelType.EIGHT" in nuovo
-    compile(nuovo, "genera_psd.py", "exec")
-    assert genera_psd_angolo.sostituzioni("niente")[1] is False
+def test_parti_di_genera_psd_angolo():
+    """genera_psd_angolo cambia solo le parti con nome dello script di genera_psd (TEST-004: niente codice modificato come testo, niente exec)"""
+    from impaginatore.motore import genera_psd
+    assert set(genera_psd_angolo.PARTI) == set(genera_psd.PARTI)
+    for parti in (None, genera_psd_angolo.PARTI): assert "@@" not in genera_psd.script_js(parti)
+    js = genera_psd.script_js(genera_psd_angolo.PARTI)
+    assert "rotAround(L,it.ang" in js and "BitsPerChannelType.EIGHT" in js and js.count('var log=[]; var STEP="start";') == 1
+    assert "(it.txt==\"txt\"?addTextX:addText)(doc,it,ids[it.side])" in js and "addTextX" not in genera_psd.script_js()
 
 
 def test_anteprima_e_analizza(prj):
@@ -65,6 +66,21 @@ def test_script_psd_senza_photoshop(prj, monkeypatch):
     r = _script("verifica_psd", "--progetto", prj); assert r.returncode == 0 and "foto nei PSD 0" in r.stdout
 
 
+def test_modifica_psd_registro(prj):
+    """modifica_psd segna come «toccati a mano» i PSD salvati dopo la generazione: il registro si riscrive in modo atomico
+    (BUG-005) e uno rovinato vale come vuoto, mai un errore"""
+    psd = os.path.join(prj, "PSD"); os.makedirs(psd); os.makedirs(os.path.join(prj, "_cache"), exist_ok=True)
+    for n in (1, 2): open(os.path.join(psd, f"Spread_0{n}.psd"), "wb").close()
+    reg = os.path.join(prj, "_cache", "psd_generati.json")
+    formato.scrivi_json(reg, {"Spread_01.psd": 1000.0, "Spread_02.psd": os.path.getmtime(os.path.join(psd, "Spread_02.psd"))})
+    r = _script("modifica_psd", "--progetto", prj, "nessuno"); assert r.returncode == 0, r.stderr[-2000:]
+    assert formato.leggi_json(reg)["Spread_01.psd"] == 0 and formato.leggi_json(reg)["Spread_02.psd"] > 0
+    assert not [x for x in os.listdir(os.path.join(prj, "_cache")) if x.endswith(".tmp")], "nessun file temporaneo lasciato"
+    with open(reg, "w", encoding="utf-8") as f: f.write('{"Spread_01.psd": 10')
+    r = _script("modifica_psd", "--progetto", prj, "nessuno"); assert r.returncode == 0, r.stderr[-2000:]
+    assert formato.leggi_json(reg) == {} and "non leggibile" in r.stdout
+
+
 def test_abbina(tmp_path):
     web, orig, dest = tmp_path / "web", tmp_path / "orig", tmp_path / "dest"
     crea_foto(str(web), [("A1", 300, 200, None), ("A2", 300, 200, None)]); crea_foto(str(orig / "cap1"), [("A1", 900, 600, None)])
@@ -77,11 +93,11 @@ def test_abbina(tmp_path):
 class PhotoshopFinto:
     """esegue «a parole» gli script: per ogni spread richiesto crea un PSD finto e risponde «Spread_NN ok»"""
 
-    def __init__(self): self.script = []
+    def __init__(self): self.script = []; self.aperti = ""
 
     def trova(self): return dict(nome="Adobe Photoshop 2026", percorso="/Applications/x.app")
 
-    def esegui_js(self, codice): return ""
+    def esegui_js(self, codice): return self.aperti               # documenti aperti: «nome|salvato» per riga
 
     def esegui_jsx(self, path, timeout=3600):
         with open(path, encoding="ascii") as f: js = f.read()
@@ -142,6 +158,27 @@ def test_genera_psd_con_photoshop_finto(prj, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["genera_psd_angolo", "--progetto", prj, "--spread", "1,4"])
     runpy.run_module("impaginatore.motore.genera_psd_angolo", run_name="__main__")
     assert '"n": 4' not in ps.script[-1]
+
+
+def test_genera_psd_base_e_registro_rovinato(prj, monkeypatch, capsys):
+    """genera_psd senza le parti estese; un psd_generati.json rovinato vale come vuoto: i PSD esistenti non si sovrascrivono"""
+    from impaginatore.motore import genera_psd
+    from impaginatore.piattaforma import photoshop
+    ps = PhotoshopFinto()
+    for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
+    assert genera_psd.main(["--progetto", prj, "--spread", "1,2"]) == 0
+    assert "rotAround" not in ps.script[-1] and '"ang"' not in ps.script[-1] and '"wb": null' in ps.script[-1]
+    reg = os.path.join(prj, "_cache", "psd_generati.json")
+    capsys.readouterr(); uscite = []
+    for rotto in ("{rotto", "[1, 2]"):
+        with open(reg, "w", encoding="utf-8") as f: f.write(rotto)
+        n = len(ps.script)
+        assert genera_psd.main(["--progetto", prj, "--spread", "1"]) == 0 and len(ps.script) == n
+        uscite.append(capsys.readouterr().out)
+    assert all("SALTATO spread 1: esiste e non l'ho generato io" in u for u in uscite) and "psd_generati.json non leggibile" in uscite[0]
+    ps.aperti = "Spread_02.psd|false\nAltro.psd|true"; n = len(ps.script)
+    assert genera_psd.main(["--progetto", prj, "--spread", "2", "--forza"]) == 0 and len(ps.script) == n, "un PSD aperto in Photoshop non si tocca, neanche con --forza"
+    assert "SALTATO spread 2: è aperto in Photoshop" in capsys.readouterr().out
 
 
 def test_album_senza_progetto_non_legge_niente():

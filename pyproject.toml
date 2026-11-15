@@ -64,6 +64,7 @@ patch = ["subprocess", "execv", "_exit"]
 impaginatore = ["src/impaginatore", "*/site-packages/impaginatore"]
 
 [tool.coverage.report]
+fail_under = 74            # soglia bloccante della CI = copertura misurata (74,5 %) per difetto; T-104 la porta a 100
 show_missing = true
 skip_covered = false
 precision = 1
@@ -91,3 +92,4 @@ ignore = [
 "src/impaginatore/motore/*.py" = ["F403", "F405"]      # gli script del motore usano «from album import *» (formato 1.x)
 "src/impaginatore/editor/server.py" = ["F841"]       # due variabili inutilizzate della 1.5.2: il codice dell'editor non si tocca in questa fase
 "tests/**" = ["PLW1514"]
+"skill/*/assets/spec_esempio.py" = ["F403", "F405"]   # esempio di spec.py nel formato 1.x («from album import *», come i progetti salvati)
