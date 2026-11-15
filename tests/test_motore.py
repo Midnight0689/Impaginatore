@@ -66,6 +66,21 @@ def test_script_psd_senza_photoshop(prj, monkeypatch):
     r = _script("verifica_psd", "--progetto", prj); assert r.returncode == 0 and "foto nei PSD 0" in r.stdout
 
 
+def test_modifica_psd_registro(prj):
+    """modifica_psd segna come «toccati a mano» i PSD salvati dopo la generazione: il registro si riscrive in modo atomico
+    (BUG-005) e uno rovinato vale come vuoto, mai un errore"""
+    psd = os.path.join(prj, "PSD"); os.makedirs(psd); os.makedirs(os.path.join(prj, "_cache"), exist_ok=True)
+    for n in (1, 2): open(os.path.join(psd, f"Spread_0{n}.psd"), "wb").close()
+    reg = os.path.join(prj, "_cache", "psd_generati.json")
+    formato.scrivi_json(reg, {"Spread_01.psd": 1000.0, "Spread_02.psd": os.path.getmtime(os.path.join(psd, "Spread_02.psd"))})
+    r = _script("modifica_psd", "--progetto", prj, "nessuno"); assert r.returncode == 0, r.stderr[-2000:]
+    assert formato.leggi_json(reg)["Spread_01.psd"] == 0 and formato.leggi_json(reg)["Spread_02.psd"] > 0
+    assert not [x for x in os.listdir(os.path.join(prj, "_cache")) if x.endswith(".tmp")], "nessun file temporaneo lasciato"
+    with open(reg, "w", encoding="utf-8") as f: f.write('{"Spread_01.psd": 10')
+    r = _script("modifica_psd", "--progetto", prj, "nessuno"); assert r.returncode == 0, r.stderr[-2000:]
+    assert formato.leggi_json(reg) == {} and "non leggibile" in r.stdout
+
+
 def test_abbina(tmp_path):
     web, orig, dest = tmp_path / "web", tmp_path / "orig", tmp_path / "dest"
     crea_foto(str(web), [("A1", 300, 200, None), ("A2", 300, 200, None)]); crea_foto(str(orig / "cap1"), [("A1", 900, 600, None)])
