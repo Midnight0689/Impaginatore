@@ -2,7 +2,6 @@
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -11,20 +10,6 @@ from aiuti import come_script, crea_foto
 
 from impaginatore import formato
 from impaginatore.motore import album, genera_psd_angolo
-
-RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-P152 = os.path.join(RADICE, "tests", "dati", "progetto_152")
-
-
-@pytest.fixture
-def prj(tmp_path):
-    """il progetto dello scenario 1.5.2 (cornici libere, angoli, testi), pronto per gli script"""
-    p = tmp_path / "Album àè"; crea_foto(str(p / "Foto"))
-    shutil.copy(os.path.join(P152, "spec.py"), p / "spec.py")
-    with open(os.path.join(P152, "progetto.json"), encoding="utf-8") as f: cfg = json.loads(f.read().replace("{PROGETTO}", str(p).replace("\\", "/")))
-    formato.scrivi_json(str(p / "progetto.json"), cfg, indent=2, ensure_ascii=False)
-    return str(p)
-
 
 def _script(nome, *args, cwd=None, env=None):
     return subprocess.run([sys.executable, "-m", f"impaginatore.motore.{nome}", *args], capture_output=True, text=True, encoding="utf-8", cwd=cwd, env=env)
