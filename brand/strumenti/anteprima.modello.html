@@ -257,6 +257,15 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
 .fascia-lab h3 { font-size: 24px; margin: 8px 0 6px; }
 .fascia-lab p { margin: 0; max-width: 62ch; }
 .fascia-lab .pulsante { flex: none; }
+.fascia-ore { margin-top: var(--imp-griglia-canale); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--imp-spazio-5) var(--imp-spazio-6); align-items: center; padding: var(--imp-spazio-6); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-grande); background: var(--imp-superficie); }
+.fascia-ore h3 { font-size: 24px; margin: 8px 0 6px; }
+.fascia-ore p { margin: 0; max-width: 62ch; }
+.fascia-ore .nota { grid-column: 1 / -1; font-size: 12.5px; color: var(--imp-testo-tenue); }
+.pacchetti { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--imp-filetto); border-radius: var(--imp-raggio-medio); }
+.pacchetto { display: grid; gap: 6px; padding: var(--imp-spazio-4) var(--imp-spazio-5); min-width: 0; }
+.pacchetto + .pacchetto { border-left: 1px solid var(--imp-filetto); }
+.pacchetto strong { font: 480 34px/1 var(--imp-font-titoli); font-variation-settings: "opsz" 48; letter-spacing: -.02em; font-variant-numeric: lining-nums; white-space: nowrap; }
+.pacchetto .per-ora { font-size: 12.5px; color: var(--imp-testo-secondario); white-space: nowrap; }
 
 /* ------------------------------------------------------------------ foto segnaposto */
 .foto { background: #8a7a6a; position: relative; overflow: hidden; }
@@ -359,6 +368,7 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
   .sito .eroe { grid-template-columns: 1fr; }
   .prezzi, .concept { grid-template-columns: 1fr; }
   .fascia-lab { flex-direction: column; align-items: flex-start; }
+  .fascia-ore { grid-template-columns: minmax(0, 1fr); }
   .scorretti { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 760px) {
@@ -385,6 +395,8 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
   .contrasti { grid-template-columns: 1fr; }
   .campioni { grid-template-columns: repeat(3, 1fr); }
   .contrasti-avvolgi { overflow-x: auto; }
+  .pacchetto { padding: var(--imp-spazio-3) var(--imp-spazio-3); }
+  .pacchetto strong { font-size: 26px; }
 }
 @media (max-width: 400px) {
   .testata .pagina { gap: var(--imp-spazio-3); }
@@ -553,7 +565,7 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
     </div>
     <div class="famiglia">
       <div class="nome"><span class="etichetta">Numeri e misure</span><b>IBM Plex Mono</b><span class="piccolo tenue">IBM · OFL 1.1 · Regular 400, Medium 500</span></div>
-      <div class="esempio"><div class="misura" style="font-size:28px;letter-spacing:-.01em">30 × 30 cm · 3,0 mm · 0,1 mm · 349 €</div><div class="etichetta" style="margin-top:10px">Etichette tecniche · maiuscolo · spaziatura +6 %</div></div>
+      <div class="esempio"><div class="misura" style="font-size:28px;letter-spacing:-.01em">30 × 30 cm · 3,0 mm · 0,1 mm · 89 €</div><div class="etichetta" style="margin-top:10px">Etichette tecniche · maiuscolo · spaziatura +6 %</div></div>
     </div>
     <div class="blocco">
       <span class="etichetta">Scala tipografica</span>
@@ -686,7 +698,7 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
         <span class="etichetta">Badge</span>
         <div class="fila" style="margin-top:16px">
           <span class="badge verde">Licenza perpetua</span><span class="badge">macOS · Windows</span><span class="badge">Novità</span>
-          <span class="badge prezzo"><b class="num">349 €</b><span>una volta</span></span>
+          <span class="badge prezzo"><b class="num">89 €</b><span>una volta</span></span>
         </div>
         <p class="piccolo secondario" style="margin-top:20px">Il badge prezzo dice sempre due cose: la cifra, in carattere dei numeri, e il fatto che si paga una volta. Le cifre di questa pagina sono quelle del listino (<span class="num">docs/mercato/tier.json</span>), IVA esclusa.</p>
       </div>
@@ -738,26 +750,39 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
       <div class="prezzi" style="margin-top:28px">
         <div class="card-prezzo">
           <div><span class="etichetta">Pochi album</span><h3 style="margin-top:8px">Essenziale</h3></div>
-          <div class="cifra"><strong>199 €</strong><span>una volta</span></div>
+          <div class="cifra"><strong>49 €</strong><span>una volta</span></div>
           <ul><li><svg><use href="#i-ok"/></svg>Editor completo, spread per spread</li><li><svg><use href="#i-ok"/></svg>30 modelli d'autore, 5 tuoi</li><li><svg><use href="#i-ok"/></svg>Esportazione JPG e PDF</li><li><svg><use href="#i-ok"/></svg>Formati dei laboratori</li><li><svg><use href="#i-ok"/></svg>1 computer</li></ul>
           <a class="pulsante" href="#">Acquista Essenziale</a>
-          <p class="nota">IVA esclusa · 242,78 € con IVA al 22 %</p>
+          <p class="nota">IVA esclusa · 59,78 € con IVA al 22 %</p>
         </div>
         <div class="card-prezzo consigliata">
           <span class="nastro badge verde">Consigliato</span>
           <div><span class="etichetta">Professionista</span><h3 style="margin-top:8px">Pro</h3></div>
-          <div class="cifra"><strong>349 €</strong><span>una volta</span></div>
+          <div class="cifra"><strong>89 €</strong><span>una volta</span></div>
           <ul><li><svg><use href="#i-ok"/></svg>Tutto di Essenziale</li><li><svg><use href="#i-ok"/></svg>Bozza dell'intero album con Claude</li><li><svg><use href="#i-ok"/></svg>PSD a livelli per Photoshop</li><li><svg><use href="#i-ok"/></svg>Spazi e tono uniformi su tutto l'album</li><li><svg><use href="#i-ok"/></svg>Tutti i modelli · 2 computer</li></ul>
           <a class="pulsante primario" href="#">Acquista Pro</a>
-          <p class="nota">IVA esclusa · 425,78 € con IVA al 22 %</p>
+          <p class="nota">IVA esclusa · 108,58 € con IVA al 22 %</p>
         </div>
         <div class="card-prezzo">
           <div><span class="etichetta">Più postazioni</span><h3 style="margin-top:8px">Studio</h3></div>
-          <div class="cifra"><strong>699 €</strong><span>una volta</span></div>
-          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Pro</li><li><svg><use href="#i-ok"/></svg>5 computer, più operatori</li><li><svg><use href="#i-ok"/></svg>Risposta entro 1 giorno lavorativo</li><li><svg><use href="#i-ok"/></svg>30 minuti di avvio guidato</li><li><svg><use href="#i-ok"/></svg>Prossima versione maggiore inclusa</li></ul>
+          <div class="cifra"><strong>169 €</strong><span>una volta</span></div>
+          <ul><li><svg><use href="#i-ok"/></svg>Tutto di Pro</li><li><svg><use href="#i-ok"/></svg>5 computer, più operatori</li><li><svg><use href="#i-ok"/></svg>Uso in studio con più postazioni</li><li><svg><use href="#i-ok"/></svg>1 ora di assistenza inclusa</li><li><svg><use href="#i-ok"/></svg>Prossima versione maggiore inclusa</li></ul>
           <a class="pulsante" href="#">Acquista Studio</a>
-          <p class="nota">IVA esclusa · 852,78 € con IVA al 22 %</p>
+          <p class="nota">IVA esclusa · 206,18 € con IVA al 22 %</p>
         </div>
+      </div>
+      <div class="fascia-ore">
+        <div>
+          <span class="etichetta">Assistenza</span>
+          <h3>Assistenza a ore</h3>
+          <p class="secondario">Una persona lavora con te in videochiamata: installazione, formati del tuo laboratorio, Photoshop, Claude, formazione dei collaboratori. Paghi le ore in anticipo; valgono 12 mesi e si usano a blocchi di 30 minuti.</p>
+        </div>
+        <div class="pacchetti">
+          <div class="pacchetto"><span class="etichetta">1 ora</span><strong>60 €</strong><span class="per-ora">60 € l'ora</span></div>
+          <div class="pacchetto"><span class="etichetta">5 ore</span><strong>250 €</strong><span class="per-ora">50 € l'ora</span></div>
+          <div class="pacchetto"><span class="etichetta">10 ore</span><strong>450 €</strong><span class="per-ora">45 € l'ora</span></div>
+        </div>
+        <p class="nota">IVA esclusa · Gratis per tutti: manuale, guide video e correzione dei difetti. Se il problema è del programma, non paghi.</p>
       </div>
       <div class="fascia-lab">
         <div>
@@ -767,7 +792,7 @@ hr { border: 0; border-top: 1px solid var(--imp-filetto); margin: 0; }
         </div>
         <a class="pulsante pieno" href="#">Parliamone</a>
       </div>
-      <p class="piccolo secondario" style="margin-top:20px">Durante il lancio la cifra grande è il prezzo di lancio e il listino va accanto, con la data di fine, per esempio «249 € fino al 15 gennaio, poi 349 €». Mai il prezzo barrato prima che il listino sia stato applicato davvero.</p>
+      <p class="piccolo secondario" style="margin-top:20px">Durante il lancio la cifra grande è il prezzo di lancio e il listino va accanto, con la data di fine, per esempio «69&nbsp;€ fino al 15 gennaio, poi 89&nbsp;€». Mai il prezzo barrato prima che il listino sia stato applicato davvero. Le ore di assistenza si scrivono con l'unità («60&nbsp;€ l'ora»), mai con «una volta» né come abbonamento.</p>
     </div>
 
     <div class="blocco">

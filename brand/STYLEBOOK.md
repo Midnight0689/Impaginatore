@@ -95,12 +95,13 @@ Composizione: Newsreader, punto finale compreso, in Verde Bottega o Inchiostro. 
 - Nessun punto esclamativo, nessuna emoji, nessun maiuscolo urlato.
 - L’assistente si chiama col suo nome: «Claude prepara la bozza». Non «l’IA crea», non «magia».
 - Si spiega il perché in una riga, poi ci si ferma.
-- Convenzioni italiane: virgola decimale (3,0 mm), punto delle migliaia (1.290 €), prezzo con lo spazio prima di € (349 €), segno di moltiplicazione con spazi (30 × 30 cm), lineetta per gli intervalli (spread 07–08), virgolette basse («»), apostrofo tipografico (’). In inglese: €349, 30 × 30 cm, 3.0 mm.
+- Convenzioni italiane: virgola decimale (3,0 mm), punto delle migliaia (1.290 €), prezzo con lo spazio prima di € (89 €), segno di moltiplicazione con spazi (30 × 30 cm), lineetta per gli intervalli (spread 07–08), virgolette basse («»), apostrofo tipografico (’). In inglese: €89, 30 × 30 cm, 3.0 mm.
 
 | Si dice | Non si dice |
 |---|---|
 | Le foto restano sul tuo computer. | Privacy-first, 100% sicuro, cloud-free! |
 | Paghi una volta. La versione che compri resta tua. | Offerta lifetime imperdibile 🔥 |
+| Se il problema è del programma, non paghi. L’assistenza personale è a ore, pagata in anticipo. | Supporto premium prioritario 24/7 |
 | Claude prepara la bozza; tu decidi ogni spread. | La nostra AI rivoluzionaria crea album magici in un click ✨ |
 | Spazi uguali al decimo di millimetro. | Layout pixel-perfect da sogno. |
 | Nello spread 07–08 un volto cade a 4 mm dalla piega. | Ops! Qualcosa non va nel tuo layout 😅 |
@@ -126,7 +127,7 @@ In inglese: magic · effortless · stunning · unleash · elevate · next-level 
 **Per i fotografi.**
 
 1. **Le foto restano sul tuo computer.** Nessuna funzione le carica in rete; si lavora anche senza connessione. *Prova:* regola del progetto, verificata dall’audit di sicurezza.
-2. **Paghi una volta.** Licenza perpetua: la versione che compri resta tua, anche se smetti di aggiornare. *Prova:* attivazione con chiave verificata in locale.
+2. **Paghi una volta.** Licenza perpetua: la versione che compri resta tua, anche se smetti di aggiornare. *Prova:* attivazione con chiave verificata in locale. L’assistenza personale è a parte, a ore e facoltativa: si dice chiaro accanto al prezzo, non in piccolo.
 3. **Precisione da tipografo.** Spazi e margini uguali al decimo di millimetro, controllati spread per spread; modelli d’autore; PSD a livelli per Photoshop.
 4. **La bozza la prepara Claude, la rifinitura è tua.** L’assistente costruisce l’intero album dentro l’editor; gli spread che hai rifinito a mano non vengono più toccati.
 5. **Fatto da un fotografo.** Nasce dal banco di lavoro di chi impagina album da più di dieci anni e non voleva perdere il proprio strumento.
@@ -445,11 +446,13 @@ Stati: hover (fondo più scuro o bordo `testo`), premuto (spostamento di 1 px in
 
 **Badge.** 24 px, raggio 2 px, IBM Plex Mono 500 11,5 px maiuscolo. Varianti: neutro (filetto), verde (`accento-tenue` + `accento`).
 
-**Badge prezzo.** Due parti unite: la cifra in IBM Plex Mono su `superficie` con bordo `testo`, e «una volta» su `inverso-fondo`. Il prezzo non compare mai senza «una volta» (in inglese «one-time»).
+**Badge prezzo.** Due parti unite: la cifra in IBM Plex Mono su `superficie` con bordo `testo`, e «una volta» su `inverso-fondo`. Il prezzo della licenza non compare mai senza «una volta» (in inglese «one-time»).
 
-**Card prezzo.** Etichetta per chi è (POCHI ALBUM / PROFESSIONISTA / PIÙ POSTAZIONI), nome della fascia in Newsreader 30 px, cifra in Newsreader 64 px con «una volta» accanto, elenco con spunte verdi, pulsante a tutta larghezza in fondo, nota fiscale in 12,5 px. Tre fasce per i fotografi, Essenziale · **Pro** · Studio, con il Pro al centro: bordo `testo`, ombra *sollevato*, badge verde «Consigliato» e l’unico pulsante verde. L’edizione per i laboratori sta in una fascia a parte sotto le card, con «Parliamone» e senza cifra. Cifre, funzioni e nomi vengono da `docs/mercato/tier.json` e `prezzi.md` (T-004): se cambiano lì, si cambiano qui.
+**Card prezzo.** Etichetta per chi è (POCHI ALBUM / PROFESSIONISTA / PIÙ POSTAZIONI), nome della fascia in Newsreader 30 px, cifra in Newsreader 64 px con «una volta» accanto, elenco con spunte verdi, pulsante a tutta larghezza in fondo, nota fiscale in 12,5 px. Tre fasce per i fotografi, Essenziale · **Pro** · Studio, con il Pro al centro: bordo `testo`, ombra *sollevato*, badge verde «Consigliato» e l’unico pulsante verde. Sotto le card, una fascia **Assistenza a ore** con i tre pacchetti (1 ora 60 €, 5 ore 250 €, 10 ore 450 €), il prezzo per ora in testo secondario, la validità (12 mesi, blocchi di 30 minuti) e la nota «Gratis per tutti: manuale, guide video e correzione dei difetti». Pulsante neutro, mai verde. L’edizione per i laboratori sta in una fascia a parte sotto, con «Parliamone» e senza cifra. Cifre, funzioni e nomi vengono da `docs/mercato/tier.json` e `prezzi.md` (T-004): se cambiano lì, si cambiano qui.
 
-**Prezzo di lancio.** La cifra grande è quella che si paga oggi; il prezzo di listino va accanto in testo secondario con la data di fine («249 € fino al 15 gennaio, poi 349 €»). Niente prezzo barrato finché il listino non è stato davvero applicato: per la direttiva Omnibus (art. 17-bis del Codice del consumo) il prezzo «prima» di uno sconto deve essere il più basso dei 30 giorni precedenti. Da far confermare a chi segue l’aspetto legale.
+**Prezzi dell’assistenza.** Si scrivono con l’unità: «60 € l’ora», «5 ore, 250 €». Mai «una volta» (vale solo per la licenza), mai «abbonamento», mai «supporto prioritario»: nessuna fascia lo include. Studio dice «1 ora di assistenza inclusa».
+
+**Prezzo di lancio.** La cifra grande è quella che si paga oggi; il prezzo di listino va accanto in testo secondario con la data di fine («69 € fino al 15 gennaio, poi 89 €»). Niente prezzo barrato finché il listino non è stato davvero applicato: per la direttiva Omnibus (art. 17-bis del Codice del consumo) il prezzo «prima» di uno sconto deve essere il più basso dei 30 giorni precedenti. Da far confermare a chi segue l’aspetto legale.
 
 **Avvisi.** Filetto sinistro di 3 px nel colore dello stato, fondo tinto al 9 %, icona, attacco in grassetto che dice l’esito («Spaziature corrette.», «Da controllare.», «Non esportabile.»).
 
@@ -508,5 +511,5 @@ python3 strumenti/genera_anteprima.py                                     # ante
 - `icona.png` — icona da 1024 a 16 px su chiaro e scuro; 16 e 32 px ingranditi.
 - `concept.png` — i tre concept e la versione scartata, a 200, 64, 32, 16 px.
 - `anteprima-chiaro.png`, `anteprima-scuro.png` — la pagina intera a 1440 px.
-- `anteprima-telefono.png` — la pagina a 390 px, chiaro e scuro; misurata anche a 360 e 375 px: nessuno scorrimento orizzontale.
+- `anteprima-telefono.png` — la sezione prezzi (card, assistenza a ore, laboratori) a 390 px, chiaro e scuro; pagina misurata anche a 360 e 375 px: nessuno scorrimento orizzontale. Con `google-chrome --headless=new` la finestra non scende sotto i 500 px e la vista è 87 px più bassa della finestra: le schermate a 390 px si fanno dentro un `iframe` largo 390 px, e l’altezza della finestra va aumentata di 87 px.
 - Contrasti: 38 coppie, tutte sopra soglia (tabella al §9).
