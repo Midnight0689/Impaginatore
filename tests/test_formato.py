@@ -1,5 +1,7 @@
-"""Formato di salvataggio: spec.py (codice Python del formato 1.x) e progetto.json. I progetti salvati dalla 1.5.2 devono
-aprirsi e risalvarsi identici; quelli salvati dalla 2.0 devono restare leggibili dagli script 1.x."""
+"""Formato di salvataggio: album.json (formato 2, solo dati) e progetto.json. I progetti salvati dalla 1.5.2 (spec.py) si
+convertono senza eseguire niente e danno lo stesso stato e le stesse anteprime; su richiesta un progetto si esporta ancora
+per la 1.x (spec.py che gli script 1.5.2 leggono)."""
+import ast
 import json
 import os
 import shutil
@@ -9,8 +11,8 @@ import sys
 import pytest
 from aiuti import FOTO_SCENARIO, crea_foto, riduci
 
-from impaginatore import formato
-from impaginatore.motore import album, compat
+from impaginatore import formato, formato_1x, validazione
+from impaginatore.motore import album, album_libere
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P152 = os.path.join(RADICE, "tests", "dati", "progetto_152")
@@ -25,19 +27,102 @@ def _progetto_152(base):
     return p, cfg
 
 
-def test_progetto_152_si_riapre_e_si_risalva_identico(tmp_path, apri_editor):
+def _esegui_come_la_1x(path):
+    """riferimento: SPREADS come li dava la 1.5.2, eseguendo spec.py (solo qui, nel test, su un file nostro e fidato)"""
+    nomi = {}
+    sys.modules["album"], sys.modules["album_libere"] = album, album_libere          # come faceva la 1.x: i moduli con i nomi brevi
+    try:
+        with open(path, encoding="utf-8") as f: exec(compile(f.read(), path, "exec"), nomi)
+    finally: del sys.modules["album"], sys.modules["album_libere"]
+    return [[[m, list(it)] for m, it in sp] for sp in nomi["SPREADS"]]
+
+
+def _anteprime(spreads):
+    return [album.render(sp, 0.05).tobytes() for sp in spreads]
+
+
+def test_progetto_152_si_converte_e_si_riapre_uguale(tmp_path, apri_editor):
     p, cfg = _progetto_152(str(tmp_path))
+    with open(os.path.join(p, "spec.py"), "rb") as f: originale = f.read()
     c = apri_editor(p)
     with open(os.path.join(P152, "stato_ridotto.json"), encoding="utf-8") as f: atteso = json.load(f)
     assert riduci(c.get("/api/state")) == atteso, "stato dell'editor diverso da quello della 1.5.2"
-    c.E.save(backup=False)
-    with open(os.path.join(p, "spec.py"), encoding="utf-8") as f: nuovo = f.read().split("\n")
+    assert not os.path.exists(os.path.join(p, "spec.py")) and os.path.exists(os.path.join(p, "album.json"))
+    with open(os.path.join(p, "spec.py.1x"), "rb") as f: assert f.read() == originale, "spec.py resta, intatto, come copia"
+    # la stessa impaginazione riscritta per la 1.x è identica (riga per riga) a quella salvata dalla 1.5.2
     with open(os.path.join(P152, "spec.py"), encoding="utf-8") as f: vecchio = f.read().split("\n")
-    assert nuovo[0].startswith('"""Parità àè: 5 spread. Salvato dall\'editor il ')
-    assert nuovo[1:] == vecchio[1:], "spec.py risalvato diverso"
+    assert formato_1x.testo_spec(c.E.SP, "Parità àè", album.name).split("\n")[1:] == vecchio[1:]
+    c.E.save(backup=False)
     assert formato.leggi_json(os.path.join(p, "progetto.json")) == cfg, "progetto.json risalvato diverso"
-    for f in ("album_libere.py", "testo.py", "vib_lut.npz"): assert os.path.exists(os.path.join(p, f)), f      # formato 1.x: copie del motore accanto a spec.py
-    assert "__pycache__" not in os.listdir(p)
+    assert sorted(os.listdir(p)) == ["Foto", "_backup_editor", "_cache", "album.json", "progetto.json", "spec.py.1x"]
+    c.E.inizializza(p)
+    assert riduci(c.get("/api/state")) == atteso, "riaperto da album.json: stato diverso"
+
+
+def test_conversione_uguale_alla_152_eseguita(tmp_path):
+    """parità vera: la conversione senza esecuzione dà gli stessi elementi e le stesse anteprime (pixel per pixel) di spec.py eseguito"""
+    p, _ = _progetto_152(str(tmp_path)); album.carica_progetto(p)
+    rif = _esegui_come_la_1x(os.path.join(p, "spec.py"))
+    sp = formato.carica(p)
+    assert sp == rif
+    assert _anteprime(sp) == _anteprime(rif)
+    assert formato.carica(p) == rif, "riletto da album.json"
+
+
+SPEC_SKILL = '''"""Esempio come lo scrive l'assistente con la skill: moduli, tuple, commenti, nomi o numeri delle foto."""
+from album import *
+from album_libere import FREE, ROT as GIRA
+
+APERTURA = (W(TXT("title", 0, 0, 12, 8)), I(FULL("V10")))
+SPREADS = [
+    APERTURA,                                                      # apertura
+    (I(DUO("V03", "V04", z=(1, 1.1))), I(G4("H01", "H02", "H06", "H08"))),
+    (I(DUO("V07", "V10", bw=(True, False), z=(1.25, 1))), W(CV("Q05"))),
+    (I(VLL("V03", "H01", "H02", mirror=True)), I(V4("V04", "V07", "V10", "V03", "V04", mirror=True, z=1.2))),
+    (W(*SV("Q09"), *PP(1, bw=True)), W(COL2("H01", "H02"), BAND2("H06", "H08"))),
+]
+SPREADS += [(W(STRIP3("H01", "H02", 3)), W(GIRA(FREE(5, 0.1, 0.2 - 0.1, 1 / 2, 0.5 * 1, zo=+1), -4.5)))]
+SPREADS.append((W(P("H08", 0, 0, 6, 8), TXT("end", 7, 0, 5, 8)), I(FULL(-(-2)))))
+'''
+
+
+def test_spec_scritto_con_la_skill_si_converte(tmp_path, foto_campione):
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
+    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    (p / "spec.py").write_text(SPEC_SKILL, encoding="utf-8")
+    album.carica_progetto(str(p))
+    assert formato.controlla(str(p)) == 7 and formato.conta_spread(str(p)) == 7 and formato.conta_spread(str(p)) == 7
+    rif = _esegui_come_la_1x(str(p / "spec.py"))
+    sp = formato.carica(str(p))
+    doc = formato.leggi_album(str(p / "album.json"))
+    assert formato.documento(sp, album.name) == formato.documento(rif, album.name) == doc
+    assert _anteprime(sp) == _anteprime(rif)
+    assert sp[5][1][1][0]["a"] == -4.5 and sp[5][1][1][0]["zo"] == 1 and sp[6][1][1][0]["i"] == 1
+    assert formato.conta_spread(str(p)) == 7 and formato.file_album(str(p)).endswith("album.json") and formato.conta_spread(str(tmp_path)) == 0
+    assert "__pycache__" not in os.listdir(p) and str(p) not in sys.path
+
+
+def test_progetto_si_esporta_per_la_1x(tmp_path, apri_editor):
+    """«Esporta per la versione 1.x»: spec.py e copie del motore che gli script della 1.5.2 (ramo main) leggono"""
+    p, _ = _progetto_152(str(tmp_path))
+    c = apri_editor(p)
+    out = tmp_path / "per_1x"; out.mkdir()
+    formato_1x.esporta(str(out), c.E.SP, "Nome con \"\"\" e \\ dentro", album.name, quando="01/01/2026 10:00")
+    for f in ("album_libere.py", "testo.py", "vib_lut.npz"): assert (out / f).exists(), f
+    testo = (out / "spec.py").read_text(encoding="utf-8")
+    assert ast.literal_eval(testo.split("\n")[0]) == 'Nome con """ e \\ dentro: 5 spread. Salvato dall\'editor il 01/01/2026 10:00.'
+    assert formato_1x.leggi(testo.encode(), prova=True) and len(formato_1x.leggi(testo.encode())) == 5
+    vecchio = _album_152()
+    if vecchio is None: pytest.skip("storia git della 1.5.2 non disponibile")
+    shutil.copy(os.path.join(p, "progetto.json"), out / "progetto.json"); shutil.copytree(os.path.join(p, "_cache"), out / "_cache")
+    scr = tmp_path / "scripts_152"; scr.mkdir(); (scr / "album.py").write_bytes(vecchio)
+    codice = ("import sys; sys.path.insert(0, sys.argv[1]); sys.argv = ['x', '--progetto', '.']\n"
+              "import album\nSP = album.load_spec()\nimport album_libere, testo\n"
+              "im = album.render(SP[1], 0.05)\nprint(len(SP), im.size, album_libere.__file__)")
+    r = subprocess.run([sys.executable, "-c", codice, str(scr), str(out)], cwd=str(out), capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert r.stdout.startswith("5 ") and os.path.join(str(out), "album_libere.py") in r.stdout
 
 
 def _album_152():
@@ -47,27 +132,10 @@ def _album_152():
     return r.stdout if r.returncode == 0 else None
 
 
-def test_progetto_salvato_dalla_2_si_apre_con_gli_script_152(tmp_path, apri_editor):
-    """chi ha ancora la 1.5.2 (ramo main) deve poter aprire un progetto salvato dalla 2.0: spec.py con «from album import *»
-    e le copie di album_libere.py / testo.py nella cartella del progetto"""
-    vecchio = _album_152()
-    if vecchio is None: pytest.skip("storia git della 1.5.2 non disponibile")
-    p, _ = _progetto_152(str(tmp_path))
-    c = apri_editor(p); c.E.save(backup=False)
-    scr = tmp_path / "scripts_152"; scr.mkdir(); (scr / "album.py").write_bytes(vecchio)
-    codice = ("import sys; sys.path.insert(0, sys.argv[1]); sys.argv = ['x', '--progetto', '.']\n"
-              "import album\nSP = album.load_spec()\nimport album_libere, testo\n"
-              "assert album_libere.__file__.startswith(sys.argv[2]) or True\n"
-              "im = album.render(SP[1], 0.05)\nprint(len(SP), im.size, album_libere.__file__)")
-    r = subprocess.run([sys.executable, "-c", codice, str(scr), p], cwd=p, capture_output=True, text=True, encoding="utf-8")
-    assert r.returncode == 0, r.stderr[-2000:]
-    assert r.stdout.startswith("5 ") and os.path.join(p, "album_libere.py") in r.stdout
-
-
 def test_copie_nel_progetto_funzionano_da_sole(tmp_path):
-    """album_libere.py e testo.py copiati in un progetto non devono avere bisogno del pacchetto"""
+    """album_libere.py e testo.py copiati per la 1.x non devono avere bisogno del pacchetto"""
     d = tmp_path / "prj"; d.mkdir()
-    formato.copia_motore(str(d))
+    formato_1x.copia_motore(str(d))
     (d / "album.py").write_text("def _place(*a): pass\ndef zcrop(it): pass\ndef _photo(*a): pass\ndef render(*a): pass\ndef _text(*a): pass\ndef apply_ev(*a): pass\ndef layout(s): pass\n", encoding="utf-8")
     codice = "import album_libere, testo; print(testo._dirs()[0], testo._cache()); print(album_libere.vib_lut().shape)"
     r = subprocess.run([sys.executable, "-I", "-c", "import sys; sys.path.insert(0, '.'); " + codice], cwd=str(d), capture_output=True, text=True, encoding="utf-8")
@@ -75,58 +143,196 @@ def test_copie_nel_progetto_funzionano_da_sole(tmp_path):
     assert ".album-tools" in r.stdout and "17, 17, 17, 3)" in r.stdout
 
 
-def test_carica_spec_scritto_a_mano(tmp_path, foto_campione):
-    """uno spec.py scritto con le funzioni del motore (come lo scrive Claude con la skill) si carica"""
-    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
-    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
-    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
-    (p / "aiuto.py").write_text("PAGINA = 'W'\n", encoding="utf-8")
-    (p / "spec.py").write_text("from album import *\nfrom aiuto import PAGINA\n\nSPREADS = [\n    # 1\n    (I(DUO('V03', 'V04')),\n     W(*CV('V10'))),\n    # 2\n    (I(FULL('H01')),\n     W(PP(2))),\n]\n", encoding="utf-8")
-    album.carica_progetto(str(p))
-    sp = formato.carica(str(p))
-    assert len(sp) == 2 and sp[0][0][0] == "I" and sp[1][1][1][0]["i"] == 1
-    assert formato.conta_spread(str(p)) == 2 and formato.conta_spread(str(tmp_path)) == 0
-    assert "__pycache__" not in os.listdir(p) and str(p) not in sys.path
-
-
-def test_testo_spec_rilegge_quello_che_scrive(tmp_path, foto_campione):
-    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
-    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
-    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
-    album.carica_progetto(str(p))
+def _tutti_i_tipi():
     i = album.IDX
-    spreads = [[["I", [dict(k="p", i=i["H01"] - 1, c=0, r=0, w=6, h=8, bw=True, z=1.3)]], ["W", [dict(k="full", i=i["V03"] - 1, bw=False, z=1.0)]]],
-               [["W", [dict(k="f", i=i["Q05"] - 1, x=0.1, y=0.2, w=0.5, h=0.4, bw=False, z=1.0, zo=2, a=-4.5, bd=[2.0, "#000000"], sh=30, oc=90)]],
-                ["W", [dict(k="t", kind="txt", tx="Ciao «àè»\nriga", fx=0.1, fy=0.1, fw=0.5, fh=0.2, font="X-Regular", size=90.0, col=[1, 2, 3], al="right", tr=10.0, auto=False, lh=1.4, caps=True, zo=3, stile="T"),
-                       dict(k="t", kind="title", c=0, r=0, w=12, h=8), dict(k="t", kind="end", fx=0.5, fy=0.5, fw=0.4, fh=0.3, ts=1.2)]]]]
-    formato.salva(str(p), spreads, "Album «prova»", album.name, quando="01/01/2026 10:00")
-    with open(p / "spec.py", encoding="utf-8") as f: testo = f.read()
-    assert testo.startswith('"""Album «prova»: 2 spread. Salvato dall\'editor il 01/01/2026 10:00."""\nfrom album import *\nfrom album_libere import *')
-    assert all(os.path.exists(p / f) for f in ("album_libere.py", "testo.py", "vib_lut.npz"))
+    return [[["I", [dict(k="p", i=i["H01"] - 1, c=0, r=0, w=6, h=8, bw=True, z=1.3), dict(k="full", i=i["H02"] - 1, bw=False, z=1.0, zo=4, a=2.0, sh=0, oc=100)]],
+             ["W", [dict(k="full", i=i["V03"] - 1, bw=False, z=1.0)]]],
+            [["W", [dict(k="f", i=i["Q05"] - 1, x=0.1, y=0.2, w=0.5, h=0.4, bw=False, z=1.0, zo=2, a=-4.5, bd=[2.0, "#000000"], sh=30, oc=90)]],
+             ["W", [dict(k="t", kind="txt", tx="Ciao «àè»\nriga \"\"\" ' \\", fx=0.1, fy=0.1, fw=0.5, fh=0.2, font="X-Regular", size=90.0, col=[1, 2, 3], al="right", tr=10.0, auto=False, lh=1.4, caps=True, zo=3, stile="T"),
+                    dict(k="t", kind="title", c=0, r=0, w=12, h=8, ts=1.5, zo=7), dict(k="t", kind="end", fx=0.5, fy=0.5, fw=0.4, fh=0.3, ts=1.2, c=3, r=3, w=2, h=2)]]]]
+
+
+def test_album_json_rilegge_quello_che_scrive(tmp_path, foto_campione):
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
+    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    album.carica_progetto(str(p))
+    spreads = _tutti_i_tipi()
+    doc = formato.salva(str(p), spreads, album.name)
+    testo = (p / "album.json").read_text(encoding="utf-8")
+    assert json.loads(testo) == doc and doc["formato"] == 2 and doc["programma"].startswith("Impaginatore ")
+    assert testo.count("\n") > 8, "un elemento per riga"
     letto = formato.carica(str(p))
-    assert formato.testo_spec([[[m, list(it)] for m, it in sp] for sp in letto], "Album «prova»", album.name, "01/01/2026 10:00") == testo
-    assert not formato.ha_liberi([[["I", [dict(k="p", i=0)]], ["W", []]]])
-    assert formato.spec_vuota("X").count("SPREADS = [") == 1
+    assert formato.documento(letto, album.name) == doc
+    # gli elementi riletti sono quelli dei costruttori del motore, come li dava spec.py (più zo e ts che la 1.x perdeva)
+    assert letto[1][1][1][1] == dict(k="t", kind="title", c=0, r=0, w=12, h=8, ts=1.5, zo=7)
+    assert letto[1][1][1][2] == album_libere.TXTF("end", 0.5, 0.5, 0.4, 0.3, ts=1.2)
+    assert letto[0][0][1][1] == dict(album.FULL("H02"), zo=4, a=2.0)
+    assert formato.testo_album(formato.leggi_album(str(p / "album.json"))) == testo
+    assert json.loads(formato.album_vuoto())["spread"] == [] and formato.testo_album({"formato": 2, "spread": []}).count("[]") == 1
+    assert not formato_1x.ha_liberi([[["I", [dict(k="p", i=0)]], ["W", []]]]) and formato_1x.ha_liberi(spreads)
 
 
-def test_compat_nomi_1x():
-    compat.installa(); compat.installa()
-    import album as a
-    import album_libere as al
-    import testo as t
-    from impaginatore.motore import album_libere, testo
-    assert a is album and al is album_libere and t is testo
-    assert a.__spec__.name == "impaginatore.motore.album"
-    compat.disinstalla()
-    assert "album" not in sys.modules
-    compat.installa()
+def test_nuovo_progetto_e_solo_dati(home):
+    p = home.nuovo({"nome": "  Nuovo  ", "w": 30, "h": 30})
+    assert os.path.basename(p) == "Nuovo" and sorted(os.listdir(p)) == ["Foto", "album.json", "progetto.json"]
+    assert formato.leggi_album(os.path.join(p, "album.json"))["spread"] == [] and formato.controlla(p) == 0
+    assert formato.leggi_progetto(p)["nome"] == "Nuovo"
 
 
+# ---------------------------------------------------------------- album.json non validi: errori chiari, mai eccezioni qualsiasi
+def _doc(*el, modo="I"):
+    return {"formato": 2, "spread": [{"sinistra": {"modo": modo, "elementi": list(el)}, "destra": {"modo": "W", "elementi": []}}]}
+
+
+P0 = {"k": "p", "foto": "H01", "c": 0, "r": 0, "w": 6, "h": 8}
+TX0 = {"k": "t", "kind": "txt", "tx": "a", "fx": 0, "fy": 0, "fw": 0.5, "fh": 0.1, "font": "F", "size": 10, "col": [0, 0, 0], "al": "left", "tr": 0}
+
+
+@pytest.mark.parametrize("doc, messaggio", [
+    ([], "deve contenere un oggetto"),
+    ({"spread": []}, "manca «formato»"),
+    ({"formato": 3, "spread": []}, "aggiorna il programma"),
+    ({"formato": "2", "spread": []}, "formato sconosciuto"),
+    ({"formato": True, "spread": []}, "formato sconosciuto"),
+    ({"formato": 2, "spread": [], "codice": "x"}, "chiave sconosciuta «codice»"),
+    ({"formato": 2, "spread": {}}, "deve essere un elenco"),
+    ({"formato": 2, "spread": [{"sinistra": {"modo": "I", "elementi": []}}]}, "spread 1: manca «destra»"),
+    (_doc(modo="X"), "modo: deve essere uno tra «I», «W»"),
+    (_doc(dict(P0, c=11)), "esce dalla griglia"),
+    (_doc(dict(P0, c=1.5)), "c: deve essere un numero intero"),
+    (_doc(dict(P0, z=float("nan"))), "z: deve essere un numero da -100 a 100"),
+    (_doc(dict(P0, z=True)), "z: deve essere un numero"),
+    (_doc(dict(P0, zo="__import__('os')")), "zo: deve essere un numero intero"),
+    (_doc(dict(P0, bd=[2, "red"])), 'il colore deve essere nella forma "#rrggbb"'),
+    (_doc(dict(P0, bd=[2])), "deve essere [millimetri"),
+    (_doc(dict(P0, sh=101)), "sh: deve essere un numero da 0 a 100"),
+    (_doc(dict(P0, extra=1)), "elemento 1: chiave sconosciuta «extra»"),
+    (_doc({"k": "p"}), "manca «foto», «c», «r», «w», «h»"),
+    (_doc({"k": "x"}), "tipo di elemento sconosciuto"),
+    (_doc("P('H01')"), "elemento 1: deve essere un oggetto"),
+    (_doc({"k": "t", "kind": "boh"}), "kind: deve essere"),
+    (_doc({"k": "f", "foto": "H01", "x": 0, "y": 0, "w": 0, "h": 1}), "w: deve essere un numero maggiore di 0"),
+    (_doc(dict(TX0, al="justify")), "al: deve essere uno tra"),
+    (_doc(dict(TX0, col=[0, 0])), "col: deve avere 3 valori"),
+    (_doc(dict(TX0, col=[0, 0, 300])), "col: deve essere un numero da 0 a 255"),
+    (_doc(dict(TX0, tx="\ud800")), "carattere non ammesso"),
+    (_doc(dict(TX0, tx="x" * 100001)), "troppo lungo"),
+    (_doc(dict(TX0, tx=5)), "tx: deve essere un testo"),
+    (_doc(dict(TX0, size=0)), "size: deve essere un numero maggiore di 0"),
+    (_doc(dict(TX0, auto="sì")), "auto: deve essere vero o falso"),
+    (_doc(dict(TX0, font="")), None),
+    (_doc({"k": "t", "kind": "title", "c": 0, "r": 0, "w": 12, "h": 8, "ts": 99}), "ts: deve essere un numero da 0.05 a 20"),
+    (_doc({"k": "t", "kind": "end", "fx": 0, "fy": 0, "fw": 0, "fh": 0}), None),
+    ({"formato": 2, "programma": 7, "spread": []}, "programma: deve essere un testo"),
+    ({"formato": 2, "spread": [None] * 2001}, "troppi elementi"),
+])
+def test_album_json_non_valido(doc, messaggio):
+    if messaggio is None: validazione.album(doc); return
+    with pytest.raises(validazione.ErroreProgetto, match=messaggio.replace("(", r"\(").replace("[", r"\[")): validazione.album(doc)
+
+
+def test_foto_che_non_ci_sono(tmp_path):
+    with pytest.raises(validazione.ErroreProgetto, match="la foto «H01» non è nel progetto"): validazione.album(_doc(P0), foto={"H02"})
+    validazione.album(_doc(P0), foto={"H01"})
+
+
+@pytest.mark.parametrize("testo, messaggio", [
+    (b'{"formato": 2, "spread": [], "spread": []}', "compare due volte"),
+    (b'{"formato": 2, "spread": [NaN]}', "valore non ammesso"),
+    (b'{"formato": 2, "spread": [Infinity]}', "valore non ammesso"),
+    (b'{"formato": 2, "spread": [', "non è un JSON valido"),
+    (b'\xff\xfe', "non è un testo UTF-8"),
+    (b"[" * 100000 + b"]" * 100000, "non è valido"),
+])
+def test_album_json_illeggibile(tmp_path, testo, messaggio):
+    p = tmp_path / "album.json"; p.write_bytes(testo)
+    with pytest.raises(validazione.ErroreProgetto, match=messaggio): formato.leggi_album(str(p))
+
+
+def test_album_json_troppo_grande(tmp_path, monkeypatch):
+    p = tmp_path / "album.json"; p.write_text(formato.album_vuoto(), encoding="utf-8")
+    monkeypatch.setattr(formato, "MAX_ALBUM", 10)
+    with pytest.raises(validazione.ErroreProgetto, match="troppo grande"): formato.leggi_album(str(p))
+    with pytest.raises(validazione.ErroreProgetto, match="troppo grande"): formato.leggi_json(str(p), massimo=10)
+
+
+def test_progetto_json_controllato(tmp_path):
+    base = dict(nome="X", formato_cm=[30, 20])
+    assert validazione.progetto(dict(base, sconosciuta={"resta": 1}))["sconosciuta"] == {"resta": 1}, "le chiavi di altre versioni restano"
+    for cfg, msg in [([], "deve contenere un oggetto"), ({}, "manca «formato_cm»"), (dict(base, formato_cm=[30]), "deve avere 2 valori"),
+                     (dict(base, ppi=10**6), "ppi: deve essere un numero da 30 a 2400"), (dict(base, formato_cm=[1000, 1000], ppi=2400), "troppo grande da elaborare"),
+                     (dict(base, testo={"colore": "rosso"}), "colore: deve essere un elenco"), (dict(base, stili={"T": {"al": "giustificato"}}), "al: deve essere uno tra"),
+                     (dict(base, tono={"H01": {"c": [[1, 2, 3]]}}), "tono, c: deve avere 2 valori"), (dict(base, ritocco={"H01": {"vib": 500}}), "vib: deve essere un numero da -100 a 100"),
+                     (dict(base, guide=[{"v": ["x"]}]), "guide, v: deve essere un numero"), (dict(base, tolte="H01"), "tolte: deve essere un elenco"),
+                     (dict(base, dimensioni_esatte="no"), "vero o falso"), (dict(base, esposizione={"per_foto": {"H01": "+1"}}), "per_foto: deve essere un numero"),
+                     (dict(base, centri_volto={"H01": [0.5]}), "centri_volto: deve avere 2 valori"), (dict(base, bilanciamento_bianco={"H01": [1, 1, -1]}), "bilanciamento_bianco: deve essere un numero da 0 a 100"),
+                     (dict(base, colori={"H01": 3}), "colori: deve essere un testo")]:
+        with pytest.raises(validazione.ErroreProgetto, match=msg): validazione.progetto(cfg)
+    (tmp_path / "progetto.json").write_text("{", encoding="utf-8")
+    with pytest.raises(validazione.ErroreProgetto, match="non è un JSON valido"): formato.leggi_progetto(str(tmp_path))
+
+
+def test_cache_delle_foto_controllata():
+    buona = [dict(n="a.jpg", dt="", src="/x/a.jpg", w=10, h=10, ar=1.0)]
+    assert validazione.meta(buona) == buona and validazione.volti({"a.jpg": [[0, 0, 1, 1]]})
+    for m, msg in [([dict(buona[0], n="../../a.jpg")], "non è un nome di file valido"), ([dict(buona[0], n="..")], "non è un nome di file valido"),
+                   ([{"n": "a.jpg"}], "manca «dt»"), ([dict(buona[0], w="10")], "w: deve essere un numero intero"), (["a.jpg"], "deve essere un oggetto")]:
+        with pytest.raises(validazione.ErroreProgetto, match=msg): validazione.meta(m)
+    with pytest.raises(validazione.ErroreProgetto): validazione.volti({"a.jpg": [[0, 0, 1]]})
+
+
+# ---------------------------------------------------------------- scritture atomiche (BUG-005)
 def test_scrivi_atomico(tmp_path):
-    f = tmp_path / "a.txt"; formato.scrivi_atomico(str(f), "àè\n")
-    assert f.read_text(encoding="utf-8") == "àè\n" and not (tmp_path / "a.txt.tmp").exists()
+    d = tmp_path / "w"; d.mkdir(); f = d / "a.txt"; formato.scrivi_atomico(str(f), "àè\n")
+    assert f.read_text(encoding="utf-8") == "àè\n" and os.listdir(d) == ["a.txt"]
     formato.scrivi_json(str(tmp_path / "b.json"), {"n": "è"}, ensure_ascii=False)
     assert formato.leggi_json(str(tmp_path / "b.json")) == {"n": "è"}
+    os.chmod(f, 0o600); formato.scrivi_atomico(str(f), "x")
+    assert (os.stat(f).st_mode & 0o777) == 0o600 or os.name == "nt", "i permessi del file restano quelli di prima"
+
+
+def test_scrittura_interrotta_non_rovina_il_file(tmp_path, monkeypatch):
+    """BUG-005: un errore a metà scrittura (dati non serializzabili, disco pieno, sostituzione fallita) lascia il file di prima"""
+    d = tmp_path / "w"; d.mkdir(); f = d / "meta.json"; formato.scrivi_json(str(f), [{"n": "a.jpg"}])
+    with pytest.raises(TypeError): formato.scrivi_json(str(f), [{"n": "b.jpg"}, {"x": object()}])
+    assert formato.leggi_json(str(f)) == [{"n": "a.jpg"}] and os.listdir(d) == ["meta.json"]
+    monkeypatch.setattr(os, "replace", lambda a, b: (_ for _ in ()).throw(OSError(28, "disco pieno")))
+    with pytest.raises(OSError): formato.scrivi_json(str(f), [{"n": "c.jpg"}])
+    assert formato.leggi_json(str(f)) == [{"n": "a.jpg"}] and os.listdir(d) == ["meta.json"]
+
+
+def test_copia_atomica(tmp_path):
+    a = tmp_path / "a"; a.write_bytes(b"x" * 3000000); os.utime(a, (1000000000, 1000000000))
+    formato.copia_atomica(str(a), str(tmp_path / "b"))
+    assert (tmp_path / "b").read_bytes() == a.read_bytes() and os.path.getmtime(tmp_path / "b") == 1000000000
+
+
+def test_cache_rovinata_si_ricostruisce(tmp_path, foto_campione, capsys):
+    """BUG-005: meta.json o faces.json troncati (o non validi) non bloccano l'apertura: si rifanno dalle foto"""
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True)
+    for f in os.listdir(foto_campione): shutil.copy(os.path.join(foto_campione, f), p / "Foto" / f)
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    album.carica_progetto(str(p)); n = len(album.M)
+    (p / "_cache" / "meta.json").write_text('[{"n": "H01.jpg", "dt"', encoding="utf-8")
+    (p / "_cache" / "faces.json").write_text('{"H01.jpg": [[0, 0', encoding="utf-8")
+    (p / "_cache" / "origine.json").write_text('[1, 2]', encoding="utf-8")
+    album.carica_progetto(str(p))
+    assert len(album.M) == n and len(album.F) == n and album.ORIGINE == {}
+    assert len(formato.leggi_json(str(p / "_cache" / "meta.json"))) == n
+    assert "meta.json non valido" in capsys.readouterr().out
+
+
+def test_meta_json_con_percorsi_fuori_dal_progetto(tmp_path, foto_campione):
+    """un meta.json costruito apposta non fa scrivere miniature fuori da _cache/thumbs (nome con ../ o assoluto)"""
+    p = tmp_path / "Album"; (p / "Foto").mkdir(parents=True); shutil.copy(os.path.join(foto_campione, "H01.jpg"), p / "Foto" / "H01.jpg")
+    formato.scrivi_json(str(p / "progetto.json"), dict(nome="Album", foto=str(p / "Foto"), formato_cm=[40, 20]))
+    (p / "_cache").mkdir()
+    fuori = tmp_path / "fuori.jpg"
+    formato.scrivi_json(str(p / "_cache" / "meta.json"), [dict(n="../../fuori.jpg", dt="", src=str(p / "Foto" / "H01.jpg"), w=900, h=600, ar=1.5),
+                                                          dict(n=str(fuori), dt="", src=str(p / "Foto" / "H01.jpg"), w=900, h=600, ar=1.5)])
+    album.carica_progetto(str(p))
+    assert not fuori.exists() and not (p / "fuori.jpg").exists() and [m["n"] for m in album.M] == ["H01.jpg"]
 
 
 def test_foto_scenario_nomi():
@@ -140,8 +346,9 @@ def _senza_misure_testi(righe):
 
 
 def test_stesse_operazioni_stesso_risultato_della_152(home_srv, apri_editor, tmp_path):
-    """lo scenario di parità: le operazioni fatte con la 1.5.2 danno, con la 2.0, lo stesso spec.py, lo stesso progetto.json
-    e lo stesso stato dell'editor (tests/dati/progetto_152 è l'uscita della 1.5.2)"""
+    """lo scenario di parità: le operazioni fatte con la 1.5.2 danno, con la 2.0, la stessa impaginazione (album.json
+    riscritto per la 1.x è lo spec.py della 1.5.2), lo stesso progetto.json e lo stesso stato dell'editor
+    (tests/dati/progetto_152 è l'uscita della 1.5.2)"""
     h = home_srv
     proj = h.post("/api/nuovo", {"nome": "Parità àè", "w": "60", "h": "22,5", "spazio": "2,5"})["path"]
     crea_foto(os.path.join(proj, "Foto"))
@@ -177,7 +384,8 @@ def test_stesse_operazioni_stesso_risultato_della_152(home_srv, apri_editor, tmp
     op({"op": "blank", "pos": len(st["spreads"])}); op({"op": "addtospread", "s": len(st["spreads"]) - 1, "names": [names[8]], "how": "keep"})
     op({"op": "tono_L", "value": 60})
     c.post("/api/save")
-    with open(os.path.join(proj, "spec.py"), encoding="utf-8") as fh: nuovo = fh.read().split("\n")[1:]
+    assert not os.path.exists(os.path.join(proj, "spec.py"))
+    nuovo = formato_1x.testo_spec(formato.carica(proj), "Parità àè", album.name).split("\n")[1:]
     with open(os.path.join(P152, "spec.py"), encoding="utf-8") as fh: vecchio = fh.read().split("\n")[1:]
     assert _senza_misure_testi(nuovo) == _senza_misure_testi(vecchio)
     with open(os.path.join(P152, "progetto.json"), encoding="utf-8") as fh: atteso = json.loads(fh.read().replace("{PROGETTO}", proj.replace("\\", "/")))

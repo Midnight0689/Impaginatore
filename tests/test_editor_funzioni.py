@@ -17,6 +17,11 @@ from impaginatore.piattaforma import azioni, cartelle, dialoghi
 def _op(c, st, o): return c.post("/api/op", dict(cid="t", rev=st["rev"], **o))
 
 
+def _modello(id_, nome):
+    """un modello come lo scrivono l'editor 1.x e 2.0 (una foto a mezza pagina a sinistra)"""
+    return {"id": id_, "nome": nome, "n": 1, "lato": None, "pages": [{"mode": "I", "items": [{"k": "p", "c": 0, "r": 0, "w": 6, "h": 8}]}, {"mode": "I", "items": []}]}
+
+
 def _due_spread(c):
     st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
     for k in range(2):
@@ -88,7 +93,8 @@ def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     dest = tmp_path / "uscita"; dest.mkdir()
     out = c.post("/api/prj_esporta", {"dest": str(dest), "zip": True, "foto": True})["cartella"]
     L = attendi_log(c); assert any(x.startswith("RISULTATO:") for x in L), L
-    nomi = set(os.listdir(out)); assert {"spec.py", "progetto.json", "album_libere.py", "testo.py", "vib_lut.npz", "Foto", "_cache", "LEGGIMI.txt", "font_usati.txt"} <= nomi
+    nomi = set(os.listdir(out)); assert {"album.json", "progetto.json", "Foto", "_cache", "LEGGIMI.txt", "font_usati.txt"} <= nomi
+    assert not nomi & {"spec.py", "album_libere.py", "testo.py", "vib_lut.npz", "modelli_utente.json"}, "la 2.0 esporta solo dati (spec.py solo su richiesta)"
     with open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8") as fh: assert "«Prova»" in fh.read()
     zp = out + ".zip"; assert zipfile.is_zipfile(zp)
     # nella schermata dei progetti: Importa ZIP; poi l'editor lo apre e ritrova da solo le foto nella cartella Foto
@@ -119,18 +125,27 @@ def test_modelli_utente(editor, casa):
 
 def test_modelli_migrati_da_album_tools(progetto, apri_editor, casa):
     vecchi = casa / ".album-tools"; vecchi.mkdir()
-    (vecchi / "modelli_utente.json").write_text(json.dumps([{"id": "u1", "nome": "Vecchio", "pages": [{"items": []}, {"items": []}]}]), encoding="utf-8")
+    (vecchi / "modelli_utente.json").write_text(json.dumps([_modello("u1", "Vecchio")]), encoding="utf-8")
     shutil.copy(vecchi / "modelli_utente.json", os.path.join(progetto, "modelli_utente.json"))
     c = apri_editor(progetto)
     assert c.E.ut_load()[0]["nome"] == "Vecchio" and c.E.UT_FILE.startswith(os.environ["IMPAGINATORE_DATI"])
 
 
 def test_modelli_arrivati_con_un_progetto(progetto, apri_editor, casa):
-    (casa / "dati").mkdir(); (casa / "dati" / "modelli_utente.json").write_text(json.dumps([{"id": "a", "nome": "Mio", "pages": []}]), encoding="utf-8")
+    """SEC-009: i modelli arrivati con un progetto valgono solo per quel progetto; entrano tra i tuoi solo se lo chiedi"""
+    (casa / "dati").mkdir(); (casa / "dati" / "modelli_utente.json").write_text(json.dumps([_modello("a", "Mio")]), encoding="utf-8")
     with open(os.path.join(progetto, "modelli_utente.json"), "w", encoding="utf-8") as fh:
-        json.dump([{"id": "a", "nome": "Mio", "pages": []}, {"id": "b", "nome": "mio", "pages": []}, {"id": "c", "nome": "Altro", "pages": []}], fh)
+        json.dump([_modello("a", "Mio"), _modello("b", "mio"), _modello("c", "Altro")], fh)
     c = apri_editor(progetto)
-    assert [t["nome"] for t in c.E.ut_load()] == ["Mio", "mio (importato)", "Altro"]
+    assert [t["nome"] for t in c.E.ut_load()] == ["Mio"], "i tuoi modelli non cambiano aprendo un progetto"
+    assert [t["nome"] for t in c.E.ut_progetto()] == ["mio", "Altro"]
+    st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
+    d = c.post("/api/templates", {"photos": names[:1]})
+    assert {(t["id"], t["progetto"]) for t in d["utente"]} == {("a", False), ("b", True), ("c", True)}
+    ok, r = c.prova("/api/modelli", {"azione": "rinomina", "id": "b", "nome": "X"}); assert not ok, "un modello del progetto non è tuo: non si modifica"
+    c.post("/api/modelli", {"azione": "importa", "id": "b"}); c.post("/api/modelli", {"azione": "importa", "id": "c"})
+    assert [t["nome"] for t in c.E.ut_load()] == ["Mio", "mio (importato)", "Altro"] and c.E.ut_progetto() == []
+    ok, r = c.prova("/api/modelli", {"azione": "importa", "id": "zz"}); assert not ok and "non trovato" in r["errore"]
 
 
 def test_selettore_di_foto(editor, casa, tmp_path, monkeypatch):
