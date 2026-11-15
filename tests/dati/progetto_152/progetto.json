@@ -1,0 +1,111 @@
+{
+ "abbondanza_mm": 0.0,
+ "bilanciamento_bianco": {},
+ "centri_volto": {
+  "H06": [
+   0.3,
+   0.4
+  ]
+ },
+ "colori": {
+  "H02": "rosso"
+ },
+ "dimensioni_esatte": false,
+ "esposizione": {
+  "globale": 0.25,
+  "per_cartella": {},
+  "per_foto": {
+   "V03": 0.5
+  }
+ },
+ "formato_cm": [
+  60.0,
+  22.5
+ ],
+ "foto": "{PROGETTO}/Foto",
+ "foto_extra": [],
+ "guide": [
+  {
+   "h": [],
+   "v": []
+  },
+  {
+   "h": [
+    300
+   ],
+   "v": [
+    100,
+    2000
+   ]
+  },
+  {
+   "h": [],
+   "v": []
+  },
+  {
+   "h": [],
+   "v": []
+  },
+  {
+   "h": [],
+   "v": []
+  }
+ ],
+ "margine_mm": 10.0,
+ "nome": "Parità àè",
+ "ppi": 300,
+ "ritocco": {
+  "Q05": {
+   "tmp": -25
+  },
+  "V04": {
+   "con": 30,
+   "vib": 20
+  }
+ },
+ "spazio_mm": 2.5,
+ "stelle": [
+  "H01"
+ ],
+ "stili": {
+  "Titolo": {
+   "al": "center",
+   "col": [
+    200,
+    30,
+    30
+   ],
+   "font": "AvenirNext-Regular",
+   "size": 150.0,
+   "tr": 40.0
+  }
+ },
+ "testo": {
+  "data": "",
+  "nome": "Parità àè",
+  "sottotitolo": ""
+ },
+ "tolte": [
+  "V07"
+ ],
+ "tono": {
+  "Q05": {
+   "b": 10,
+   "c": [
+    [
+     64,
+     50
+    ],
+    [
+     192,
+     210
+    ]
+   ],
+   "m": 1.2,
+   "w": 240
+  }
+ },
+ "tono_L": 60.0,
+ "tono_escl": [],
+ "uscita_psd": "{PROGETTO}/PSD"
+}

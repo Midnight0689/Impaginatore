@@ -1,0 +1,79 @@
+"""Strumenti comuni dei test: foto sintetiche, client HTTP, attese."""
+import json
+import os
+import time
+import urllib.error
+import urllib.request
+
+from PIL import Image, ImageDraw
+
+# le 10 foto dello scenario di parità con la 1.5.2 (stessi nomi, misure e date: i file in tests/dati/progetto_152 le usano)
+FOTO_SCENARIO = [("H01", 900, 600, "2026:05:23 10:00:01"), ("H02", 900, 600, "2026:05:23 10:00:02"), ("V03", 600, 900, "2026:05:23 10:00:03"), ("V04", 600, 900, "2026:05:23 10:00:04"),
+                 ("Q05", 700, 700, "2026:05:23 10:00:05"), ("H06", 1000, 560, "2026:05:23 10:00:06"), ("V07", 560, 1000, None), ("H08", 900, 600, None), ("Q09", 640, 640, "2026:05:23 10:00:09"),
+                 ("V10", 600, 900, "2026:05:23 10:00:10")]
+
+
+def crea_foto(cartella, elenco=FOTO_SCENARIO, orientamento=None, estensione=".jpg"):
+    """JPEG sintetici (orizzontali, verticali, quadrati; con e senza data EXIF). orientamento = {nome: valore EXIF 274}"""
+    os.makedirs(cartella, exist_ok=True); out = []
+    for k, (n, w, h, dt) in enumerate(elenco):
+        im = Image.new("RGB", (w, h), (40 + 20 * k, 120, 200 - 15 * k)); d = ImageDraw.Draw(im)
+        for j in range(8): d.rectangle([j * w // 8, 0, j * w // 8 + w // 16, h], fill=(200 - 20 * j, 60 + 15 * j, 90 + 10 * k))
+        d.ellipse([w // 4, h // 4, 3 * w // 4, 3 * h // 4], fill=(230, 180 - 10 * k, 140)); d.line([0, h // 2, w, h // 2], fill=(255, 255, 255), width=6)
+        ex = Image.Exif()
+        if dt: ex.get_ifd(0x8769)[36867] = dt
+        o = (orientamento or {}).get(n)
+        if o: ex[274] = o
+        p = os.path.join(cartella, n + estensione)
+        im.save(p, "JPEG", quality=92, exif=ex.tobytes() if (dt or o) else b"")
+        out.append(p)
+    return out
+
+
+class Client:
+    """client JSON per i server locali (home ed editor)"""
+
+    def __init__(self, porta):
+        self.porta = porta
+
+    def url(self, path): return f"http://127.0.0.1:{self.porta}{path}"
+
+    def raw(self, path, body=None, timeout=120):
+        r = urllib.request.Request(self.url(path), None if body is None else json.dumps(body).encode(), {"Content-Type": "application/json"})
+        with urllib.request.urlopen(r, timeout=timeout) as f: return f.read()
+
+    def get(self, path, timeout=120): return json.loads(self.raw(path, timeout=timeout))
+
+    def post(self, path, body=None, timeout=120): return json.loads(self.raw(path, body if body is not None else {}, timeout=timeout))
+
+    def prova(self, path, body=None):
+        """(True, risposta) oppure (False, risposta d'errore) senza sollevare eccezioni HTTP"""
+        try: return True, (self.post(path, body) if body is not None else self.get(path))
+        except urllib.error.HTTPError as e:
+            try: return False, json.load(e)
+            except Exception: return False, {"errore": str(e)}
+
+
+def attendi(cond, secondi=60, passo=0.1):
+    t = time.time() + secondi
+    while time.time() < t:
+        try:
+            v = cond()
+            if v: return v
+        except Exception:
+            pass
+        time.sleep(passo)
+    raise AssertionError("tempo scaduto")
+
+
+def attendi_log(c, secondi=300):
+    """aspetta la fine di un'esportazione dell'editor e restituisce il registro"""
+    return attendi(lambda: (lambda L: L if "[finito]" in L else None)(c.get("/api/log")), secondi, 0.1)
+
+
+def riduci(st):
+    """parte dello stato dell'editor che non dipende dai font del sistema (i testi si misurano con i font installati)"""
+    chiavi = ("k", "name", "side", "x", "y", "w", "h", "a", "bw", "z", "free", "bd", "sh", "oc", "ev", "evp", "rit", "tono", "crop", "cell", "box")
+    return dict(nome=st["nome"], W=st["W"], H=st["H"], fold=st["fold"], gap=st["gap"], ppi=st["ppi"], globale=st["globale"], tolte=st["tolte"], unused=st["unused"],
+                modules=st["modules"], photos=st["photos"],
+                spreads=[dict(L=s["L"], R=s["R"], items=[{k: it.get(k) for k in chiavi} for it in s["items"] if it["k"] != "t"]) for s in st["spreads"]])

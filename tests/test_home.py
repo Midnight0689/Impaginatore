@@ -1,0 +1,175 @@
+"""Schermata dei progetti: elenco, nuovo progetto, apertura, importazione ZIP, cestino, aggiornamenti (nel processo dei test;
+l'editor vero parte come processo a parte solo in test_processi.py)."""
+import json
+import os
+import zipfile
+
+import pytest
+
+from impaginatore import aggiornamenti
+from impaginatore.piattaforma import azioni, dialoghi
+
+
+class Finti(dialoghi.Dialoghi):
+    def __init__(self, risposte): self.risposte = list(risposte)
+
+    def _scegli(self, tipo, messaggio): return [self.risposte.pop(0)] if self.risposte else []
+
+
+def test_pagina_ed_elenco(home_srv):
+    c = home_srv
+    assert b"<script>" in c.raw("/") and c.get("/api/ping") == {"ok": True}
+    r = c.get("/api/progetti"); assert r["progetti"] == [] and r["cartella"] == c.modulo.PROGETTI
+    a = c.get("/api/aggiornamento"); assert a["attuale"]["rel"] and a["errore"] and not a["da_aggiornare"]
+    assert c.get("/api/versioni") == {"versioni": []} and c.post("/api/controlla")["errore"]
+    ok, r = c.prova("/api/aggiorna", {}); assert not ok and "non disponibili" in r["errore"].lower()
+    ok, r = c.prova("/api/ripristina", {"codice": "abc1234"}); assert not ok
+    ok, r = c.prova("/api/boh"); assert not ok and r["errore"] == "non trovato"
+    ok, r = c.prova("/api/boh", {}); assert not ok
+
+
+def test_nuovo_progetto(home_srv, tmp_path):
+    c = home_srv
+    p = c.post("/api/nuovo", {"nome": "Sposi: A/B", "w": "30,5", "h": 30, "abb": "3"})["path"]
+    assert os.path.basename(p) == "Sposi- A-B" and os.path.isdir(os.path.join(p, "Foto"))
+    with open(os.path.join(p, "progetto.json"), encoding="utf-8") as f: cfg = json.load(f)
+    assert cfg["formato_cm"] == [30.5, 30.0] and cfg["abbondanza_mm"] == 3.0 and cfg["foto"] == os.path.join(p, "Foto")
+    assert c.post("/api/nuovo", {"nome": "Sposi: A/B", "w": 30, "h": 30})["path"].endswith("Sposi- A-B 2")
+    for d, msg in (({"nome": "", "w": 1, "h": 1}, "nome"), ({"nome": "X", "w": 1, "h": 30}, "Misure"), ({"nome": "X", "w": "a", "h": 30}, "could not convert"), ({"nome": "X", "w": -3, "h": 30}, "misura")):
+        ok, r = c.prova("/api/nuovo", d); assert not ok and msg in r["errore"], r
+    # progetto accanto alle foto del cliente: <cartella>/Impaginatore, foto lasciate dove sono, in registro
+    cli = tmp_path / "Cliente"; cli.mkdir()
+    p2 = c.post("/api/nuovo", {"nome": "Cliente", "w": 30, "h": 30, "foto": str(cli) + os.sep})["path"]
+    assert p2 == str(tmp_path / "Impaginatore"), "accanto alla cartella delle foto"
+    ok, r = c.prova("/api/nuovo", {"nome": "X", "w": 30, "h": 30, "foto": str(tmp_path / "no")}); assert not ok
+    el = c.get("/api/progetti")["progetti"]
+    assert {x["nome"] for x in el} == {"Sposi: A/B", "Cliente"} and len(el) == 3 and any(x["esterno"] for x in el)
+    c.post("/api/rimuovi", {"path": p2}); assert len(c.get("/api/progetti")["progetti"]) == 2
+
+
+def test_elenco_con_progetto_rovinato(home_srv):
+    c = home_srv
+    p = c.post("/api/nuovo", {"nome": "Rotto", "w": 30, "h": 30})["path"]
+    with open(os.path.join(p, "progetto.json"), "w", encoding="utf-8") as f: f.write("{non json")
+    el = c.get("/api/progetti")["progetti"]; assert el[0]["errore"] and el[0]["nome"] == "Rotto"
+
+
+def test_copertina(home_srv, editor):
+    c = home_srv
+    el = c.get("/api/progetti")["progetti"]; x = next(e for e in el if e["nome"] == "Prova")
+    assert x["foto"] == 10 and x["cover"] and x["spread"] == 0
+    q = f"/api/cover?path={x['path']}&n={x['cover']}"
+    assert c.raw(q.replace(" ", "%20"))[:2] == b"\xff\xd8"
+    for n in ("../progetto.json", "..\\progetto.json", ".."):
+        ok, _ = c.prova(f"/api/cover?path={x['path']}&n={n}".replace(" ", "%20")); assert not ok
+    ok, _ = c.prova("/api/cover?path=/tmp&n=a.jpg"); assert not ok
+
+
+def test_aggiungi_e_scegli_foto(home_srv, tmp_path):
+    c = home_srv
+    assert c.post("/api/aggiungi") == {"annullato": True}
+    altro = tmp_path / "Altro"; altro.mkdir()
+    dialoghi.imposta(Finti([str(altro)]))
+    ok, r = c.prova("/api/aggiungi", {}); assert not ok and "progetto.json" in r["errore"]
+    (altro / "progetto.json").write_text(json.dumps({"nome": "Altro", "formato_cm": [20, 20]}), encoding="utf-8")
+    dialoghi.imposta(Finti([str(altro) + "/"]))
+    assert c.post("/api/aggiungi")["path"] == str(altro)
+    assert any(p["path"] == str(altro) for p in c.get("/api/progetti")["progetti"])
+    dialoghi.imposta(Finti([str(tmp_path)]))
+    assert c.post("/api/scegli-foto")["path"] == str(tmp_path)
+
+
+def test_importa_zip(home_srv, tmp_path):
+    c = home_srv
+    assert c.post("/api/importa-zip") == {"annullato": True}
+    zp = tmp_path / "Album Rossi - progetto.zip"
+    with zipfile.ZipFile(zp, "w") as z:
+        z.writestr("Album Rossi - progetto/progetto.json", json.dumps({"nome": "Rossi", "formato_cm": [30, 30], "foto": ""}))
+        z.writestr("Album Rossi - progetto/spec.py", "from album import *\nSPREADS = []\n")
+    dialoghi.imposta(Finti([str(zp), str(zp)]))
+    p = c.post("/api/importa-zip")["path"]; assert os.path.basename(p) == "Album Rossi - progetto" and os.path.exists(os.path.join(p, "spec.py"))
+    assert c.post("/api/importa-zip")["path"].endswith(" 2")
+    vuoto = tmp_path / "vuoto.zip"
+    with zipfile.ZipFile(vuoto, "w") as z: z.writestr("leggimi.txt", "x")
+    dialoghi.imposta(Finti([str(vuoto)]))
+    ok, r = c.prova("/api/importa-zip", {}); assert not ok and "progetto.json" in r["errore"]
+    assert not os.path.exists(os.path.join(c.modulo.PROGETTI, ".importazione"))
+
+
+def test_cestino_e_finder(home_srv, tmp_path, monkeypatch):
+    c = home_srv; fatti = []
+    monkeypatch.setattr(azioni, "cestina", lambda p: fatti.append(("cestino", p)))
+    monkeypatch.setattr(azioni, "mostra", lambda p: fatti.append(("mostra", p)))
+    p = c.post("/api/nuovo", {"nome": "Via", "w": 30, "h": 30})["path"]
+    assert c.post("/api/cestino", {"path": p}) == {"ok": True}
+    ok, r = c.prova("/api/cestino", {"path": str(tmp_path)}); assert not ok and "Cestino" in r["errore"]
+    c.post("/api/finder", {"path": p})
+    assert fatti == [("cestino", p), ("mostra", p)]
+
+
+def test_apri_non_in_elenco(home_srv, tmp_path):
+    ok, r = home_srv.prova("/api/apri", {"path": str(tmp_path)}); assert not ok and "elenco" in r["errore"]
+    assert home_srv.get("/api/pronto?porta=9") == {"pronto": False}
+
+
+def test_apri_riusa_editor_gia_attivo(home_srv, editor):
+    """se un editor di quel progetto risponde già (anche non lanciato da qui) si usa quello"""
+    import threading
+    c = home_srv; pt = c.modulo.porta_stabile(editor.progetto)
+    if not c.modulo.porta_libera(pt) == pt: pytest.skip(f"porta {pt} occupata")
+    srv = editor.E.crea_server(pt); threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        assert c.post("/api/apri", {"path": editor.progetto})["porta"] == pt and not c.modulo.EDITORS
+        assert c.get(f"/api/pronto?porta={pt}") == {"pronto": True}
+    finally: srv.shutdown(); srv.server_close()
+
+
+def test_esci(home_srv):
+    import time
+    assert home_srv.post("/api/esci") == {"ok": True}
+    for _ in range(50):
+        if home_srv.uscite: break
+        time.sleep(0.05)
+    assert home_srv.uscite == [1]
+
+
+def test_porte(home):
+    from impaginatore import servizio
+    assert 8801 <= home.porta_stabile("/a") <= 8899 and home.porta_stabile("/a") == home.porta_stabile("/a")
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None); occupata = srv.server_address[1]
+    try:
+        assert not servizio.porta_libera(occupata)
+        assert home.porta_libera(occupata) != occupata
+    finally: srv.server_close()
+    assert servizio.porta_libera(occupata)
+
+
+def test_aggiornamenti_spenti_e_predefiniti(monkeypatch):
+    assert isinstance(aggiornamenti.predefiniti(), aggiornamenti.NonDisponibili)
+    monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "")
+    from impaginatore.piattaforma import cartelle
+    monkeypatch.setattr(cartelle, "radice_checkout", lambda: None)
+    a = aggiornamenti.predefiniti(); assert isinstance(a, aggiornamenti.NonDisponibili) and "installazione" in a.motivo
+    monkeypatch.setattr(cartelle, "radice_checkout", lambda: "/repo")
+    monkeypatch.setattr(aggiornamenti.shutil, "which", lambda n: "/usr/bin/git")
+    from impaginatore.aggiornamenti.git import Git
+    g = aggiornamenti.predefiniti(); assert isinstance(g, Git) and g.radice == "/repo"
+    import threading
+    e = threading.Event(); e.set(); a.ciclo(e)
+    with pytest.raises(NotImplementedError): aggiornamenti.Aggiornamenti().stato()
+    for m in ("controlla", "versioni", "aggiorna"):
+        with pytest.raises(NotImplementedError): getattr(aggiornamenti.Aggiornamenti(), m)()
+    with pytest.raises(NotImplementedError): aggiornamenti.Aggiornamenti().ripristina("x")
+
+
+def test_riavvio_dopo_aggiornamento(home, monkeypatch):
+    from impaginatore.piattaforma import processi
+    lanci, uscite = [], []
+    monkeypatch.setattr(processi, "rilancia_dopo", lambda argv, r: lanci.append(argv))
+    monkeypatch.setattr(home, "esci", lambda: uscite.append(1))
+    home.riavvia_programma(); assert lanci == [], "IMPAGINATORE_SENZA_RIAVVIO: niente riavvio"
+    monkeypatch.delenv("IMPAGINATORE_SENZA_RIAVVIO")
+    monkeypatch.setattr(home.threading, "Thread", lambda target, daemon: type("T", (), {"start": lambda s: target()})())
+    monkeypatch.setattr(home.time, "sleep", lambda s: None)
+    home.riavvia_programma()
+    assert lanci[0][1:3] == ["-m", "impaginatore"] and "--no-browser" in lanci[0] and uscite == [1]
