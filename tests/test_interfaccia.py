@@ -106,3 +106,16 @@ def test_interfaccia_completa_senza_errori(home_srv, apri_editor, tmp_path):
         assert b.js("location.port") == str(h.porta) and b.js("LIST.length") == 1, "«Progetti» torna alla schermata"
         assert not b.problemi(), b.problemi()
         assert [r for r in b.risposte() if r[0] >= 400] == []
+
+
+def test_nome_dalla_cartella_delle_foto_anche_su_windows(home_srv, tmp_path):
+    """«Scegli…» delle foto di un progetto nuovo: il nome proposto è l'ultima cartella anche con le barre di Windows"""
+    from cdp import Browser
+
+    from impaginatore.piattaforma import dialoghi
+    dialoghi.imposta(type("F", (dialoghi.Dialoghi,), {"_scegli": lambda self, t, m: ["C:\\Clienti\\Sposi Rossi JPG"]})())
+    with Browser(tmp_path) as b:
+        b.apri(home_srv.srv.indirizzo_avvio(), 1)
+        b.js("document.getElementById('fpick').click()", attendi=False); b.pausa(1)
+        assert b.js("document.getElementById('nome').value") == "Sposi Rossi" and b.js("document.getElementById('fdir').value") == "C:\\Clienti\\Sposi Rossi JPG"
+        assert not b.problemi(), b.problemi()
