@@ -72,8 +72,7 @@ def pil_ripiego(size):
         if p: return ImageFont.truetype(p, size, index=idx)
     except OSError:
         pass
-    try: return ImageFont.load_default(size)
-    except TypeError: return ImageFont.load_default()                         # Pillow < 10.1
+    return ImageFont.load_default(size)                                       # a misura da Pillow 10.1 (il pacchetto chiede la 13)
 
 
 def profilo_srgb():
