@@ -107,6 +107,7 @@ Passo successivo: spostare gli stili dei modelli in classi o in `elemento.style`
   `IMPAGINATORE_GETTONE` se c'è (riavvio con `os.execv` dopo un'importazione: la pagina aperta resta collegata), altrimenti
   uno nuovo, che scrive nella variabile. `piattaforma.processi.ambiente_figli` toglie la variabile ai processi figli (l'editor
   ha il suo gettone); `rilancia_dopo(..., gettone=)` la rimette solo per il rilancio della schermata dopo un aggiornamento.
+  L'ambiente di un processo lo legge solo lo stesso utente (`/proc/<pid>/environ` su Linux), la riga di comando chiunque.
 - **File di sessione.** Ogni server in funzione scrive `<dati dell'utente>/sessioni/<tipo>-<porta>.json` (cartella 0700, file
   creato 0600 e sostituito in modo atomico) con `tipo`, `porta`, `gettone`, `pid`, `creato` e `progetti` (schermata) o
   `progetto` (editor); lo toglie alla chiusura, solo se contiene ancora il suo gettone. Cartella dei dati: macOS
