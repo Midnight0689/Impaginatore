@@ -13,9 +13,9 @@
     {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
     {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
     {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
-    {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+    {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "in_corso"},
     {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
-    {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+    {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "fatto", "nota": "15 nuovi rilievi VER-001…015 da chiudere prima di chiudere la Fase 1"},
 
     {"id": "T-201", "fase": 2, "titolo": "Finestra desktop con pywebview", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
     {"id": "T-202", "fase": 2, "titolo": "Licenze, fasce e prova gratuita", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102", "T-004"], "stato": "da_fare"},
