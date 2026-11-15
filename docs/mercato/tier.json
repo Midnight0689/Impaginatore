@@ -1,6 +1,6 @@
 {
   "valuta": "EUR",
-  "versione_listino": "2026-11-15b",
+  "versione_listino": "2026-11-15c",
   "aliquota_iva_riferimento": 0.22,
   "nota_iva": "prezzo_ivato calcolato con IVA italiana 22%; il Merchant of Record applica l'IVA del paese dell'acquirente (B2C UE) o il reverse charge (B2B UE con partita IVA valida).",
   "semantica_funzioni": "true = inclusa (per le funzioni con limite numerico significa tutti/illimitati); false = esclusa; numero intero = limite massimo. Le chiavi sono stabili: non rinominarle, aggiungerne di nuove.",
@@ -47,10 +47,10 @@
     {
       "id": "pro",
       "nome": "Pro",
-      "prezzo_netto": 89,
-      "prezzo_ivato": 108.58,
-      "prezzo_lancio": 69,
-      "prezzo_lancio_ivato": 84.18,
+      "prezzo_netto": 99,
+      "prezzo_ivato": 120.78,
+      "prezzo_lancio": 79,
+      "prezzo_lancio_ivato": 96.38,
       "attivazioni": 2,
       "consigliato": true,
       "aggiornamenti": {
@@ -86,10 +86,10 @@
     {
       "id": "studio",
       "nome": "Studio",
-      "prezzo_netto": 169,
-      "prezzo_ivato": 206.18,
-      "prezzo_lancio": 129,
-      "prezzo_lancio_ivato": 157.38,
+      "prezzo_netto": 149,
+      "prezzo_ivato": 181.78,
+      "prezzo_lancio": 119,
+      "prezzo_lancio_ivato": 145.18,
       "attivazioni": 5,
       "consigliato": false,
       "aggiornamenti": {
@@ -124,9 +124,9 @@
     }
   ],
   "upgrade_tier_netto": {
-    "essenziale_pro": 40,
-    "pro_studio": 80,
-    "essenziale_studio": 120
+    "essenziale_pro": 50,
+    "pro_studio": 50,
+    "essenziale_studio": 100
   },
   "politica_aggiornamenti": {
     "mesi_minimi_tra_versioni_maggiori": 18,
@@ -136,7 +136,7 @@
     "nota_attivazione": "Decisione 15/11/2026: nessun server di attivazione. La chiave è firmata, verificata in locale e intestata all'acquirente (nome mostrato nell'app). Il numero di computer è un limite contrattuale, non tecnico."
   },
   "lancio": {
-    "sconto_indicativo_pct": 22,
+    "sconto_indicativo_pct": 20,
     "durata_giorni": 60,
     "max_licenze": 300
   },
