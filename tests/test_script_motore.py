@@ -339,3 +339,57 @@ def test_modifica_psd_rifai_pagina(prj, monkeypatch, capsys):
     come_script(monkeypatch, "modifica_psd", "--progetto", prj, "rifai-pagina", "4", "sinistra")
     assert [{k: it[k] for k in ("name", "ev", "bw", "wb")} for it in ps.var("ITEMS", "F")] == [dict(name="V03", ev=1.2, bw=True, wb=None), dict(name="V04", ev=0.25, bw=False, wb=None)]
     assert sorted(_copie(prj)) == ["Spread_02.psd", "Spread_04.psd"] and capsys.readouterr().out.count("copia di sicurezza: ") == 2
+
+
+# ---------------------------------------------------------------- esporta_pdf
+COLORI = {"Spread_01": (200, 40, 40), "Spread_02": (40, 160, 60)}
+
+
+def _esporta_jpg(js):
+    """Photoshop finto per esporta_pdf: «salva come JPEG» gli spread chiusi nella cartella indicata dallo script; quello
+    aperto lo salta"""
+    cartella = json.loads(re.search(r'new File\((".*?")\+"/"\+nm', js).group(1))
+    for nm, c in COLORI.items(): Image.new("RGB", (708, 265), c).save(os.path.join(cartella, nm + ".jpg"), quality=95)
+    return "Spread_01.psd\nSALTATO (aperto): Spread_03.psd\nSpread_02.psd"
+
+
+def _pagine_pdf(p):
+    with open(p, "rb") as f: return len(re.findall(rb"/Type\s*/Page\b", f.read()))
+
+
+def _colore(im, xy): return tuple(int(v) for v in im.convert("RGB").getpixel(xy))
+
+
+def _vicino(c, atteso, tol=30): return all(abs(a - b) <= tol for a, b in zip(c, atteso))
+
+
+@pytest.mark.parametrize("copertina", [None, "H01"])
+def test_esporta_pdf(prj, monkeypatch, capsys, copertina):
+    """PDF leggero dai PSD esportati da Photoshop: una pagina per spread (con la piega e il numero), in testa la copertina
+    se chiesta; gli spread aperti in Photoshop si saltano e si dice; i JPEG di un'esportazione vecchia non entrano"""
+    _faces(prj, {}); _tinta(prj, "H01", (30, 60, 220))
+    vecchi = os.path.join(prj, "_cache", "export_pdf"); os.makedirs(vecchi); Image.new("RGB", (10, 10)).save(os.path.join(vecchi, "Spread_05.jpg"))
+    ps = _Photoshop(monkeypatch, risposta=_esporta_jpg)
+    come_script(monkeypatch, "esporta_pdf", "--progetto", prj, "--nome", "Prova àè", "--larghezza", "400", *(["--copertina", copertina] if copertina else []))
+    pdf = os.path.join(prj, "Prova àè.pdf")
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "SALTATO (aperto): Spread_03.psd" and out[1] == pdf
+    assert out[2].startswith(f"{3 if copertina else 2} pagine, ") and _pagine_pdf(pdf) == (3 if copertina else 2)
+    assert "app.open(f[i])" in ps.jsx[-1] and json.loads(re.search(r"new Folder\((\".*?\")\)", ps.jsx[-1]).group(1)) == os.path.join(prj, "PSD")
+    with Image.open(os.path.join(prj, "_cache", "pdf_pagina1.jpg")) as p1:
+        assert p1.size == (400, round(400 * 2657 / 7087) + 60)
+        if copertina:
+            assert _vicino(_colore(p1, (200, 130)), (30, 60, 220)) and _colore(p1, (5, 130)) == (255, 255, 255), "la foto di copertina al centro, bordi bianchi"
+        else:
+            assert _vicino(_colore(p1, (100, 75)), COLORI["Spread_01"]) and _colore(p1, (100, 180)) == (255, 255, 255), "lo spread sopra, il numero sotto su bianco"
+
+
+def test_esporta_pdf_ipotesi_di_copertina(prj, monkeypatch, capsys):
+    """più foto di copertina (nomi del progetto o percorsi di file): una pagina «ipotesi di copertina» con le foto affiancate"""
+    _faces(prj, {}); _tinta(prj, "H01", (30, 60, 220))
+    altra = os.path.join(prj, "altra.jpg"); Image.new("RGB", (600, 900), (240, 200, 20)).save(altra)
+    _Photoshop(monkeypatch, risposta=_esporta_jpg)
+    come_script(monkeypatch, "esporta_pdf", "--progetto", prj, "--larghezza", "800", "--copertina", "H01," + altra)
+    assert _pagine_pdf(os.path.join(prj, "Album - bozza.pdf")) == 3
+    with Image.open(os.path.join(prj, "_cache", "pdf_pagina1.jpg")) as p1:
+        assert _vicino(_colore(p1, (230, 180)), (30, 60, 220)) and _vicino(_colore(p1, (570, 180)), (240, 200, 20)), "A a sinistra, B a destra"
