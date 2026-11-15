@@ -30,7 +30,7 @@
     {"id": "T-302", "fase": 3, "titolo": "Compilazione Nuitka e installer", "ruolo": "Release Engineer", "dipende_da": ["T-201", "T-202"], "stato": "da_fare"},
     {"id": "T-303", "fase": 3, "titolo": "Rilascio su tag", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare"},
     {"id": "T-304", "fase": 3, "titolo": "Sicurezza della filiera", "ruolo": "Release Engineer", "dipende_da": ["T-301"], "stato": "da_fare"},
-    {"id": "T-305", "fase": 3, "titolo": "Firma del codice", "ruolo": "Titolare + Release Engineer", "dipende_da": ["T-302"], "stato": "bloccato", "nota": "Servono i certificati Apple e Windows del titolare"},
+    {"id": "T-305", "fase": 3, "titolo": "Distribuzione senza certificati: comandi di installazione, firma propria delle release, guide illustrate", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare", "nota": "Decisione del titolare: nessun conto Apple Developer, nessun certificato Windows, nessun push per ora"},
 
     {"id": "T-401", "fase": 4, "titolo": "Manuale d'uso", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-402", "fase": 4, "titolo": "Guida di installazione e attivazione", "ruolo": "Autore", "dipende_da": ["T-202", "T-302"], "stato": "da_fare"},

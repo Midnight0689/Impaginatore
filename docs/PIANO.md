@@ -19,8 +19,8 @@ Un'applicazione desktop con finestra propria per macOS, Windows e Linux, install
 | Server interno | `http.server` su 127.0.0.1, porta casuale, gettone di sessione, controllo di Host e Origin | Nessun sito aperto nel browser deve poter comandare l'editor |
 | Salvataggio | JSON al posto di `spec.py`, con migrazione dei vecchi progetti | Un album ricevuto da un collega non deve poter eseguire codice |
 | Protezione del codice | Compilazione con Nuitka | Compila in codice macchina: offusca e accelera l'avvio |
-| Licenze | Chiave firmata Ed25519 verificata in locale, attivazione in rete solo al primo avvio | Funziona senza connessione; la piattaforma di vendita emette le chiavi |
-| Installer | `.dmg` firmato e notarizzato, `.exe` Inno Setup firmato, AppImage e `.deb` | Un file, due clic |
+| Licenze | Chiave firmata Ed25519 emessa da un nostro strumento e verificata in locale, senza server; la piattaforma di vendita è un adattatore facoltativo | Funziona senza connessione e senza conti esterni; si può vendere dal primo giorno anche con bonifico o PayPal |
+| Installer | `.dmg` con firma locale (ad hoc), `.exe` Inno Setup, AppImage e `.deb`; in più un comando di installazione di una riga per macOS e Windows | Nessun conto Apple Developer né certificato Windows (vedi «Distribuzione senza certificati») |
 | Costruzione e rilascio | GitHub Actions su runner dei tre sistemi | Non servono tre computer; ogni rilascio è riproducibile |
 | MCP | Server stdio incluso nell'installer, più comando per registrarlo in Claude | È la funzione che distingue il prodotto |
 | Lingue | Italiano e inglese | Italia prima, estero subito dopo |
@@ -86,7 +86,7 @@ Un compito parte quando sono chiusi quelli da cui dipende. Compiti senza dipende
 | T-302 | Compilazione e installer | Un file per sistema, prodotto dalla pipeline |
 | T-303 | Rilascio su tag: costruzione, firma, checksum, SBOM, note dal registro | Un tag produce una release completa |
 | T-304 | Sicurezza della filiera: CodeQL, audit delle dipendenze, ricerca di segreti, Dependabot | Attivi e bloccanti |
-| T-305 | Firma del codice | Richiede i certificati del titolare (vedi sotto) |
+| T-305 | Distribuzione senza certificati | Installazione riuscita su macOS e Windows senza conti a pagamento, con integrità verificata dalla nostra firma |
 
 ### Fase 4 — Documentazione
 
@@ -109,10 +109,24 @@ Un compito parte quando sono chiusi quelli da cui dipende. Compiti senza dipende
 | T-505 | Negozio: configurazione della piattaforma scelta |
 | T-506 | Piano di lancio a 90 giorni |
 
+## Distribuzione senza certificati
+
+Decisione del titolare (15/11/2026): niente conto Apple Developer, niente certificato Windows, niente conti esterni e nessun push per ora.
+
+| Sistema | Cosa succede senza certificato | Come lo risolviamo |
+|---|---|---|
+| macOS | Un'app scaricata dal browser e non notarizzata viene bloccata al primo avvio | **Via principale:** un comando di una riga nel Terminale scarica e installa l'app; i file scaricati così non ricevono il contrassegno di quarantena e l'app si apre normalmente. **Via alternativa:** `.dmg` con firma ad hoc (gratuita, obbligatoria su Apple Silicon) e una pagina illustrata per il consenso una tantum in Impostazioni → Privacy e sicurezza → «Apri comunque» |
+| Windows | SmartScreen mostra un avviso sugli eseguibili scaricati e non firmati | **Via principale:** un comando di una riga in PowerShell scarica e installa; il file non riceve il contrassegno di provenienza dal web. **Via alternativa:** installer `.exe` con la pagina illustrata «Ulteriori informazioni → Esegui comunque» |
+| Linux | Nessun blocco | AppImage e `.deb` |
+
+- L'integrità non dipende dai certificati commerciali: ogni release è firmata con la nostra chiave Ed25519 e accompagnata dagli SHA-256; i comandi di installazione e l'aggiornamento interno verificano la firma prima di installare.
+- La chiave privata resta sul computer del titolare, fuori dal repository.
+- Finché non c'è push, le pipeline per macOS e Windows restano scritte ma mai eseguite: quei due sistemi non sono provati. Si provano al primo push o su un Mac e un PC veri.
+- Il codice resta predisposto alla firma: aggiungere i certificati in futuro è una modifica di configurazione.
+
 ## Cosa può fare solo il titolare
 
 - Accordo con l'ideatore su proprietà del codice, quote e uso del repository (oggi è suo e privato).
 - Parere di un legale sulla somiglianza con SmartAlbums e sui contratti.
-- Partita IVA e conto sulla piattaforma di vendita.
-- Certificati di firma: Apple Developer (99 $/anno) e certificato di firma del codice per Windows.
+- Partita IVA e, quando si decide di vendere tramite piattaforma, il conto relativo. Fino ad allora le chiavi si emettono in proprio (T-202).
 - Dominio del sito.
