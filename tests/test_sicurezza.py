@@ -12,11 +12,12 @@ import zipfile
 
 import pytest
 
+import impaginatore
 from impaginatore import formato
 from impaginatore.motore import album
 from impaginatore.piattaforma import dialoghi
 
-SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src", "impaginatore")
+SRC = os.path.dirname(os.path.abspath(impaginatore.__file__))          # il pacchetto davvero importato (sorgente o installato)
 
 
 def _progetto(base, spec, foto_campione, extra=None):
@@ -209,6 +210,21 @@ def test_sec009_modelli_di_terzi_non_entrano_nei_tuoi(progetto, apri_editor, cas
     assert not S.exists()
 
 
+def test_sec009_scenario_dell_audit(progetto, apri_editor):
+    """SEC-009 come nell'audit: un progetto arriva con un modelli_utente.json che ha un modello ben fatto e uno con «zo»
+    di codice; aprirlo non cambia i tuoi modelli (la 1.x li univa ai modelli globali) e il codice non arriva mai al file
+    dell'impaginazione"""
+    buono = {"id": "a1b2", "nome": "Del collega", "n": 1, "lato": None, "pages": [{"mode": "I", "items": [{"k": "p", "c": 0, "r": 0, "w": 6, "h": 8}]}, {"mode": "W", "items": []}]}
+    cattivo = dict(buono, id="c3d4", nome="Iniettato", pages=[{"mode": "W", "items": [{"k": "f", "x": 0.1, "y": 0.1, "w": 0.5, "h": 0.5, "zo": "__import__('os').getcwd()"}]}, {"mode": "W", "items": []}])
+    with open(os.path.join(progetto, "modelli_utente.json"), "w", encoding="utf-8") as f: json.dump([buono, cattivo], f)
+    c = apri_editor(progetto)
+    tuoi = formato.leggi_json(c.E.UT_FILE) if os.path.exists(c.E.UT_FILE) else []
+    assert [t["id"] for t in tuoi] == [], "i modelli di un progetto aperto non entrano nei tuoi"
+    st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
+    proposti = [t["id"] for t in c.post("/api/templates", {"photos": names[:1]}).get("utente", [])]
+    assert "c3d4" not in proposti, "un modello non valido non si propone"
+
+
 def test_modelli_illeggibili_non_si_perdono(editor):
     c = editor
     os.makedirs(os.path.dirname(c.E.UT_FILE), exist_ok=True)
@@ -314,7 +330,7 @@ def test_zip_importato_ripulito(home_srv, tmp_path):
     """dopo Importa ZIP i percorsi del computer di chi l'ha esportato spariscono; meta.json punta solo alla cartella Foto"""
     meta = [dict(n="a.jpg", dt="", src="/Users/collega/Privato/a.jpg", w=10, h=10, ar=1.0)]
     zp = _zip(tmp_path / "Rossi.zip", [("progetto.json", json.dumps({"nome": "Rossi", "formato_cm": [30, 30], "foto": "/Users/collega", "foto_extra": ["/x"], "uscita_psd": "/y"})),
-                                       ("album.json", formato.album_vuoto()), ("_cache/meta.json", json.dumps(meta))])
+                                       ("album.json", '{"formato": 2, "spread": []}'), ("_cache/meta.json", json.dumps(meta))])
     zp2 = _zip(tmp_path / "Meta rotto.zip", [("progetto.json", json.dumps({"nome": "R", "formato_cm": [30, 30]})), ("_cache/meta.json", '[{"n": "../x"')])
     zp3 = _zip(tmp_path / "Non valido.zip", [("progetto.json", json.dumps({"nome": "R", "formato_cm": "30x30"}))])
     class Z(dialoghi.Dialoghi):
