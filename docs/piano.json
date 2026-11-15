@@ -36,7 +36,7 @@
     {"id": "T-402", "fase": 4, "titolo": "Guida di installazione e attivazione", "ruolo": "Autore", "dipende_da": ["T-202", "T-302"], "stato": "da_fare"},
     {"id": "T-403", "fase": 4, "titolo": "Guida al server MCP", "ruolo": "Autore", "dipende_da": ["T-203"], "stato": "da_fare"},
     {"id": "T-404", "fase": 4, "titolo": "Guida per sviluppatori e README", "ruolo": "Autore", "dipende_da": ["T-006"], "stato": "da_fare"},
-    {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "in_corso", "nota": "Da far rivedere a un legale"},
+    {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "fatto", "nota": "Da far rivedere a un legale"},
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
