@@ -42,7 +42,7 @@
     {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
     {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "in_corso"},
     {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
-    {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "in_corso"},
-    {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "in_corso"}
+    {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "fatto"},
+    {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "fatto"}
   ]
 }
