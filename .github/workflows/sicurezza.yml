@@ -1,0 +1,130 @@
+# Sicurezza della filiera: analisi statica (bandit), vulnerabilità note delle dipendenze (pip-audit), segreti nella
+# storia git (gitleaks), licenze delle dipendenze (pip-licenses). Tutti i controlli sono bloccanti.
+# Ogni passo chiama strumenti/controlli.py, che li esegue identici in locale:
+#     python strumenti/controlli.py sicurezza        (oppure bandit | dipendenze | segreti | licenze)
+# Le versioni degli strumenti e lo SHA-256 di gitleaks sono fissati in strumenti/controlli.py.
+#
+# CodeQL non c'è: sui repository privati la scansione del codice richiede la licenza GitHub Code Security
+# (30 $ al mese per committer attivo, verificato a novembre 2026) e anche il caricamento di risultati SARIF da altri
+# strumenti passa da quella licenza. Se il repository diventa pubblico o si acquista la licenza, si aggiunge un job
+# con github/codeql-action (init + analyze, languages: python) fissato per SHA come le altre azioni.
+#
+# gitleaks gira come binario ufficiale verificato con il suo SHA-256 e non con gitleaks-action, che per i repository
+# di un'organizzazione chiede una licenza a pagamento.
+#
+# Consumo stimato: 4 job Linux da ~1 minuto ciascuno (arrotondati al minuto) = ~4 minuti Linux, ~0,03 $ a esecuzione.
+name: Sicurezza
+
+on:
+  pull_request:
+  # anche a ogni push sui rami principali: un segreto finito in un commit va visto subito, non al lunedì dopo
+  push:
+    branches: [main, "prodotto/**"]
+  # ogni lunedì: vulnerabilità pubblicate nel frattempo per dipendenze che non sono cambiate.
+  # GitHub esegue le pianificazioni solo dal ramo predefinito (oggi main): finché questo file sta solo su
+  # prodotto/2.0 l'esecuzione settimanale non parte.
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_PYTHON_PREFERENCE: only-managed
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  bandit:
+    name: Analisi statica (bandit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            strumenti/controlli.py
+      - name: bandit su src/
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py bandit
+
+  dipendenze:
+    name: Vulnerabilità delle dipendenze (pip-audit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            strumenti/controlli.py
+      - name: pip-audit su tutte le versioni di uv.lock
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py dipendenze
+
+  segreti:
+    name: Segreti nella storia git (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice con tutta la storia
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          # niente da mettere in cache: il job usa solo Python e il binario di gitleaks
+          enable-cache: false
+      - name: gitleaks su tutti i commit
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py segreti
+
+  licenze:
+    name: Licenze delle dipendenze (pip-licenses)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            strumenti/controlli.py
+      - name: pip-licenses con Python 3.10, 3.11 e 3.12
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py licenze
