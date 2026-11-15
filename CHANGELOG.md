@@ -22,6 +22,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-002` **editor** — L'editor si crea, si avvia e si ferma da codice, senza leggere la riga di comando all'importazione; finestre di scelta, font e Photoshop passano dallo strato di piattaforma. API e interfaccia invariate. _File:_ `src/impaginatore/editor/server.py`. _Rif:_ `TEST-001`, `TEST-002`.
 - `MOD-003` **progetti** — La schermata dei progetti accetta `--porta` (anche 0 per una porta libera), `--progetti`, `--no-browser`, `--versione` e gira in una sola istanza. _File:_ `src/impaginatore/home/server.py`.
 - `MOD-004` **installer** — I lanciatori della versione 1.x per macOS sono spostati in `legacy/macos/` e installano il pacchetto. _File:_ `legacy/macos/`.
+- `MOD-005` **mercato** — Listino 2026-11-15d: Essenziale 49 €, Pro 99 €, Studio 149 € (lancio 39/79/119 €), passaggi di fascia 50/50/100 €, assistenza 49/249/499 € senza sconto a quantità; studio dei prezzi, schede di marca, negozio, piano di lancio, email e bozze legali riallineati. _File:_ `docs/mercato/tier.json`, `docs/mercato/prezzi.md`, `brand/STYLEBOOK.md`, `marketing/negozio/polar/prodotti.json`, `marketing/lancio/PIANO-90-GIORNI.md`, `marketing/email/sorgenti/lancio.mjml`, `docs/legale/CONDIZIONI-ASSISTENZA.md`.
 
 ### Corretto
 
