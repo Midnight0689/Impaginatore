@@ -13,8 +13,10 @@ def cartella_pacchetto():
 
 
 def ambiente_figli(env=None):
-    """ambiente dei processi figli: testo sempre in UTF-8 (su Windows sarebbe cp1252) e uscita non bufferizzata nei registri"""
+    """ambiente dei processi figli: testo sempre in UTF-8 (su Windows sarebbe cp1252) e uscita non bufferizzata nei registri.
+    Senza il gettone di sessione di questo server (IMPAGINATORE_GETTONE): ogni server ha il suo (docs/architettura/SICUREZZA.md)"""
     e = dict(os.environ if env is None else env)
+    e.pop("IMPAGINATORE_GETTONE", None)
     e["PYTHONUTF8"] = "1"; e["PYTHONIOENCODING"] = "utf-8"
     return e
 
@@ -33,11 +35,14 @@ def riesegui(argv=None):
     os.execv(sys.executable, argv)
 
 
-def rilancia_dopo(argv, ritardo=1.5):
-    """fa ripartire il comando argv tra `ritardo` secondi, fuori da questo processo (che sta per chiudersi e liberare la porta)"""
+def rilancia_dopo(argv, ritardo=1.5, gettone=None):
+    """fa ripartire il comando argv tra `ritardo` secondi, fuori da questo processo (che sta per chiudersi e liberare la porta);
+    gettone: quello della sessione, che il programma rilanciato tiene (passa nell'ambiente, mai sulla riga di comando)"""
     codice = "import subprocess, sys, time; time.sleep(float(sys.argv[1])); subprocess.Popen(sys.argv[2:])"
+    env = ambiente_figli()
+    if gettone: env["IMPAGINATORE_GETTONE"] = gettone
     subprocess.Popen([sys.executable, "-c", codice, str(ritardo), *argv], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                     cwd=cartella_pacchetto(), env=ambiente_figli(), **opzioni_staccato())
+                     cwd=cartella_pacchetto(), env=env, **opzioni_staccato())
 
 
 def stacca(registro):
