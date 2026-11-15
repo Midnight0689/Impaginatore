@@ -1,0 +1,24 @@
+# Registro delle modifiche
+
+Tutte le modifiche dal ramo `prodotto/2.0` in poi. La forma delle voci è descritta in `AGENTS.md` (sezione «Registro delle modifiche») ed è la stessa per chi legge e per gli strumenti automatici. La storia fino alla versione 1.5.2 è in `CAMBIAMENTI.md`.
+
+Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in vendita.
+
+## [Non rilasciato]
+
+### Aggiunto
+
+### Modificato
+
+### Corretto
+
+### Sicurezza
+
+### Rimosso
+
+### Documenti e contenuti
+
+- `DOC-001` **documenti** — Requisiti e KPI ricavati dai quattro vocali dell'ideatore, con le decisioni di prodotto che ne derivano. _File:_ `docs/prodotto/REQUISITI-VOCALI.md`.
+- `DOC-002` **documenti** — Regole di lavoro per persone e agenti, forma del registro, struttura del repository. _File:_ `AGENTS.md`.
+- `DOC-003` **documenti** — Piano di lavoro: organizzazione, fasi, compiti, dipendenze e criteri di accettazione. _File:_ `docs/PIANO.md`, `docs/piano.json`.
+- `DOC-004` **documenti** — Questo registro, che sostituisce `CAMBIAMENTI.md` per il lavoro nuovo. _File:_ `CHANGELOG.md`.

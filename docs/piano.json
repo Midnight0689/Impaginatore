@@ -1,0 +1,48 @@
+{
+  "aggiornato": "2026-11-15",
+  "ramo": "prodotto/2.0",
+  "stati": ["da_fare", "in_corso", "in_verifica", "fatto", "bloccato"],
+  "compiti": [
+    {"id": "T-001", "fase": 0, "titolo": "Trascrizione vocali, requisiti e KPI", "ruolo": "Orchestratore", "dipende_da": [], "stato": "fatto", "consegna": ["docs/prodotto/REQUISITI-VOCALI.md"]},
+    {"id": "T-002", "fase": 0, "titolo": "Audit sicurezza, bug, portabilità, testabilità, rischi legali", "ruolo": "Security & QA Lead", "dipende_da": [], "stato": "in_corso", "consegna": ["docs/audit/AUDIT-2026-11.md", "docs/audit/rilievi.json"]},
+    {"id": "T-003", "fase": 0, "titolo": "Profilo dei concorrenti", "ruolo": "Analista di mercato", "dipende_da": [], "stato": "in_corso", "consegna": ["docs/mercato/competitor.md", "docs/mercato/competitor.json"]},
+    {"id": "T-004", "fase": 0, "titolo": "Lead, prezzi e fasce, canale di vendita", "ruolo": "Go-to-market", "dipende_da": [], "stato": "in_corso", "consegna": ["docs/mercato/lead.md", "docs/mercato/lead.csv", "docs/mercato/prezzi.md", "docs/mercato/tier.json", "docs/mercato/canale-vendita.md"]},
+    {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "in_corso", "consegna": ["brand/"]},
+    {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "in_corso", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
+
+    {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
+    {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
+    {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "da_fare"},
+    {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+    {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
+
+    {"id": "T-201", "fase": 2, "titolo": "Finestra desktop con pywebview", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-202", "fase": 2, "titolo": "Licenze, fasce e prova gratuita", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102", "T-004"], "stato": "da_fare"},
+    {"id": "T-203", "fase": 2, "titolo": "Server MCP", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-204", "fase": 2, "titolo": "Strumentazione e telemetria con consenso", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-205", "fase": 2, "titolo": "Interfaccia ridisegnata con la marca", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-005", "T-105"], "stato": "da_fare"},
+    {"id": "T-206", "fase": 2, "titolo": "Italiano e inglese", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-205"], "stato": "da_fare"},
+    {"id": "T-207", "fase": 2, "titolo": "Aggiornamenti dalle release", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-201"], "stato": "da_fare"},
+    {"id": "T-208", "fase": 2, "titolo": "Pacchetti catalogo per i laboratori", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-101"], "stato": "da_fare"},
+
+    {"id": "T-301", "fase": 3, "titolo": "Pipeline di controllo sui tre sistemi", "ruolo": "Release Engineer", "dipende_da": ["T-006"], "stato": "da_fare"},
+    {"id": "T-302", "fase": 3, "titolo": "Compilazione Nuitka e installer", "ruolo": "Release Engineer", "dipende_da": ["T-201", "T-202"], "stato": "da_fare"},
+    {"id": "T-303", "fase": 3, "titolo": "Rilascio su tag", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare"},
+    {"id": "T-304", "fase": 3, "titolo": "Sicurezza della filiera", "ruolo": "Release Engineer", "dipende_da": ["T-301"], "stato": "da_fare"},
+    {"id": "T-305", "fase": 3, "titolo": "Firma del codice", "ruolo": "Titolare + Release Engineer", "dipende_da": ["T-302"], "stato": "bloccato", "nota": "Servono i certificati Apple e Windows del titolare"},
+
+    {"id": "T-401", "fase": 4, "titolo": "Manuale d'uso", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
+    {"id": "T-402", "fase": 4, "titolo": "Guida di installazione e attivazione", "ruolo": "Autore", "dipende_da": ["T-202", "T-302"], "stato": "da_fare"},
+    {"id": "T-403", "fase": 4, "titolo": "Guida al server MCP", "ruolo": "Autore", "dipende_da": ["T-203"], "stato": "da_fare"},
+    {"id": "T-404", "fase": 4, "titolo": "Guida per sviluppatori e README", "ruolo": "Autore", "dipende_da": ["T-006"], "stato": "da_fare"},
+    {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "da_fare", "nota": "Da far rivedere a un legale"},
+
+    {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
+    {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
+    {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "da_fare"},
+    {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
+    {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "da_fare"},
+    {"id": "T-506", "fase": 5, "titolo": "Piano di lancio a 90 giorni", "ruolo": "Go-to-market", "dipende_da": ["T-003", "T-004"], "stato": "da_fare"}
+  ]
+}
