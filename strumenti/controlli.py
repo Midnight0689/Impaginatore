@@ -60,9 +60,9 @@ GITLEAKS_SHA256 = {
     ("windows", "arm64"): "b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f",
 }
 
-# una versione di Python per ogni ramo di «resolution-markers» in uv.lock (< 3.11, == 3.11, >= 3.12): le dipendenze
+# una versione di Python per ogni ramo di «resolution-markers» in uv.lock (< 3.12, >= 3.12): le dipendenze
 # installate cambiano da un ramo all'altro. Se il lock ne aggiunge uno, va aggiunto anche qui.
-PYTHON_LICENZE = ("3.10", "3.11", "3.12")
+PYTHON_LICENZE = ("3.11", "3.12")
 
 # Licenze compatibili con un programma proprietario distribuito compilato: solo permissive. Niente GPL, LGPL, AGPL, MPL,
 # EPL, SSPL né licenze sconosciute: una dipendenza così va valutata a parte prima di aggiungerla qui.
@@ -249,7 +249,7 @@ def main(argv=None):
         except (AttributeError, ValueError): pass
     p = argparse.ArgumentParser(prog="controlli.py", description="Gli stessi controlli della CI, in locale.")
     p.add_argument("comando", choices=list(GRUPPI))
-    p.add_argument("--python", help="versione di Python dell'ambiente dei test, per esempio 3.10 (imposta UV_PYTHON)")
+    p.add_argument("--python", help="versione di Python dell'ambiente dei test, per esempio 3.11 (imposta UV_PYTHON)")
     a = p.parse_args(argv)
     if a.python:
         os.environ["UV_PYTHON"] = a.python

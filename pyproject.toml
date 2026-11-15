@@ -7,7 +7,7 @@ name = "impaginatore"
 dynamic = ["version"]
 description = "Impaginare album fotografici (spread, modelli, testi, correzioni) ed esportare JPG, PDF e PSD"
 readme = "LEGGIMI.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Proprietario: tutti i diritti riservati" }
 authors = [{ name = "Stefano Imperato" }]
 classifiers = [
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
-    "pillow>=10.1,<14",
+    "pillow>=13,<14",          # 13: correzioni di sicurezza (pip-audit); vuole Python 3.11 o successivo
     "numpy>=1.26,<3",
     "opencv-python-headless>=4.8,<5",
     "psd-tools>=1.9,<2",
@@ -72,7 +72,7 @@ precision = 1
 # ---------------------------------------------------------------- stile
 [tool.ruff]
 line-length = 400          # il codice esistente usa righe lunghe e più istruzioni per riga: non si riformatta
-target-version = "py310"
+target-version = "py311"
 extend-exclude = ["legacy", "tests/dati"]
 
 [tool.ruff.lint]

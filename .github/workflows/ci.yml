@@ -2,15 +2,15 @@
 # Ogni passo chiama strumenti/controlli.py, che in locale esegue gli stessi controlli:
 #     python strumenti/controlli.py lint | test | copertura | tutto   [--python 3.13]
 #
-# Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.10, 3.12 e 3.13
-# (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
+# Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.11 (la minima di
+# pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
 #
 # Consumo stimato per esecuzione, prezzi GitHub di novembre 2026 (Linux 2 core 0,006 $/min, Windows 0,010 $/min,
 # macOS 0,062 $/min; ogni job è arrotondato al minuto intero), con la cache di uv già calda:
-#     lint 1 min + Linux 3+4+3 min                       = 11 min Linux   ~ 0,07 $
+#     lint 1 min + Linux 3+4+3+3 min                     = 14 min Linux   ~ 0,08 $
 #     Windows ~7 min (processi e file più lenti)          =  7 min Windows ~ 0,07 $
 #     macOS ~4 min                                        =  4 min macOS   ~ 0,25 $
-#     totale ~0,39 $ a esecuzione, cioè ~65 minuti Linux equivalenti, per due terzi macOS.
+#     totale ~0,40 $ a esecuzione, cioè ~67 minuti Linux equivalenti, per due terzi macOS.
 # Il piano gratuito include 12 $ al mese (~2.000 minuti Linux): circa 30 esecuzioni al mese, più quelle di sicurezza.yml.
 # Le stime vanno confermate con i tempi reali dopo il primo push: finora il workflow non è mai stato eseguito su GitHub.
 name: CI
@@ -69,9 +69,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, python: "3.10", comando: test }
+          - { os: ubuntu-24.04, python: "3.11", comando: test }
           - { os: ubuntu-24.04, python: "3.12", comando: copertura }
           - { os: ubuntu-24.04, python: "3.13", comando: test }
+          - { os: ubuntu-24.04, python: "3.14", comando: test }
           - { os: macos-26, python: "3.12", comando: test }
           - { os: windows-2025, python: "3.12", comando: test }
     steps:
