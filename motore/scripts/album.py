@@ -179,8 +179,10 @@ INK = tuple(TXTCFG.get("colore", [58, 54, 51]))
 def _font(path_key, default, size, index=0):
     p = TXTCFG.get(path_key) or default
     try: return ImageFont.truetype(p, size, index=index)
-    except Exception: return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
-SERIF_FILE = "/System/Library/Fonts/Supplemental/Didot.ttc"; SANS_FILE = "/System/Library/Fonts/Avenir Next.ttc"
+    except Exception: return ImageFont.truetype((os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf") if os.name == "nt" else "/System/Library/Fonts/Helvetica.ttc"), size)
+_WF = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
+SERIF_FILE = os.path.join(_WF, "georgia.ttf") if os.name == "nt" else "/System/Library/Fonts/Supplemental/Didot.ttc"
+SANS_FILE = os.path.join(_WF, "segoeui.ttf") if os.name == "nt" else "/System/Library/Fonts/Avenir Next.ttc"
 def _spaced(d, xy, text, font, track, center=None):
     w = sum(font.getlength(ch) for ch in text) + track * (len(text) - 1); x, y = xy
     if center is not None: x = center - w / 2

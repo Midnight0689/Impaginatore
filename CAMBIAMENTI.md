@@ -3,6 +3,12 @@
 Scritto per Claude (e per Stefano): cosa è stato cambiato, perché, in quali file.
 **Regola:** prima di toccare il programma si legge questo file; dopo ogni modifica si aggiunge una voce in cima (numero di build = numero del commit; numero di rilascio = file `VERSION`, vedi sotto), poi commit + push. Le versioni si possono ripristinare dal riquadro Versione → "Versioni precedenti".
 
+## Versione 1.6.0 — Prima versione per Windows (da provare)
+- Nuovo modulo `Editor Album/piattaforma.py`: raccoglie tutto ciò che cambia tra Mac e Windows (finestre per scegliere foto/cartelle/ZIP, «mostra nel Finder/Esplora risorse», cestino, percorso dell'ambiente Python, cartelle dei font, riavvio dopo l'aggiornamento). `home.py`, `editor.py`, `testo.py` lo usano al posto dei comandi del Mac.
+- Windows: `Installa.bat`, `Avvia Impaginatore.bat`, `Aggiorna.bat`, `motore/scripts/setup.bat`; i programmi partono in UTF-8 (`PYTHONUTF8=1`); font di ripiego (Arial, Georgia, Segoe UI) e profilo sRGB di Windows; `.gitattributes` per le fine riga.
+- Su Windows i PSD danno un messaggio chiaro («solo dal Mac»); JPG e PDF funzionano.
+- **Non provato su Windows** (nessun PC per la prova): solo sul Mac, prova automatica 32 ok. — `piattaforma.py`, `home.py`, `editor.py`, `testo.py`, `motore/scripts/album.py` / `analizza.py` / `anteprima.py`, file `.bat`.
+
 ## Versione 1.5.2 — Installa.command ripristinato
 - `Installa.command` era sparito per errore dal commit «Trascinamento fluido»: su un Mac nuovo il programma non poteva partire. Ripristinato (crea l'ambiente Python, collega la skill, controlla Photoshop e font). `Avvia Impaginatore.command` ora rimanda a lui se manca l'ambiente. — `Installa.command`, `Avvia Impaginatore.command`.
 

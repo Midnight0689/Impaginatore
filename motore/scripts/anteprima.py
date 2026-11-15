@@ -19,7 +19,7 @@ ap = argparse.ArgumentParser(); ap.add_argument("--progetto"); ap.add_argument("
 ap.add_argument("--spread", default=""); ap.add_argument("--prima-dopo", default=""); ap.add_argument("--tolte", default="")
 a = ap.parse_args()
 SP = load_spec(); OUT = os.path.join(PROJ, "Anteprime"); os.makedirs(OUT, exist_ok=True)
-FONT = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s)
+FONT = lambda s: ImageFont.truetype((os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf") if os.name == "nt" else "/System/Library/Fonts/Helvetica.ttc"), s)
 tolte = set(CFG.get("tolte", [])) | {x for x in a.tolte.split(",") if x}
 
 # ---------- controllo ----------

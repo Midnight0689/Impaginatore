@@ -20,7 +20,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(HERE)
 PROGETTI = os.path.abspath(os.path.expanduser(os.environ.get("IMPAGINATORE_PROGETTI") or os.path.join(BASE, "Progetti")))
 REG = os.path.join(PROGETTI, "registro.json")
-PY = os.path.expanduser("~/.album-tools/venv/bin/python")
+import piattaforma
+PY = piattaforma.venv_python()
 if not os.path.exists(PY): PY = sys.executable
 os.makedirs(PROGETTI, exist_ok=True)
 LOCK = threading.Lock()
@@ -127,15 +128,14 @@ def apri(path):
         pt = porta_libera(porta_stabile(path))
         log = open(os.path.join(PROGETTI, "editor.log"), "a")
         proc = subprocess.Popen([PY, os.path.join(HERE, "editor.py"), "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{ARGS.porta}"],
-                                stdout=log, stderr=subprocess.STDOUT, cwd=HERE)
+                                stdout=log, stderr=subprocess.STDOUT, cwd=HERE, env=piattaforma.env_utf8())
         EDITORS[path] = (proc, pt); return pt
 
 
 def importa_zip():
     """sceglie un file .zip di progetto esportato, lo apre in <Progetti>/ e lo mette in elenco; restituisce la cartella ('' se annullato)"""
     import zipfile
-    r = subprocess.run(["osascript", "-e", 'POSIX path of (choose file of type {"public.zip-archive"} with prompt "Scegli il file ZIP del progetto")'], capture_output=True, text=True)
-    zp = r.stdout.strip() if r.returncode == 0 else ""
+    zp = piattaforma.scegli_zip("Scegli il file ZIP del progetto")
     if not zp: return ""
     tmp = os.path.join(PROGETTI, ".importazione"); shutil.rmtree(tmp, ignore_errors=True); os.makedirs(tmp)
     try:
@@ -151,8 +151,7 @@ def importa_zip():
 
 
 def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.json)"):
-    r = subprocess.run(["osascript", "-e", f'POSIX path of (choose folder with prompt "{msg}")'], capture_output=True, text=True)
-    return r.stdout.strip().rstrip("/") if r.returncode == 0 else ""
+    return piattaforma.scegli_cartella(msg)
 
 
 AGG = dict(da_aggiornare=False, novita=[], controllato=0, errore="", attuale=None, ultima=None)
@@ -187,9 +186,8 @@ def ripristina_versione(codice):
     if _git("read-tree", "-u", "--reset", codice).returncode != 0: raise ValueError("Ripristino non riuscito")
     _git("-c", "user.name=Impaginatore", "-c", "user.email=impaginatore@local", "commit", "-q", "--allow-empty", "-m", f"Ripristino alla versione {n} ({codice})")
     p = _git("push", "-q", t=60)
-    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
-    if os.path.exists(setup):
-        r = subprocess.run(["zsh", setup], capture_output=True, text=True, timeout=900)
+    r = piattaforma.prepara_ambiente(BASE)
+    if r is not None:
         if r.returncode != 0: raise ValueError("Novità scaricate, ma l'ambiente Python non è pronto (" + ((r.stderr or r.stdout).strip().splitlines() or ["errore"])[-1][:200] + "). Il programma resta com'è: lancia Installa.command per sistemarlo.")
     riavvia_programma()
     return dict(n=n, caricato=p.returncode == 0)
@@ -214,13 +212,12 @@ def ciclo_aggiornamenti():
 
 def riavvia_programma():
     if os.environ.get("IMPAGINATORE_SENZA_RIAVVIO"): return                       # solo per le prove
-    app = os.path.join(BASE, "Impaginatore.app")
     def riavvia():
         time.sleep(.6)
         for pr, _ in EDITORS.values():
             try: pr.terminate()
             except Exception: pass
-        subprocess.Popen(["/bin/sh", "-c", f'sleep 1.5; open "{app}"'], start_new_session=True)
+        piattaforma.riapri_programma(BASE)
         os._exit(0)
     threading.Thread(target=riavvia, daemon=True).start()
 
@@ -232,8 +229,7 @@ def aggiorna_programma():
         except Exception: pass
     r = _git("pull", "--ff-only", t=120)
     if r.returncode != 0: raise ValueError("Aggiornamento non riuscito: " + (r.stderr or r.stdout)[:300])
-    setup = os.path.join(BASE, "motore", "scripts", "setup.sh")
-    if os.path.exists(setup): subprocess.run(["zsh", setup], capture_output=True, timeout=900)
+    piattaforma.prepara_ambiente(BASE)
     riavvia_programma()
     return True
 
@@ -286,8 +282,8 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/cestino":
                 p = os.path.abspath(d["path"])
                 if not p.startswith(PROGETTI + os.sep): raise ValueError("Solo i progetti creati qui si possono mettere nel Cestino")
-                subprocess.run(["osascript", "-e", f'tell application "Finder" to delete POSIX file "{p}"'], check=True, capture_output=True); self.send({"ok": True})
-            elif u.path == "/api/finder": subprocess.run(["open", "-R", d["path"]]); self.send({"ok": True})
+                piattaforma.cestina(p); self.send({"ok": True})
+            elif u.path == "/api/finder": piattaforma.mostra_file(d["path"]); self.send({"ok": True})
             elif u.path == "/api/esci":
                 self.send({"ok": True})
                 for pr, _ in EDITORS.values():
