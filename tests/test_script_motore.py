@@ -2,8 +2,10 @@
 analisi delle foto, verifica e modifica dei PSD, PDF dai PSD, abbinamento delle foto. Photoshop è finto (registra gli
 script e risponde come lui); i PSD letti da psd-tools sono oggetti finti con la stessa forma (cornici, maschere vettoriali,
 livelli di regolazione agganciati)."""
+import glob
 import json
 import os
+import pathlib
 import re
 import types
 
@@ -259,3 +261,81 @@ def test_verifica_psd_senza_risoluzione(prj, monkeypatch, capsys):
     come_script(monkeypatch, "verifica_psd", "--progetto", prj)
     out = capsys.readouterr().out.splitlines()
     assert out[0] == "Spread 01: 7087x2657px (risoluzione non scritta nel PSD) | V10 [+0.25], Q09 [+0.25], H06 [+0.25]"
+
+
+# ---------------------------------------------------------------- modifica_psd
+def _copre(op, rett, foto):
+    """la foto messa nella cornice (left, top, width in px del PSD) copre tutta la cornice e ha le proporzioni della foto"""
+    with Image.open(foto) as im: w, h = im.size
+    x0, y0, x1, y1 = rett; alto = op["width"] * h / w
+    return op["left"] <= x0 + 1e-6 and op["top"] <= y0 + 1e-6 and op["left"] + op["width"] >= x1 - 1e-6 and op["top"] + alto >= y1 - 1e-6
+
+
+def _copie(prj):
+    """{nome: contenuto} dei file nelle copie di sicurezza di modifica_psd"""
+    return {f: pathlib.Path(d, f).read_bytes() for d in glob.glob(os.path.join(prj, "PSD_vecchi", "backup_*")) for f in os.listdir(d)}
+
+
+def test_modifica_psd_scambia(prj, monkeypatch, capsys):
+    """scambio di due foto tra spread diversi: l'esposizione regolata nel PSD segue la foto, la foto riempie la cornice
+    dell'altra; prima di toccare i PSD se ne fa una copia; Photoshop riceve lo script e la sua risposta si stampa"""
+    _faces(prj, {}); A = _carica(prj)
+    out = _psd_su_disco(prj, monkeypatch, {3: _psd_spread(A, 3, ev={"V04": -0.3}), 4: _psd_spread(A, 4, ev={"Q05": 0.4})})
+    prima = {f: pathlib.Path(out, f).read_bytes() for f in os.listdir(out)}
+    ps = _Photoshop(monkeypatch, risposta=lambda js: "3: V04 -> Q05\n4: Q05 -> V04")
+    come_script(monkeypatch, "modifica_psd", "--progetto", prj, "scambia", "3:V04", "4:Q05")
+    ops = ps.var("OPS", "OUT"); foto = os.path.join(prj, "Foto")
+    assert [{k: o[k] for k in ("op", "n", "frame", "photo", "ev")} for o in ops] == [dict(op="replace", n=3, frame="V04", photo="Q05", ev=0.4),
+                                                                                    dict(op="replace", n=4, frame="Q05", photo="V04", ev=-0.3)]
+    assert os.path.samefile(ops[0]["file"], os.path.join(foto, "Q05.jpg")) and _copre(ops[0], (1779, 0, 3528, 2657), os.path.join(foto, "Q05.jpg"))
+    assert os.path.samefile(ops[1]["file"], os.path.join(foto, "V04.jpg")) and _copre(ops[1], (5052, 424, 6691, 2233), os.path.join(foto, "V04.jpg"))
+    assert json.loads(re.search(r"var OUT=(.*?);\n", ps.jsx[-1]).group(1)) == out
+    assert _copie(prj) == prima, "copia di sicurezza dei due PSD, uguali a prima"
+    stampa = capsys.readouterr().out
+    assert "copia di sicurezza: " + os.path.join(prj, "PSD_vecchi", "backup_") in stampa and stampa.endswith("3: V04 -> Q05\n4: Q05 -> V04\n")
+
+
+def test_modifica_psd_una_cornice(prj, monkeypatch):
+    """sostituisci (con l'esposizione del progetto per la foto nuova), colore, bn, esposizione: un'operazione sulla cornice"""
+    _faces(prj, {}); A = _carica(prj)
+    _psd_su_disco(prj, monkeypatch, {1: _psd_spread(A, 1), 4: _psd_spread(A, 4)})
+    ps = _Photoshop(monkeypatch); fatti = []
+    for comando in (["sostituisci", "1:H06", "H08"], ["colore", "4:V03"], ["bn", "1:Q09"], ["esposizione", "1:V10", "0.95"]):
+        come_script(monkeypatch, "modifica_psd", "--progetto", prj, *comando)
+        fatti.append(ps.var("OPS", "OUT"))
+    h08 = os.path.join(prj, "Foto", "H08.jpg")
+    assert {k: fatti[0][0][k] for k in ("op", "n", "frame", "photo", "ev")} == dict(op="replace", n=1, frame="H06", photo="H08", ev=0.25)
+    assert os.path.samefile(fatti[0][0]["file"], h08) and _copre(fatti[0][0], (5338, 1344, 7087, 2657), h08)
+    assert fatti[1:] == [[dict(op="colore", n=4, frame="V03")], [dict(op="bn", n=1, frame="Q09")], [dict(op="esposizione", n=1, frame="V10", ev=0.95)]]
+    assert sorted(_copie(prj)) == ["Spread_01.psd", "Spread_04.psd"]
+
+
+@pytest.mark.parametrize("salvato, motivo", [("false", "Spread_01.psd è aperto in Photoshop CON MODIFICHE NON SALVATE: chiedi all'utente di salvarlo e chiuderlo"),
+                                             ("true", "Spread_01.psd è aperto in Photoshop: chiedi all'utente di salvarlo e chiuderlo")])
+def test_modifica_psd_documento_aperto(prj, monkeypatch, salvato, motivo):
+    """un PSD aperto in Photoshop non si tocca: nessuna copia, nessuno script, si dice perché"""
+    _faces(prj, {}); A = _carica(prj)
+    _psd_su_disco(prj, monkeypatch, {1: _psd_spread(A, 1), 2: _psd_spread(A, 2)})
+    ps = _Photoshop(monkeypatch, aperti=f"Altro.psd|true\nSpread_01.psd|{salvato}")
+    with pytest.raises(SystemExit) as e: come_script(monkeypatch, "modifica_psd", "--progetto", prj, "scambia", "2:H01", "1:V10")
+    assert str(e.value) == motivo
+    assert ps.jsx == [] and not os.path.exists(os.path.join(prj, "PSD_vecchi"))
+
+
+def test_modifica_psd_rifai_pagina(prj, monkeypatch, capsys):
+    """rifai-pagina ricostruisce solo la pagina chiesta dall'impaginazione attuale (i testi no): esposizioni già regolate
+    nei PSD (anche di altri spread; un PSD che non si legge si salta), bilanciamento del bianco, bianco e nero"""
+    cfg = formato.leggi_json(os.path.join(prj, "progetto.json")); cfg["bilanciamento_bianco"] = {"H02": [1.1, 1.0, 0.9]}
+    formato.scrivi_json(os.path.join(prj, "progetto.json"), cfg)
+    _faces(prj, {}); A = _carica(prj)
+    out = _psd_su_disco(prj, monkeypatch, {2: _psd_spread(A, 2, ev={"H02": 0.9}), 4: _psd_spread(A, 4, ev={"V03": 1.2}), 7: ValueError("PSD rovinato")})
+    ps = _Photoshop(monkeypatch, risposta=lambda js: "ok")
+    come_script(monkeypatch, "modifica_psd", "--progetto", prj, "rifai-pagina", "2", "sinistra")
+    (h02,) = ps.var("ITEMS", "F"); foto = os.path.join(prj, "Foto", "H02.jpg")
+    assert {k: h02[k] for k in ("name", "rect", "ev", "bw", "wb")} == dict(name="H02", rect=[396, 424, 3147, 2233], ev=0.9, bw=False, wb=[104.4, 100.0, 95.3])
+    assert os.path.samefile(h02["file"], foto) and _copre(h02, h02["rect"], foto)
+    assert json.loads(re.search(r"var F=(.*?); var GROUP=(.*?);\n", ps.jsx[-1]).group(1)) == os.path.join(out, "Spread_02.psd")
+    assert json.loads(re.search(r"var GROUP=(.*?);\n", ps.jsx[-1]).group(1)) == "Pagina sinistra"
+    come_script(monkeypatch, "modifica_psd", "--progetto", prj, "rifai-pagina", "4", "sinistra")
+    assert [{k: it[k] for k in ("name", "ev", "bw", "wb")} for it in ps.var("ITEMS", "F")] == [dict(name="V03", ev=1.2, bw=True, wb=None), dict(name="V04", ev=0.25, bw=False, wb=None)]
+    assert sorted(_copie(prj)) == ["Spread_02.psd", "Spread_04.psd"] and capsys.readouterr().out.count("copia di sicurezza: ") == 2
