@@ -5,6 +5,7 @@ livelli di regolazione agganciati)."""
 import json
 import os
 import re
+import types
 
 import numpy as np
 import pytest
@@ -112,3 +113,140 @@ def test_analizza_comando_sconosciuto(prj, monkeypatch, capsys):
     _faces(prj, {})
     come_script(monkeypatch, "analizza", "--progetto", prj, "boh")
     assert "python analizza.py --progetto <cartella> provini" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------- PSD finti (forma di psd_tools) e Photoshop finto
+class _Livello:
+    """livello come lo dà psd_tools: i gruppi si scorrono, la maschera vettoriale ha i punti in frazioni (y, x) del documento,
+    i livelli di regolazione hanno kind ed exposure e possono essere agganciati (clipping) al livello sotto"""
+
+    def __init__(self, name, figli=(), rett=None, kind="group", clipping=False, exposure=0.0):
+        self.name, self.figli, self.rett, self.kind, self.clipping, self.exposure = name, list(figli), rett, kind, clipping, exposure
+        self.misura = None
+
+    def is_group(self): return self.kind == "group"
+
+    def has_vector_mask(self): return self.rett is not None
+
+    @property
+    def vector_mask(self):
+        (x0, y0, x1, y1), (W, H) = self.rett, self.misura
+        nodo = lambda x, y: types.SimpleNamespace(anchor=(y / H, x / W))
+        return types.SimpleNamespace(paths=[[nodo(x0, y0), nodo(x1, y0), nodo(x1, y1), nodo(x0, y1)]])
+
+    def __iter__(self): return iter(self.figli)
+
+
+class _PSD:
+    def __init__(self, misura, livelli, ppi=300):
+        self.size, self.livelli = misura, livelli
+        self.image_resources = types.SimpleNamespace(get_data=lambda k: types.SimpleNamespace(horizontal=ppi * 65536) if k == 1005 and ppi else None)
+        for L in self.descendants(): L.misura = misura
+
+    def __iter__(self): return iter(self.livelli)
+
+    def descendants(self):
+        def giu(ls):
+            for L in ls: yield L; yield from giu(L.figli)
+        return giu(self.livelli)
+
+
+def _cornice(nome, rett, ev=None, bw=False, altro=()):
+    """cornice di genera_psd: gruppo con maschera vettoriale (dentro la foto), sopra le regolazioni agganciate"""
+    out = [_Livello(nome, [_Livello(nome, kind="smartobject")], rett=rett)]
+    if ev is not None: out.append(_Livello("Esposizione", kind="exposure", clipping=True, exposure=ev))
+    if bw: out.append(_Livello("Bianco e nero", kind="blackandwhite", clipping=True))
+    out += [_Livello(k, kind=k, clipping=True) for k in altro]
+    return out
+
+
+def _psd_spread(A, n, ev=None):
+    """il PSD dello spread n come lo scrive genera_psd dall'impaginazione (ev: {foto: esposizione}, se no ev_for)"""
+    pagine = {"L": [], "R": []}
+    for it in A.layout(A.load_spec()[n - 1]):
+        if it["k"] == "t": pagine[it["side"]].append(_Livello("Testo", kind="type")); continue
+        nm = A.name(it["i"])
+        pagine[it["side"]] += _cornice(nm, (it["x"], it["y"], it["x"] + it["W"], it["y"] + it["H"]), (ev or {}).get(nm, A.ev_for(it["i"])), it.get("bw"))
+    return _PSD((A.CW, A.CH), [_Livello("Sfondo", kind="pixel"), _Livello("Pagina sinistra", pagine["L"], rett=(0, 0, A.FOLD, A.CH)),
+                                _Livello("Pagina destra", pagine["R"], rett=(A.FOLD, 0, A.CW, A.CH))])
+
+
+def _carica(prj):
+    """il motore con il progetto caricato (come lo vedono gli script), per costruire i PSD finti"""
+    from impaginatore.motore import album
+    return album.carica_progetto(prj)
+
+
+def _psd_su_disco(prj, monkeypatch, psd):
+    """{numero spread: _PSD o eccezione}: file Spread_NN.psd nella cartella dei PSD, psd_tools li «apre» da qui"""
+    import psd_tools
+    out = os.path.join(prj, "PSD"); os.makedirs(out, exist_ok=True)
+    for n in psd:
+        with open(os.path.join(out, f"Spread_{n:02d}.psd"), "wb") as f: f.write(b"8BPS" + bytes([n]) * 64)
+
+    def apri(p):
+        v = psd[int(re.findall(r"(\d+)\.psd", p)[0])]
+        if isinstance(v, Exception): raise v
+        return v
+    monkeypatch.setattr(psd_tools.PSDImage, "open", staticmethod(apri))
+    return out
+
+
+class _Photoshop:
+    """Photoshop finto: documenti aperti da esegui_js, script .jsx registrati; risponde con `risposta(script)`"""
+
+    def __init__(self, monkeypatch, aperti="", risposta=lambda js: "fatto"):
+        from impaginatore.piattaforma import photoshop
+        self.aperti, self.risposta, self.jsx = aperti, risposta, []
+        for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(self, n))
+
+    def trova(self): return dict(nome="Adobe Photoshop 2026", percorso="/Applications/x.app")
+
+    def esegui_js(self, codice): return self.aperti
+
+    def esegui_jsx(self, path, timeout=3600):
+        with open(path, encoding="ascii") as f: self.jsx.append(f.read())
+        return self.risposta(self.jsx[-1])
+
+    def var(self, nome, dopo):
+        """valore JSON di «var NOME=...; var DOPO=» nell'ultimo script"""
+        return json.loads(re.search(rf"var {nome}=(.*?); var {dopo}=", self.jsx[-1]).group(1))
+
+
+# ---------------------------------------------------------------- verifica_psd
+def test_verifica_psd_come_generati(prj, monkeypatch, capsys):
+    """PSD uguali all'impaginazione: misure, cornici con le loro regolazioni, nessun problema; foto doppie e non usate
+    (H08 nello spread 5 che non c'è; V07 è tolta) sull'album intero; uno spread oltre l'impaginazione non si confronta"""
+    _faces(prj, {}); A = _carica(prj)
+    psd = {n: _psd_spread(A, n) for n in (1, 2, 3, 4)}
+    psd[9] = _PSD((A.CW, A.CH), [_Livello("Sfondo", kind="pixel")])
+    _psd_su_disco(prj, monkeypatch, psd)
+    come_script(monkeypatch, "verifica_psd", "--progetto", prj, "--confronta-spec")
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "Spread 01: 7087x2657px 60.00x22.50cm @300.00 | V10 [+0.25], Q09 [+0.25], H06 [+0.25]"
+    assert out[1] == "Spread 02: 7087x2657px 60.00x22.50cm @300.00 | H02 [+0.25], H01 [+0.25]"
+    assert out[3] == "Spread 04: 7087x2657px 60.00x22.50cm @300.00 | V03 [+0.75 BN], V04 [+0.25], Q05 [+0.25]"
+    assert out[4] == "Spread 09: 7087x2657px 60.00x22.50cm @300.00 | "
+    assert "CONTROLLA" not in "\n".join(out)
+    assert out[-1] == "foto nei PSD 11 | doppie ['V03', 'V04', 'Q05'] | non usate ['H08'] | spread con problemi 0"
+
+
+def test_verifica_psd_segnala_i_problemi(prj, monkeypatch, capsys):
+    """cornice a cavallo della piega, fuori pagina, spazi diversi da quello del progetto (in orizzontale e in verticale; i
+    margini ai lati della piega vanno bene), misura del documento sbagliata, cornici diverse dall'impaginazione"""
+    _faces(prj, {}); A = _carica(prj)
+    G, MG, F = A.G, A.MG, round(A.FOLD)
+    assert (G, MG) == (30, 118)
+    sinistra = (_cornice("V03", (100, 100, 600, 900), 0.5, altro=("channelmixer", "curves")) + [_Livello("Testo", kind="type")]
+                + _cornice("V04", (650, 100, 1000, 900)) + _cornice("Q05", (1500, 100, 1900, 500)) + _cornice("H06", (1500, 545, 1900, 900))
+                + _cornice("H08", (2400, 100, F - MG, 900)))
+    destra = _cornice("V10", (F + MG, 100, F + 1000, 900)) + _cornice("H02", (F - 150, 1400, F + 150, 1800), bw=True) + _cornice("H01", (6800, 2000, A.CW + 50, 2600))
+    _psd_su_disco(prj, monkeypatch, {2: _PSD((A.CW + 10, A.CH), [_Livello("Pagina sinistra", sinistra), _Livello("Pagina destra", destra)])})
+    come_script(monkeypatch, "verifica_psd", "--progetto", prj, "--confronta-spec")
+    out = capsys.readouterr().out.splitlines()
+    assert out[0].startswith("Spread 02: 7097x2657px") and out[0].endswith("| V03 [+0.50 WB curves], V04, Q05, H06, H08, V10, H02 [BN], H01")
+    problemi = out[1].split("<-- CONTROLLA: ")[1].split("; ")
+    assert problemi == ["spazio 50px V03|V04", "spazio 45px Q05/H06", "H02 a cavallo della piega", "H01 esce dalla pagina",
+                        "misura 7097x2657 invece di 7087x2657", "cornici diverse dalla spec (normale se modificato a mano)"]
+    assert out[-1].endswith("spread con problemi 1")
+
