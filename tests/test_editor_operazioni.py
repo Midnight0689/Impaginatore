@@ -114,6 +114,15 @@ def test_spread_che_non_esiste(ed, op, s):
     _rifiutata(dict(op=op, s=s, to=0), "spread inesistente")
 
 
+def test_per_ogni_numero_di_foto_ce_un_modello(ed):
+    """da 1 a 10 foto il catalogo ha sempre un modello di spread (due pagine), quindi «newspreadsel» non resta mai senza: ci sono
+    coppie di moduli di pagina per ogni numero di foto e i modelli proposti non sono mai zero (alcuni numeri, per non rallentare)"""
+    assert set(range(1, 11)) <= {E.NPH[a[0]] + E.NPH[b[0]] for a in E.LAYS for b in E.LAYS if (a[0], b[0]) != ("BLANK", "BLANK")}
+    for n in (1, 4, 7, 10):
+        t = E.tpl_options(list(range(n)))["items"][0]
+        assert t["L"] and t["R"] and len(t["L"]["photos"]) + len(t["R"]["photos"]) == n, n
+
+
 @pytest.mark.parametrize("op", ["newspreadsel", "addtospread"])
 def test_foto_sconosciuta_tra_quelle_trascinate(ed, op):
     _rifiutata(dict(op=op, s=0, names=["H01", "NON-ESISTE"]), "foto sconosciuta: 'NON-ESISTE'")

@@ -503,11 +503,9 @@ def apply(o):
     elif t == "newspreadsel":                             # foto trascinate sulla fila degli spread: nuovo spread nel punto scelto, col modello che rispetta meglio le proporzioni
         names = list(o["names"]); ph = []
         for n in names:
-            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
         if not 1 <= len(ph) <= 10: raise ValueError("per uno spread servono da 1 a 10 foto")
-        best = next((x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R")), None)
-        if best is None: raise ValueError("nessun modello adatto a queste foto")
+        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto c'è sempre almeno un modello
         gone = set(ph)
         for sp in SP:
             for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]       # le foto spostate escono dal vecchio spread (restano le altre e i testi)
@@ -517,7 +515,6 @@ def apply(o):
     elif t == "addtospread":                              # foto lasciate sulla miniatura di uno spread esistente: entrano lì (cornici libere) e, a richiesta, lo spread si riorganizza con un altro modello
         s_ = o["s"]; ph = []
         for n in o["names"]:
-            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
         here = {it["i"] for pg in SP[s_] for it in pg[1] if it["k"] != "t"}; new = [i for i in ph if i not in here]
         gone = set(new)
@@ -656,7 +653,6 @@ def apply(o):
             _put_px(s_, key[0], key[1], ax + (L["x"] - ax) * sx, ay + (L["y"] - ay) * sy, L["W"] * sx, L["H"] * sy)
     elif t == "dup":                                      # spread identico subito dopo (le foto compaiono due volte: si usa per fare varianti)
         s_ = o["s"]
-        if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
         SP.insert(s_ + 1, copy.deepcopy(SP[s_])); GD.insert(s_ + 1, copy.deepcopy(GD[s_]))
     elif t == "copia":                                    # appunti dell'editor (non cambiano il progetto): elementi scelti con la loro posizione
         R = _rects(o["s"]); CLIP.clear()
@@ -712,14 +708,11 @@ def apply(o):
     elif t == "mode": SP[o["s"]][0 if o["side"] == "L" else 1][0] = o["mode"]
     elif t == "move":
         s, to = o["s"], max(0, min(len(SP) - 1, o["to"]))
-        if not 0 <= s < len(SP): raise ValueError("spread inesistente")
         SP.insert(to, SP.pop(s)); GD.insert(to, GD.pop(s))
     elif t == "swappages":                                # inverte le due pagine: quello che stava a sinistra va a destra e viceversa (stesse posizioni dentro la pagina)
         s_ = o["s"]
-        if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
         SP[s_][0], SP[s_][1] = SP[s_][1], SP[s_][0]; GD[s_]["v"] = [round(VW - x, 1) for x in GD[s_]["v"]]
     elif t == "delete":
-        if not 0 <= o["s"] < len(SP): raise ValueError("spread inesistente")
         if len(SP) > 1: SP.pop(o["s"]); GD.pop(o["s"])
     elif t == "new":
         u = [i for i in range(len(A.M)) if i not in used_set()]
