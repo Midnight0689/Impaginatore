@@ -1,0 +1,191 @@
+/* Impaginatore — fogli comuni dei modelli social.
+   Colori, caratteri e misure vengono da brand/tokens.css: qui niente HEX scritti a mano.
+   Una «tela» è l'immagine intera, in pixel veri (1 px CSS = 1 px del PNG).
+   Le misure dei testi sono pensate per un telefono che mostra la tela larga 1080 px a circa 390–430 px:
+   fattore 0,36–0,40. Per questo il testo corrente non scende sotto 38 px e le etichette sotto 28 px
+   (≈ 14 e 10,5 px sul telefono), e il logotipo resta alto almeno 60 px (≈ 24 px, il minimo del manuale). */
+
+@import url("../../../brand/tokens.css");
+@import url("../../../brand/font/font.css");
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #808080; }
+body { -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; font-kerning: normal; }
+
+/* ----------------------------------------------------------------- lingua e tema */
+/* Ogni modello può contenere le due lingue: si vede solo quella dell'elemento radice. */
+html[lang="it"] [lang="en"], html[lang="en"] [lang="it"] { display: none !important; }
+/* Logo e immagini con una versione per tema */
+.solo-scuro { display: none !important; }
+[data-theme="dark"] .solo-chiaro { display: none !important; }
+[data-theme="dark"] .solo-scuro { display: revert !important; }
+
+/* ----------------------------------------------------------------- tela */
+.tela {
+  position: relative; overflow: hidden;
+  width: var(--l); height: var(--a);
+  background: var(--imp-fondo); color: var(--imp-testo);
+  font-family: var(--imp-font-testo); font-size: 40px; line-height: 1.4;
+  font-variant-numeric: lining-nums;
+}
+.tela.tenue { background: var(--imp-fondo-tenue); }
+
+/* Crocini: segni di taglio fuori dagli angoli della tela (STYLEBOOK §13, motivo del concept 2). */
+.tela.crocini::before {
+  --c: var(--imp-testo-tenue); --o: 44px; --s: 30px; --t: 2px;
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background:
+    linear-gradient(var(--c), var(--c)) var(--o) 0 / var(--t) var(--s) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 var(--o) / var(--s) var(--t) no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 0 / var(--t) var(--s) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% var(--o) / var(--s) var(--t) no-repeat,
+    linear-gradient(var(--c), var(--c)) var(--o) 100% / var(--t) var(--s) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 calc(100% - var(--o)) / var(--s) var(--t) no-repeat,
+    linear-gradient(var(--c), var(--c)) calc(100% - var(--o)) 100% / var(--t) var(--s) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% calc(100% - var(--o)) / var(--s) var(--t) no-repeat;
+}
+
+/* Gabbia: margini di sicurezza. 96 px ai lati coprono il ritaglio 3:4 della griglia di Instagram
+   (34 px per lato su un 4:5) e lasciano aria. */
+.gabbia { position: absolute; inset: var(--alto, 96px) var(--lato, 96px) var(--basso, 96px); display: flex; flex-direction: column; }
+.spinta { flex: 1; }
+
+/* ----------------------------------------------------------------- testo */
+.etichetta {
+  font: 500 30px/1.25 var(--imp-font-numeri); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--imp-testo-tenue); margin: 0;
+}
+.etichetta.accento { color: var(--imp-accento); }
+.titolo {
+  font-family: var(--imp-font-titoli); font-weight: 480; font-size: 100px; line-height: 1.04;
+  letter-spacing: -.02em; font-variation-settings: "opsz" 72; margin: 0; text-wrap: balance;
+}
+.titolo.grande { font-size: 132px; line-height: 1.0; letter-spacing: -.024em; }
+.titolo.medio { font-size: 80px; line-height: 1.08; letter-spacing: -.016em; }
+.titolo.piccolo { font-size: 64px; line-height: 1.12; letter-spacing: -.012em; }
+.titolo em, .corsivo { font-style: italic; }
+.attacco { font-size: 44px; line-height: 1.38; letter-spacing: -.004em; color: var(--imp-testo-secondario); margin: 0; text-wrap: pretty; }
+.testo { font-size: 40px; line-height: 1.42; color: var(--imp-testo-secondario); margin: 0; text-wrap: pretty; }
+.testo b, .attacco b { color: var(--imp-testo); font-weight: 600; }
+.nota { font-size: 30px; line-height: 1.4; color: var(--imp-testo-tenue); margin: 0; }
+.num { font-family: var(--imp-font-numeri); font-variant-numeric: tabular-nums; }
+.payoff { font-family: var(--imp-font-titoli); font-weight: 480; font-variation-settings: "opsz" 72; letter-spacing: -.02em; }
+.verde { color: var(--imp-accento); }
+
+/* ----------------------------------------------------------------- marca */
+.logotipo { display: block; height: 60px; width: auto; }
+.logotipo.grande { height: 84px; }
+.piede { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
+.piede .payoff { font-size: 52px; line-height: 1; }
+
+/* ----------------------------------------------------------------- spread
+   Un album 30 × 30 cm aperto: due pagine quadrate, la piega al centro, i segni di piega verdi
+   sopra e sotto (come nel simbolo). Misure in scala vera: 1 mm = (metà larghezza dello spread) / 300,
+   cioè 50cqw / 300. Margine 15,0 mm (2,5cqw), spazio tra le foto 5,0 mm (0,8333cqw).
+   Lo spread è carta anche nel tema scuro: dentro usa i colori del tema chiaro. */
+.spread {
+  --margine: 2.5cqw; --spazio: 0.8333cqw;
+  container-type: inline-size; position: relative; display: grid; grid-template-columns: 1fr 1fr; aspect-ratio: 2 / 1; width: 100%;
+  background: var(--imp-carta-0); box-shadow: var(--imp-ombra-sollevato);
+}
+[data-theme="dark"] .spread {
+  --imp-accento: var(--imp-verde-600); --imp-superficie: var(--imp-carta-0); --imp-attenzione: var(--imp-ocra-600);
+  background: var(--imp-carta-0);
+}
+[data-theme="dark"] .segno-piega { background: var(--imp-verde-300); }
+.spread::after { /* la piega: un filo d'ombra al centro */
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-1px);
+  background: linear-gradient(90deg, rgb(0 0 0 / .0), rgb(0 0 0 / .10), rgb(0 0 0 / .0)); }
+.pagina { position: relative; padding: var(--margine); display: grid; gap: var(--spazio); min-height: 0; }
+.pagina.una { grid-template: 1fr / 1fr; }
+.pagina.due-v { grid-template: 1fr / 1fr 1fr; }
+.pagina.due-o { grid-template: 1fr 1fr / 1fr; }
+.pagina.tre { grid-template: 1fr 1fr / 1.4fr 1fr; }
+.pagina.tre > :first-child { grid-row: span 2; }
+.pagina.vivo { padding: 0; } /* foto al vivo: va fino al rifilo */
+.foto { position: relative; overflow: hidden; background: var(--imp-carta-200); min-height: 0; }
+.foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto img[data-mancante] { display: none; }
+.segno-piega { position: absolute; left: 50%; width: 14px; height: 40px; transform: translateX(-50%); background: var(--imp-accento); }
+.segno-piega.su { top: -58px; } .segno-piega.giu { bottom: -58px; }
+
+/* Quota sopra lo spread: due linee di richiamo dal bordo delle foto, frecce dall'esterno (lo spazio è
+   troppo stretto per starci dentro), valore in mono. --x0 e --x1 in cqw dello spread. */
+.quota-spazio {
+  position: absolute; z-index: 3; color: var(--imp-accento);
+  left: var(--x0); width: calc(var(--x1) - var(--x0));
+  top: calc(-1 * var(--su, 70px)); height: calc(var(--su, 70px) + var(--margine));
+  border-left: 3px solid currentColor; border-right: 3px solid currentColor;
+}
+.quota-spazio::before, .quota-spazio::after { /* frecce dall'esterno verso le linee di richiamo */
+  content: ""; position: absolute; top: 14px; width: 34px; height: 3px; background: currentColor;
+}
+.quota-spazio::before { right: 100%; } .quota-spazio::after { left: 100%; }
+.quota-spazio .valore {
+  position: absolute; left: 50%; bottom: calc(100% + 0px); transform: translate(-50%, -2px);
+  font: 500 30px/1 var(--imp-font-numeri); white-space: nowrap; padding: 8px 14px; border-radius: 4px;
+  background: var(--imp-superficie); box-shadow: inset 0 0 0 2px currentColor;
+}
+[data-theme="dark"] .quota-spazio { color: var(--imp-verde-300); }
+[data-theme="dark"] .quota-spazio .valore { background: var(--imp-carta-800); }
+
+/* Quota: linea di misura con terminali e valore in mono, verde se torna, ocra se va controllata */
+.quota { position: absolute; color: var(--imp-accento); font: 500 30px/1 var(--imp-font-numeri); white-space: nowrap; z-index: 3; }
+.quota.attenzione { color: var(--imp-attenzione); }
+.quota .linea { position: absolute; background: currentColor; }
+.quota.o .linea { left: 0; right: 0; top: 50%; height: 3px; transform: translateY(-50%); }
+.quota.o::before, .quota.o::after { content: ""; position: absolute; top: 50%; width: 3px; height: 26px; background: currentColor; transform: translateY(-50%); }
+.quota.o::before { left: 0; } .quota.o::after { right: 0; }
+.quota.v .linea { top: 0; bottom: 0; left: 50%; width: 3px; transform: translateX(-50%); }
+.quota.v::before, .quota.v::after { content: ""; position: absolute; left: 50%; height: 3px; width: 26px; background: currentColor; transform: translateX(-50%); }
+.quota.v::before { top: 0; } .quota.v::after { bottom: 0; }
+.quota .valore { position: absolute; padding: 6px 12px; background: var(--imp-superficie); border-radius: var(--imp-raggio-piccolo); box-shadow: inset 0 0 0 2px currentColor; }
+.quota.o .valore { left: 50%; bottom: 22px; transform: translateX(-50%); }
+.quota.v .valore { top: 50%; left: 22px; transform: translateY(-50%); }
+
+/* ----------------------------------------------------------------- componenti */
+.pulsante {
+  display: inline-flex; align-items: center; justify-content: center; gap: 16px;
+  height: 104px; padding: 0 48px; border-radius: 8px;
+  font: 600 40px/1 var(--imp-font-testo); letter-spacing: -.004em;
+  background: var(--imp-accento-fondo); color: var(--imp-su-accento);
+}
+.pulsante.pieno { background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); }
+.pulsante.secondario { background: transparent; color: var(--imp-testo); box-shadow: inset 0 0 0 3px var(--imp-bordo-campo); }
+.badge {
+  display: inline-flex; align-items: center; height: 56px; padding: 0 20px; border-radius: 4px;
+  font: 500 28px/1 var(--imp-font-numeri); letter-spacing: .05em; text-transform: uppercase;
+  background: var(--imp-fondo-tenue); color: var(--imp-testo-secondario); box-shadow: inset 0 0 0 2px var(--imp-filetto);
+}
+.badge.verde { background: var(--imp-accento-tenue); color: var(--imp-accento); box-shadow: none; }
+.filetto { height: 2px; background: var(--imp-filetto); border: 0; margin: 0; }
+.card { background: var(--imp-superficie); border-radius: 16px; box-shadow: var(--imp-ombra-appoggio); padding: 48px; }
+[data-theme="dark"] .card { box-shadow: inset 0 0 0 2px var(--imp-filetto); }
+.icona { width: 72px; height: 72px; fill: none; stroke: var(--imp-accento); stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; flex: none; }
+.riquadro-icona { width: 112px; height: 112px; display: grid; place-items: center; border-radius: 8px; box-shadow: inset 0 0 0 2px var(--imp-filetto); background: var(--imp-superficie); flex: none; }
+.elenco { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.elenco li { display: grid; grid-template-columns: 44px 1fr; gap: 20px; align-items: start; }
+.elenco li svg { width: 44px; height: 44px; margin-top: 4px; fill: none; stroke: var(--imp-accento); stroke-width: 2.25; stroke-linecap: square; }
+
+/* Prezzi: la cifra grande è quella che si paga oggi, il listino accanto con la data (STYLEBOOK §16). */
+.cifra { font: 480 168px/0.95 var(--imp-font-titoli); font-variation-settings: "opsz" 72; letter-spacing: -.03em; font-variant-numeric: lining-nums; }
+.cifra.media { font-size: 120px; }
+.cifra.piccola { font-size: 96px; }
+.una-volta { display: inline-flex; align-items: center; height: 56px; padding: 0 18px; border-radius: 4px; background: var(--imp-inverso-fondo); color: var(--imp-inverso-testo); font: 600 30px/1 var(--imp-font-testo); }
+
+/* Segnaposto di una schermata dell'app che arriverà dopo (T-501): impossibile da scambiare per vera. */
+.segnaposto {
+  position: relative; display: grid; place-content: center; gap: 14px; text-align: center; padding: 40px;
+  background: repeating-linear-gradient(135deg, var(--imp-fondo-tenue) 0 18px, var(--imp-fondo) 18px 36px);
+  box-shadow: inset 0 0 0 3px var(--imp-filetto);
+}
+.segnaposto .etichetta { color: var(--imp-accento); }
+.segnaposto .titolo { font-size: 48px; }
+.segnaposto .nota { font-family: var(--imp-font-numeri); font-size: 26px; }
+
+/* ----------------------------------------------------------------- zone di sicurezza (solo anteprime) */
+.zone [data-zona] { position: absolute; z-index: 50; pointer-events: none; }
+
+/* Valore non ancora deciso (costanti.json vuoto): si vede come segnaposto, in piccolo, mai come prezzo */
+.segnaposto-valore { display: inline-block; font: 500 26px/1.3 var(--imp-font-numeri); letter-spacing: 0; color: var(--imp-attenzione);
+  padding: 6px 10px; border: 2px dashed currentColor; border-radius: 4px; white-space: normal; word-break: break-all; vertical-align: middle; }

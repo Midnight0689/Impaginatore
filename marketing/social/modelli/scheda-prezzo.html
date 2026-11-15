@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="prezzi">
+<meta name="uso" content="Scheda prezzi: le tre licenze con il prezzo di lancio e il listino accanto, mai barrato (STYLEBOOK §16). Cifre da tier.json. Esempi: U10, U45. Dopo il 23 aprile usa scheda-prezzo-listino.">
+<title>Scheda prezzi</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .fasce { display: grid; gap: 22px; }
+  .fascia { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 24px; padding: 30px 36px; border-radius: 12px; background: var(--imp-superficie); box-shadow: inset 0 0 0 2px var(--imp-filetto); }
+  .fascia.consigliata { box-shadow: inset 0 0 0 4px var(--imp-testo); }
+  .fascia h2 { margin: 0; font: 500 56px/1 var(--imp-font-titoli); letter-spacing: -.01em; display: flex; align-items: center; gap: 18px; }
+  .fascia .cifra { grid-row: span 2; font-size: 112px; text-align: right; }
+  .fascia .poi { font-size: 30px; line-height: 1.3; color: var(--imp-testo-secondario); margin: 0; }
+  .sotto { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:100px;--basso:92px">
+    <p class="etichetta"><span lang="it">Prezzi di lancio fino al <span data-valore="data.fine_lancio">23 aprile</span></span><span lang="en">Launch prices until <span data-valore="data.fine_lancio">23 April</span></span></p>
+    <h1 class="titolo medio" style="margin-top:22px">
+      <span lang="it">Tre licenze. Nessun abbonamento.</span>
+      <span lang="en">Three licences. No subscription.</span>
+    </h1>
+    <div class="spinta"></div>
+    <div class="fasce">
+      <div class="fascia">
+        <h2>Essenziale</h2>
+        <span class="cifra" data-valore="essenziale.lancio">39 €</span>
+        <p class="poi"><span lang="it">poi <span data-valore="essenziale.listino">49 €</span> · <span data-valore="essenziale.computer">1</span> computer</span><span lang="en">then <span data-valore="essenziale.listino">€49</span> · <span data-valore="essenziale.computer">1</span> computer</span></p>
+      </div>
+      <div class="fascia consigliata">
+        <h2>Pro <span class="badge verde"><span lang="it">Consigliato</span><span lang="en">Recommended</span></span></h2>
+        <span class="cifra" data-valore="pro.lancio">79 €</span>
+        <p class="poi"><span lang="it">poi <span data-valore="pro.listino">99 €</span> · <span data-valore="pro.computer">2</span> computer · PSD a livelli</span><span lang="en">then <span data-valore="pro.listino">€99</span> · <span data-valore="pro.computer">2</span> computers · layered PSD</span></p>
+      </div>
+      <div class="fascia">
+        <h2>Studio</h2>
+        <span class="cifra" data-valore="studio.lancio">119 €</span>
+        <p class="poi"><span lang="it">poi <span data-valore="studio.listino">149 €</span> · <span data-valore="studio.computer">5</span> computer · 1 ora di assistenza inclusa</span><span lang="en">then <span data-valore="studio.listino">€149</span> · <span data-valore="studio.computer">5</span> computers · 1 hour of support included</span></p>
+      </div>
+    </div>
+    <div class="sotto">
+      <span class="una-volta"><span lang="it">Una volta</span><span lang="en">One-time</span></span>
+      <span class="nota"><span lang="it">IVA esclusa · prova <span data-valore="prova.giorni">30</span> giorni senza carta</span><span lang="en">VAT excluded · <span data-valore="prova.giorni">30</span>-day trial, no card</span></span>
+    </div>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

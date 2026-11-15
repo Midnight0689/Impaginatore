@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="carosello">
+<meta name="uso" content="Pagina di carosello con una schermata dell'app. Finché l'interfaccia ridisegnata (T-205) e le schermate vere (T-501) non ci sono, mostra un segnaposto con misura e nome del file. Per sostituirlo: metti il PNG in modelli/schermate/ con quel nome e cambia il div .segnaposto in &lt;img class=&quot;schermata&quot; src=&quot;schermate/…&quot;&gt;. Esempio: U29 e U42.">
+<title>Pagina con schermata</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .pagine { display: flex; justify-content: space-between; align-items: center; }
+  .riquadro { width: 888px; height: 700px; position: relative; }
+  .riquadro .segnaposto, .riquadro .schermata { position: absolute; inset: 0; width: 100%; height: 100%; display: grid; }
+  .riquadro .schermata { object-fit: cover; box-shadow: var(--imp-ombra-sollevato); }
+  .annotazione { display: flex; gap: 18px; align-items: baseline; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <div class="pagine"><p class="etichetta">Nell’editor</p><p class="etichetta num">03/06</p></div>
+    <h1 class="titolo piccolo" style="margin-top:28px">Il pannello misure: margini, spazi, abbondanza.</h1>
+    <div class="spinta"></div>
+    <div class="riquadro">
+      <div class="segnaposto">
+        <p class="etichetta">Segnaposto · schermata da sostituire</p>
+        <p class="titolo">Spread 07–08 con il pannello misure aperto</p>
+        <p class="testo" style="max-width:640px;margin:0 auto">Tema chiaro, album dimostrativo, una sola quota verde «5,0 mm» fra due foto. Ritaglio sul pannello, niente finestra intera.</p>
+        <p class="nota">888 × 700 px · modelli/schermate/pannello-misure.png</p>
+      </div>
+    </div>
+    <div class="annotazione"><span class="etichetta accento" style="white-space:nowrap">5,0 mm</span><span class="nota">Margini e spazi si leggono in millimetri, accanto allo spread.</span></div>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="etichetta accento">Scorri →</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

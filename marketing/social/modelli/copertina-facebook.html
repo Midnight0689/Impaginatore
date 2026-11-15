@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1702x630">
+<meta name="lingue" content="it en">
+<meta name="zone" content="facebook-mobile">
+<meta name="gruppo" content="copertine">
+<meta name="uso" content="Copertina della Pagina Facebook, a 2x di 851 × 315. Sul computer si vede 820 × 312, sul telefono il centro 640 × 360: il testo sta nel centro largo 1120 px.">
+<title>Copertina Facebook</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1040px; display: grid; justify-items: center; gap: 30px; text-align: center; }
+  .centro .logotipo { height: 96px; }
+  .centro .payoff { font-size: 64px; line-height: 1; }
+  .centro .testo { font-size: 36px; }
+  .lato { position: absolute; top: 120px; bottom: 120px; width: 230px; display: grid; gap: 10px; }
+  .lato.s { left: 60px; grid-template-rows: 1.4fr 1fr; } .lato.d { right: 60px; grid-template-rows: 1fr 1.4fr; }
+  .lato .foto { box-shadow: var(--imp-ombra-appoggio); }
+</style>
+</head>
+<body>
+<div class="tela" style="--l:1702px;--a:630px">
+  <div class="lato s"><div class="foto"><img src="../../demo/foto/DEMO_0005.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0001.jpg" alt=""></div></div>
+  <div class="lato d"><div class="foto"><img src="../../demo/foto/DEMO_0043.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0058.jpg" alt=""></div></div>
+  <div class="centro">
+    <img class="logotipo" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+    <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    <p class="testo"><span lang="it">Album di matrimonio impaginati sul tuo computer. Paghi una volta.</span><span lang="en">Wedding albums, laid out on your computer. Pay once.</span></p>
+  </div>
+</div>
+</body>
+</html>

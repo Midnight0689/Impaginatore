@@ -1,0 +1,11 @@
+# I PNG finiti si rigenerano con strumenti/genera_grafiche.py: contengono le foto dimostrative, che non si
+# versionano (marketing/demo/.gitignore), e pesano decine di MB in tutto. Nel repository restano i sorgenti
+# (modelli/) e le tavole di controllo (anteprime/).
+grafiche/
+
+# Riprese dei video (COPIONI.md): file pesanti, restano sul computer di chi gira.
+riprese/
+
+# Le tavole con le zone di sicurezza sono uno strumento di controllo: si rifanno con genera_grafiche.py.
+# Si versionano solo le tavole telefono-*.png, per vedere le grafiche senza rigenerarle.
+anteprime/zone-*.png

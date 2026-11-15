@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1920">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="storia">
+<meta name="gruppo" content="lancio">
+<meta name="uso" content="U49, storia dell'ultimo giorno del prezzo di lancio (venerdì 23 aprile). Un promemoria, non una corsa: nessun conto alla rovescia, nessun «ultimi posti». Se le 300 licenze finiscono prima, questa storia non si pubblica.">
+<title>U49, ultimo giorno</title>
+<link rel="stylesheet" href="../social.css">
+<style>
+  .righe { display: grid; gap: 0; border-top: 2px solid var(--imp-filetto); }
+  .righe > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 26px 0; border-bottom: 2px solid var(--imp-filetto); }
+  .righe .nome { font: 500 52px/1 var(--imp-font-titoli); }
+  .righe .poi { font-size: 32px; color: var(--imp-testo-secondario); }
+  .righe .cifra { font-size: 80px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="tela" style="--l:1080px;--a:1920px">
+  <div class="gabbia" style="--alto:300px;--basso:390px">
+    <p class="etichetta accento"><span lang="it">Oggi, <span data-valore="data.fine_lancio">23 aprile</span></span><span lang="en">Today, <span data-valore="data.fine_lancio">23 April</span></span></p>
+    <h1 class="titolo" style="margin-top:30px">
+      <span lang="it">Ultimo giorno del prezzo di lancio.</span>
+      <span lang="en">Last day of the launch price.</span>
+    </h1>
+    <p class="attacco" style="margin-top:34px">
+      <span lang="it">Fino a mezzanotte valgono questi prezzi. Da domani si torna al listino, che resta quello.</span>
+      <span lang="en">These prices hold until midnight. From tomorrow it’s the list price, and that stays.</span>
+    </p>
+    <div class="spinta"></div>
+    <div class="righe">
+      <div><span><span class="nome">Essenziale</span><br><span class="poi"><span lang="it">poi <span data-valore="essenziale.listino">49 €</span></span><span lang="en">then <span data-valore="essenziale.listino">€49</span></span></span></span><span class="cifra" data-valore="essenziale.lancio">39 €</span></div>
+      <div><span><span class="nome">Pro</span><br><span class="poi"><span lang="it">poi <span data-valore="pro.listino">99 €</span></span><span lang="en">then <span data-valore="pro.listino">€99</span></span></span></span><span class="cifra" data-valore="pro.lancio">79 €</span></div>
+      <div><span><span class="nome">Studio</span><br><span class="poi"><span lang="it">poi <span data-valore="studio.listino">149 €</span></span><span lang="en">then <span data-valore="studio.listino">€149</span></span></span></span><span class="cifra" data-valore="studio.lancio">119 €</span></div>
+    </div>
+    <p class="nota" style="margin-top:24px"><span lang="it">Una volta, IVA esclusa. Con il bonifico istantaneo la chiave arriva entro 2 ore lavorative.</span><span lang="en">One-time, VAT excluded. With an instant bank transfer, your key arrives within 2 working hours.</span></p>
+    <div class="spinta"></div>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

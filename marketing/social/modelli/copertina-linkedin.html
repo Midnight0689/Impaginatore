@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1512x256">
+<meta name="lingue" content="it en">
+<meta name="gruppo" content="copertine">
+<meta name="uso" content="Copertina della Pagina aziendale LinkedIn, 1512 × 256 (misura minima e consigliata dell'aiuto LinkedIn). Il logo della Pagina si sovrappone in basso a sinistra: lì non c'è testo.">
+<title>Copertina LinkedIn, Pagina</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .tela { background: var(--imp-carta-900); color: var(--imp-carta-50); }
+  .riga { position: absolute; right: 72px; top: 50%; transform: translateY(-50%); display: grid; justify-items: end; gap: 10px; text-align: right; }
+  .riga .payoff { font-size: 56px; line-height: 1; color: var(--imp-carta-50); }
+  .riga .testo { font-size: 26px; line-height: 1.3; color: var(--imp-carta-300); }
+  .segni { position: absolute; left: 520px; top: 0; bottom: 0; width: 14px; }
+  .segni::before, .segni::after { content: ""; position: absolute; left: 0; width: 14px; height: 70px; background: var(--imp-verde-300); }
+  .segni::before { top: 0; } .segni::after { bottom: 0; }
+</style>
+</head>
+<body>
+<div class="tela" style="--l:1512px;--a:256px">
+  <span class="segni"></span>
+  <div class="riga">
+    <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    <p class="testo"><span lang="it">Software per impaginare album, sul computer del fotografo · Edizioni per i laboratori di stampa</span><span lang="en">Album layout software that runs on the photographer’s computer · Editions for print labs</span></p>
+  </div>
+</div>
+</body>
+</html>

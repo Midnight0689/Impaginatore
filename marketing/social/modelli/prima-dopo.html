@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1350">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="post">
+<meta name="uso" content="Prima e dopo: la stessa pagina di un album 30 × 30 cm con margini e spazi a occhio (quota ocra) e con margini 15,0 mm e spazi 5,0 mm (quota verde). Disegno in scala vera. Esempio: U24. Va bene anche come seconda pagina di un carosello.">
+<title>Prima e dopo</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  /* Una pagina sola, quadrata: 300 mm = 100cqw, quindi 1 mm = 0,3333cqw. Margine 15 mm = 5cqw, spazio 5 mm = 1,6667cqw. */
+  .spread.singola { --margine: 5cqw; --spazio: 1.6667cqw; grid-template-columns: 1fr; aspect-ratio: 1; }
+  .spread.singola::after { display: none; }
+  .confronto { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding-top: 120px; }
+  .confronto figure { margin: 0; display: grid; gap: 30px; }
+  /* Prima: margini diversi su ogni lato (17,4 / 10,2 / 12,0 / 18,6 mm), spazi 3,0 mm in orizzontale e 9,6 mm in verticale */
+  .storta .pagina { padding: 5.8cqw 3.4cqw 4.0cqw 6.2cqw; gap: 3.2cqw 1.0cqw; }
+  .quota-spazio.attenzione { color: var(--imp-attenzione); }
+  [data-theme="dark"] .quota-spazio.attenzione { color: var(--imp-ocra-300); }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1350px">
+  <div class="gabbia" style="--alto:104px">
+    <h1 class="titolo medio">
+      <span lang="it">Gli stessi spazi, su tutto l’album.</span>
+      <span lang="en">The same spacing, across the whole album.</span>
+    </h1>
+    <p class="testo" style="margin-top:28px">
+      <span lang="it">Con Pro e Studio, spazi e tono uniformi su tutte le pagine. Le scelte restano tue.</span>
+      <span lang="en">With Pro and Studio, even spacing and tone on every page. The choices stay yours.</span>
+    </p>
+    <div class="spinta"></div>
+    <div class="confronto">
+      <figure>
+        <div class="spread singola storta">
+          <div class="pagina tre"><div class="foto"><img src="../../demo/foto/DEMO_0052.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0010.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0054.jpg" alt=""></div></div>
+          <div class="quota-spazio attenzione" style="--x0:58.35cqw;--x1:59.35cqw;--margine:5.8cqw"><span class="valore"><span lang="it">3,0 mm</span><span lang="en">3.0 mm</span></span></div>
+        </div>
+        <figcaption class="etichetta"><span lang="it">Prima · a occhio</span><span lang="en">Before · by eye</span></figcaption>
+      </figure>
+      <figure>
+        <div class="spread singola">
+          <div class="pagina tre"><div class="foto"><img src="../../demo/foto/DEMO_0052.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0010.jpg" alt=""></div><div class="foto"><img src="../../demo/foto/DEMO_0054.jpg" alt=""></div></div>
+          <div class="quota-spazio" style="--x0:56.53cqw;--x1:58.19cqw"><span class="valore"><span lang="it">5,0 mm</span><span lang="en">5.0 mm</span></span></div>
+        </div>
+        <figcaption class="etichetta accento"><span lang="it">Dopo · 5,0 mm</span><span lang="en">After · 5.0 mm</span></figcaption>
+      </figure>
+    </div>
+    <div class="spinta"></div>
+    <p class="nota" style="margin-bottom:28px"><span lang="it">Disegno in scala: una pagina di un album 30 × 30 cm.</span><span lang="en">Drawn to scale: one page of a 30 × 30 cm album.</span></p>
+    <div class="piede">
+      <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+      <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+      <span class="payoff"><span lang="it">Resta tuo.</span><span lang="en">Yours to keep.</span></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

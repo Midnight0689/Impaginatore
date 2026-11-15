@@ -1,0 +1,1196 @@
+// Sorgente delle uscite social. Da qui strumenti/componi_testi.py ricava CALENDARIO.md, CALENDARIO.csv.
+// Non si modificano i file composti: si cambia questo file e si rilancia lo script.
+//
+// Ogni uscita comincia con «=== ID». Poi campi «chiave: valore» e i testi dopo «--- it» e «--- en».
+// Campi: data (AAAA-MM-GG), ora, canale, formato, pilastro, modello (nome in modelli/), grafica (PNG in grafiche/),
+// cta, link, hashtag, importante (sì: va anche in inglese), mcp (sì: riserva, senza data), titolo, titolo_en, note.
+// Prezzi e date si scrivono come {{chiave}} (strumenti/listino.py): mai a mano.
+// Il giorno della settimana lo calcola lo script dalla data. Niente sabato, niente Pasqua (28/03) e Pasquetta (29/03).
+// Instagram: nessun indirizzo nel testo (non è cliccabile), si scrive «link nella bio». Al massimo 5 hashtag.
+
+=== U01
+data: 2027-02-02
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Bottega
+modello: post-verticale
+grafica: grafiche/post-verticale.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum
+titolo: Perché esiste Impaginatore
+note: Primo post del profilo. Si fissa in cima fino al lancio, insieme a U02 e U05.
+--- it
+Il programma per album che uso dal 2012 smetterà di aprirsi quando il Mac toglierà il livello di compatibilità su cui gira. Non l’ho scelto io: succede.
+
+Un album dura una vita. Lo strumento con cui lo fai dovrebbe durare almeno quanto il tuo lavoro.
+
+Così, tra un matrimonio e l’altro, ne ho scritto uno. Si chiama Impaginatore. Lavora sul tuo computer, con le foto nelle tue cartelle. Lo paghi una volta e la versione che compri resta tua.
+
+Lo uso da anni sui miei album. In queste settimane lo sto preparando perché lo possano usare anche altri fotografi. Esce a febbraio.
+
+Se vuoi sapere il giorno, la lista d’attesa è al link nella bio. Ti scrivo due volte: per la data e per il lancio.
+
+=== U02
+data: 2027-02-04
+ora: 12:30
+canale: Instagram
+formato: carosello 5 pagine 4:5
+pilastro: Le foto restano tue
+modello: carosello-copertina, carosello-interna, U02-pagina-3, U02-pagina-4, carosello-chiusura
+grafica: grafiche/carosello-copertina.png, grafiche/carosello-interna.png, grafiche/uscite/U02-pagina-3.png, grafiche/uscite/U02-pagina-4.png, grafiche/carosello-chiusura.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum #fotografiadimatrimonio
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: Tre promesse
+titolo_en: Three promises
+--- it
+Tre promesse, scritte prima di vendere una sola copia.
+
+1. Le foto restano sul tuo computer. Nessuna funzione le carica in rete, e il programma lavora anche senza connessione.
+2. Paghi una volta. La licenza non scade: la versione che compri resta tua anche se un giorno smetti di aggiornare.
+3. Al decimo di millimetro. Margini, spazio tra le foto e abbondanza si impostano in millimetri, con i valori del tuo laboratorio.
+
+Se una di queste tre cose un giorno cambiasse, avremmo smesso di fare il programma che volevamo fare.
+
+Esce a febbraio. Per sapere il giorno: lista d’attesa, link nella bio.
+--- en
+Three promises, written before selling a single copy.
+
+1. Your photos stay on your computer. No feature uploads them, and the app works offline.
+2. Pay once. The licence doesn’t expire: the version you buy is yours to keep, even if one day you stop updating.
+3. To a tenth of a millimetre. Margins, spacing and bleed are set in millimetres, with your lab’s values.
+
+If any of these three ever changed, we would have stopped making the software we set out to make.
+
+Out in February. To hear the date first, join the waiting list: link in bio.
+
+=== U03
+data: 2027-02-03
+ora: 18:00
+canale: Instagram
+formato: storia con sondaggio
+pilastro: Mestiere
+modello: nessuno (testo e adesivo «sondaggio» nell’app, fondo Carta)
+grafica: nessuna
+cta: Rispondi al sondaggio
+link: nessuno
+hashtag: nessuno
+titolo: Sondaggio: dove impagini
+note: Le risposte servono a scegliere i prossimi consigli di bottega. Nessun marchio nelle opzioni.
+--- it
+Testo sullo schermo: Dove impagini i tuoi album, oggi?
+Adesivo sondaggio: «Un programma per album» / «A mano, in Photoshop»
+Seconda storia, il giorno dopo: i risultati, senza commenti sui programmi degli altri.
+
+=== U04
+data: 2027-02-05
+ora: 09:00
+canale: LinkedIn (profilo del titolare)
+formato: post con immagine 4:5
+pilastro: Bottega
+modello: post-verticale
+grafica: grafiche/post-verticale.png
+cta: Commenta o scrivimi
+link: {{link_lista}}
+hashtag: #fotografia #software #matrimonio
+titolo: Da strumento personale a prodotto
+--- it
+Da qualche anno impagino gli album di matrimonio con un programma che ho scritto per me. A febbraio diventa un prodotto: si chiama Impaginatore.
+
+Tre scelte che sul mercato dei software per album non sono scontate:
+– le foto restano sul computer del fotografo, nessuna funzione le carica in rete;
+– la licenza si paga una volta e non scade;
+– le misure si danno in millimetri, con i valori del laboratorio di stampa.
+
+Se lavori in un laboratorio di stampa, in un’associazione di fotografi o nella formazione, mi interessa parlarti prima del lancio. Il programma esce {{data.lancio}}.
+
+Lista d’attesa: {{link_lista}}
+
+=== U05
+data: 2027-02-08
+ora: 09:00
+canale: Instagram e Facebook
+formato: post 1:1
+pilastro: Resta tuo
+modello: post-quadrato
+grafica: grafiche/post-quadrato.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: La data
+titolo_en: The date
+note: Stesso giorno dell’email «data» alla lista (PIANO-90-GIORNI, S-2). Su Facebook al posto di «link nella bio» si incolla {{link_lista}}.
+--- it
+La data: {{data.lancio}}.
+
+Quel giorno Impaginatore si può comprare e provare per {{prova.giorni}} giorni, senza carta. Chi è in lista d’attesa può comprarlo 48 ore prima, da {{data.accesso_anticipato}}, al prezzo di lancio.
+
+Il prezzo lo scriviamo qui il giorno del lancio, insieme a tutto quello che contiene ogni licenza. Nessun abbonamento.
+
+Lista d’attesa: link nella bio.
+--- en
+The date: {{data.lancio}}.
+
+That day you can buy Impaginatore, or try it for {{prova.giorni}} days without a card. People on the waiting list can buy it 48 hours earlier, from {{data.accesso_anticipato}}, at the launch price.
+
+We will post the price here on launch day, with everything each licence includes. No subscription.
+
+Waiting list: link in bio.
+
+=== U06
+data: 2027-02-10
+ora: 12:30
+canale: Instagram
+formato: reel 9:16, 30 s (copione V1)
+pilastro: Le foto restano tue
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #privacy
+titolo: Stacco il wi-fi ed esporto l’album
+note: Girato sul computer del titolare con la versione beta e l’album dimostrativo (foto Pexels senza volti in primo piano).
+--- it
+Una prova che puoi rifare tu, il giorno che lo installi: stacco il wi‑fi ed esporto un album intero.
+
+Impaginatore lavora sui file che hai già, nelle tue cartelle. Non c’è un archivio online da cui dipendere e nessuna funzione carica le foto in rete. Le foto dei tuoi sposi restano dove le hai messe tu.
+
+Esce {{data.lancio}}. Lista d’attesa al link nella bio.
+
+=== U07
+data: 2027-02-11
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Mestiere
+modello: citazione
+grafica: grafiche/citazione.png
+cta: Salva il post
+link: nessuno
+hashtag: #fotografodimatrimonio #albumdimatrimonio #consiglidifotografia
+titolo: Consiglio di bottega 01: la piega
+--- it
+Consiglio di bottega, numero uno.
+
+Tieni i volti lontani dalla piega. Quanto lontano non lo decide il programma: lo decide la rilegatura. Un album a lay-flat si apre piatto, uno cucito no, e la zona da evitare cambia.
+
+Chiedi al tuo laboratorio la misura per ogni rilegatura che usi, scrivila da qualche parte e impostala una volta sola. Poi non ci pensi più.
+
+Ogni settimana, fino al lancio, un consiglio dal banco di lavoro. Salvalo se ti serve.
+
+=== U08
+data: 2027-02-12
+ora: 09:00
+canale: LinkedIn (pagina Impaginatore)
+formato: post con immagine 1,91:1
+pilastro: Mestiere
+modello: copertina-linkedin-profilo
+grafica: grafiche/copertina-linkedin-profilo.png
+cta: Scrivici per un’edizione per laboratori
+link: {{link_laboratori}}
+hashtag: #stampafotografica #fotolibri #fotografia
+titolo: Per i laboratori di stampa
+note: Nomi dei laboratori pilota solo con il loro consenso scritto.
+--- it
+Impaginatore esce {{data.lancio}}. Per chi stampa album, che cosa cambia?
+
+Il fotografo imposta formato, margini, spazio tra le foto e abbondanza in millimetri, con i valori che gli dà il laboratorio. Esporta JPG o PDF; con le licenze Pro e Studio anche PSD a livelli. Il progetto e le foto restano sul suo computer.
+
+Per i laboratori stiamo preparando un’edizione con il vostro catalogo di formati e il vostro marchio. Se volete saperne di più, scriveteci: {{link_laboratori}}
+
+=== U09
+data: 2027-02-12
+ora: 12:30
+canale: Facebook (pagina)
+formato: post 1:1
+pilastro: Le foto restano tue
+modello: post-quadrato
+grafica: grafiche/post-quadrato.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}}
+hashtag: nessuno
+titolo: La data, su Facebook
+note: Variante per Facebook di U05: qui il link è cliccabile. L’ultima riga solo se la presenza alla Convention ANFM è confermata.
+--- it
+Impaginatore esce {{data.lancio}}.
+
+È un programma per impaginare album di matrimonio sul tuo computer: le foto restano nelle tue cartelle, la licenza si paga una volta. Chi è in lista d’attesa può comprarlo 48 ore prima, al prezzo di lancio.
+
+Lista d’attesa: {{link_lista}}
+
+Ci trovi anche alla Convention ANFM di Padova, {{data.convention}}.
+
+=== U10
+data: 2027-02-15
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: U10-tre-anni
+grafica: grafiche/uscite/U10-tre-anni.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #abbonamenti
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: Fare i conti su tre anni
+titolo_en: Doing the maths over three years
+note: Pubblicità comparativa senza marchi: da far vedere al legale prima (PIANO-90-GIORNI, S-4). Fonti in docs/mercato/prezzi.md. Prima di pubblicare rileggere i prezzi e aggiornare confronto.* in costanti.json: dal 1/1/2027 uno dei tre abbonamenti rincara.
+--- it
+Facciamo due conti, senza nomi.
+
+Un abbonamento annuale a un software per album costava, al {{confronto.data}}, da {{confronto.dollari_min}} a {{confronto.dollari_max}} $ l’anno: circa {{confronto.abbonamento_mese}} € al mese. In tre anni sono 36 mensilità.
+
+Impaginatore Pro costa {{pro.listino}}, una volta, IVA esclusa: più o meno quanto {{confronto.mesi_pro}} mesi di abbonamento. Gli altri mesi non li paghi, e la versione che hai comprato resta tua.
+
+Al lancio Pro costa {{frase.pro}}, sempre una volta e IVA esclusa.
+
+Le fonti dei prezzi le pubblichiamo nella pagina prezzi. Lista d’attesa al link nella bio.
+--- en
+Let’s do the maths, without names.
+
+On {{confronto.data}}, an annual album software subscription cost ${{confronto.dollari_min}} to ${{confronto.dollari_max}} a year: about €{{confronto.abbonamento_mese}} a month. Over three years, that’s 36 monthly payments.
+
+Impaginatore Pro costs {{pro.listino}}, one-time, VAT excluded: roughly {{confronto.mesi_pro}} months of subscription. You don’t pay for the other months, and the version you bought is yours to keep.
+
+At launch, Pro costs {{frase.pro}}, still one-time and VAT excluded.
+
+Price sources are on our pricing page. Waiting list: link in bio.
+
+=== U11
+data: 2027-02-17
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Mestiere
+modello: prima-dopo
+grafica: grafiche/prima-dopo.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum
+titolo: Gli stessi spazi su tutto l’album
+--- it
+A sinistra, una pagina impaginata a occhio: spazi da 3,0 mm in orizzontale e quasi 10 in verticale, margini diversi su ogni lato. A destra, la stessa pagina con 5,0 mm ovunque e 15,0 mm di margine.
+
+Su una pagina la differenza si vede appena. Su quaranta spread, sfogliando, si sente.
+
+Con le licenze Pro e Studio, Impaginatore rende uniformi spazi e tono su tutte le pagine dell’album. Poi ogni spread lo puoi ancora cambiare a mano.
+
+Disegno in scala vera, album 30 × 30 cm. Lista d’attesa al link nella bio.
+
+=== U12
+data: 2027-02-18
+ora: 18:00
+canale: Instagram
+formato: storia, 2 schermate di testo
+pilastro: Bottega
+modello: nessuno (testo nell’app, fondo Inchiostro)
+grafica: nessuna
+cta: Rispondi alla storia
+link: nessuno
+hashtag: nessuno
+titolo: Versione congelata
+--- it
+Schermata 1: Da oggi la versione di lancio è congelata. Fino al {{data.lancio}} correggiamo solo errori, niente funzioni nuove.
+Schermata 2: Hai una domanda sul programma? Rispondi a questa storia: le domande più frequenti finiscono nelle risposte del sito.
+
+=== U13
+data: 2027-02-19
+ora: 09:00
+canale: LinkedIn (profilo del titolare)
+formato: post con immagine 4:5
+pilastro: Resta tuo
+modello: U10-tre-anni
+grafica: grafiche/uscite/U10-tre-anni.png
+cta: Iscriviti alla lista d’attesa
+link: {{link_lista}}
+hashtag: #fotografia #software #abbonamenti
+titolo: Licenza perpetua, nel 2027
+note: Dopo il parere del legale, come U10.
+--- it
+Una domanda che mi fanno spesso: perché vendere una licenza perpetua nel 2027?
+
+Perché chi impagina album lavora su progetti che durano anni: l’album si riapre per una ristampa, per una copia ai genitori, per un anniversario. Un programma che smette di aprirsi se smetti di pagare non va d’accordo con questo lavoro.
+
+Impaginatore Pro costa {{pro.listino}}, una volta, IVA esclusa. Al lancio {{frase.pro}}. La chiave si verifica sul computer, senza server: il programma si apre anche senza connessione.
+
+Esce {{data.lancio}}. Lista d’attesa: {{link_lista}}
+
+=== U14
+data: 2027-02-21
+ora: 09:00
+canale: Instagram e Facebook
+formato: storia 9:16
+pilastro: Resta tuo
+modello: storia
+grafica: grafiche/storia.png
+cta: Controlla l’email
+link: {{link_lista}} (adesivo link)
+hashtag: nessuno
+importante: sì
+titolo: Accesso anticipato
+titolo_en: Early access
+note: Domenica: è l’unica uscita nel fine settimana, insieme all’email dell’accesso anticipato.
+--- it
+Testo sullo schermo: Da oggi, 48 ore prima di tutti.
+Testo piccolo: Se sei in lista d’attesa, ti è arrivata un’email con il link per comprare al prezzo di lancio. Per tutti si apre {{data.lancio}}.
+Adesivo link: «Lista d’attesa» → {{link_lista}}
+--- en
+On-screen text: From today, 48 hours before everyone.
+Small text: If you are on the waiting list, an email with the purchase link at the launch price is in your inbox. Sales open to everyone on {{data.lancio}}.
+Link sticker: «Waiting list» → {{link_lista}}
+
+=== U15
+data: 2027-02-23
+ora: 09:00
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: annuncio-lancio
+grafica: grafiche/annuncio-lancio.png
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum #fotografiadimatrimonio
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: Impaginatore è pronto
+titolo_en: Impaginatore is ready
+note: Si fissa in cima al profilo per tutto il periodo di lancio. Alle 9 in punto, con l’email di lancio.
+--- it
+Impaginatore è pronto.
+
+Impagini l’album sul tuo computer, con le foto nelle tue cartelle: nessuna funzione le carica in rete. Paghi una volta, la licenza non scade.
+
+Tre licenze, prezzi di lancio, una volta, IVA esclusa:
+– Essenziale: {{frase.essenziale}}. {{essenziale.computer}} computer, {{essenziale.modelli_autore}} modelli d’autore, JPG e PDF.
+– Pro: {{frase.pro}}. {{pro.computer}} computer, impaginazione automatica dell’album, spazi e tono uniformi, PSD a livelli.
+– Studio: {{frase.studio}}. {{studio.computer}} computer, un’ora di assistenza inclusa e la prossima versione maggiore.
+
+Prova gratuita di {{prova.giorni}} giorni, senza carta: tutte le funzioni del Pro tranne il PSD, con una filigrana sugli export. Su Mac e Windows si installa con una riga; su Linux c’è l’AppImage o il pacchetto .deb.
+
+Link nella bio.
+--- en
+Impaginatore is ready.
+
+You lay out the album on your computer, with the photos in your own folders: no feature uploads them. Pay once; the licence doesn’t expire.
+
+Three licences, launch prices, one-time, VAT excluded:
+– Essenziale: {{frase.essenziale}}. {{essenziale.computer}} computer, {{essenziale.modelli_autore}} designer layouts, JPG and PDF.
+– Pro: {{frase.pro}}. {{pro.computer}} computers, automatic album layout, even spacing and tone, layered PSD.
+– Studio: {{frase.studio}}. {{studio.computer}} computers, one hour of support included, and the next major version.
+
+Free {{prova.giorni}}-day trial, no card: every Pro feature except PSD, with a watermark on exports. On Mac and Windows it installs with one line; on Linux there’s an AppImage or a .deb package.
+
+Link in bio.
+
+=== U16
+data: 2027-02-23
+ora: 09:05
+canale: Instagram e Facebook
+formato: storia 9:16
+pilastro: Resta tuo
+modello: annuncio-lancio-storia
+grafica: grafiche/annuncio-lancio-storia.png
+cta: Scarica la prova
+link: {{link_prova}} (adesivo link)
+hashtag: nessuno
+titolo: Lancio, storia
+--- it
+Testo sullo schermo: Impaginatore è pronto. Sul tuo computer, con le tue foto. Paghi una volta.
+Prezzo nella grafica: Pro {{frase.pro}}, una volta, IVA esclusa.
+Adesivo link: «Prova {{prova.giorni}} giorni» → {{link_prova}}
+
+=== U17
+data: 2027-02-23
+ora: 09:30
+canale: LinkedIn (profilo del titolare e pagina Impaginatore)
+formato: post con immagine 4:5
+pilastro: Bottega
+modello: annuncio-lancio
+grafica: grafiche/annuncio-lancio.png
+cta: Prova gratis per {{prova.giorni}} giorni
+link: {{link_prova}}
+hashtag: #fotografia #software #matrimonio
+hashtag_en: #photography #software
+importante: sì
+titolo: Lancio su LinkedIn
+titolo_en: Launch on LinkedIn
+--- it
+Oggi esce Impaginatore, il programma con cui impagino i miei album di matrimonio, ora per tutti i fotografi.
+
+Lavora sul computer, senza conti online e senza caricare le foto da nessuna parte. Si paga una volta: Pro costa {{frase.pro}}, IVA esclusa. Ci sono anche Essenziale e Studio, per chi lavora con un computer solo o con uno studio intero.
+
+Ringrazio i fotografi che l’hanno provato in queste settimane: alcune delle cose che trovate dentro sono nate dalle loro segnalazioni.
+
+Prova gratuita di {{prova.giorni}} giorni, senza carta: {{link_prova}}
+Laboratori di stampa e associazioni: scrivetemi, ci sono edizioni pensate per voi.
+--- en
+Today we release Impaginatore, the software I use to lay out my own wedding albums, now for every photographer.
+
+It runs on your computer, with no online account and no photo uploads. You pay once: Pro costs {{frase.pro}}, VAT excluded. There are also Essenziale and Studio, for a single computer or a whole studio.
+
+Thank you to the photographers who tested it in recent weeks: some of what you will find inside came from their reports.
+
+Free {{prova.giorni}}-day trial, no card: {{link_prova}}
+Print labs and associations: get in touch, there are editions made for you.
+
+=== U18
+data: 2027-02-23
+ora: 10:00
+canale: YouTube
+formato: video 16:9, 3–5 min (guida all’installazione)
+pilastro: Assistenza e prova
+modello: copertina-video
+grafica: grafiche/copertina-video.png
+cta: Scarica la prova
+link: {{link_installa}}
+hashtag: #impaginatore #albumdimatrimonio
+titolo: Come si installa Impaginatore (Mac, Windows, Linux)
+note: Titolo del video = titolo qui sopra (massimo 100 caratteri). Il testo è la descrizione. Il video lungo lo registra il fondatore (PIANO-90-GIORNI, S-6); la versione breve è il copione V2.
+--- it
+Su Mac e Windows Impaginatore si installa con un comando di una riga; su Linux con l’AppImage o il pacchetto .deb. In questo video vediamo che cosa fa quel comando, passo per passo, e come si apre il primo album.
+
+Capitoli
+00:00 Che cosa serve
+00:40 Mac
+01:40 Windows
+02:40 Linux: AppImage e .deb
+03:30 Il primo progetto e la prova di {{prova.giorni}} giorni
+
+Il comando scarica il programma dal nostro sito e, prima di installarlo, controlla la nostra firma digitale: se il file non è quello che abbiamo pubblicato, si ferma.
+
+Pagina di installazione, con il comando da copiare: {{link_installa}}
+Manuale: {{link_manuale}}
+Se qualcosa non va, scrivici: {{email_supporto}}. Gli errori del programma li correggiamo gratis.
+
+=== U19
+data: 2027-02-23
+ora: 12:00
+canale: Facebook (pagina)
+formato: post 4:5
+pilastro: Resta tuo
+modello: annuncio-lancio
+grafica: grafiche/annuncio-lancio.png
+cta: Scarica la prova
+link: {{link_prova}}
+hashtag: nessuno
+titolo: Lancio su Facebook
+note: L’ultimo paragrafo solo se la presenza alla Convention ANFM è confermata.
+--- it
+Impaginatore è pronto.
+
+Un programma per impaginare album di matrimonio sul tuo computer. Le foto restano nelle tue cartelle, la licenza si paga una volta e non scade.
+
+Prezzi di lancio, una volta, IVA esclusa:
+Essenziale {{frase.essenziale}}
+Pro {{frase.pro}}
+Studio {{frase.studio}}
+
+Prova gratuita di {{prova.giorni}} giorni, senza carta: {{link_prova}}
+Prezzi e differenze tra le licenze: {{link_prezzi}}
+
+Da domani siamo alla Convention ANFM di Padova: se passi, ti mostriamo un album impaginato dal vivo.
+
+=== U20
+data: 2027-02-24
+ora: 10:00
+canale: Instagram
+formato: storia 9:16, foto dallo stand
+pilastro: Bottega
+modello: nessuno (foto del banco, senza volti di visitatori)
+grafica: nessuna
+cta: Passa a trovarci
+link: nessuno
+hashtag: nessuno
+titolo: Convention ANFM, giorno 1
+note: Solo se la presenza alla Convention è confermata da ANFM. Nessuna foto di visitatori senza il loro consenso.
+--- it
+Testo sullo schermo: Convention ANFM, Padova. Fino a sabato impaginiamo un album dal vivo, in dieci minuti di demo.
+Seconda storia: Vuoi provarlo sul tuo portatile? Portalo: lo installiamo insieme.
+
+=== U21
+data: 2027-02-25
+ora: 12:30
+canale: Instagram
+formato: reel 9:16, 40 s (copione V3)
+pilastro: Mestiere
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png (testo da cambiare: «Dalla cartella alla bozza»)
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum
+titolo: Dalla cartella alla bozza
+--- it
+Dalla cartella delle foto scelte alla prima bozza dell’album, sul mio portatile.
+
+Con Pro e Studio, Impaginatore prepara la bozza dell’album intero con le foto che hai scelto, poi rende uniformi spazi e tono. Da lì comincia il lavoro vero: sposti, cambi, decidi ogni spread. La bozza è automatica, la firma è tua.
+
+Prova gratuita di {{prova.giorni}} giorni, senza carta: link nella bio.
+
+=== U22
+data: 2027-02-26
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: scheda-prezzo
+grafica: grafiche/scheda-prezzo.png
+cta: Confronta le licenze
+link: {{link_prezzi}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Quale licenza scegliere
+--- it
+Quale licenza ti serve? Tre domande.
+
+Lavori su un computer solo e ti bastano JPG e PDF? Essenziale: {{frase.essenziale}}.
+Vuoi la bozza automatica dell’album e i PSD a livelli, su fisso e portatile? Pro: {{frase.pro}}.
+Siete in più persone, fino a {{studio.computer}} computer? Studio: {{frase.studio}}, con un’ora di assistenza e la prossima versione maggiore.
+
+Sempre una volta, IVA esclusa. Se cambi idea, passi alla licenza superiore: da Essenziale a Pro costa {{passaggio.essenziale_pro}}.
+
+Rimborso entro {{rimborso.giorni}} giorni se non fa per te. Link nella bio.
+
+=== U23
+data: 2027-03-02
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Assistenza e prova
+modello: scheda-ore
+grafica: grafiche/scheda-ore.png
+cta: Prenota un’ora
+link: {{link_assistenza}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: Un’ora con una persona
+titolo_en: An hour with a person
+note: Nessun confronto fra il prezzo per ora dei pacchetti.
+--- it
+Un’ora con una persona, quando ti serve.
+
+In videochiamata o da remoto: l’installazione, il primo album, i formati del tuo laboratorio, il passaggio a Photoshop.
+
+{{ore.1}} per un’ora. Se preferisci non pensarci più, ci sono anche i pacchetti da 5 ore ({{ore.5}}) e da 10 ore ({{ore.10}}): un solo pagamento, ore valide 12 mesi, usate a blocchi di 30 minuti. IVA esclusa.
+
+Restano gratis per tutti il manuale, le guide video e la correzione degli errori del programma: se il problema è nostro, non paghi.
+
+Link nella bio.
+--- en
+An hour with a person, when you need it.
+
+By video call or remote session: installation, your first album, your lab’s formats, moving to Photoshop.
+
+{{ore.1}} for one hour. If you’d rather not think about it again, there are also 5-hour ({{ore.5}}) and 10-hour ({{ore.10}}) packs: one payment, hours valid for 12 months, used in 30-minute blocks. VAT excluded.
+
+The manual, video guides and bug fixes stay free for everyone: if the problem is ours, you don’t pay.
+
+Link in bio.
+
+=== U24
+data: 2027-03-03
+ora: 12:30
+canale: Instagram
+formato: carosello 4 pagine 4:5
+pilastro: Mestiere
+modello: carosello-copertina, segnaposto-schermata, carosello-interna, carosello-chiusura
+grafica: da comporre quando ci sono le schermate (T-501): pannello-misure.png nella pagina 3
+cta: Salva il post
+link: {{link_manuale}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #stampafotografica
+titolo: Le misure del laboratorio, una volta sola
+note: Pagina 3 = segnaposto-schermata finché non c’è la schermata vera (modelli/schermate/pannello-misure.png, 888 × 700 px).
+--- it
+Le misure del laboratorio, impostate una volta sola.
+
+Pagina 2: chiedi al laboratorio formato, abbondanza e margine di sicurezza per ogni prodotto che usi.
+Pagina 3: in Impaginatore li scrivi in millimetri nel pannello misure, insieme allo spazio tra le foto.
+Pagina 4: li salvi come preset e li ritrovi in ogni album nuovo.
+
+Un errore di abbondanza costa una ristampa. Un preset costa due minuti.
+
+Il manuale con tutti i passaggi è al link nella bio.
+
+=== U25
+data: 2027-03-04
+ora: 18:00
+canale: YouTube Shorts e Instagram
+formato: short/reel 9:16, 25 s (copione V2)
+pilastro: Assistenza e prova
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png (testo da cambiare: «Una riga per installarlo»)
+cta: Guarda la guida completa
+link: {{link_installa}}
+hashtag: #impaginatore #albumdimatrimonio
+titolo: Una riga per installarlo
+note: Su YouTube il titolo dello Short è il titolo qui sopra. Su Instagram il testo finisce con «link nella bio».
+--- it
+Una riga nel Terminale del Mac, o in PowerShell su Windows, e Impaginatore è installato. Prima di installare, il comando controlla la nostra firma sul file.
+
+La guida completa, anche per Linux, è sul nostro canale YouTube. Pagina con il comando da copiare: {{link_installa}}
+
+=== U26
+data: 2027-03-05
+ora: 09:00
+canale: LinkedIn (profilo del titolare)
+formato: post di solo testo
+pilastro: Bottega
+modello: nessuno
+grafica: nessuna
+cta: Commenta
+link: nessuno
+hashtag: #fotografia #software
+titolo: Una chiave senza server
+--- it
+Dietro Impaginatore c’è una scelta tecnica che i fotografi non vedono, ma che spiega molto di come lavoriamo.
+
+La licenza è una chiave firmata. Il programma la verifica sul computer, senza chiamare nessun server. Vuol dire che non c’è un conto da tenere aperto, che il programma si apre anche senza connessione e che, se un giorno noi smettessimo di esistere, la tua copia continuerebbe a funzionare.
+
+La chiave porta il nome di chi l’ha comprata, e il programma lo mostra. Il resto è fiducia tra professionisti.
+
+Ogni ordine lo evadiamo a mano, entro 2 ore lavorative.
+
+=== U27
+data: 2027-03-09
+ora: 12:30
+canale: Instagram
+formato: carosello 4:5
+pilastro: Mestiere
+modello: citazione (frase del beta tester), carosello-interna, carosello-chiusura
+grafica: da comporre con i dati del caso di studio
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum
+titolo: Caso di studio di un beta tester
+note: Si pubblica solo con dati veri e il consenso scritto del fotografo (PIANO-90-GIORNI, S2). Nome, frase e dato vanno in costanti.json (caso.*). Niente numeri inventati.
+--- it
+{{caso.nome}} ha impaginato con Impaginatore gli album della sua stagione invernale, durante la prova riservata ai beta tester.
+
+«{{caso.citazione}}»
+
+Il dato che ci ha dato lui: {{caso.dato}}. È il suo caso, con le sue foto e il suo modo di lavorare: il tuo può essere diverso, ed è per questo che la prova dura {{prova.giorni}} giorni.
+
+Link nella bio.
+
+=== U28
+data: 2027-03-10
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Mestiere
+modello: citazione (testo da cambiare: consiglio 02)
+grafica: grafiche/citazione.png (consiglio 02)
+cta: Salva il post
+link: nessuno
+hashtag: #fotografodimatrimonio #albumdimatrimonio #consiglidifotografia
+titolo: Consiglio di bottega 02: l’abbondanza
+--- it
+Consiglio di bottega, numero due.
+
+L’abbondanza non è un margine: è la parte di foto che il laboratorio taglia via. Se una foto arriva al bordo della pagina, deve uscire oltre il rifilo di quanto chiede il laboratorio, altrimenti dopo il taglio resta un filo bianco.
+
+Il contrario vale per i testi e i volti: tienili dentro il margine di sicurezza, lontani dal rifilo.
+
+Due misure da chiedere al laboratorio, una volta: abbondanza e margine di sicurezza.
+
+=== U29
+data: 2027-03-11
+ora: 12:30
+canale: Instagram
+formato: post 1:1
+pilastro: Assistenza e prova
+modello: post-quadrato (testo da cambiare: «Passaparola»)
+grafica: da comporre da post-quadrato
+cta: Usa il tuo codice
+link: nessuno
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Il passaparola
+--- it
+Se hai già Impaginatore, nella email della chiave trovi un codice personale.
+
+Chi compra con il tuo codice ha il 10% di sconto sulla licenza. Tu, per ogni amico che compra, ricevi 30 minuti di assistenza, che si sommano.
+
+Nessuna classifica e nessun premio a sorpresa: un collega che ne aiuta un altro, come succede già tra fotografi.
+
+=== U30
+data: 2027-03-12
+ora: 09:00
+canale: LinkedIn (pagina Impaginatore)
+formato: post di solo testo
+pilastro: Mestiere
+modello: nessuno
+grafica: nessuna
+cta: Scrivici per un’edizione per laboratori
+link: {{link_laboratori}}
+hashtag: #stampafotografica #fotolibri
+titolo: File pronti per il laboratorio
+--- it
+Una domanda per chi lavora in un laboratorio di stampa: quanti file di album vi tornano indietro perché le misure non sono quelle giuste?
+
+Impaginatore permette al fotografo di salvare come preset le misure di ogni vostro prodotto: formato, abbondanza, margine, spazio tra le foto. Nell’edizione per laboratori il catalogo dei formati arriva già dentro il programma, con il vostro marchio.
+
+Se volete vederla, organizziamo una dimostrazione da remoto: {{link_laboratori}}
+
+=== U31
+data: 2027-03-16
+ora: 12:30
+canale: Facebook (pagina)
+formato: post con video 9:16 (copione V1)
+pilastro: Le foto restano tue
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png
+cta: Scarica la prova
+link: {{link_prova}}
+hashtag: nessuno
+titolo: La prova del wi-fi, su Facebook
+note: Riuso del reel V1 (U06) per chi segue solo la pagina Facebook.
+--- it
+Una prova che puoi fare anche tu: staccare il wi‑fi ed esportare un album intero.
+
+Impaginatore lavora sui file che hai già, nelle tue cartelle. Nessuna funzione carica le foto in rete: le foto dei tuoi sposi restano sul tuo computer.
+
+Prova gratuita di {{prova.giorni}} giorni, senza carta: {{link_prova}}
+
+=== U32
+data: 2027-03-17
+ora: 18:00
+canale: Instagram
+formato: storia 9:16
+pilastro: Mestiere
+modello: storia (testi da cambiare)
+grafica: da comporre da storia
+cta: Iscriviti al webinar
+link: link del laboratorio (adesivo link)
+hashtag: nessuno
+titolo: Webinar con un laboratorio
+note: Solo se il webinar è confermato (PIANO-90-GIORNI, S3) e il laboratorio ha dato il consenso a essere nominato. Valori in costanti.json (webinar.*).
+--- it
+Testo sullo schermo: Webinar con {{webinar.laboratorio}}, {{webinar.data}}. Come preparare i file dell’album perché tornino stampati come li hai visti.
+Adesivo link: «Iscriviti» → pagina del laboratorio
+
+=== U33
+data: 2027-03-18
+ora: 12:30
+canale: Instagram
+formato: reel 9:16, 35 s (copione V4)
+pilastro: Mestiere
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png (testo da cambiare: «Il PSD a livelli»)
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #photoshop
+titolo: Lo spread finisce in Photoshop
+--- it
+Uno spread impaginato, esportato come PSD a livelli e aperto in Photoshop: ogni foto sul suo livello, pronta per l’ultima rifinitura.
+
+Il PSD a livelli è nelle licenze Pro e Studio e serve Photoshop installato sul computer. JPG e PDF li hai con tutte le licenze.
+
+Prova gratuita di {{prova.giorni}} giorni: link nella bio. Nella prova il PSD non c’è, tutto il resto del Pro sì.
+
+=== U34
+data: 2027-03-19
+ora: 12:30
+canale: Facebook (pagina)
+formato: post 4:5
+pilastro: Assistenza e prova
+modello: carosello-interna (pagina 2 di U02)
+grafica: grafiche/carosello-interna.png
+cta: Scarica la prova
+link: {{link_prova}}
+hashtag: nessuno
+titolo: Com’è fatta la prova
+--- it
+Com’è fatta la prova di Impaginatore, senza sorprese.
+
+Dura {{prova.giorni}} giorni e non chiede la carta. Ha tutte le funzioni del Pro tranne il PSD a livelli. Gli export hanno una filigrana. Alla fine della prova i tuoi progetti restano apribili, in sola lettura: niente va perso.
+
+Se compri, la chiave arriva entro 2 ore lavorative e la filigrana sparisce dagli export successivi.
+
+Scarica la prova: {{link_prova}}
+
+=== U35
+data: 2027-03-23
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Le foto restano tue
+modello: carosello-interna
+grafica: grafiche/carosello-interna.png
+cta: Salva il post
+link: nessuno
+hashtag: #fotografodimatrimonio #privacy #albumdimatrimonio
+titolo: Dove finiscono le foto
+--- it
+Quando impagini un album, dove finiscono le foto dei tuoi sposi?
+
+Con Impaginatore restano dove le hai messe tu: nelle tue cartelle, sul tuo disco. Il programma non ha un archivio online e nessuna funzione le carica in rete. Lo puoi verificare da solo: stacca il wi‑fi e lavora come sempre.
+
+È una regola scritta del progetto, non un’impostazione che si può cambiare. Ai tuoi clienti puoi dirlo così: le vostre foto le ho solo io.
+
+=== U36
+data: 2027-03-25
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Mestiere
+modello: citazione (testo da cambiare: consiglio 03)
+grafica: grafiche/citazione.png (consiglio 03)
+cta: Salva il post
+link: nessuno
+hashtag: #fotografodimatrimonio #albumdimatrimonio #consiglidifotografia
+titolo: Consiglio di bottega 03: la bozza al cliente
+note: Ultima uscita prima di Pasqua: niente uscite il 28 e il 29 marzo.
+--- it
+Consiglio di bottega, numero tre.
+
+Alla coppia manda la bozza in PDF, con gli spread numerati. Chiedi le modifiche per numero di spread, non per descrizione: «nello spread 14 togliamo la foto in basso» si capisce al primo colpo, «quella foto con la zia» no.
+
+Un giro di modifiche, al massimo due. Poi si stampa.
+
+=== U37
+data: 2027-03-31
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: U37-rosetta
+grafica: grafiche/uscite/U37-rosetta.png
+cta: Mandaci la licenza o la fattura
+link: {{link_rosetta}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio #macos
+hashtag_en: #weddingphotographer #weddingalbum #albumdesign
+importante: sì
+titolo: Offerta macOS 28
+titolo_en: macOS 28 offer
+note: Solo con il parere del legale e i prezzi approvati in costanti.json (PIANO-90-GIORNI §3.2). Nessun marchio di concorrenti, nemmeno nei commenti: le domande sui nomi si portano in privato.
+--- it
+Hai un vecchio software per album con licenza perpetua che su macOS 28 non si aprirà più?
+
+Mandaci la licenza o la fattura del vecchio programma. Ti diamo Impaginatore Pro a {{prezzo_rosetta_pro}} o Studio a {{prezzo_rosetta_studio}}, una volta, IVA esclusa. L’offerta vale fino al {{data_fine_rosetta}}.
+
+Sei un fotografo che ha comprato il suo strumento per tenerlo: ne sappiamo qualcosa, è da lì che nasce Impaginatore.
+
+Link nella bio.
+--- en
+Do you own an old perpetual-licence album app that won’t open on macOS 28?
+
+Send us the licence or invoice of your old software. We’ll give you Impaginatore Pro for {{prezzo_rosetta_pro}} or Studio for {{prezzo_rosetta_studio}}, one-time, VAT excluded. The offer runs until {{data_fine_rosetta}}.
+
+You bought your tool to keep it. So did we: that’s where Impaginatore comes from.
+
+Link in bio.
+
+=== U38
+data: 2027-04-01
+ora: 09:00
+canale: LinkedIn (profilo del titolare)
+formato: post con immagine 4:5
+pilastro: Resta tuo
+modello: U37-rosetta
+grafica: grafiche/uscite/U37-rosetta.png
+cta: Inoltra a un collega
+link: {{link_rosetta}}
+hashtag: #fotografia #macos #software
+titolo: macOS 28 e i programmi vecchi
+note: Come U37: dopo il parere del legale.
+--- it
+Apple ha annunciato che macOS 27 sarà l’ultima versione con Rosetta, il livello che fa girare sui Mac nuovi i programmi scritti per i processori Intel. Alcuni software per album comprati anni fa con licenza perpetua, su macOS 28, non si apriranno più.
+
+Per chi è in questa situazione abbiamo un’offerta fino al {{data_fine_rosetta}}: Impaginatore Pro a {{prezzo_rosetta_pro}} o Studio a {{prezzo_rosetta_studio}}, una volta, IVA esclusa, mostrando la licenza o la fattura del vecchio programma.
+
+Se conosci un fotografo che ci lavora ancora, giragli questo post: {{link_rosetta}}
+
+=== U39
+data: 2027-04-02
+ora: 12:30
+canale: Facebook (pagina)
+formato: post 4:5
+pilastro: Resta tuo
+modello: U37-rosetta
+grafica: grafiche/uscite/U37-rosetta.png
+cta: Mandaci la licenza o la fattura
+link: {{link_rosetta}}
+hashtag: nessuno
+titolo: Offerta macOS 28, su Facebook
+note: Come U37: dopo il parere del legale.
+--- it
+Hai un vecchio software per album con licenza perpetua che su macOS 28 non si aprirà più?
+
+Fino al {{data_fine_rosetta}}: Impaginatore Pro a {{prezzo_rosetta_pro}} o Studio a {{prezzo_rosetta_studio}}, una volta, IVA esclusa. Basta mostrarci la licenza o la fattura del vecchio programma.
+
+Come funziona: {{link_rosetta}}
+
+=== U40
+data: 2027-04-06
+ora: 12:30
+canale: Instagram
+formato: storia 9:16, condivisione
+pilastro: Mestiere
+modello: nessuno (condivisione del video dell’educator)
+grafica: nessuna
+cta: Guarda il video
+link: video dell’educator (adesivo link)
+hashtag: nessuno
+titolo: Il video di un educator
+note: Solo se l’educator pubblica il video (PIANO-90-GIORNI, S6). Valori in costanti.json (educator.*). Il codice affiliato lo comunica l’educator, non noi.
+--- it
+Testo sullo schermo: {{educator.nome}} ha provato Impaginatore sul suo canale {{educator.canale}}. Lo trovi qui sotto, con le sue opinioni: belle e meno belle.
+Adesivo link: «Guarda il video» → video dell’educator
+
+=== U41
+data: 2027-04-07
+ora: 12:30
+canale: Instagram
+formato: carosello 6 pagine 4:5
+pilastro: Mestiere
+modello: carosello-copertina, carosello-interna (×4), carosello-chiusura
+grafica: da comporre (titoli delle pagine qui sotto)
+cta: Salva il post
+link: nessuno
+hashtag: #fotografodimatrimonio #albumdimatrimonio #stampafotografica
+titolo: Cinque controlli prima della stampa
+--- it
+Cinque controlli prima di mandare un album in stampa. Salvalo per la prossima consegna.
+
+1. Le foto ci sono tutte, e sono gli originali: non le anteprime.
+2. Niente volti e niente testi nella zona della piega.
+3. Le foto al vivo escono oltre il rifilo di tutta l’abbondanza.
+4. I testi sono dentro il margine di sicurezza.
+5. Hai riletto nomi e date con la coppia, per iscritto.
+
+Che le foto ci siano tutte, Impaginatore lo controlla da solo prima di ogni export. Il resto è il tuo occhio.
+
+=== U42
+data: 2027-04-09
+ora: 09:00
+canale: LinkedIn (pagina Impaginatore)
+formato: post di solo testo
+pilastro: Bottega
+modello: nessuno
+grafica: nessuna
+cta: Scrivici
+link: {{link_laboratori}}
+hashtag: #fotografia #formazione
+titolo: Per chi fa formazione
+--- it
+Fai formazione per fotografi di matrimonio, in aula o su YouTube?
+
+Cerchiamo alcuni formatori a cui dare una licenza Pro gratuita per mostrare Impaginatore ai corsisti, con un accordo di affiliazione scritto per chi lo consiglia. Nessun obbligo di parlarne bene: ci interessa che venga mostrato com’è.
+
+Scrivici: {{email_supporto}}
+
+=== U43
+data: 2027-04-13
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Assistenza e prova
+modello: scheda-ore
+grafica: grafiche/scheda-ore.png
+cta: Prenota le ore
+link: {{link_assistenza}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Inizio stagione: 5 ore
+note: Pacchetto «inizio stagione» (PIANO-90-GIORNI, S7): stessi prezzi del listino delle ore, nessuno sconto.
+--- it
+La stagione dei matrimoni sta per cominciare. Se vuoi arrivarci con il programma già sistemato, prenota 5 ore di assistenza: {{ore.5}}, IVA esclusa, un solo pagamento.
+
+Le usi a blocchi di 30 minuti, quando ti servono, per 12 mesi: un’ora adesso per i preset dei tuoi laboratori, mezz’ora a giugno quando arriva il primo album grande, un’ora per i PSD.
+
+Se ti basta un’ora, sono {{ore.1}}. Link nella bio.
+
+=== U44
+data: 2027-04-15
+ora: 12:30
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: scheda-prezzo
+grafica: grafiche/scheda-prezzo.png
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Promemoria onesto
+note: Stessa settimana dell’email di promemoria (PIANO-90-GIORNI, S7). Una volta sola, senza conti alla rovescia.
+--- it
+Un promemoria, una volta sola: il prezzo di lancio finisce il {{data.fine_lancio}} a mezzanotte, o prima se arriviamo a {{lancio.max_licenze}} licenze.
+
+Essenziale {{frase.essenziale}}. Pro {{frase.pro}}. Studio {{frase.studio}}. Sempre una volta, IVA esclusa.
+
+Se sei a metà della prova e non hai ancora deciso, va bene così: la prova dura {{prova.giorni}} giorni e il listino dopo il lancio resta quello. Se compri e non fa per te, hai {{rimborso.giorni}} giorni per il rimborso.
+
+Link nella bio.
+
+=== U45
+data: 2027-04-16
+ora: 09:00
+canale: LinkedIn e Facebook
+formato: post con immagine 4:5
+pilastro: Resta tuo
+modello: scheda-prezzo
+grafica: grafiche/scheda-prezzo.png
+cta: Scarica la prova
+link: {{link_prova}}
+hashtag: #fotografia #software
+hashtag_en: #photography #software
+importante: sì
+titolo: Il prezzo di lancio finisce il 23 aprile
+titolo_en: The launch price ends on 23 April
+--- it
+Il prezzo di lancio di Impaginatore finisce il {{data.fine_lancio}} a mezzanotte, o prima se arriviamo a {{lancio.max_licenze}} licenze.
+
+Fino ad allora: Essenziale {{frase.essenziale}}; Pro {{frase.pro}}; Studio {{frase.studio}}. Una volta, IVA esclusa.
+
+Dopo, il listino non cambia per promozioni o ricorrenze. Se vuoi prima provare, la prova dura {{prova.giorni}} giorni e non chiede la carta: {{link_prova}}
+--- en
+Impaginatore’s launch price ends on {{data.fine_lancio}} at midnight, or earlier if we reach {{lancio.max_licenze}} licences.
+
+Until then: Essenziale {{frase.essenziale}}; Pro {{frase.pro}}; Studio {{frase.studio}}. One-time, VAT excluded.
+
+After that, the list price doesn’t change for promotions or holidays. If you want to try it first, the trial lasts {{prova.giorni}} days and needs no card: {{link_prova}}
+
+=== U46
+data: 2027-04-20
+ora: 12:30
+canale: Instagram
+formato: reel 9:16, 45 s (copione V5)
+pilastro: Assistenza e prova
+modello: copertina-reel
+grafica: grafiche/copertina-reel.png (testo da cambiare: «Tre domande, tre risposte»)
+cta: Scarica la prova
+link: {{link_prova}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Tre domande che ci fate
+--- it
+Le tre domande che ci fate più spesso, in 45 secondi.
+
+Funziona senza connessione? Sì, dopo l’installazione non serve la rete.
+Su quanti computer? Uno con Essenziale, {{pro.computer}} con Pro, {{studio.computer}} con Studio.
+E se smetto di aggiornare? La versione che hai comprato resta tua e continua ad aprirsi.
+
+Le altre risposte sono nella pagina delle domande frequenti. Link nella bio.
+
+=== U47
+data: 2027-04-22
+ora: 12:30
+canale: Facebook (pagina)
+formato: post 4:5
+pilastro: Resta tuo
+modello: scheda-prezzo
+grafica: grafiche/scheda-prezzo.png
+cta: Scarica la prova
+link: {{link_prezzi}}
+hashtag: nessuno
+titolo: Domani finisce il prezzo di lancio
+--- it
+Domani, {{data.fine_lancio}}, finisce il prezzo di lancio di Impaginatore: Pro {{frase.pro}}, una volta, IVA esclusa.
+
+Non lo diciamo per metterti fretta: preferiamo che nessuno lo scopra il giorno dopo.
+
+Prezzi e differenze tra le licenze: {{link_prezzi}}
+
+=== U48
+data: 2027-04-23
+ora: 09:00
+canale: Instagram
+formato: post 4:5
+pilastro: Resta tuo
+modello: scheda-prezzo
+grafica: grafiche/scheda-prezzo.png
+cta: Scarica la prova
+link: {{link_prezzi}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Oggi l’ultimo giorno
+note: Se le {{lancio.max_licenze}} licenze finiscono prima, al posto di questa uscita si pubblica un grazie (testo nel README, «Se il lancio finisce prima»).
+--- it
+Oggi è l’ultimo giorno del prezzo di lancio. Fino a mezzanotte: Essenziale {{frase.essenziale}}; Pro {{frase.pro}}; Studio {{frase.studio}}. Una volta, IVA esclusa.
+
+Grazie a chi ha comprato in questi due mesi, e a chi ci ha scritto anche solo per una domanda. Da domani il listino resta quello che vedi, senza promozioni a sorpresa.
+
+Link nella bio.
+
+=== U49
+data: 2027-04-23
+ora: 09:05
+canale: Instagram e Facebook
+formato: storia 9:16
+pilastro: Resta tuo
+modello: U49-ultimo-giorno
+grafica: grafiche/uscite/U49-ultimo-giorno.png
+cta: Vai ai prezzi
+link: {{link_prezzi}} (adesivo link)
+hashtag: nessuno
+importante: sì
+titolo: Ultimo giorno, storia
+titolo_en: Last day, story
+--- it
+Testo sullo schermo: Ultimo giorno del prezzo di lancio. Fino a mezzanotte valgono questi prezzi; da domani si torna al listino, che resta quello.
+Prezzi nella grafica: Essenziale {{frase.essenziale}}; Pro {{frase.pro}}; Studio {{frase.studio}}. Una volta, IVA esclusa.
+Adesivo link: «Prezzi» → {{link_prezzi}}
+--- en
+On-screen text: Last day of the launch price. These prices hold until midnight; from tomorrow it’s the list price, and that stays.
+Prices in the graphic: Essenziale {{frase.essenziale}}; Pro {{frase.pro}}; Studio {{frase.studio}}. One-time, VAT excluded.
+Link sticker: «Prices» → {{link_prezzi}}
+
+=== R01
+mcp: sì
+canale: Instagram
+formato: post 4:5
+pilastro: Bottega
+modello: mcp-bozza-claude
+grafica: grafiche/uscite/mcp-bozza-claude.png
+cta: Leggi la guida
+link: {{link_guida_claude}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Claude prepara la bozza
+note: Prima di pubblicare: verificare con la guida T-403 quali dati passano a Claude (nomi dei file, metadati, anteprime) e scrivere la frase sulla riservatezza di conseguenza. Togliere dalla grafica la fascia «Riserva».
+--- it
+Da oggi Impaginatore funziona con Claude.
+
+Gli chiedi una prima bozza dell’album, con le tue indicazioni: formato, numero di spread, ordine della giornata. Claude prepara la bozza dentro l’editor tramite MCP. Poi decidi tu, spread per spread; quelli che hai già rifinito a mano non li tocca.
+
+È una possibilità in più, non un obbligo: Impaginatore funziona come prima anche senza.
+
+La guida per collegarlo è al link nella bio.
+
+=== R02
+mcp: sì
+canale: LinkedIn (profilo del titolare)
+formato: post con immagine 4:5
+pilastro: Bottega
+modello: mcp-bozza-claude
+grafica: grafiche/uscite/mcp-bozza-claude.png
+cta: Leggi la guida
+link: {{link_guida_claude}}
+hashtag: #fotografia #software
+titolo: Impaginatore e Claude, su LinkedIn
+note: Stesse verifiche di R01.
+--- it
+Impaginatore ora ha un server MCP: Claude può preparare la bozza di un album dentro l’editor, seguendo le indicazioni del fotografo.
+
+Abbiamo tenuto ferma una regola: la bozza la prepara Claude, ogni spread lo decide il fotografo. Gli spread rifiniti a mano non vengono più toccati.
+
+Guida al collegamento: {{link_guida_claude}}
+
+=== R03
+mcp: sì
+canale: Instagram
+formato: reel 9:16, 40 s
+pilastro: Mestiere
+modello: copertina-reel
+grafica: da comporre: mcp-copertina-reel (copia di copertina-reel con meta mcp)
+cta: Leggi la guida
+link: {{link_guida_claude}} (nella bio)
+hashtag: #fotografodimatrimonio #albumdimatrimonio
+titolo: Dalla richiesta alla bozza
+note: Copione da scrivere dopo il rilascio, con l’interfaccia vera. Stesse verifiche di R01.
+--- it
+Scrivo a Claude che cosa voglio: album 30 × 30 cm, una quarantina di spread, la cerimonia in ordine di tempo. Claude prepara la bozza dentro Impaginatore. Poi la riprendo io, spread per spread.
+
+La guida per collegarlo è al link nella bio.

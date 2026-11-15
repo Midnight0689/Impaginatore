@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="tela" content="1080x1080">
+<meta name="temi" content="chiaro scuro">
+<meta name="lingue" content="it en">
+<meta name="zone" content="griglia-3x4">
+<meta name="gruppo" content="post">
+<meta name="uso" content="Post quadrato 1:1 (Instagram, Facebook, LinkedIn). Nella griglia del profilo Instagram si vede solo il centro largo 810 px: tutto il testo sta lì. Esempio: U05, annuncio della data.">
+<title>Post quadrato</title>
+<link rel="stylesheet" href="social.css">
+<style>
+  .colonna { position: absolute; left: 160px; right: 160px; top: 110px; bottom: 100px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .colonna .titolo::first-letter { text-transform: uppercase; }
+  .motivo { position: relative; width: 300px; height: 150px; margin: 0 auto; }
+  .motivo i { position: absolute; top: 0; width: 140px; height: 150px; background: var(--imp-testo); }
+  .motivo i:first-child { left: 0; } .motivo i:nth-child(2) { right: 0; }
+  .motivo b { position: absolute; left: 50%; width: 20px; height: 34px; transform: translateX(-50%); background: var(--imp-accento); }
+  .motivo b.su { top: -52px; } .motivo b.giu { bottom: -52px; }
+</style>
+</head>
+<body>
+<div class="tela crocini" style="--l:1080px;--a:1080px">
+  <div class="colonna">
+    <p class="etichetta accento"><span lang="it">La data</span><span lang="en">The date</span></p>
+    <h1 class="titolo grande" style="margin-top:34px"><span data-valore="data.lancio">martedì 23 febbraio</span>.</h1>
+    <p class="attacco" style="margin-top:34px">
+      <span lang="it">Impaginatore esce dalla bottega. Chi è in lista d’attesa può comprarlo 48 ore prima.</span>
+      <span lang="en">Impaginatore leaves the workshop. People on the waiting list can buy it 48 hours early.</span>
+    </p>
+    <div class="spinta"></div>
+    <div class="motivo"><i></i><i></i><b class="su"></b><b class="giu"></b></div>
+    <div class="spinta"></div>
+    <img class="logotipo solo-chiaro" src="../../../brand/logo/impaginatore-logotipo.svg" alt="Impaginatore">
+    <img class="logotipo solo-scuro" src="../../../brand/logo/impaginatore-logotipo-negativo.svg" alt="Impaginatore">
+  </div>
+</div>
+</body>
+</html>

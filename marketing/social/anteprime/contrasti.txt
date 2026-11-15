@@ -1,0 +1,22 @@
+Contrasti delle coppie di colori usate nei modelli social (WCAG 2.2, calcolati da brand/strumenti/genera_token.py)
+
+16.17:1  (soglia 4.5)  ok            carta-900 su carta-50  ·  chiaro: titoli e testo su Carta
+ 7.03:1  (soglia 4.5)  ok            carta-600 su carta-50  ·  chiaro: testo secondario su Carta
+ 4.95:1  (soglia 4.5)  ok            carta-500 su carta-50  ·  chiaro: etichette su Carta
+ 6.13:1  (soglia 4.5)  ok            verde-600 su carta-50  ·  chiaro: etichetta verde, cifre su Carta
+ 6.13:1  (soglia 4.5)  ok            carta-50 su verde-600  ·  chiaro: pulsante verde
+16.17:1  (soglia 4.5)  ok            carta-50 su carta-900  ·  chiaro: «una volta» su Inchiostro
+17.46:1  (soglia 4.5)  ok            carta-900 su carta-0  ·  chiaro: testo nelle card
+ 7.60:1  (soglia 4.5)  ok            carta-600 su carta-0  ·  chiaro: testo secondario nelle card
+ 6.62:1  (soglia 4.5)  ok            verde-600 su carta-0  ·  quote verdi sullo spread (anche in scuro: lo spread è carta)
+ 5.93:1  (soglia 4.5)  ok            ocra-600 su carta-0  ·  quote ocra sullo spread
+16.17:1  (soglia 4.5)  ok            carta-50 su carta-900  ·  scuro: titoli e testo su Inchiostro
+10.28:1  (soglia 4.5)  ok            carta-300 su carta-900  ·  scuro: testo secondario su Inchiostro
+ 6.70:1  (soglia 4.5)  ok            carta-400 su carta-900  ·  scuro: etichette su Inchiostro
+ 9.35:1  (soglia 4.5)  ok            verde-300 su carta-900  ·  scuro: etichetta verde, cifre su Inchiostro
+ 7.61:1  (soglia 4.5)  ok            carta-950 su verde-400  ·  scuro: pulsante verde
+16.17:1  (soglia 4.5)  ok            carta-900 su carta-50  ·  scuro: «una volta» su Carta
+13.43:1  (soglia 4.5)  ok            carta-50 su carta-800  ·  scuro: testo nelle card
+ 8.54:1  (soglia 4.5)  ok            carta-300 su carta-800  ·  scuro: testo secondario nelle card
+ 9.35:1  (soglia 3.0)  ok            verde-300 su carta-900  ·  scuro: segni di piega su Inchiostro (grafica)
+ 6.13:1  (soglia 3.0)  ok            verde-600 su carta-50  ·  chiaro: segni di piega su Carta (grafica)
