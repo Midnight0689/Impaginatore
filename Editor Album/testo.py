@@ -6,9 +6,8 @@ Solo libreria standard + Pillow: i nomi dei font si leggono direttamente dai fil
 """
 import json, os, struct
 
-import piattaforma
-DIRS = piattaforma.font_dirs()
-CACHE = os.path.join(piattaforma.TOOLS, "font_cache.json")
+DIRS = ["/System/Library/Fonts", "/System/Library/Fonts/Supplemental", "/Library/Fonts", os.path.expanduser("~/Library/Fonts")]
+CACHE = os.path.expanduser("~/.album-tools/font_cache.json")
 _FONTS = None
 
 
@@ -70,7 +69,7 @@ def font_file(ps):
         if f["ps"] == ps: return f["file"], f["idx"]
     for f in fonts():                                              # ripiego: qualsiasi stile della stessa famiglia o Helvetica
         if ps and ps.split("-")[0] == f["ps"].split("-")[0]: return f["file"], f["idx"]
-    return piattaforma.font_ripiego()
+    return "/System/Library/Fonts/Helvetica.ttc", 0
 
 
 _CACHE_F = {}

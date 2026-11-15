@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageCms
 
 args = [a for a in sys.argv[1:] if a != "--progetto" and os.path.abspath(a) != PROJ]
 cmd = args[0] if args else "provini"
-FONT = lambda s: ImageFont.truetype((os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf") if os.name == "nt" else "/System/Library/Fonts/Helvetica.ttc"), s)
+FONT = lambda s: ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", s)
 _tr = ImageCms.buildTransformFromOpenProfiles(ImageCms.createProfile("sRGB"), ImageCms.createProfile("LAB"), "RGB", "LAB")
 def lab(im):
     # attenzione: in PIL a* e b* sono int8 complemento a due, NON uint8 con offset 128

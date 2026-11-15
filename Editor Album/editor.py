@@ -18,8 +18,6 @@ ap.add_argument("--porta", type=int, default=8765)
 ap.add_argument("--home", default="")
 ARGS = ap.parse_args()
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-import piattaforma
 PROJ = os.path.abspath(ARGS.progetto)
 
 def _scripts():
@@ -153,7 +151,7 @@ for _k in SPM_KEYS:
 COUPLED = [((k + ("M" if m else "") + "L", "I", False), (k + ("M" if m else "") + "R", "I", False)) for k in SPM_KEYS for m in (False, True)]
 
 # ---- modelli dell'utente: layout di uno spread salvato per riusarlo (file nella cartella degli strumenti, valgono per tutti gli album)
-UT_FILE = os.path.join(piattaforma.TOOLS, "modelli_utente.json")
+UT_FILE = os.path.expanduser("~/.album-tools/modelli_utente.json")
 UT_KEEP = ("k", "c", "r", "w", "h", "x", "y", "a", "zo")          # solo la geometria: foto, zoom e bianco/nero restano quelli della foto che ci va dentro
 
 def ut_load():
@@ -1325,7 +1323,7 @@ def srgb_icc():
     """profilo sRGB IEC61966-2.1 vero (quello di sistema, lo stesso delle foto); se manca, quello interno di Pillow"""
     global _ICC
     if _ICC is None:
-        p = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "spool", "drivers", "color", "sRGB Color Space Profile.icm") if piattaforma.WIN else "/System/Library/ColorSync/Profiles/sRGB Profile.icc"
+        p = "/System/Library/ColorSync/Profiles/sRGB Profile.icc"
         if os.path.exists(p): _ICC = open(p, "rb").read()
         else:
             from PIL import ImageCms
@@ -1421,7 +1419,7 @@ def run_export(o):
             elif fmt == "pdf":
                 from PIL import ImageDraw, ImageFont
                 Wp = int(o.get("width", 2000)); K = Wp / VW; pages = []
-                try: font = ImageFont.truetype((os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf") if os.name == "nt" else "/System/Library/Fonts/Helvetica.ttc"), max(14, Wp // 80))
+                try: font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", max(14, Wp // 80))
                 except Exception: font = ImageFont.load_default()
                 for k in nums:
                     with LOCK: tup = spread_tuple(k - 1)
@@ -1438,7 +1436,6 @@ def run_export(o):
                 if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
             else:
-                if piattaforma.WIN: raise ValueError("I PSD per ora si generano solo dal Mac (serve Photoshop con i suoi script): su Windows esporta JPG o PDF")
                 cmd = [sys.executable, os.path.join(HERE, "genera_psd_angolo.py"), "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
                 p = subprocess.Popen(cmd, cwd=SCRIPTS, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=dict(os.environ, ALBUM_PROGETTO=PROJ, ALBUM_SCRIPTS=SCRIPTS))
                 t0 = time.time() - 2; out = []
@@ -1464,7 +1461,12 @@ def autosave_loop():
             if time.time() - LAST["op"] > 2 and snap() != SAVED: save(backup=time.time() - LAST["backup"] > 600)
         except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}"); SAVE_ERR[0] = str(e)[:160]
 
-def pick(kind): return piattaforma.scegli_foto(kind == "folder")
+def pick(kind):
+    if kind == "folder": sc = 'POSIX path of (choose folder with prompt "Scegli la cartella")'
+    else: sc = ('set fs to choose file with prompt "Scegli le foto" of type {"public.jpeg"} with multiple selections allowed\nset out to ""\n'
+                'repeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nreturn out')
+    r = subprocess.run(["osascript", "-e", sc], capture_output=True, text=True)
+    return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 LASTDIR = [None]
 def ls_dir(path):
@@ -1701,7 +1703,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
             elif u.path == "/api/export": LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": piattaforma.mostra_file(body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
+            elif u.path == "/api/reveal": subprocess.run(["open", "-R", body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]]); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 

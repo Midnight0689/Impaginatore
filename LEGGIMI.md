@@ -7,12 +7,6 @@ Programma per impaginare album fotografici (spread, modelli, testi, correzioni) 
 2. Doppio clic su **Installa.command** (una volta sola): crea l'ambiente Python, collega la skill di Claude, controlla Photoshop e font.
 3. Apri **Impaginatore.app**.
 
-## Windows (versione di prova)
-1. Estrai lo ZIP (o `git clone`) in Documenti.
-2. Doppio clic su **Installa.bat** (una volta sola): serve Python 3.9 o più recente da python.org, con «Add python.exe to PATH» spuntato.
-3. Doppio clic su **Avvia Impaginatore.bat**. Per aggiornare: **Aggiorna.bat** (serve Git).
-Su Windows si esportano JPG e PDF; i PSD per Photoshop per ora solo dal Mac.
-
 ## Aggiornare
 Sul Mac secondario: doppio clic su **Aggiorna.command**. Scarica le novità, aggiorna da solo l'ambiente e riavvia il programma.
 Sul Mac principale gli aggiornamenti li carica Claude dopo ogni modifica.
