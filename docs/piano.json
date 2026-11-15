@@ -10,9 +10,9 @@
     {"id": "T-005", "fase": 0, "titolo": "Identità di marca", "ruolo": "Brand & Design Director", "dipende_da": [], "stato": "fatto", "consegna": ["brand/"]},
     {"id": "T-006", "fase": 0, "titolo": "Fondamenta: pacchetto, tre sistemi, base di test", "ruolo": "Principal Engineer", "dipende_da": [], "stato": "fatto", "consegna": ["src/impaginatore/", "tests/", "pyproject.toml", "docs/architettura/ARCHITETTURA.md"]},
 
-    {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
-    {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
-    {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_corso"},
+    {"id": "T-101", "fase": 1, "titolo": "Salvataggio in JSON e migrazione da spec.py", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
+    {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
+    {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "in_verifica"},
     {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
     {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
     {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "da_fare"},
