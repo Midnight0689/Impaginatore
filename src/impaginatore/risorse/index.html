@@ -503,6 +503,7 @@
   <div class="empty" style="margin:4px 0 6px">Crea una cartella autonoma (impaginazione, correzioni, modelli, anteprime, elenco dei font) da copiare su un altro computer o su un disco. Si apre da «Apri progetto esistente».</div>
   <label style="display:block;margin:4px 0"><input type="checkbox" id="pxfoto" checked> Includi le foto (originali: può essere molto pesante)</label>
   <label style="display:block;margin:4px 0"><input type="checkbox" id="pxzip"> Crea anche un file ZIP</label>
+  <label style="display:block;margin:4px 0" title="Aggiunge spec.py, il file che leggono le versioni 1.x: serve solo a chi apre il progetto con una versione vecchia"><input type="checkbox" id="pxv1x"> Aggiungi spec.py per la versione 1.x</label>
   <div class="tools" style="margin-top:6px"><button id="pxgo" class="primary">Esporta progetto…</button><button id="pxreveal" style="display:none">Mostra nel Finder</button></div>
   <pre id="pxlog" style="display:none;max-height:160px;overflow:auto;font-size:11px;background:var(--panel2);padding:6px 8px;border-radius:6px;margin:8px 0 0;white-space:pre-wrap"></pre>
   <div style="display:flex;justify-content:flex-end;margin-top:10px"><button id="prjclose">Chiudi</button></div>
@@ -1960,10 +1961,11 @@ async function openTpl() {
     <div class="empty" id="tnone" style="display:none">${d.nota || "Nessun modello per questo numero di foto."}</div>`;
   if ($("tsave")) $("tsave").onclick = async () => { const n = prompt(`Nome del modello (layout di questo spread, ${d.n} foto):`); if (n && n.trim()) mod({ azione: "salva", s: cur, nome: n.trim() }, "Modello salvato"); };
   ut.forEach(t => {
-    const tile = mkTile(t, t.cur ? t.nome + " · attuale" : t.nome, apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
+    const tile = mkTile(t, (t.cur ? t.nome + " · attuale" : t.nome) + (t.progetto ? " · del progetto" : ""), apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
+    (t.progetto ? [["Aggiungi ai miei", "Questo modello è arrivato con il progetto e vale solo qui: aggiungilo ai tuoi per usarlo anche negli altri album", () => mod({ azione: "importa", id: t.id }, "Modello aggiunto ai tuoi")]] :
     [["Aggiorna", "Sostituisci questo modello con il layout dello spread attuale", () => { if (confirm(`Aggiornare «${t.nome}» con il layout di questo spread (${d.n} foto)?`)) mod({ azione: "aggiorna", s: cur, id: t.id }, "Modello aggiornato"); }],
      ["Rinomina", "", () => { const n = prompt("Nuovo nome:", t.nome); if (n && n.trim() && n.trim() !== t.nome) mod({ azione: "rinomina", id: t.id, nome: n.trim() }, "Modello rinominato"); }],
-     ["Elimina", "Elimina il modello (gli spread già fatti non cambiano)", () => { if (confirm(`Eliminare il modello «${t.nome}»?`)) mod({ azione: "elimina", id: t.id }, "Modello eliminato"); }]].forEach(([l, ti, fn]) => {
+     ["Elimina", "Elimina il modello (gli spread già fatti non cambiano)", () => { if (confirm(`Eliminare il modello «${t.nome}»?`)) mod({ azione: "elimina", id: t.id }, "Modello eliminato"); }]]).forEach(([l, ti, fn]) => {
       const b = document.createElement("button"); b.textContent = l; b.title = ti; b.style.cssText = "font-size:11px;padding:2px 6px"; if (l === "Elimina") b.className = "danger"; b.onclick = ev => { ev.stopPropagation(); fn(); }; bar.appendChild(b); });
     tile.appendChild(bar); $("gut").appendChild(tile); });
   d.items.forEach((t, n) => $("gstd").appendChild(mkTile(t, t.cur ? "attuale" : "modello " + (n + 1), apply(t))));
@@ -1998,7 +2000,7 @@ $("pcheck").onclick = async () => {
 };
 $("pxgo").onclick = async () => {
   const lg = $("pxlog"); try {
-    const r = await api("/api/prj_esporta", { foto: $("pxfoto").checked, zip: $("pxzip").checked }); if (r.annullato) return;
+    const r = await api("/api/prj_esporta", { foto: $("pxfoto").checked, zip: $("pxzip").checked, v1x: $("pxv1x").checked }); if (r.annullato) return;
     lg.style.display = "block"; lg.textContent = "…"; $("pxgo").disabled = true; $("pxreveal").style.display = "none"; pxres = null;
     for (let i = 0; i < 3000; i++) { await new Promise(z => setTimeout(z, 800)); const L = await api("/api/log"); lg.textContent = L.filter(x => !x.startsWith("RISULTATO:")).join("\n"); lg.scrollTop = lg.scrollHeight;
       const rs = L.find(x => x.startsWith("RISULTATO:")); if (rs) pxres = rs.slice(10); if (L.includes("[finito]")) break; }

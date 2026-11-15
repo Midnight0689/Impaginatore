@@ -107,6 +107,21 @@ def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     with open(os.path.join(p, "progetto.json"), encoding="utf-8") as fh: assert json.load(fh)["foto"] == os.path.join(p, "Foto")
 
 
+def test_esporta_per_la_versione_1x(editor, tmp_path):
+    """«Aggiungi spec.py per la versione 1.x»: il pacchetto ha anche spec.py e le copie del motore che gli servono; il
+    progetto resta in album.json e spec.py si rilegge senza eseguirlo"""
+    from impaginatore import formato_1x
+    c = editor; st, names = _due_spread(c)
+    f = [i for i in st["spreads"][0]["items"] if i["k"] != "t"][0]
+    st = _op(c, st, {"op": "free", "at": [0, f["side"], f["idx"]], "x": .1, "y": .1, "w": .5, "h": .5})
+    dest = tmp_path / "uscita"; dest.mkdir()
+    out = c.post("/api/prj_esporta", {"dest": str(dest), "foto": False, "v1x": True})["cartella"]
+    L = attendi_log(c); assert any("spec.py per la versione 1.x" in x for x in L) and any(x.startswith("RISULTATO:") for x in L), L
+    assert {"album.json", "spec.py", "album_libere.py", "testo.py", "vib_lut.npz"} <= set(os.listdir(out))
+    with open(os.path.join(out, "spec.py"), "rb") as fh: sp = formato_1x.leggi(fh.read(), prova=True)
+    assert len(sp) == 2 and not os.path.exists(os.path.join(c.progetto, "spec.py")), "nel progetto resta solo album.json"
+
+
 def test_modelli_utente(editor, casa):
     """i modelli salvati vanno nella cartella dei dati dell'utente (prima: ~/.album-tools) e si possono usare per un nuovo spread"""
     c = editor; st, names = _due_spread(c)

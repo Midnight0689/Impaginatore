@@ -237,6 +237,8 @@ def test_modelli_illeggibili_non_si_perdono(editor):
     c.post("/api/modelli", {"azione": "salva", "s": 0, "nome": "Mio"})
     salvati = formato.leggi_json(c.E.UT_FILE)
     assert [t["nome"] for t in salvati] == ["Mio", "Di una versione futura"], "le voci che questa versione non capisce restano"
+    os.remove(c.E.UT_FILE); os.makedirs(c.E.UT_FILE)              # file che non si riesce a leggere (qui: una cartella): niente copia, niente errore
+    assert c.E.ut_load() == [] and open(c.E.UT_FILE + ".illeggibile", encoding="utf-8").read() == '[{"id": "x", rotto'
 
 
 # ---------------------------------------------------------------- ZIP

@@ -156,7 +156,7 @@ def _ut_leggi(path, dove):
     try: lst = V.lista(formato.leggi_json_rigoroso(path, 16 * 2**20), dove, 10**5)
     except (OSError, V.ErroreProgetto) as ex:
         LOG.append(f"modelli non letti: {ex}")
-        if path == UT_FILE: formato.copia_atomica(path, path + ".illeggibile")     # il prossimo salvataggio non deve far perdere niente
+        if path == UT_FILE and isinstance(ex, V.ErroreProgetto): formato.copia_atomica(path, path + ".illeggibile")     # il prossimo salvataggio non deve far perdere niente
         return [], []
     ok, ko = [], []
     for k, t in enumerate(lst[:V.MAX_MODELLI], 1):
