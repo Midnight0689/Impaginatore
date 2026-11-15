@@ -169,7 +169,7 @@
     }
   },
   "laboratorio": {
-    "descrizione": "Edizione white-label/OEM con catalogo del laboratorio (formati, copertine, abbondanze, profili ICC, controlli prestampa) e marchio del laboratorio. Prezzi IVA esclusa; intervalli = ipotesi motivate da validare nei piloti. Con il listino 2026-11-15b le licenze a volume costano meno del Pro al dettaglio (sconto a volume sul Pro, mai sotto il 40% del suo listino): il valore dell'edizione sta nel setup, nella manutenzione del catalogo e nell'assistenza allo staff del laboratorio. Contratti fatturati direttamente al laboratorio, senza Merchant of Record.",
+    "descrizione": "Edizione white-label/OEM con catalogo del laboratorio (formati, copertine, abbondanze, profili ICC, controlli prestampa) e marchio del laboratorio. Prezzi IVA esclusa; intervalli = ipotesi motivate da validare nei piloti. Dal listino 2026-11-15b le licenze a volume costano meno del Pro al dettaglio (sconto a volume sul Pro, mai sotto 39 € a licenza: con il Pro a 99 € del listino 2026-11-15d è il 39% del suo listino; sconti 40/51/61%): il valore dell'edizione sta nel setup, nella manutenzione del catalogo e nell'assistenza allo staff del laboratorio. Contratti fatturati direttamente al laboratorio, senza Merchant of Record.",
     "riferimento_prezzo_licenze": "pro",
     "fatturazione": "diretta_b2b",
     "funzioni_come_tier": "pro",
@@ -204,17 +204,17 @@
           {
             "quantita_min": 50,
             "prezzo_unitario_eur": 59,
-            "sconto_su_pro_pct": 34
+            "sconto_su_pro_pct": 40
           },
           {
             "quantita_min": 200,
             "prezzo_unitario_eur": 49,
-            "sconto_su_pro_pct": 45
+            "sconto_su_pro_pct": 51
           },
           {
             "quantita_min": 500,
             "prezzo_unitario_eur": 39,
-            "sconto_su_pro_pct": 56
+            "sconto_su_pro_pct": 61
           }
         ],
         "manutenzione_catalogo_anno_eur": [
