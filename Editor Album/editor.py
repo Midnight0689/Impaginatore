@@ -503,6 +503,21 @@ def apply(o):
         pos = min(max(int(o.get("pos", len(SP))), 0), len(SP))
         SP.insert(pos, [[best[side]["mode"], [dict(x) for x in BUILD[best[side]["module"]]([i + 1 for i in best[side]["photos"]], bool(best[side].get("mirror")))]] for side in "LR"])
         GD.insert(pos, dict(v=[], h=[]))
+    elif t == "addtospread":                              # foto lasciate sulla miniatura di uno spread esistente: entrano lì (cornici libere) e, a richiesta, lo spread si riorganizza con un altro modello
+        s_ = o["s"]; ph = []
+        for n in o["names"]:
+            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
+            if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
+        here = {it["i"] for pg in SP[s_] for it in pg[1] if it["k"] != "t"}; new = [i for i in ph if i not in here]
+        gone = set(new)
+        for k, sp in enumerate(SP):
+            if k == s_: continue
+            for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]
+        for j, i in enumerate(new): apply(dict(op="putfree", s=s_, photo=A.name(i), fx=0.27 + 0.46 * (j % 2), fy=0.42 + 0.08 * ((j // 2) % 3)))
+        if o.get("how") == "reorg":
+            alt = [x for x in templates(s_)["items"] if not x["cur"]]
+            if not alt: raise ValueError("nessun altro modello adatto a queste foto")
+            apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
