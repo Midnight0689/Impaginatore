@@ -235,17 +235,6 @@ def modello(t, dove="modello"):
     return t
 
 
-def modelli(lst, dove="modelli_utente.json", avvisi=None):
-    """i modelli validi di un elenco; quelli non validi si tralasciano (con una riga in `avvisi`)"""
-    lista(lst, dove, 10**6)
-    out = []
-    for k, t in enumerate(lst[:MAX_MODELLI], 1):
-        try: out.append(modello(t, f"{dove}, modello {k}"))
-        except ErroreProgetto as e:
-            if avvisi is not None: avvisi.append(f"modello tralasciato: {e}")
-    return out
-
-
 # ---------------------------------------------------------------- progetto.json
 def _stile(v, dove):
     """stile di testo salvato: le sue chiavi finiscono nei livelli di testo, quindi valgono le stesse regole"""
