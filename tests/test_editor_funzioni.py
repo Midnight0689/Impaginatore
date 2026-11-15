@@ -83,6 +83,29 @@ def test_versioni_e_ripristino(editor):
     attendi(lambda: c.riavvii == [1], 10)
 
 
+def test_versioni_della_1x_e_copie_rovinate(editor):
+    """le copie di spec.py fatte dalla 1.x restano tra le versioni (lette come testo) e si ripristinano convertendole senza
+    eseguirle; una copia con codice non si ripristina; una copia di album.json rovinata non compare; le più vecchie si potano"""
+    from impaginatore import formato
+    c = editor; st, names = _due_spread(c)
+    bk = os.path.join(c.progetto, "_backup_editor"); os.makedirs(bk, exist_ok=True)
+    spec = '"""Prova: 1 spread."""\nfrom album import *\n\nSPREADS = [\n    # 1\n    (W(P(%r, 0, 0, 6, 8)),\n     W()),\n]\n' % names[0]
+    for ts, testo in (("20250101-100000", spec), ("20250101-090000", spec.replace("1 spread.", "senza numero.")), ("20250101-080000", "import os\nSPREADS = []\n")):
+        with open(os.path.join(bk, f"{ts}_spec.py"), "w", encoding="utf-8") as fh: fh.write(testo)
+    with open(os.path.join(bk, "20250101-110000_album.json"), "w", encoding="utf-8") as fh: fh.write('{"formato": 2, "rotto"')
+    v = [(x["ts"], x["spread"]) for x in c.get("/api/versioni") if x["ts"].startswith("2025")]
+    assert v == [("20250101-100000", 1), ("20250101-090000", 1), ("20250101-080000", 0)]
+    with open(os.path.join(c.progetto, "album.json"), "rb") as fh: prima = fh.read()
+    ok, r = c.prova("/api/ripristina", {"ts": "20250101-080000"}); assert not ok and "istruzioni non riconosciute" in r["errore"]
+    with open(os.path.join(c.progetto, "album.json"), "rb") as fh: assert c.riavvii == [] and fh.read() == prima, "la copia con codice non tocca il progetto"
+    assert c.post("/api/ripristina", {"ts": "20250101-100000"}) == {"riavvio": True}
+    attendi(lambda: c.riavvii == [1], 10)
+    doc = formato.leggi_album(os.path.join(c.progetto, "album.json"))
+    assert len(doc["spread"]) == 1 and doc["spread"][0]["sinistra"]["elementi"][0]["foto"] == names[0]
+    c.E._pota_backup(bk, tieni=1)
+    assert len({f.split("_", 1)[0] for f in os.listdir(bk)}) == 1, "resta solo la copia più recente"
+
+
 def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     c = editor; st, names = _due_spread(c)
     f = [i for i in st["spreads"][0]["items"] if i["k"] != "t"][0]

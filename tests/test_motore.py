@@ -93,11 +93,11 @@ def test_abbina(tmp_path):
 class PhotoshopFinto:
     """esegue «a parole» gli script: per ogni spread richiesto crea un PSD finto e risponde «Spread_NN ok»"""
 
-    def __init__(self): self.script = []
+    def __init__(self): self.script = []; self.aperti = ""
 
     def trova(self): return dict(nome="Adobe Photoshop 2026", percorso="/Applications/x.app")
 
-    def esegui_js(self, codice): return ""
+    def esegui_js(self, codice): return self.aperti               # documenti aperti: «nome|salvato» per riga
 
     def esegui_jsx(self, path, timeout=3600):
         with open(path, encoding="ascii") as f: js = f.read()
@@ -148,6 +148,9 @@ def test_genera_psd_base_e_registro_rovinato(prj, monkeypatch, capsys):
         assert genera_psd.main(["--progetto", prj, "--spread", "1"]) == 0 and len(ps.script) == n
         uscite.append(capsys.readouterr().out)
     assert all("SALTATO spread 1: esiste e non l'ho generato io" in u for u in uscite) and "psd_generati.json non leggibile" in uscite[0]
+    ps.aperti = "Spread_02.psd|false\nAltro.psd|true"; n = len(ps.script)
+    assert genera_psd.main(["--progetto", prj, "--spread", "2", "--forza"]) == 0 and len(ps.script) == n, "un PSD aperto in Photoshop non si tocca, neanche con --forza"
+    assert "SALTATO spread 2: è aperto in Photoshop" in capsys.readouterr().out
 
 
 def test_album_senza_progetto_non_legge_niente():

@@ -121,6 +121,34 @@ def test_limiti_del_lettore(monkeypatch):
     with pytest.raises(ValueError, match="troppo complesso"): formato_1x.leggi(b"SPREADS = [1, 2, 3, 4, 5, 6]")
 
 
+def test_grammatica_ammessa_e_limiti(monkeypatch):
+    """quello che la grammatica ammette dà i valori giusti; i limiti di misura fermano i file costruiti per bloccare il programma"""
+    from impaginatore import formato_1x
+    testo = (b'from album import *\nX = [W()]\nX.extend([W(), W()])\nN = 1 + 2\nN += 0.5\nT = "a" + "b"\n'
+             b'SPREADS = [(X[0] if 0 else W(TXT("title", 0, 0, 12, 8)), I())]\n')
+    with pytest.raises(ValueError, match="espressioni con if"): formato_1x.leggi(testo, prova=True)
+    sp = formato_1x.leggi(testo.replace(b"X[0] if 0 else ", b""), prova=True)
+    assert len(sp) == 1 and sp[0][0][0] == "W"
+    let = formato_1x._Lettore(formato_1x._funzioni(True))
+    for riga in ast.parse("from album import W\nX = [W()]\nX.extend([W(), W()])\nN = 1 + 2\nN += 0.5\nT = 'a' + 'b'").body: let.istruzione(riga)
+    assert len(let.nomi["X"][1]) == 3 and let.nomi["N"][1] == 3.5 and let.nomi["T"][1] == "ab"
+    monkeypatch.setattr(formato_1x, "MAX_TESTO", 3)
+    with pytest.raises(ValueError, match="testo troppo lungo"): formato_1x.leggi(b'X = "abcd"\nSPREADS = []\n')
+    monkeypatch.setattr(formato_1x, "MAX_SPREAD", 1)
+    with pytest.raises(ValueError, match="troppi spread"): formato_1x.leggi(b"from album import *\nSPREADS = [(W(), W()), (W(), W())]\n", prova=True)
+    monkeypatch.setattr(formato_1x, "MAX_ELEMENTI", 1)
+    with pytest.raises(ValueError, match="troppi elementi"): formato_1x.leggi(b'from album import *\nSPREADS = [(W(TXT("end", 0, 0, 1, 1), TXT("end", 1, 0, 1, 1)), W())]\n', prova=True)
+
+
+def test_descrizione_con_caratteri_di_controllo():
+    """SEC-003 anche nell'esportazione per la 1.x: a capo, DEL, surrogati e virgolette non escono dal testo di descrizione"""
+    from impaginatore import formato_1x
+    nome = 'a\nb\x7fc\ud800d"""e\\'
+    d = formato_1x.descrizione(nome)
+    assert "\n" not in d and ast.literal_eval(d.replace("\\ud800", "?")) == nome.replace("\ud800", "?")
+    assert [type(x).__name__ for x in ast.parse(d + "\nX = 1").body] == ["Expr", "Assign"]
+
+
 def test_firme_dei_costruttori_uguali_a_quelle_del_motore():
     """il controllo senza motore usa una tabella delle firme: deve restare uguale a quella dei costruttori veri"""
     import inspect
