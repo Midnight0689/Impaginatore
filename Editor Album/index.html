@@ -97,6 +97,7 @@
   #pool { grid-column: 2; grid-row: 3; background: var(--panel); border-top: 1px solid var(--line); padding: 6px 10px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   #pool .cap { color: var(--dim); font-size: 11px; margin-bottom: 4px; }
   #pool img { height: 100px; box-sizing: content-box; margin-right: 22px; border-radius: 3px; cursor: grab; vertical-align: top; border: 2px solid transparent; }
+  #tline { position: fixed; height: 4px; border-radius: 2px; background: var(--blue); box-shadow: 0 0 8px var(--blue); pointer-events: none; z-index: 60; display: none; }
   #pool img:hover { border-color: var(--accent); } #pool img.psel { border-color: var(--blue); outline: 4px solid var(--blue); outline-offset: -4px; }
   #qlook { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; cursor: zoom-out; } #qlook img { max-width: 94vw; max-height: 90vh; object-fit: contain; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,.6); } #qlook span { color: #cfcfd4; font-size: 13px; }
   #pool img.tolta { opacity: .4; }
@@ -917,6 +918,23 @@ async function pasteSel() {
   const fresh = S.spreads[cur].items.filter(i => !before.has(kOf(i)));
   if (fresh.length) { msel = fresh.map(kOf); const l = fresh[fresh.length - 1]; sel = { s: cur, side: l.side, idx: l.idx }; render(); toast("Incollato"); }
 }
+function thumbDrop(ev) {                                       // trascinando foto sulla fila degli spread: posizione (0..n) dove nascerebbe il nuovo spread, o null se non sei sopra la fila
+  const T = $("thumbs"), r = T.getBoundingClientRect(); if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return null;
+  const ch = [...T.children]; let pos = ch.length;
+  for (let i = 0; i < ch.length; i++) { const b = ch[i].getBoundingClientRect(); if (ev.clientY < b.top + b.height / 2) { pos = i; break; } }
+  return pos;
+}
+function tline(pos) {                                          // linea blu tra due miniature: qui nasce il nuovo spread
+  let L = $("tline"); if (!L) { L = document.createElement("div"); L.id = "tline"; document.body.appendChild(L); }
+  if (pos == null) { L.style.display = "none"; return; }
+  const ch = [...$("thumbs").children]; if (!ch.length) { L.style.display = "none"; return; }
+  const r = $("thumbs").getBoundingClientRect(), y = pos < ch.length ? ch[pos].getBoundingClientRect().top - 3 : ch[ch.length - 1].getBoundingClientRect().bottom + 1;
+  L.style.left = r.left + 8 + "px"; L.style.width = r.width - 16 + "px"; L.style.top = Math.min(Math.max(y, r.top), r.bottom - 4) + "px"; L.style.display = "block";
+}
+async function newSpreadFrom(names, pos) {
+  try { await op({ op: "newspreadsel", pos, names }); } catch (e) { toast(e.message || String(e), true); return false; }
+  cur = pos; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(`Nuovo spread ${pos + 1} con ${names.length} foto`); return true;
+}
 async function moveSp(a, b) { if (b < 0 || b >= S.spreads.length || a === b) return; await op({ op: "move", s: a, to: b }); cur = b; sel = null; render(); }
 function go(k) { if (k >= 0 && k < S.spreads.length) { cur = k; sel = null; msel = []; render(); } }
 const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
@@ -1533,12 +1551,16 @@ function startFree(e, it, kind) {
       if (t === "v") { d.style.left = v / S.W * 100 + "%"; d.style.top = 0; d.style.bottom = 0; d.style.width = "1px"; } else { d.style.top = v / S.H * 100 + "%"; d.style.left = 0; d.style.right = 0; d.style.height = "1px"; }
       $("slots").appendChild(d); });
   };
-  const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; lastEv = ev; if (!raf) raf = requestAnimationFrame(() => { raf = 0; rect = compute(lastEv); draw(); }); };       // una volta per schermata, non a ogni evento del mouse
+  const onMove = ev => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return; moved = true; lastEv = ev; if (kind === "move") tline(thumbDrop(ev)); if (!raf) raf = requestAnimationFrame(() => { raf = 0; rect = compute(lastEv); draw(); }); };       // una volta per schermata, non a ogni evento del mouse
   const onUp = async ev => {
     window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
     if (raf) { cancelAnimationFrame(raf); raf = 0; if (moved) { rect = compute(ev); draw(); } }
     document.body.classList.remove("dragging"); DRAG = false; if (srcEl) srcEl.classList.remove("srcdrag"); srcExtra.forEach(el => el.classList.remove("srcdrag"));
     document.querySelectorAll(".guide, .eqm").forEach(x => x.remove()); document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
+    tline(null);
+    if (moved && kind === "move") { const tp = thumbDrop(ev); if (tp != null) {       // lasciata sulla fila degli spread: le foto (anche più di una) diventano un nuovo spread lì
+      const ks = msel.length > 1 && inM(it) ? msel : [kOf(it)], nm = ks.map(k => S.spreads[cur].items.find(i => kOf(i) === k)).filter(i => i && i.k !== "t" && i.name).map(i => i.name);
+      if (nm.length) { clearGhosts(); await newSpreadFrom(nm, tp); return; } } }
     const grp = msel.length > 1 && inM(it);
     sel = { s: cur, side: it.side, idx: it.idx }; if (!grp) msel = [kOf(it)];
     if (!moved) { if (wasOnly && kind === "move") { msel = []; sel = null; } else if (grp) msel = [kOf(it)]; render(); return; }
@@ -1564,17 +1586,18 @@ $("nmenu").onclick = async e => {
 
 // ---- trascinare una foto libera: con il puntatore (più affidabile del drag-and-drop del browser)
 function startPhotoDrag(e, n) {
-  if (e.button !== 0) return; e.preventDefault(); const x0 = e.clientX, y0 = e.clientY; let g = null;
+  if (e.button !== 0) return; const names = POOLSELS.length > 1 && POOLSELS.includes(n) ? POOLSELS.slice() : [n]; e.preventDefault(); const x0 = e.clientX, y0 = e.clientY; let g = null;
   const hit = ev => { const t = document.elementFromPoint(ev.clientX, ev.clientY); return t; };
   const mv = ev => {
     if (!g && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
     if (!g) { g = document.createElement("img"); g.src = `/img/thumb/${n}?w=240`; g.style.cssText = "position:fixed;z-index:50;width:130px;opacity:.85;pointer-events:none;border:2px solid var(--accent);border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.5)"; document.body.appendChild(g); }
     g.style.left = ev.clientX - 65 + "px"; g.style.top = ev.clientY - 40 + "px";
     document.querySelectorAll("#slots > div.over").forEach(x => x.classList.remove("over")); const t = hit(ev), sl = t && t.closest("#slots > div"); if (sl) sl.classList.add("over");
+    tline(thumbDrop(ev));
   };
   const up = ev => {
     document.removeEventListener("pointermove", mv); document.removeEventListener("pointerup", up); document.querySelectorAll("#slots > div.over").forEach(x => x.classList.remove("over"));
-    if (!g) return; g.remove(); const t = hit(ev); if (!t) return; const sl = t.closest("#slots > div");
+    tline(null); if (!g) return; g.remove(); const tp = thumbDrop(ev); if (tp != null) { newSpreadFrom(names, tp); return; } const t = hit(ev); if (!t) return; const sl = t.closest("#slots > div");
     if (sl && sl.dataset.at) op({ op: "replace", at: JSON.parse(sl.dataset.at), photo: n });
     else { const r = $("main").getBoundingClientRect(); if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) op({ op: "putfree", s: cur, photo: n, fx: (ev.clientX - r.left) / r.width, fy: (ev.clientY - r.top) / r.height }); }
   };

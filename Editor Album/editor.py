@@ -489,6 +489,20 @@ def apply(o):
         pos = min(max(int(o.get("pos", len(SP))), 0), len(SP))
         SP.insert(pos, [[o[side]["mode"], [dict(x) for x in BUILD[o[side]["module"]]([i + 1 for i in o[side]["photos"]], bool(o[side].get("mirror")))]] for side in "LR"])
         GD.insert(pos, dict(v=[], h=[]))
+    elif t == "newspreadsel":                             # foto trascinate sulla fila degli spread: nuovo spread nel punto scelto, col modello che rispetta meglio le proporzioni
+        names = list(o["names"]); ph = []
+        for n in names:
+            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
+            if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
+        if not 1 <= len(ph) <= 10: raise ValueError("per uno spread servono da 1 a 10 foto")
+        best = next((x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R")), None)
+        if best is None: raise ValueError("nessun modello adatto a queste foto")
+        gone = set(ph)
+        for sp in SP:
+            for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]       # le foto spostate escono dal vecchio spread (restano le altre e i testi)
+        pos = min(max(int(o.get("pos", len(SP))), 0), len(SP))
+        SP.insert(pos, [[best[side]["mode"], [dict(x) for x in BUILD[best[side]["module"]]([i + 1 for i in best[side]["photos"]], bool(best[side].get("mirror")))]] for side in "LR"])
+        GD.insert(pos, dict(v=[], h=[]))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
