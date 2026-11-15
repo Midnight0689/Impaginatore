@@ -24,7 +24,9 @@ if __name__ == "__main__":
     SP = load_spec()
     OUT = CFG.get("uscita_psd") or os.path.join(PROJ, "PSD"); os.makedirs(OUT, exist_ok=True)
     nums = list(range(1, len(SP) + 1)) if a.spread == "tutti" else [int(x) for x in a.spread.split(",")]
-    REG = os.path.join(CACHE, "psd_generati.json"); reg = json.load(open(REG, encoding="utf-8")) if os.path.exists(REG) else {}
+    REG = os.path.join(CACHE, "psd_generati.json"); reg = {}
+    if os.path.exists(REG):
+        with open(REG, encoding="utf-8") as f: reg = json.load(f)
 
     open_docs = PS.open_documents()
     skip = []

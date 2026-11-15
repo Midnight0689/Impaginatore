@@ -128,7 +128,9 @@ log.join("\n");
     else:
         print(__doc__)
     # questi file ora contengono modifiche "a mano": genera_psd.py non deve più sovrascriverli
-    reg = json.load(open(REG, encoding="utf-8")) if os.path.exists(REG) else {}
+    reg = {}
+    if os.path.exists(REG):
+        with open(REG, encoding="utf-8") as f: reg = json.load(f)
     for p in glob.glob(os.path.join(OUT, "Spread_*.psd")):
         if os.path.basename(p) in reg and os.path.getmtime(p) > reg[os.path.basename(p)] + 5: reg[os.path.basename(p)] = 0
     json.dump(reg, open(REG, "w", encoding="utf-8"), indent=1)

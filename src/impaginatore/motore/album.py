@@ -12,7 +12,7 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import os, sys, json, glob
+import io, logging, os, sys, json, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -22,6 +22,8 @@ from ..piattaforma import font as _pfont
 PROJ = CFG = SRC = CACHE = THUMBS = None             # riempiti da carica_progetto()
 CW = CH = PPI = B = G = MG = FOLD = TW = TH = None
 M, F, IDX, ORIGINE, FACE_FIX, WB, _ESP, TXTCFG = [], {}, {}, {}, {}, {}, {}, {}
+SCARTATE = []                                        # foto non aperte all'ultimo caricamento: [{n, motivo}] (le mostra l'editor)
+log = logging.getLogger("impaginatore.motore")
 TITLE, INK = ("", "", ""), (58, 54, 51)
 SERIF_FILE = SANS_FILE = None
 
@@ -40,7 +42,7 @@ def carica_progetto(cartella):
     """legge progetto.json, aggiorna l'elenco delle foto (metadati, miniature, volti) e prepara geometria, correzioni e testi.
     Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo)."""
     global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
-    Image.MAX_IMAGE_PIXELS = None
+    Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear()
     PROJ = os.path.abspath(cartella)
     CFG = _leggi_json(os.path.join(PROJ, "progetto.json"))
     SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
@@ -51,11 +53,10 @@ def carica_progetto(cartella):
     # ---- foto: metadati, miniature, volti
     mp, fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
     M = _leggi_json(mp) if os.path.exists(mp) else []
-    known = {m["n"] for m in M}
-    files = sorted(set(glob.glob(os.path.join(SRC, "*.jpg")) + glob.glob(os.path.join(SRC, "*.JPG")) + glob.glob(os.path.join(SRC, "*.jpeg"))))     # set: su Windows *.jpg e *.JPG trovano gli stessi file
-    new = [_meta_one(f) for f in files if os.path.basename(f) not in known]
+    _date_mancanti(M)
+    new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
-    new += [_meta_one(f) for f in CFG.get("foto_extra", []) if os.path.basename(f) not in known | {m["n"] for m in new}]
+    new += _nuove(CFG.get("foto_extra", []), M + new)
     if new:
         first = not M
         M += sorted(new, key=lambda x: x["dt"]) if first else new
@@ -105,14 +106,107 @@ def _geometry():
 NC, NR = 12, 8
 
 # ---------------- foto: metadati, miniature, volti ----------------
+MAX_MPIXEL = 160                 # milioni di pixel al massimo per foto (IMPAGINATORE_MAX_MPIXEL): oltre, la foto si scarta con un avviso
+ESTENSIONI = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp")
+NON_SUPPORTATE = (".heic", ".heif", ".cr2", ".cr3", ".nef", ".arw", ".dng", ".raf", ".orf", ".rw2", ".psd", ".gif", ".bmp")      # si riconoscono ma non si aprono: si avvisa
+_HEIF = []
+
+
+def limite_pixel():
+    """pixel massimi per foto (vale anche come Image.MAX_IMAGE_PIXELS): IMPAGINATORE_MAX_MPIXEL milioni, predefinito MAX_MPIXEL"""
+    try: mp = float(os.environ.get("IMPAGINATORE_MAX_MPIXEL") or MAX_MPIXEL)
+    except ValueError: mp = MAX_MPIXEL
+    return int(max(mp, 0.01) * 1_000_000)
+
+
+def estensioni():
+    """estensioni delle foto che il programma apre (HEIC/HEIF solo con il pacchetto facoltativo pillow-heif)"""
+    if not _HEIF:
+        try:
+            import pillow_heif
+            pillow_heif.register_heif_opener(); _HEIF.append((".heic", ".heif"))
+        except ImportError: _HEIF.append(())
+    return ESTENSIONI + _HEIF[0]
+
+
+def apri_foto(f):
+    """apre la foto (senza decodificarla) controllando il limite di pixel: ValueError con un messaggio chiaro se è troppo grande"""
+    lim = Image.MAX_IMAGE_PIXELS = limite_pixel(); estensioni()
+    try: im = Image.open(f)
+    except Image.DecompressionBombError: im = None
+    if im is None or im.width * im.height > lim:
+        if im is not None: im.close()
+        raise ValueError(f"{os.path.basename(f)}: foto troppo grande (oltre {lim / 1e6:g} milioni di pixel; il limite si cambia con IMPAGINATORE_MAX_MPIXEL)")
+    return im
+
+
+def in_srgb(im):
+    """la foto in RGB a 8 bit nello spazio sRGB: profilo colore incorporato convertito (CMYK, Adobe RGB...), trasparenza su bianco, 16 bit ridotti"""
+    icc = im.info.get("icc_profile")
+    if im.mode.startswith("I"): im = im.point(lambda v: v * (1 / 256)).convert("L") if im.mode == "I" else im.convert("I").point(lambda v: v * (1 / 256)).convert("L")
+    if im.mode in ("RGBA", "LA", "PA") or (im.mode == "P" and "transparency" in im.info):
+        im = im.convert("RGBA"); fondo = Image.new("RGBA", im.size, (255, 255, 255, 255)); fondo.alpha_composite(im); im = fondo.convert("RGB")
+    if icc and im.mode in ("RGB", "CMYK", "L"):
+        from PIL import ImageCms
+        try: return ImageCms.profileToProfile(im, ImageCms.ImageCmsProfile(io.BytesIO(icc)), ImageCms.createProfile("sRGB"), outputMode="RGB")
+        except (ImageCms.PyCMSError, OSError) as e: log.warning("profilo colore non convertito (%s): colori come sono", e)
+    return im.convert("RGB")
+
+
+def _data_file(f):
+    """data di modifica del file, nella forma delle date EXIF: per le foto senza data di scatto"""
+    return time.strftime("%Y:%m:%d %H:%M:%S", time.localtime(os.path.getmtime(f))) + ".00"
+
+
+def _date_mancanti(meta):
+    """foto senza data di scatto lette con le versioni fino alla 2.0 ("None.00"): la data del file (l'ordine resta quello salvato)"""
+    for m in meta:
+        if str(m.get("dt", "")).startswith("None") and os.path.exists(m.get("src", "")): m["dt"], m["senza_data"] = _data_file(m["src"]), True
+
+
+def _cerca_foto(cartella):
+    """foto della cartella (formati supportati), in ordine di nome; quelle in formati che non si aprono vanno in SCARTATE"""
+    try: nomi = sorted(os.listdir(cartella))
+    except OSError: return []
+    out = []
+    for n in nomi:
+        e = os.path.splitext(n)[1].lower()
+        if n.startswith(".") or not os.path.isfile(os.path.join(cartella, n)): continue
+        if e in estensioni(): out.append(os.path.join(cartella, n))
+        elif e in NON_SUPPORTATE: SCARTATE.append(dict(n=n, motivo=f"formato {e[1:].upper()} non supportato: esportala in JPEG, PNG o TIFF"))
+    return out
+
+
+def _nuove(files, meta):
+    """metadati delle foto non ancora in meta, una sola per nome senza estensione (è la chiave delle foto in spec.py).
+    Quelle che non si aprono (file rovinato, troppo grande, doppione) vanno in SCARTATE con il motivo"""
+    noti = {m["n"] for m in meta}; radici = {m["n"].rsplit(".", 1)[0] for m in meta}; out = []
+    for f in files:
+        n = os.path.basename(f); r = n.rsplit(".", 1)[0]
+        if n in noti: continue
+        if r in radici: SCARTATE.append(dict(n=n, motivo=f"c'è già una foto che si chiama «{r}»")); continue
+        try: out.append(_meta_one(f))
+        except (OSError, ValueError) as e:
+            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto")); log.warning("foto scartata %s: %s", n, e); continue
+        noti.add(n); radici.add(r)
+    return out
+
+
 def _meta_one(f):
-    im = Image.open(f); ex = im.getexif(); sub = ex.get_ifd(0x8769); w, h = im.size
-    return dict(n=os.path.basename(f), dt=f"{sub.get(36867) or ex.get(306)}.{sub.get(37521, '00')}", w=w, h=h, ar=round(w / h, 3), src=os.path.abspath(f))
+    with apri_foto(f) as im:
+        ex = im.getexif(); sub = ex.get_ifd(0x8769); w, h = im.size
+        if ex.get(274) in (5, 6, 7, 8): w, h = h, w                       # ruotata dall'EXIF: misure come la si vede (come la miniatura)
+    dt = sub.get(36867) or ex.get(306)
+    m = dict(n=os.path.basename(f), dt=f"{dt}.{sub.get(37521, '00')}" if dt else _data_file(f), w=w, h=h, ar=round(w / h, 3), src=os.path.abspath(f))
+    if not dt: m["senza_data"] = True                                  # data presa dal file: l'editor lo dice
+    return m
 def _build_thumbs(meta):
     for m in meta:
         p = os.path.join(THUMBS, m["n"])
         if not os.path.exists(p):
-            im = Image.open(m["src"]); im.draft("RGB", (1200, 1200)); im = ImageOps.exif_transpose(im).convert("RGB"); im.thumbnail((1200, 1200)); im.save(p, quality=85)
+            with apri_foto(m["src"]) as im0:
+                im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
+            im.thumbnail((1200, 1200)); im.save(p, "JPEG", quality=85)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
 def _build_faces(meta):
     import cv2
     d = cv2.data.haarcascades

@@ -68,7 +68,7 @@ if __name__ == "__main__":
             s = ", ".join(("TESTO" if i["k"] == "t" else name(i["i"]) + (" (BN)" if i.get("bw") else "") + (" (al vivo)" if i["k"] == "full" else "")) for i in it if i["side"] == side)
             return ("[bianca] " if mode == "W" else "[immersiva] ") + s
         lines.append(f"Spread {k + 1:02d}  sx: {nm('L')}  |  dx: {nm('R')}")
-    open(os.path.join(OUT, f"Sequenza{suffix}.txt"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    with open(os.path.join(OUT, f"Sequenza{suffix}.txt"), "w", encoding="utf-8") as f: f.write("\n".join(lines) + "\n")
     if a.spread:
         nums = [int(x) for x in a.spread.split(",")]
         sheet(nums, 0.2, os.path.join(OUT, f"Modifiche spread {'-'.join(map(str, nums))}.jpg"))
