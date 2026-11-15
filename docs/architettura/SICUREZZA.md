@@ -221,7 +221,8 @@ sha256 del pacchetto, niente ritorni a versioni vecchie, installazione solo su r
 - **`Impaginatore.app` della 1.x** (`legacy/macos`): controlla che il programma sia acceso con
   `curl http://127.0.0.1:8765/api/ping | grep -q ok` e poi apre l'indirizzo nudo. Con il gettone `/api/ping` risponde 401:
   l'applet crede che il programma non parta e, dopo l'attesa, mostra «Non riesco ad avviare il programma», anche se la
-  schermata è partita e ha aperto da sola il browser con un URL di avvio (anche con `--daemon`). Correzione proposta:
+  schermata è partita e ha aperto da sola il browser con un URL di avvio (anche con `--daemon`). Dedotto dai testi
+  dell'applet compilata (`main.scpt`), non provato su un Mac. Correzione proposta:
   ricompilare `main.scpt` (serve un Mac, `osacompile`) perché esegua solo `home.py --porta 8765 --daemon`, che pensa da
   sé a un'istanza sola e all'apertura del browser. Non si è aperta un'eccezione al gettone per `/api/ping`.
 - Il codice di avvio sulla riga di comando del browser (vedi sopra).
