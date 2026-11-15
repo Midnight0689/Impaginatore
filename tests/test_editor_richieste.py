@@ -75,6 +75,7 @@ def test_operazioni_valide_passano(editor):
     for k in range(2):
         t = c.post("/api/templates", {"photos": names[2 * k:2 * k + 2]})["items"][0]
         st = c.post("/api/op", dict(cid="t", rev=st["rev"], op="newspread", pos=k, L=t["L"], R=t["R"]))
+    st = c.post("/api/op", dict(cid="t", rev=st["rev"], op="template", s=1, R=t["R"]))           # una pagina sola: l'altra resta com'è
     f = [i for i in st["spreads"][0]["items"] if i["k"] != "t"]
     st = c.post("/api/op", dict(cid="t", rev=st["rev"], op="free", at=[0, f[0]["side"], f[0]["idx"]], x=.1, y=.1, w=.4, h=.4))
     f = [i for i in st["spreads"][0]["items"] if i["k"] != "t" and i["free"]][0]
