@@ -5,6 +5,9 @@ metterlo nel Cestino.
     Windows  explorer /select / Cestino via PowerShell
     Linux    FileManager1 su D-Bus (seleziona il file) o xdg-open sulla cartella / gio trash, oppure il cestino
              freedesktop scritto a mano (~/.local/share/Trash)
+
+Regola (SEC-004): un percorso non entra mai nel testo di uno script (AppleScript, PowerShell): arriva come argomento
+(«on run argv») o come variabile d'ambiente, e sempre assoluto (non può sembrare un'opzione come «-a»).
 """
 import datetime
 import os
@@ -17,7 +20,7 @@ from . import cartelle, sistema
 
 def mostra(path):
     """apre la cartella del file e, dove si può, lo seleziona"""
-    s = sistema()
+    s = sistema(); path = os.path.abspath(path)
     if s == "mac": subprocess.run(["open", "-R", path]); return
     if s == "windows": subprocess.run(["explorer", "/select,", os.path.normpath(path)]); return
     uri = "file://" + urllib.parse.quote(os.path.abspath(path))
@@ -35,13 +38,15 @@ def cestina(path):
     """mette il file o la cartella nel Cestino (si può recuperare); solleva un errore se non riesce"""
     s = sistema()
     if s == "mac":
-        subprocess.run(["osascript", "-e", f'tell application "Finder" to delete POSIX file "{path}"'], check=True, capture_output=True); return
-    if s == "windows":
-        ps = ("Add-Type -AssemblyName Microsoft.VisualBasic; $p = $args[0]; if (Test-Path -LiteralPath $p -PathType Container) "
+        subprocess.run(["osascript", "-e", "on run argv", "-e", 'tell application "Finder" to delete (POSIX file (item 1 of argv) as alias)', "-e", "end run",
+                        os.path.abspath(path)], check=True, capture_output=True); return
+    if s == "windows":                                   # con -Command gli argomenti dopo lo script diventerebbero testo dello script: il percorso passa dall'ambiente
+        ps = ("Add-Type -AssemblyName Microsoft.VisualBasic; $p = $env:IMPAGINATORE_PERCORSO; if (Test-Path -LiteralPath $p -PathType Container) "
               "{ [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p, 'OnlyErrorDialogs', 'SendToRecycleBin') } else "
               "{ [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p, 'OnlyErrorDialogs', 'SendToRecycleBin') }")
-        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps, os.path.normpath(path)], check=True, capture_output=True); return
-    if shutil.which("gio") and subprocess.run(["gio", "trash", "--", path], capture_output=True).returncode == 0: return
+        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], check=True, capture_output=True,
+                       env=dict(os.environ, IMPAGINATORE_PERCORSO=os.path.normpath(os.path.abspath(path)))); return
+    if shutil.which("gio") and subprocess.run(["gio", "trash", "--", os.path.abspath(path)], capture_output=True).returncode == 0: return
     cestina_freedesktop(path)
 
 

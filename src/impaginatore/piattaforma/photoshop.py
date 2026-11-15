@@ -5,6 +5,8 @@
     Linux    Photoshop non esiste: l'export PSD non è disponibile e motivo_assente() lo spiega
 
 Le regole imparate sul Mac (script ASCII, $.evalFile invece di «POSIX file») sono in motore/photoshop.py.
+Nessun dato (percorso, codice) entra nel testo di uno script AppleScript: arriva come argomento («on run argv»); il nome
+dell'applicazione (dal disco) e il percorso dentro il codice JavaScript sono quotati (quota_applescript, json.dumps) (SEC-004).
 """
 import glob
 import json
@@ -53,6 +55,17 @@ def motivo_assente():
     return "I PSD si creano con Photoshop, che non esiste per Linux: esporta in JPG o PDF (oppure apri il progetto su un Mac o un PC Windows con Photoshop)"
 
 
+def quota_applescript(s):
+    """stringa AppleScript tra virgolette: barre rovesciate e virgolette protette"""
+    return '"' + str(s).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _do_javascript(ps, codice, timeout):
+    """comando osascript che fa eseguire codice a Photoshop: il codice è il primo argomento dello script, non parte del testo"""
+    return ["osascript", "-e", "on run argv", "-e", f"with timeout of {int(timeout)} seconds",
+            "-e", f"tell application {quota_applescript(ps['nome'])} to do javascript (item 1 of argv)", "-e", "end timeout", "-e", "end run", codice]
+
+
 _VBS = 'Dim a, r\r\nSet a = CreateObject("Photoshop.Application")\r\nr = a.DoJavaScriptFile(WScript.Arguments(0))\r\nWScript.StdOut.Write r\r\n'
 
 
@@ -61,9 +74,7 @@ def esegui_jsx(path, timeout=3600):
     ps = trova()
     if ps is None: raise RuntimeError(motivo_assente())
     if sistema() == "mac":
-        r = subprocess.run(["osascript", "-e", f"with timeout of {timeout} seconds",
-                            "-e", f'tell application "{ps["nome"]}" to do javascript "$.evalFile(new File(\'{path}\'))"',
-                            "-e", "end timeout"], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(_do_javascript(ps, f"$.evalFile(new File({json.dumps(os.path.abspath(path))}))", timeout), capture_output=True, text=True, encoding="utf-8")
         return (r.stdout + r.stderr).strip()
     with tempfile.TemporaryDirectory(prefix="impaginatore_ps_") as d:
         vbs = os.path.join(d, "esegui.vbs")
@@ -77,7 +88,7 @@ def esegui_js(codice):
     ps = trova()
     if ps is None: raise RuntimeError(motivo_assente())
     if sistema() == "mac":
-        r = subprocess.run(["osascript", "-e", f'tell application "{ps["nome"]}" to do javascript {json.dumps(codice)}'], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(_do_javascript(ps, codice, 120), capture_output=True, text=True, encoding="utf-8")
         return (r.stdout + r.stderr).strip()
     with tempfile.TemporaryDirectory(prefix="impaginatore_ps_") as d:
         p = os.path.join(d, "codice.jsx")

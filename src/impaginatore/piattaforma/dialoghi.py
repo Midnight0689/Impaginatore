@@ -19,7 +19,8 @@ import sys
 
 from . import sistema
 
-TIPI_FOTO = ("*.jpg", "*.jpeg", "*.JPG", "*.JPEG")
+TIPI_FOTO = ("*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.png", "*.PNG", "*.tif", "*.tiff", "*.TIF", "*.TIFF", "*.webp", "*.WEBP", "*.heic", "*.HEIC", "*.heif", "*.HEIF")
+UTI_FOTO = ("public.jpeg", "public.png", "public.tiff", "org.webmproject.webp", "public.heic", "public.heif")      # gli stessi tipi per il Finder
 
 
 def senza_barra(p):
@@ -42,7 +43,7 @@ class Dialoghi:
         return (self._scegli("zip", messaggio) or [""])[0]
 
     def scegli_percorsi(self, cartella=False, messaggio=None):
-        """una cartella (cartella=True) o una o più foto JPEG: elenco di percorsi"""
+        """una cartella (cartella=True) o una o più foto (JPEG, PNG, TIFF, WebP, HEIC): elenco di percorsi"""
         if cartella: return self._scegli("cartella", messaggio or "Scegli la cartella")
         return self._scegli("foto", messaggio or "Scegli le foto")
 
@@ -55,15 +56,16 @@ class Nessuno(Dialoghi):
 
 
 class Mac(Dialoghi):
-    """finestre del Finder via osascript (come nelle versioni 1.x: stessi testi, stessi risultati)"""
+    """finestre del Finder via osascript (come nelle versioni 1.x: stessi testi, stessi risultati). Il messaggio arriva allo
+    script come argomento («on run argv»), mai dentro il testo dello script (SEC-004)"""
     nome = "mac"
 
     def _scegli(self, tipo, messaggio):
-        if tipo == "cartella": sc = f'POSIX path of (choose folder with prompt "{messaggio}")'
-        elif tipo == "zip": sc = f'POSIX path of (choose file of type {{"public.zip-archive"}} with prompt "{messaggio}")'
-        else: sc = (f'set fs to choose file with prompt "{messaggio}" of type {{"public.jpeg"}} with multiple selections allowed\nset out to ""\n'
+        if tipo == "cartella": sc = 'POSIX path of (choose folder with prompt (item 1 of argv))'
+        elif tipo == "zip": sc = 'POSIX path of (choose file of type {"public.zip-archive"} with prompt (item 1 of argv))'
+        else: sc = ('set fs to choose file with prompt (item 1 of argv) of type {' + ", ".join(f'"{u}"' for u in UTI_FOTO) + '} with multiple selections allowed\nset out to ""\n'
                     'repeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nreturn out')
-        r = subprocess.run(["osascript", "-e", sc], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(["osascript", "-e", "on run argv\n" + sc + "\nend run", str(messaggio)], capture_output=True, text=True, encoding="utf-8")
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []        # la cartella arriva con la barra finale di AppleScript, come prima
 
 
@@ -76,7 +78,7 @@ except Exception: pass
 k, msg = sys.argv[1], sys.argv[2]
 if k == "cartella": out = [filedialog.askdirectory(title=msg)]
 elif k == "zip": out = [filedialog.askopenfilename(title=msg, filetypes=[("ZIP", "*.zip")])]
-else: out = list(filedialog.askopenfilenames(title=msg, filetypes=[("JPEG", "*.jpg *.jpeg *.JPG *.JPEG")]))
+else: out = list(filedialog.askopenfilenames(title=msg, filetypes=[("Foto", sys.argv[3])]))
 sys.stdout.write("\n".join(x for x in out if x))
 '''
 
@@ -86,7 +88,7 @@ class Tk(Dialoghi):
     nome = "tk"
 
     def _scegli(self, tipo, messaggio):
-        r = subprocess.run([sys.executable, "-c", _TK, tipo, messaggio], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run([sys.executable, "-c", _TK, tipo, messaggio, " ".join(TIPI_FOTO)], capture_output=True, text=True, encoding="utf-8")
         return [os.path.normpath(x) for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 
@@ -97,7 +99,7 @@ class Zenity(Dialoghi):
         cmd = ["zenity", "--file-selection", "--title", messaggio]
         if tipo == "cartella": cmd.append("--directory")
         elif tipo == "zip": cmd += ["--file-filter", "ZIP | *.zip"]
-        else: cmd += ["--multiple", "--separator", "\n", "--file-filter", "JPEG | " + " ".join(TIPI_FOTO)]
+        else: cmd += ["--multiple", "--separator", "\n", "--file-filter", "Foto | " + " ".join(TIPI_FOTO)]
         r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
