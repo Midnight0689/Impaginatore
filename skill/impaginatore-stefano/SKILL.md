@@ -12,11 +12,11 @@ Rispondi in italiano, breve e diretto, con immagini quando aiutano. La cartella 
 2. **Programma**: controlla `http://127.0.0.1:8765/api/ping`; se non risponde apri `ROOT/legacy/macos/Impaginatore.app` (oppure `legacy/macos/Avvia Impaginatore.command`, o da terminale `python -m impaginatore`).
 3. **Progetto**: nuovo con `POST /api/nuovo` (`nome`, `w`, `h` in cm, opz. `abb`, `spazio`, `margine`) oppure «Apri progetto esistente». Poi `POST /api/apri` con `path` → restituisce la porta dell'editor.
 4. **Foto**: informazioni (formato, misure, cliente) chieste a Stefano; selezione in alta con `python -m impaginatore.motore.abbina`, analisi con `python -m impaginatore.motore.analizza`, bozza con `python -m impaginatore.motore.anteprima` (parametri in `references/SKILL_originale.md`). Le foto stanno in `Foto/` del progetto o nelle cartelle indicate in `progetto.json`.
-5. **Rifinitura**: nell'editor (spread, modelli, cornici, testi, allinea, versioni). Esporta JPG/PDF/PSD dall'editor.
+5. **Composizione e rifinitura**: sempre nell'editor, a mano o con le sue API (spread, modelli, cornici, testi, allinea, versioni). Esporta JPG/PDF/PSD dall'editor.
 6. **Regole di stile e Photoshop**: `references/stile.md` e `references/photoshop.md` (in questa cartella).
 
 ## Regole d'oro
-- Con l'editor aperto NON modificare `spec.py` a mano: lo salva l'editor (autosave 2 s). Per modifiche via script chiudi/riavvia prima l'editor, dopo aver controllato che non ci siano modifiche non salvate.
+- L'impaginazione sta in `album.json` (solo dati, schema in `ROOT/docs/architettura/FORMATO-PROGETTO.md`) e la scrive solo l'editor (autosave 2 s). **Non scrivere mai a mano `album.json` né `spec.py`** (il formato delle 1.x: la 2.0 non lo esegue più, lo converte una volta sola e rifiuta ogni istruzione che non riconosce): componi e modifica gli spread con le API dell'editor (`/api/templates`, `/api/op`, `/api/save`, vedi `references/SKILL_originale.md` §4). Un server MCP con le stesse azioni arriverà (piano, T-203): quando c'è, usa quello.
 - Mai toccare PSD già ritoccati a mano da Stefano; mai sovrascrivere i suoi PDF/esportazioni.
 - Non usare undo/redo sull'editor vivo per test: lavora su una copia del progetto.
 - Dati globali dell'utente (modelli salvati: `~/Library/Application Support/Impaginatore/modelli_utente.json`; le 1.x li tenevano in `~/.album-tools/`, da dove vengono copiati) non vanno cancellati; i test usano un HOME finto (`pytest` dalla cartella `ROOT`).

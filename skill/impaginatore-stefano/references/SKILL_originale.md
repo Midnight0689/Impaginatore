@@ -5,7 +5,7 @@ description: Impagina album fotografici (battesimi, matrimoni, comunioni, serviz
 
 # Impaginazione album (stile Stefano)
 
-Flusso completo: selezione del cliente -> foto in alta -> analisi -> spec dell'impaginazione -> anteprime approvate ->
+Flusso completo: selezione del cliente -> foto in alta -> analisi -> impaginazione nell'editor -> anteprime approvate ->
 PSD in Photoshop -> verifiche -> correzioni del cliente -> PDF per il cliente.
 Prima di comporre leggi `references/stile.md` (le regole che Stefano pretende e cosa non ha funzionato).
 Prima di toccare Photoshop leggi `references/photoshop.md` (trappole già incontrate).
@@ -55,11 +55,26 @@ python -m impaginatore.motore.analizza --progetto P luminosita    # pelle L* per
 Raggruppa per momenti (capitoli), individua la foto più bella del soggetto (apertura e finale), le coppie che si
 "parlano", le quasi-doppie (primo piano su una delle due), i gruppi grandi e piccoli, i dettagli.
 
-## 4. Componi la spec e le anteprime
+## 4. Componi l'impaginazione e le anteprime
 
-Scrivi `P/spec.py` (modello in `assets/spec_esempio.py`): `SPREADS = [(pagina sinistra, pagina destra), ...]`
-con le foto indicate per nome file. Segui `references/stile.md`: griglia 12x8, moduli ripetuti, pagine immersive e
-bianche alternate, una protagonista per spread, BN come accento, capitoli, climax sul rito, finale sul soggetto.
+L'impaginazione si compone **nell'editor**, con le sue API (porta restituita da `POST /api/apri` della schermata dei
+progetti; chiamate JSON in POST). Non scrivere file a mano: `album.json` lo scrive l'editor, e `spec.py` (il formato
+delle 1.x) la 2.0 non lo esegue più. Un server MCP con le stesse azioni arriverà (T-203): quando c'è, usa quello.
+
+- `GET /api/state`: foto (`photos[].n` = nome del file senza estensione) e spread (`spreads[].items`, con `side` e `idx`).
+- `POST /api/templates {"photos": ["_DSC3054", "_DSC3291"]}`: disposizioni possibili per quelle foto (`items[].L` e `.R`,
+  con il modulo: FULL, DUO, VLL, V4, G4, CV, SV, PP, COL2, BAND2, STRIP3...), dalla migliore.
+- `POST /api/op {"op": "newspread", "pos": 0, "L": ..., "R": ...}`: nuovo spread con la disposizione scelta;
+  `{"op": "newspreadsel", "names": [...], "pos": 3}`: nuovo spread con la disposizione migliore per quelle foto;
+  `{"op": "blank", "pos": 0}` spread vuoto; `{"op": "template", "s": 2, "L": ..., "R": ...}` cambia disposizione;
+  `{"op": "set", "at": [s, "L" o "R", idx], "bw": true, "z": 1.2}` bianco e nero e primo piano;
+  `{"op": "addtext", "s": 0, "fx": 0.1, "fy": 0.1, "fw": 0.4, "tx": "..."}` testo; `{"op": "testo", "nome": ..., "sottotitolo": ..., "data": ...}` titolo;
+  `{"op": "swap", "a": [...], "b": [...]}`, `{"op": "move", "s": 4, "to": 1}`, `{"op": "delete", "s": 5}`, `{"op": "undo"}`.
+- `POST /api/save` salva (lo fa anche da solo dopo 2 s).
+
+Esempio di sequenza approvata (moduli per spread) in `assets/sequenza_esempio.md`. Segui `references/stile.md`: griglia
+12x8, moduli ripetuti, pagine immersive (I) e bianche (W) alternate, una protagonista per spread, BN come accento,
+capitoli, climax sul rito, finale sul soggetto.
 
 ```bash
 python -m impaginatore.motore.anteprima --progetto P --nome v1                 # controllo + Anteprime/Anteprima v1 - N spread.jpg + Sequenza v1.txt
@@ -99,7 +114,7 @@ Se un PSD è stato salvato dopo la generazione, **è suo**: genera_psd.py lo sal
 python -m impaginatore.motore.modifica_psd --progetto P scambia 4:_DSC3457 5:_DSC3513
 python -m impaginatore.motore.modifica_psd --progetto P sostituisci 23:_DSC8801 _DSC9355
 python -m impaginatore.motore.modifica_psd --progetto P colore 15:_DSC0299        # oppure: bn, esposizione 4:_DSC3674 0.95
-python -m impaginatore.motore.modifica_psd --progetto P rifai-pagina 9 sinistra   # dopo aver aggiornato spec.py: rifà solo quella pagina
+python -m impaginatore.motore.modifica_psd --progetto P rifai-pagina 9 sinistra   # dopo aver cambiato lo spread nell'editor: rifà solo quella pagina
 ```
 Ogni comando fa una copia di sicurezza in `PSD_vecchi/backup_<data-ora>/`; dillo a Stefano. Dopo: verifica_psd.py
 ed esportazione di controllo. Leggi i valori attuali dai PSD (Stefano ritocca le esposizioni a mano): non rimetterli ai
@@ -118,4 +133,4 @@ Esporta i PSD come sono (anche modificati a mano), ~5 MB: va su WhatsApp. Contro
 - Misura esatta chiesta e verificata in cm in Photoshop; abbondanza solo se richiesta.
 - Mai sovrascrivere il lavoro di Stefano: niente rigenerazioni sui PSD toccati, copie di sicurezza, nessun documento
   aperto con modifiche non salvate.
-- Verifica sempre i file reali (psd-tools + JPG esportato), non solo la spec.
+- Verifica sempre i file reali (psd-tools + JPG esportato), non solo l'impaginazione.
