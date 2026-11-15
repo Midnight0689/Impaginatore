@@ -254,16 +254,17 @@ def main(argv=None):
     if a.python:
         os.environ["UV_PYTHON"] = a.python
     esiti = []
-    try:
-        for nome, controllo in GRUPPI[a.comando]:
-            esiti.append((nome, controllo()))
-    except Mancante as e:
-        print(f"\nerrore: {e}", file=sys.stderr)
-        return 2
+    for nome, controllo in GRUPPI[a.comando]:
+        try:
+            esiti.append((nome, "ok" if controllo() else "FALLITO"))
+        except Mancante as e:
+            print(f"\nerrore: {e}", file=sys.stderr, flush=True)
+            esiti.append((nome, "NON ESEGUITO"))
     print("\nriepilogo:")
-    for nome, ok in esiti:
-        print(f"  {'ok' if ok else 'FALLITO':8} {nome}")
-    return 0 if all(ok for _, ok in esiti) else 1
+    for nome, esito in esiti:
+        print(f"  {esito:13} {nome}")
+    stati = {esito for _, esito in esiti}
+    return 1 if "FALLITO" in stati else 2 if "NON ESEGUITO" in stati else 0
 
 
 if __name__ == "__main__":
