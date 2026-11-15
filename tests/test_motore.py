@@ -31,13 +31,14 @@ def _script(nome, *args, cwd=None, env=None):
     return subprocess.run([sys.executable, "-m", f"impaginatore.motore.{nome}", *args], capture_output=True, text=True, encoding="utf-8", cwd=cwd, env=env)
 
 
-def test_sostituzioni_di_genera_psd_combaciano():
-    """genera_psd_angolo modifica genera_psd.py per testo: se qualcuno cambia genera_psd.py, i PSD perdono gli angoli"""
-    with open(os.path.join(os.path.dirname(genera_psd_angolo.__file__), "genera_psd.py"), encoding="utf-8") as f: src = f.read()
-    nuovo, ok = genera_psd_angolo.sostituzioni(src)
-    assert ok and "rotAround(L,it.ang" in nuovo and "BitsPerChannelType.EIGHT" in nuovo
-    compile(nuovo, "genera_psd.py", "exec")
-    assert genera_psd_angolo.sostituzioni("niente")[1] is False
+def test_parti_di_genera_psd_angolo():
+    """genera_psd_angolo cambia solo le parti con nome dello script di genera_psd (TEST-004: niente codice modificato come testo, niente exec)"""
+    from impaginatore.motore import genera_psd
+    assert set(genera_psd_angolo.PARTI) == set(genera_psd.PARTI)
+    for parti in (None, genera_psd_angolo.PARTI): assert "@@" not in genera_psd.script_js(parti)
+    js = genera_psd.script_js(genera_psd_angolo.PARTI)
+    assert "rotAround(L,it.ang" in js and "BitsPerChannelType.EIGHT" in js and js.count('var log=[]; var STEP="start";') == 1
+    assert "(it.txt==\"txt\"?addTextX:addText)(doc,it,ids[it.side])" in js and "addTextX" not in genera_psd.script_js()
 
 
 def test_anteprima_e_analizza(prj):
@@ -114,6 +115,24 @@ def test_genera_psd_con_photoshop_finto(prj, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["genera_psd_angolo", "--progetto", prj, "--spread", "1,4"])
     runpy.run_module("impaginatore.motore.genera_psd_angolo", run_name="__main__")
     assert '"n": 4' not in ps.script[-1]
+
+
+def test_genera_psd_base_e_registro_rovinato(prj, monkeypatch, capsys):
+    """genera_psd senza le parti estese; un psd_generati.json rovinato vale come vuoto: i PSD esistenti non si sovrascrivono"""
+    from impaginatore.motore import genera_psd
+    from impaginatore.piattaforma import photoshop
+    ps = PhotoshopFinto()
+    for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
+    assert genera_psd.main(["--progetto", prj, "--spread", "1,2"]) == 0
+    assert "rotAround" not in ps.script[-1] and '"ang"' not in ps.script[-1] and '"wb": null' in ps.script[-1]
+    reg = os.path.join(prj, "_cache", "psd_generati.json")
+    capsys.readouterr(); uscite = []
+    for rotto in ("{rotto", "[1, 2]"):
+        with open(reg, "w", encoding="utf-8") as f: f.write(rotto)
+        n = len(ps.script)
+        assert genera_psd.main(["--progetto", prj, "--spread", "1"]) == 0 and len(ps.script) == n
+        uscite.append(capsys.readouterr().out)
+    assert all("SALTATO spread 1: esiste e non l'ho generato io" in u for u in uscite) and "psd_generati.json non leggibile" in uscite[0]
 
 
 def test_album_senza_progetto_non_legge_niente():
