@@ -55,7 +55,7 @@ def test_xss_da_nomi_ed_exif(home_srv, apri_editor, tmp_path):
         _senza_iniezioni(b)
         b.apri(c.srv.indirizzo_avvio(), 2)
         assert nome in b.js("S.photos.map(p => p.n)")
-        b.js("(async () => { const t = await api('/api/templates', { photos: S.photos.map(p => p.n) }); await op({ op: 'newspread', pos: 0, L: t.items[0].L, R: t.items[0].R }); })()")
+        b.js("(async () => { const t = await api('/api/templates', { photos: S.photos.map(p => p.n) }); await op({ op: 'newspread', pos: 0, L: t.items[0].L, R: t.items[0].R }); go(0); })()")
         b.js(f"(() => {{ const it = slotsOf(0).find(i => i.name === {json.dumps(nome)}); sel = {{ s: 0, side: it.side, idx: it.idx }}; msel = [it.side + ':' + it.idx]; render(); }})()")
         b.pausa(1.5)
         assert CATTIVO in b.js("document.getElementById('info').innerText"), "la data EXIF nel pannello, come testo"
