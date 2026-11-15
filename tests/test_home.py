@@ -2,6 +2,7 @@
 l'editor vero parte come processo a parte solo in test_processi.py)."""
 import json
 import os
+import types
 import zipfile
 
 import pytest
@@ -135,6 +136,73 @@ def test_esci(home_srv):
         if home_srv.uscite: break
         time.sleep(0.05)
     assert home_srv.uscite == [1]
+
+
+class _Processo:
+    """editor avviato dalla schermata (finto): poll() None = ancora aperto; terminate() può fallire se è già chiuso"""
+
+    def __init__(self, fine=None, rotto=False): self.fine, self.rotto, self.fermato = fine, rotto, False
+
+    def poll(self): return self.fine
+
+    def terminate(self):
+        if self.rotto: raise ProcessLookupError("già chiuso")
+        self.fermato = True
+
+
+def test_apri_riusa_editor_lanciato_da_qui(home, monkeypatch):
+    """apri: un editor del progetto lanciato da qui e ancora aperto si riusa; se è chiuso si cerca un editor già attivo"""
+    p = home.nuovo({"nome": "Riuso", "w": 30, "h": 30})
+    monkeypatch.setattr(home.subprocess, "Popen", lambda *a, **k: pytest.fail("nessun editor nuovo"))
+    home.EDITORS[p] = (_Processo(), 8811)
+    assert home.apri(p) == 8811
+    home.EDITORS[p] = (_Processo(fine=0), 8811); monkeypatch.setattr(home, "gia_attivo", lambda path: 8822 if path == p else None)
+    assert home.apri(p) == 8822
+
+
+def test_nuovo_con_cartella_foto_che_non_esiste(home, tmp_path):
+    with pytest.raises(ValueError, match="La cartella delle foto non esiste"): home.nuovo({"nome": "X", "w": 30, "h": 30, "foto": str(tmp_path / "manca")})
+    assert not os.path.exists(home.PROGETTI) or os.listdir(home.PROGETTI) == []
+
+
+def test_nessuna_porta_libera(home, monkeypatch):
+    monkeypatch.setattr(home, "_porta_libera", lambda pt: False)
+    with pytest.raises(RuntimeError, match="nessuna porta libera"): home.porta_libera(8801)
+
+
+def test_esci_e_riavvio_con_editor_gia_chiusi(home_srv, monkeypatch):
+    """uscita e riavvio fermano gli editor aperti; uno già chiuso (terminate fallisce) non blocca gli altri"""
+    from aiuti import attendi
+
+    from impaginatore.piattaforma import processi
+    vivo, chiuso = _Processo(), _Processo(rotto=True)
+    home_srv.modulo.EDITORS.update({"/a": (chiuso, 1), "/b": (vivo, 2)})
+    assert home_srv.post("/api/esci") == {"ok": True} and vivo.fermato
+    attendi(lambda: home_srv.uscite == [1], 10, 0.02)
+    vivo.fermato = False; lanci = []
+    monkeypatch.delenv("IMPAGINATORE_SENZA_RIAVVIO")
+    monkeypatch.setattr(processi, "rilancia_dopo", lambda argv, r, gettone=None: lanci.append(argv))
+    monkeypatch.setattr(home_srv.modulo.threading, "Thread", lambda target, daemon: types.SimpleNamespace(start=target))
+    monkeypatch.setattr(home_srv.modulo.time, "sleep", lambda s: None)
+    home_srv.modulo.riavvia_programma()
+    assert vivo.fermato and len(lanci) == 1 and home_srv.uscite == [1, 1]
+
+
+def test_aggiorna_e_ripristina_riusciti(home_srv, monkeypatch):
+    """con gli aggiornamenti attivi la pagina riceve l'esito di aggiorna e ripristina"""
+    chiesti = []
+    finti = types.SimpleNamespace(aggiorna=lambda: chiesti.append("aggiorna") or True, ripristina=lambda c: chiesti.append(c) or dict(n="2", caricato=True))
+    monkeypatch.setattr(home_srv.modulo, "AGGIORNAMENTI", finti)
+    assert home_srv.post("/api/aggiorna") == {"ok": True}
+    assert home_srv.post("/api/ripristina", {"codice": "abc1234"}) == {"n": "2", "caricato": True} and chiesti == ["aggiorna", "abc1234"]
+
+
+def test_apri_browser(home, monkeypatch):
+    from aiuti import attendi
+    aperti = []
+    monkeypatch.setattr(home.webbrowser, "open", aperti.append)
+    home.apri_browser("http://127.0.0.1:1/avvio?c=x", ritardo=0)
+    assert attendi(lambda: aperti, 10, 0.02) == ["http://127.0.0.1:1/avvio?c=x"]
 
 
 def test_porte(home):
