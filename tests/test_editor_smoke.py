@@ -12,6 +12,8 @@ import pytest
 from aiuti import attendi_log
 from PIL import Image
 
+from impaginatore.piattaforma import dialoghi
+
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -29,7 +31,7 @@ def _esporta(c, **o):
 @pytest.mark.skipif(not shutil.which("node"), reason="serve node per controllare la sintassi")
 @pytest.mark.parametrize("pagina", ["index.html", "home.html"])
 def test_codice_della_pagina_senza_errori_di_sintassi(pagina):
-    with open(os.path.join(RADICE, "src", "impaginatore", "risorse", pagina), encoding="utf-8") as f: js = "\n".join(re.findall(r"<script>(.*?)</script>", f.read(), re.S))
+    with open(os.path.join(RADICE, "src", "impaginatore", "risorse", pagina), encoding="utf-8") as f: js = "\n".join(re.findall(r"<script[^>]*>(.*?)</script>", f.read(), re.S))
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as tf: tf.write(js)
     try:
         r = subprocess.run(["node", "--check", tf.name], capture_output=True, text=True, encoding="utf-8")
@@ -96,7 +98,10 @@ def test_esportazioni_ed_errori(editor, tmp_path):
     c, proj = editor, editor.progetto; st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
     for k in range(2):
         t = c.post("/api/templates", {"photos": names[2 * k:2 * k + 2]})["items"][0]; st = _op(c, st, {"op": "newspread", "pos": k, "L": t["L"], "R": t["R"]})
-    dj = str(tmp_path / "out_jpg"); ok, L = _esporta(c, fmt="jpg", range="", dest=dj, res="bozza", q=80)
+    dj = str(tmp_path / "out_jpg")
+    assert c.codice("/api/export", dict(fmt="jpg", range="", dest=dj)) == 403, "destinazione mai scelta con la finestra di sistema"
+    dialoghi.imposta(type("F", (dialoghi.Dialoghi,), {"_scegli": lambda self, t, m: [str(tmp_path)]})()); c.post("/api/pick", {"kind": "folder"})
+    ok, L = _esporta(c, fmt="jpg", range="", dest=dj, res="bozza", q=80)
     jp = sorted(os.listdir(dj))
     assert ok and len(jp) == 2 and any(x.startswith("RISULTATO:") for x in L), L[-3:]
     assert all(Image.open(os.path.join(dj, f)).size[0] > 100 for f in jp) and not [f for f in jp if f.endswith(".tmp")]
@@ -119,13 +124,13 @@ def test_psd_senza_photoshop(editor, tmp_path, monkeypatch):
     c = editor; st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
     t = c.post("/api/templates", {"photos": names[:2]})["items"][0]; _op(c, st, {"op": "newspread", "pos": 0, "L": t["L"], "R": t["R"]})
     monkeypatch.setattr(photoshop, "trova", lambda: None)
-    ok, r = c.prova("/api/export", {"fmt": "psd", "range": "1", "dest": str(tmp_path / "psd")})
+    ok, r = c.prova("/api/export", {"fmt": "psd", "range": "1", "dest": os.path.join(c.progetto, "PSD")})
     assert not ok and r["errore"] == photoshop.motivo_assente()
 
 
 def test_pagina_e_risorse(editor):
     c = editor
-    html = c.raw("/").decode("utf-8"); assert "<script>" in html
+    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and f'content="{c.gettone}"' in html
     assert c.get("/api/ping")["path"] == c.progetto
     assert c.get("/api/state")["home"] == "http://127.0.0.1:9"
     assert isinstance(c.get("/api/log"), list) and isinstance(c.get("/api/versioni"), list)
@@ -134,9 +139,9 @@ def test_pagina_e_risorse(editor):
     ok, r = c.prova("/api/nonesiste", {}); assert not ok
     n = c.get("/api/state")["photos"][0]["n"]
     assert c.raw(f"/img/thumb/{n}?w=200")[:2] == b"\xff\xd8"
-    req = urllib.request.Request(c.url(f"/img/thumb/{n}?w=200"))
+    req = urllib.request.Request(c.url(f"/img/thumb/{n}?w=200"), headers={"X-Impaginatore-Gettone": c.gettone})
     with urllib.request.urlopen(req) as r: et = r.headers["ETag"]
-    req = urllib.request.Request(c.url(f"/img/thumb/{n}?w=200"), headers={"If-None-Match": et})
+    req = urllib.request.Request(c.url(f"/img/thumb/{n}?w=200"), headers={"If-None-Match": et, "X-Impaginatore-Gettone": c.gettone})
     try: urllib.request.urlopen(req); assert False, "doveva rispondere 304"
     except urllib.error.HTTPError as e: assert e.code == 304
     assert "dim" in c.get(f"/api/info/{n}")

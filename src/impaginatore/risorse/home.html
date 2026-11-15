@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
+<meta name="gettone" content="__GETTONE__">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Impaginatore</title>
 <style>
@@ -113,31 +114,36 @@
 
 <div class="veil" id="vwait"><div class="dlg" style="text-align:center;width:300px"><div class="spin"></div><div id="wmsg">Apro il progetto…</div></div></div>
 
-<script>
+<script nonce="__NONCE__">
 const $ = id => document.getElementById(id);
-async function api(p, b) { const r = await fetch(p, b === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); const j = await r.json(); if (j.errore) throw new Error(j.errore); return j; }
+const GETTONE = document.querySelector('meta[name="gettone"]').content;       // gettone di questa sessione: senza, il server non risponde (docs/architettura/SICUREZZA.md)
+const rq = (p, o = {}) => fetch(p, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
+const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // anche dentro url('...') dei CSS
+let SIS = "";                                                                    // sistema operativo (dal server): «Mostra nel Finder» o in Esplora risorse
+const lblFinder = () => ({ mac: "Mostra nel Finder", windows: "Mostra in Esplora risorse" }[SIS] || "Mostra nel gestore file");
+async function api(p, b) { const r = await rq(p, b === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); const j = await r.json(); if (j.errore) throw new Error(j.errore); return j; }
 const fmtD = t => new Date(t * 1000).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
 const cm = v => String(v).replace(".", ",");
 let LIST = [];
 
 async function load() {
-  const d = await api("/api/progetti"); LIST = d.progetti; $("where").textContent = "I nuovi progetti vengono salvati in: " + d.cartella;
+  const d = await api("/api/progetti"); LIST = d.progetti; SIS = d.sistema || ""; $("where").textContent = "I nuovi progetti vengono salvati in: " + d.cartella;
   const g = $("grid"); g.innerHTML = "";
   const nw = document.createElement("div"); nw.className = "card new"; nw.innerHTML = "<b>+</b><span>Nuovo progetto</span>"; nw.onclick = openNew; g.appendChild(nw);
   LIST.forEach(p => {
     const c = document.createElement("div"); c.className = "card";
-    c.innerHTML = `<div class="cv" ${p.cover ? `style="background-image:url('/api/cover?path=${encodeURIComponent(p.path)}&n=${encodeURIComponent(p.cover)}')"` : ""}>${p.cover ? "" : "nessuna foto"}</div>
-      <div class="tx"><div class="nm">${esc(p.nome)}</div><div class="meta">${p.cm ? cm(p.cm[0]) + " × " + cm(p.cm[1]) + " cm · " : ""}${p.spread} spread · ${p.foto} foto</div><div class="meta">${p.errore ? "errore: " + esc(p.errore) : "modificato " + fmtD(p.mod)}</div></div>
+    c.innerHTML = `<div class="cv" ${p.cover ? `style="background-image:url('/api/cover?path=${encU(p.path)}&n=${encU(p.cover)}')"` : ""}>${p.cover ? "" : "nessuna foto"}</div>
+      <div class="tx"><div class="nm">${esc(p.nome)}</div><div class="meta">${p.cm ? esc(cm(p.cm[0]) + " × " + cm(p.cm[1])) + " cm · " : ""}${esc(p.spread)} spread · ${esc(p.foto)} foto</div><div class="meta">${p.errore ? "errore: " + esc(p.errore) : "modificato " + fmtD(p.mod)}</div></div>
       ${p.aperto ? '<span class="dot">aperto</span>' : ""}<button class="mn">⋯</button>`;
     c.onclick = e => { if (e.target.classList.contains("mn")) { menu(e, p); return; } openProject(p); };
     g.appendChild(c);
   });
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const esc = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato passa da qui prima di innerHTML
 
 function menu(e, p) {
   e.stopPropagation(); const m = $("menu");
-  m.innerHTML = `<div data-a="open">Apri</div><div data-a="finder">Mostra nel Finder</div>` + (p.esterno ? `<div data-a="rim">Togli dall'elenco</div>` : `<div data-a="cest" class="d">Metti nel Cestino…</div>`);
+  m.innerHTML = `<div data-a="open">Apri</div><div data-a="finder">${lblFinder()}</div>` + (p.esterno ? `<div data-a="rim">Togli dall'elenco</div>` : `<div data-a="cest" class="d">Metti nel Cestino…</div>`);
   m.style.display = "block"; m.style.left = Math.min(e.clientX, innerWidth - 210) + "px"; m.style.top = e.clientY + "px";
   m.onclick = async ev => {
     const a = ev.target.dataset.a; m.style.display = "none"; if (!a) return;
@@ -155,7 +161,7 @@ async function openProject(p) {
   $("wmsg").textContent = "Apro «" + p.nome + "»…"; $("vwait").style.display = "flex";
   try {
     const { porta } = await api("/api/apri", { path: p.path });
-    for (let i = 0; i < 240; i++) { if ((await api("/api/pronto?porta=" + porta)).pronto) { location.href = "http://127.0.0.1:" + porta + "/"; return; } await new Promise(r => setTimeout(r, 500)); }
+    for (let i = 0; i < 240; i++) { const r = await api("/api/pronto?porta=" + porta); if (r.pronto) { location.href = r.indirizzo; return; } await new Promise(r => setTimeout(r, 500)); }
     throw new Error("L'editor non si è avviato (guarda Progetti/editor.log)");
   } catch (e) { $("vwait").style.display = "none"; alert(e.message); }
 }
@@ -167,7 +173,7 @@ function openNew() { $("err").textContent = ""; $("vnew").style.display = "flex"
 $("w").oninput = $("h").oninput = pinfo;
 document.querySelectorAll(".pre button").forEach(b => b.onclick = () => { const [w, h] = b.dataset.p.split(","); $("w").value = cm(w); $("h").value = cm(h); pinfo(); });
 $("advt").onclick = () => { $("adv").classList.toggle("on"); $("advt").textContent = ($("adv").classList.contains("on") ? "▾" : "▸") + " Avanzate (abbondanza, spazio tra le foto, margine)"; };
-$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.path.split("/").filter(Boolean).pop().replace(/\s*JPG$/i, ""); } } catch (e) { $("err").textContent = e.message; } };
+$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.path.split(/[\\/]/).filter(Boolean).pop().replace(/\s*JPG$/i, ""); } } catch (e) { $("err").textContent = e.message; } };
 $("cancel").onclick = () => $("vnew").style.display = "none";
 $("create").onclick = async () => {
   try {
@@ -179,19 +185,19 @@ $("nome").onkeydown = e => { if (e.key === "Enter") $("create").onclick(); };
 $("addzip").onclick = async () => { const b = $("addzip"); b.disabled = true; b.textContent = "Importo…"; try { const r = await api("/api/importa-zip", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Importa ZIP…"; };
 $("add").onclick = async () => { try { const r = await api("/api/aggiungi", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } };
 $("quit").onclick = async () => { if (confirm("Chiudere il programma? Le modifiche sono già salvate.")) { try { await api("/api/esci", {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;color:#aaa">Programma chiuso. Puoi chiudere questa scheda.</p>'; } };
-async function checkUpd() { try { const r = await (await fetch("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
+async function checkUpd() { try { const r = await (await rq("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
 $("upd").onclick = async () => { const b = $("upd"); if (!confirm("Novità:\n" + b.dataset.n + "\n\nAggiorno e riavvio il programma? Il lavoro è già salvato.")) return; b.textContent = "Aggiorno…"; b.disabled = true; try { await api("/api/aggiorna", {}); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Aggiornato: il programma si riapre da solo tra qualche secondo…</p>'; setTimeout(() => location.reload(), 6000); } catch (e) { alert(e.message); b.disabled = false; b.textContent = "⬆ Aggiornamento disponibile"; } };
 const nomeV = v => v.rel ? `${v.rel} (build ${v.n})` : `${v.n}`, brev = v => v.rel || v.n;
-const fmtV = v => v ? `<b>Versione ${nomeV(v)}</b> · ${v.data} · ${v.titolo} <span style="color:var(--dim)">(${v.codice})</span>` : "—";
+const fmtV = v => v ? `<b>Versione ${esc(nomeV(v))}</b> · ${esc(v.data)} · ${esc(v.titolo)} <span style="color:var(--dim)">(${esc(v.codice)})</span>` : "—";
 function showVer(r) {
-  const vb = $("verb"); vb.className = r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
-  $("vtxt").textContent = !r.attuale ? "Versione ?" : r.errore ? `Versione ${brev(r.attuale)} · non riesco a controllare` : r.da_aggiornare ? `Versione ${brev(r.attuale)} · disponibile la ${r.ultima ? brev(r.ultima) : "nuova"} — clicca per aggiornare` : `Versione ${brev(r.attuale)} · aggiornata`;
+  const vb = $("verb"), spenti = r.disponibile === false; vb.className = spenti ? "" : r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
+  $("vtxt").textContent = !r.attuale ? "Versione ?" : spenti ? `Versione ${brev(r.attuale)}` : r.errore ? `Versione ${brev(r.attuale)} · non riesco a controllare` : r.da_aggiornare ? `Versione ${brev(r.attuale)} · disponibile la ${r.ultima ? brev(r.ultima) : "nuova"} — clicca per aggiornare` : `Versione ${brev(r.attuale)} · aggiornata`;
   const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "mai";
-  $("vbody").innerHTML = `In uso: ${fmtV(r.attuale)}<br>` + (r.errore ? `<span style="color:#e5484d">Non riesco a controllare GitHub (internet?)</span>` : r.da_aggiornare ? `Disponibile: ${fmtV(r.ultima)}<br><b>Novità:</b><br>${(r.novita || []).map(x => "• " + x).join("<br>")}` : `<span style="color:#5cb85c">✓ Hai già l'ultima versione</span>`) + `<br><span style="color:var(--dim);font-size:12px">Ultimo controllo: ${ago}</span>`;
-  $("vgo").style.display = r.da_aggiornare ? "" : "none";
+  $("vbody").innerHTML = `In uso: ${fmtV(r.attuale)}<br>` + (spenti ? `<span style="color:var(--dim)">${esc(r.motivo || "Aggiornamenti automatici non disponibili")}</span>` : r.errore ? `<span style="color:#e5484d">Non riesco a controllare gli aggiornamenti (internet?)</span>` : r.da_aggiornare ? `Disponibile: ${fmtV(r.ultima)}<br><b>Novità:</b><br>${(r.novita || []).map(x => "• " + esc(x)).join("<br>")}` : `<span style="color:#5cb85c">✓ Hai già l'ultima versione</span>`) + `<br><span style="color:var(--dim);font-size:12px">Ultimo controllo: ${ago}</span>`;
+  $("vgo").style.display = r.da_aggiornare ? "" : "none"; $("vchk").style.display = spenti ? "none" : "";
 }
-$("verb").onclick = async () => { $("vver").style.display = "flex"; try { showVer(await (await fetch("/api/aggiornamento")).json()); } catch (e) {} };
-$("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (L.style.display === "block") { L.style.display = "none"; return; } L.style.display = "block"; L.textContent = "…"; try { const r = await (await fetch("/api/versioni")).json(); L.innerHTML = ""; r.versioni.forEach(v => { const d = document.createElement("div"); d.style.cssText = "display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)"; d.innerHTML = `<span style="flex:1"><b>Versione ${v.n}</b> · ${v.data}<br><span style="color:var(--dim)">${v.titolo.replace(/</g, "&lt;")}</span></span>` + (v.attuale ? '<span style="color:#3fb950">in uso</span>' : '<button>Torna a questa</button>'); const b = d.querySelector("button"); if (b) b.onclick = async () => { if (!confirm(`Tornare alla versione ${v.n}?\n\n${v.titolo}\n\nIl programma si riavvia. I tuoi progetti non cambiano. Le versioni successive restano salvate.`)) return; b.textContent = "Ripristino…"; try { const x = await api("/api/ripristina", { codice: v.codice }); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Tornato alla versione ' + x.n + (x.caricato ? "" : " (solo su questo Mac: non sono riuscito a caricarla su GitHub)") + '. Il programma si riapre da solo…</p>'; setTimeout(() => location.reload(), 6000); } catch (err) { alert(err.message); b.textContent = "Torna a questa"; } }; L.appendChild(d); }); } catch (err) { L.textContent = "Non riesco a leggere le versioni"; } };
+$("verb").onclick = async () => { $("vver").style.display = "flex"; try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} };
+$("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (L.style.display === "block") { L.style.display = "none"; return; } L.style.display = "block"; L.textContent = "…"; try { const r = await (await rq("/api/versioni")).json(); L.innerHTML = ""; r.versioni.forEach(v => { const d = document.createElement("div"); d.style.cssText = "display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)"; d.innerHTML = `<span style="flex:1"><b>Versione ${esc(v.n)}</b> · ${esc(v.data)}<br><span style="color:var(--dim)">${esc(v.titolo)}</span></span>` + (v.attuale ? '<span style="color:#3fb950">in uso</span>' : '<button>Torna a questa</button>'); const b = d.querySelector("button"); if (b) b.onclick = async () => { if (!confirm(`Tornare alla versione ${v.n}?\n\n${v.titolo}\n\nIl programma si riavvia. I tuoi progetti non cambiano. Le versioni successive restano salvate.`)) return; b.textContent = "Ripristino…"; try { const x = await api("/api/ripristina", { codice: v.codice }); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Tornato alla versione ' + esc(x.n) + (x.caricato ? "" : " (solo su questo Mac: non sono riuscito a caricarla su GitHub)") + '. Il programma si riapre da solo…</p>'; setTimeout(() => location.reload(), 6000); } catch (err) { alert(err.message); b.textContent = "Torna a questa"; } }; L.appendChild(d); }); } catch (err) { L.textContent = "Non riesco a leggere le versioni"; } };
 $("vclose").onclick = () => $("vver").style.display = "none";
 $("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
 $("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };

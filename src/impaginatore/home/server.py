@@ -11,13 +11,12 @@ Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
 Importare il modulo non fa niente: configura() le prepara, crea_server() apre la porta, main() fa tutto.
 """
-import argparse, json, os, re, shutil, subprocess, sys, threading, time, urllib.request, webbrowser
-from http.server import BaseHTTPRequestHandler
+import argparse, json, logging, os, re, shutil, subprocess, sys, threading, time, webbrowser
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, aggiornamenti, formato, risorse
+from .. import __version__, aggiornamenti, formato, giornale, percorsi, piattaforma, sicurezza
 from ..piattaforma import azioni, cartelle, dialoghi, processi
-from ..servizio import ServerLocale, porta_libera as _porta_libera
+from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 
 PORTA_PREDEFINITA = 8765
 PROGETTI = None                                # cartella dei progetti nuovi (configura)
@@ -26,6 +25,9 @@ PORTA = PORTA_PREDEFINITA                      # porta di questa schermata: gli 
 AGGIORNAMENTI = aggiornamenti.NonDisponibili()
 LOCK = threading.Lock()
 EDITORS = {}                                   # percorso progetto -> (Popen, porta)
+SERVER = None                                  # server della schermata (crea_server): il suo gettone resta dopo un riavvio
+RADICI = percorsi.Radici(lambda: [PROGETTI] + registro())      # cartelle che la pagina può nominare: progetti e cartelle scelte con le finestre di sistema
+log = logging.getLogger("impaginatore.home")
 
 
 def configura(progetti=None, porta=PORTA_PREDEFINITA, aggiorna=None):
@@ -111,17 +113,17 @@ def porta_stabile(path):
 def gia_attivo(path):
     """porta di un editor di questo progetto già in funzione (anche se non lanciato da qui), altrimenti None"""
     for pt in [porta_stabile(path)] + list(range(8801, 8900)):
+        g = sicurezza.gettone_di("editor", pt)              # solo gli editor di questo utente hanno il file di sessione (e rispondono al gettone)
+        if not g: continue
         try:
-            if _porta_libera(pt): continue                  # nessuno in ascolto
-            d = json.load(urllib.request.urlopen(f"http://127.0.0.1:{pt}/api/ping", timeout=1))
-            if d.get("path") == path: return pt
-        except Exception: pass
+            if sicurezza.chiedi(pt, "/api/ping", g, timeout=1).get("path") == path: return pt
+        except (OSError, ValueError) as e: log.debug("editor sulla porta %s non risponde: %s", pt, e)
     return None
 
 
 def pronto(pt):
-    try: return urllib.request.urlopen(f"http://127.0.0.1:{pt}/api/ping", timeout=1).status == 200
-    except Exception: return False
+    """indirizzo di avvio (monouso) dell'editor sulla porta pt se risponde, altrimenti None"""
+    return sicurezza.indirizzo_avvio("editor", pt, timeout=1)
 
 
 def apri(path):
@@ -169,7 +171,8 @@ def riavvia_programma():
         for pr, _ in EDITORS.values():
             try: pr.terminate()
             except Exception: pass
-        processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5)
+        processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5,
+                               gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
     threading.Thread(target=riavvia, daemon=True).start()
 
@@ -179,25 +182,27 @@ def esci():
     os._exit(0)
 
 
-class H(BaseHTTPRequestHandler):
+class H(Gestore):
+    COOKIE = ("/", "/api/cover")                  # pagina e copertine (immagini): anche con il solo cookie
+
     def log_message(self, *a): pass
 
     def send(self, body, ctype="application/json", code=200):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()
         self.send_response(code); self.send_header("Content-Type", ctype); self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Cache-Control", "no-store" if ctype != "image/jpeg" else "max-age=600"); self.end_headers(); self.wfile.write(body)
 
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
-            if u.path == "/": self.send(risorse.leggi("home.html"), "text/html; charset=utf-8")
+            if u.path == "/": self.pagina("home.html")
             elif u.path == "/api/ping": self.send({"ok": True})
-            elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI))
+            elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI, sistema=piattaforma.sistema()))
             elif u.path == "/api/aggiornamento": self.send(AGGIORNAMENTI.stato())       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
             elif u.path == "/api/versioni": self.send({"versioni": AGGIORNAMENTI.versioni()})
-            elif u.path == "/api/pronto": self.send({"pronto": pronto(int(q["porta"][0]))})
+            elif u.path == "/api/pronto":
+                a = pronto(int(q["porta"][0])); self.send({"pronto": bool(a), "indirizzo": a})
             elif u.path == "/api/cover":
                 p = q["path"][0]; n = q["n"][0]
                 if p not in [x["path"] for x in progetti()] or "/" in n or "\\" in n or n in ("", ".", ".."): raise ValueError("no")      # solo un nome di file (anche con le barre di Windows)
@@ -206,9 +211,12 @@ class H(BaseHTTPRequestHandler):
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
     def do_POST(self):
-        u = urlparse(self.path); n = int(self.headers.get("Content-Length", 0)); d = json.loads(self.rfile.read(n) or b"{}")
+        u = urlparse(self.path)
         try:
-            if u.path == "/api/nuovo": self.send({"path": nuovo(d)})
+            d = self.corpo()
+            if u.path == "/api/nuovo":
+                if str(d.get("foto") or "").strip(): RADICI.controlla(str(d["foto"]).strip(), "quella cartella delle foto")
+                self.send({"path": nuovo(d)})
             elif u.path == "/api/apri": self.send({"porta": apri(d["path"])})
             elif u.path == "/api/aggiungi":
                 p = scegli_cartella()
@@ -216,7 +224,7 @@ class H(BaseHTTPRequestHandler):
                 if not os.path.exists(os.path.join(p, "progetto.json")): raise ValueError("In quella cartella non c'è progetto.json: scegli la cartella del progetto")
                 salva_registro(registro() + [p]); self.send({"path": p})
             elif u.path == "/api/scegli-foto":
-                self.send({"path": scegli_cartella("Scegli la cartella con le foto del cliente")})
+                p = scegli_cartella("Scegli la cartella con le foto del cliente"); RADICI.scelta(p); self.send({"path": p})
             elif u.path == "/api/aggiorna": self.send({"ok": AGGIORNAMENTI.aggiorna()})
             elif u.path == "/api/ripristina": self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
             elif u.path == "/api/controlla": self.send(AGGIORNAMENTI.controlla())
@@ -225,10 +233,11 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/rimuovi":
                 salva_registro([p for p in registro() if p != d["path"]]); self.send({"ok": True})
             elif u.path == "/api/cestino":
-                p = os.path.abspath(d["path"])
-                if not p.startswith(PROGETTI + os.sep): raise ValueError("Solo i progetti creati qui si possono mettere nel Cestino")
+                p = percorsi.reale(d["path"])                 # collegamenti e «..» risolti: deve essere davvero un progetto dentro la cartella dei progetti
+                if p == percorsi.reale(PROGETTI) or not percorsi.dentro(p, PROGETTI) or not os.path.isfile(os.path.join(p, "progetto.json")):
+                    raise ValueError("Solo i progetti creati qui si possono mettere nel Cestino")
                 azioni.cestina(p); self.send({"ok": True})
-            elif u.path == "/api/finder": azioni.mostra(d["path"]); self.send({"ok": True})
+            elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel percorso")); self.send({"ok": True})
             elif u.path == "/api/esci":
                 self.send({"ok": True})
                 for pr, _ in EDITORS.values():
@@ -236,23 +245,26 @@ class H(BaseHTTPRequestHandler):
                     except Exception: pass
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
             else: self.send({"errore": "non trovato"}, code=404)
+        except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 
-def crea_server(porta=None):
-    """server HTTP della schermata su 127.0.0.1 (porta 0 = una libera; None = quella di configura). Non lo avvia: serve_forever()"""
-    global PORTA
+def crea_server(porta=None, gettone=None):
+    """server HTTP della schermata su 127.0.0.1 (porta 0 = una libera; None = quella di configura). Non lo avvia: serve_forever().
+    gettone: quello della sessione (None = uno nuovo); il file di sessione per i client locali si scrive qui"""
+    global PORTA, SERVER
     if PROGETTI is None: configura()
-    srv = ServerLocale(("127.0.0.1", PORTA if porta is None else porta), H)
-    PORTA = srv.server_address[1]
+    srv = ServerLocale(("127.0.0.1", PORTA if porta is None else porta), H, tipo="home", gettone=gettone, progetti=PROGETTI)
+    PORTA = srv.server_address[1]; SERVER = srv
     return srv
 
 
 def gia_aperto(porta):
     """la schermata dei progetti risponde già su questa porta?"""
-    try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{porta}/api/ping", timeout=1) as r: return json.load(r).get("ok") is True
-    except Exception: return False
+    g = sicurezza.gettone_di("home", porta)
+    if not g: return False
+    try: return sicurezza.chiedi(porta, "/api/ping", g, timeout=1).get("ok") is True
+    except (OSError, ValueError): return False
 
 
 def apri_browser(indirizzo, ritardo=0.3):
@@ -269,20 +281,21 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if args.porta and not _porta_libera(args.porta):      # porta 0 = una libera qualsiasi
         indirizzo = f"http://127.0.0.1:{args.porta}/"
-        if gia_aperto(args.porta):                         # già in funzione: basta aprire la pagina
+        if gia_aperto(args.porta):                         # già in funzione: basta aprire la pagina (con un indirizzo di avvio nuovo)
             print(f"Impaginatore è già aperto: {indirizzo}", flush=True)
-            if not args.no_browser and not args.daemon: webbrowser.open(indirizzo)
+            if not args.no_browser: webbrowser.open(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
             return 0
         print(f"La porta {args.porta} è occupata da un altro programma: scegline un'altra con --porta", file=sys.stderr)
         return 1
     configura(args.progetti, args.porta)
     if args.daemon: processi.stacca(os.path.join(PROGETTI, "impaginatore.log"))       # doppio fork + nuova sessione: non muore quando l'app che l'ha lanciato si chiude
+    giornale.configura("home")
     fermo = threading.Event()
     threading.Thread(target=AGGIORNAMENTI.ciclo, args=(fermo,), daemon=True).start()
-    srv = crea_server(args.porta)
+    srv = crea_server(args.porta, sicurezza.gettone_del_processo())
     indirizzo = f"http://127.0.0.1:{PORTA}/"
     print(f"Impaginatore: {indirizzo}  | progetti: {PROGETTI}", flush=True)
-    if not args.no_browser and not args.daemon: apri_browser(indirizzo)            # con --daemon il browser lo apre Impaginatore.app
+    if not args.no_browser: apri_browser(srv.indirizzo_avvio())                    # anche con --daemon: l'indirizzo semplice che apre Impaginatore.app 1.x non basta più (SICUREZZA.md)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass
     finally: fermo.set(); srv.server_close()

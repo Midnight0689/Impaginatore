@@ -11,30 +11,30 @@ del motore. Importare il modulo non legge niente: inizializza(progetto) carica i
 porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
 main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, hashlib, io, json, os, re, shutil, subprocess, sys, threading, time
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import parse_qs, urlparse
+import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time
+from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, risorse
+from .. import __version__, formato, giornale, percorsi, piattaforma, risorse, sicurezza
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import testo as TX
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..piattaforma import font as pfont
 from ..piattaforma import photoshop as pps
-from ..servizio import ServerLocale
+from ..servizio import Gestore, ServerLocale
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
 HOME = ""                                            # indirizzo della schermata dei progetti: il pulsante «Progetti» torna lì
+log = logging.getLogger("impaginatore.editor")
 
 def _raccogli_foto():                                # foto importate in <progetto>/Foto quando il progetto legge un'altra cartella: le aggiungo, così compaiono sempre
     try:
         pj = os.path.join(PROJ, "progetto.json"); c = formato.leggi_json(pj); d = os.path.join(PROJ, "Foto")
         if not os.path.isdir(d) or os.path.abspath(d) == os.path.abspath(c.get("foto", "")): return
-        have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith((".jpg", ".jpeg")) and not f.startswith(".") and os.path.join(d, f) not in have]
+        have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith(A.estensioni()) and not f.startswith(".") and os.path.join(d, f) not in have]
         if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
     except Exception as e: print("raccogli foto:", e, flush=True)
 def _ripara_percorsi():
@@ -707,6 +707,65 @@ def apply(o):
         SP.insert(o["s"] + 1, [["W", [dict(x) for x in A.CV(u[0] + 1)]], ["I", [A.FULL(u[1] + 1)]]])
     else: raise ValueError("operazione sconosciuta: " + t)
 
+def _intero(v, n, cosa):
+    """v è un intero (non un bool) tra 0 e n-1? Lo restituisce, altrimenti ValueError"""
+    if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v < n: raise ValueError(f"{cosa} inesistente: {v!r}")
+    return v
+
+def _pagina(s, side):
+    if side not in ("L", "R"): raise ValueError(f"pagina non valida: {side!r}")
+    return SP[s][0 if side == "L" else 1][1]
+
+def _elemento(ref):
+    """[spread, lato, indice] di un elemento che esiste"""
+    if not isinstance(ref, (list, tuple)) or len(ref) != 3: raise ValueError(f"elemento non valido: {ref!r}")
+    s = _intero(ref[0], len(SP), "spread"); _intero(ref[2], len(_pagina(s, ref[1])), "elemento")
+
+def _foto(n):
+    if not isinstance(n, str) or n not in A.IDX: raise ValueError(f"foto sconosciuta: {n!r}")
+
+def valida(o):
+    """argomenti di un'operazione controllati PRIMA di toccare lo stato (BUG-001): spread, pagine, elementi e foto devono esistere"""
+    if not isinstance(o.get("op"), str): raise ValueError("operazione mancante")
+    t = o["op"]
+    if "s" in o:
+        if t == "new": _intero(o["s"] + 1 if isinstance(o["s"], int) and not isinstance(o["s"], bool) else o["s"], len(SP) + 1, "spread")
+        else: _intero(o["s"], len(SP), "spread")
+    for k in ("at",) + (("a", "b") if t == "swap" else ()):                  # altrove "a" è l'angolo
+        if k in o: _elemento(o[k])
+    for k in ("side",) + (("to",) if t == "crosspage" else ()):
+        if k in o and o[k] not in ("L", "R"): raise ValueError(f"pagina non valida: {o[k]!r}")
+    for a in list(o.get("ats") or []) + ([o["ref"]] if "ref" in o else []):
+        if not isinstance(a, (list, tuple)) or len(a) != 2: raise ValueError(f"elemento non valido: {a!r}")
+        _intero(a[1], len(_pagina(o["s"], a[0])), "elemento")
+    if o.get("photo") is not None: _foto(o["photo"])
+    for k in ("photos", "names"):
+        if o.get(k) is not None:
+            if not isinstance(o[k], list): raise ValueError(f"elenco di foto non valido: {k}")
+            for n in o[k]: _foto(n)
+    if t == "tono_fix":
+        for c in o.get("items") or []: _foto(c.get("photo") if isinstance(c, dict) else c)
+    if t in ("newspread", "template"):
+        for side in "LR":
+            if side not in o: continue
+            d = o[side]
+            if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or not isinstance(d.get("photos"), list): raise ValueError("modello non valido")
+            for i in d["photos"]: _intero(i, len(A.M), "foto")
+    if t == "rit" and o.get("copia") is not None:
+        if not isinstance(o["copia"], dict) or any(k not in FL.RIT_KEYS or isinstance(v, bool) or not isinstance(v, (int, float)) or abs(v) > 100 for k, v in o["copia"].items()):
+            raise ValueError("ritocco da copiare non valido")
+
+def verifica():
+    """lo stato dopo un'operazione è coerente? (indici delle foto, modi e forma delle pagine, guide) Altrimenti ValueError"""
+    if len(GD) != len(SP): raise ValueError("guide e spread non corrispondono")
+    for sp in SP:
+        if not isinstance(sp, list) or len(sp) != 2: raise ValueError("spread non valido")
+        for pg in sp:
+            if pg[0] not in ("I", "W") or not isinstance(pg[1], list): raise ValueError("pagina non valida")
+            for it in pg[1]:
+                if not isinstance(it, dict) or it.get("k") not in ("p", "full", "f", "t"): raise ValueError("elemento non valido")
+                if it["k"] != "t": _intero(it.get("i"), len(A.M), "foto")
+
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
 
 def do_op(o):
@@ -722,7 +781,10 @@ def do_op(o):
         if o["op"] == "redo":
             if REDO: UNDO.append(snap()); restore(REDO.pop()); REV += 1; LASTC = cid
             return
-        apply(o); LAST["op"] = time.time()
+        valida(o)
+        try: apply(o); verifica()
+        except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001)
+        LAST["op"] = time.time()
         if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid
 
 # ------------------------------------------------------------------ vista
@@ -908,7 +970,7 @@ def photo_list():
             for it in pg[1]:
                 if it["k"] != "t": where.setdefault(it["i"], k)
     tolte = set(CFG.get("tolte", [])); col = CFG.get("colori", {})
-    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i)), rit=CFG.get("ritocco", {}).get(A.name(i)), star=A.name(i) in CFG["stelle"]) for i in range(len(A.M))]
+    return [dict(n=A.name(i), ar=A.M[i]["ar"], dt=A.M[i]["dt"][:19], sp=where.get(i), tolta=A.name(i) in tolte, col=col.get(A.name(i)), rit=CFG.get("ritocco", {}).get(A.name(i)), star=A.name(i) in CFG["stelle"], **({"sd": True} if A.M[i].get("senza_data") else {})) for i in range(len(A.M))]      # sd: senza data di scatto (BUG-003)
 
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
@@ -917,7 +979,8 @@ def state():
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
-                    modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma())
+                    modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
+                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE))
 
 TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
@@ -932,7 +995,8 @@ def _tono_img(L):
     i = L["i"]; l, t, r, b = A.crop(i, L["W"], L["H"], 1.0); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
     if key not in TONO_IM:
         if len(TONO_IM) > 400: TONO_IM.clear()
-        im = Image.open(os.path.join(A.THUMBS, A.M[i]["n"])).convert("RGB"); W, H = im.size; bw_, bh_ = max(1.0, (r - l) * W), max(1.0, (b - t) * H)
+        with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+        W, H = im.size; bw_, bh_ = max(1.0, (r - l) * W), max(1.0, (b - t) * H)
         sm = im.resize((112, max(16, round(112 * bh_ / bw_))), Image.LANCZOS, box=(l * W, t * H, r * W, b * H)); import numpy as np
         a = np.asarray(sm); w, h = sm.size; x0, x1, y0, y1 = 0, w, 0, h                  # bordo bianco (o nero) della foto stessa: non fa parte del tono
         for edge in range(4):
@@ -1123,7 +1187,8 @@ def corr_thumb(n, w, over):
             if "ev" in over:
                 if abs(float(over["ev"])) >= 0.005: E[n] = float(over["ev"])
                 else: E.pop(n, None)
-            im = Image.open(os.path.join(A.THUMBS, A.M[i]["n"])).convert("RGB"); im.thumbnail((w, w)); FL._CUR[0] = i
+            with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+            im.thumbnail((w, w)); FL._CUR[0] = i
             im = A.apply_ev(im, A.ev_for(i), A.WB.get(n))
         finally:
             for D, v in ((R, old[0]), (E, old[1])):
@@ -1170,7 +1235,7 @@ def aggiorna_foto(idx):
         for i in idx:
             m = A.M[i]
             try:
-                im = Image.open(m["src"]); im.load(); im.close()                      # file completo (Lightroom può essere ancora a scrivere)
+                with A.apri_foto(m["src"]) as im: im.load()                         # file completo (Lightroom può essere ancora a scrivere)
                 new = A._meta_one(m["src"]); old_ar = m.get("ar", new["ar"])
                 m.update(dt=new["dt"], w=new["w"], h=new["h"], ar=new["ar"])
                 tp = os.path.join(A.THUMBS, m["n"])
@@ -1202,8 +1267,9 @@ TH = {}
 def thumb_jpg(n, w):
     key = (n, w)
     if key not in TH:
-        im = Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"]))
-        im = im.convert("RGB"); im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); TH[key] = buf.getvalue()
+        with Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"])) as im0:
+            im = im0.convert("RGB")
+        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); TH[key] = buf.getvalue()
     return TH[key]
 
 INFO = {}
@@ -1211,8 +1277,7 @@ def photo_info(n):
     if n in INFO: return INFO[n]
     m = A.M[A.IDX[n] - 1]; d = dict(dim=[m["w"], m["h"]])
     try:
-        im = Image.open(m["src"]); ex = im.getexif(); sub = ex.get_ifd(0x8769)
-        icc = im.info.get("icc_profile")
+        with A.apri_foto(m["src"]) as im: ex = im.getexif(); sub = ex.get_ifd(0x8769); icc = im.info.get("icc_profile")
         if icc:
             from PIL import ImageCms
             d["profilo"] = ImageCms.getProfileDescription(ImageCms.ImageCmsProfile(io.BytesIO(icc))).strip()
@@ -1340,7 +1405,9 @@ def preflight(o, nums, dest, fmt):
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
     if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
     try:
-        t = os.path.join(dest, ".prova_scrittura"); open(t, "w", encoding="utf-8").write("x"); os.remove(t)
+        t = os.path.join(dest, ".prova_scrittura")
+        with open(t, "w", encoding="utf-8") as f: f.write("x")
+        os.remove(t)
     except OSError as e: raise ValueError(f"Non posso scrivere in «{dest}»: {e.strerror or e}. Scegli un'altra cartella")
     stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums)}[fmt]
     libero = shutil.disk_usage(dest).free
@@ -1427,35 +1494,49 @@ def autosave_loop(fermo=None):
         except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}"); SAVE_ERR[0] = str(e)[:160]
 
 def pick(kind):
-    """finestra di sistema: una cartella (kind="folder") o più foto JPEG; [] se annullata"""
-    return dialoghi.scegli_percorsi(cartella=kind == "folder")
+    """finestra di sistema: una cartella (kind="folder") o più foto; [] se annullata. Quello che l'utente sceglie diventa una radice"""
+    out = dialoghi.scegli_percorsi(cartella=kind == "folder")
+    for p in out: RADICI.scelta(p)
+    return out
+
+def _radici_progetto():
+    """cartelle del progetto aperto che la pagina può nominare: il progetto, la cartella delle foto e quella che la contiene (le altre
+    cartelle del cliente), le cartelle delle foto aggiunte e di quelle in elenco, l'uscita dei PSD (le troppo ampie le scarta Radici)"""
+    if PROJ is None or CFG is None: return []
+    foto = str(CFG.get("foto") or "").rstrip("/\\")
+    return [PROJ, foto, os.path.dirname(foto) if foto else "", str(CFG.get("uscita_psd") or "")] + sorted({os.path.dirname(str(p)) for p in CFG.get("foto_extra", [])} | {os.path.dirname(m.get("src", "")) for m in A.M})
+
+RADICI = percorsi.Radici(_radici_progetto)
 
 LASTDIR = [None]
 def ls_dir(path):
-    """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e JPEG)"""
-    home = cartelle.home()
-    path = os.path.abspath(os.path.expanduser(path or LASTDIR[0] or os.path.dirname(CFG.get("foto", "")) or cartelle.scrivania()))
-    if not os.path.isdir(path): path = home
+    """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e foto), solo dentro le radici (SEC-005):
+    le altre cartelle si aggiungono con «Altra cartella…», cioè con la finestra di sistema"""
+    radici = RADICI.tutte()
+    if path: path = RADICI.controlla(path, "quella cartella")
+    else: path = next((p for p in (LASTDIR[0], os.path.dirname(str(CFG.get("foto", "")).rstrip("/\\")), CFG.get("foto")) if p and RADICI.contiene(p) and os.path.isdir(p)), radici[0] if radici else PROJ)
+    while not os.path.isdir(path) and os.path.dirname(path) != path: path = os.path.dirname(path)          # la cartella esistente più vicina (dentro la radice, che esiste)
     LASTDIR[0] = path; dirs, files = [], []
     for n in sorted(os.listdir(path), key=str.lower):
         if n.startswith("."): continue
         p = os.path.join(path, n)
         try:
             if os.path.isdir(p): dirs.append(n)
-            elif n.lower().endswith((".jpg", ".jpeg")): files.append(dict(n=n, s=os.path.getsize(p)))
+            elif n.lower().endswith(A.estensioni()): files.append(dict(n=n, s=os.path.getsize(p)))
         except OSError: pass
-    places = [dict(n=n, p=p) for n, p in cartelle.cartelle_utente()] + [dict(n=n, p=p) for n, p in cartelle.volumi()]      # Scrivania, Documenti... e i dischi
+    places = [dict(n=os.path.basename(r) or r, p=r) for r in radici]                  # le radici; «Altra cartella…» (pagina) apre la finestra di sistema
     su = os.path.dirname(path)
-    return dict(path=path, parent=su if su != path else None, dirs=dirs, files=files, places=places)          # la radice ("/", "C:\\") non ha una cartella sopra
+    return dict(path=path, parent=su if su != path and RADICI.contiene(su) else None, dirs=dirs, files=files, places=places)          # sopra una radice non si sale
 
 FT = {}
 def file_thumb(path, w):
-    path = os.path.abspath(path)
-    if not path.lower().endswith((".jpg", ".jpeg")) or not os.path.isfile(path): raise ValueError("non è una foto JPEG")
+    path = RADICI.controlla(path, "quella foto")
+    if not path.lower().endswith(A.estensioni()) or not os.path.isfile(path): raise ValueError("non è una foto")
     k = (path, w, os.path.getmtime(path))
     if k not in FT:
-        from PIL import Image, ImageOps
-        im = Image.open(path); im.draft("RGB", (w * 2, w * 2)); im = ImageOps.exif_transpose(im).convert("RGB"); im.thumbnail((w, w))
+        with A.apri_foto(path) as im0:
+            im0.draft("RGB", (w * 2, w * 2)); im = A.in_srgb(ImageOps.exif_transpose(im0))
+        im.thumbnail((w, w))
         b = io.BytesIO(); im.save(b, "JPEG", quality=80)
         if len(FT) > 600: FT.clear()
         FT[k] = b.getvalue()
@@ -1475,7 +1556,7 @@ def do_import(paths):
     n = skipped = 0; new = []
     for f in files:
         base, ext = os.path.splitext(os.path.basename(f))
-        if ext.lower() not in (".jpg", ".jpeg") or base.startswith("."): skipped += 1; continue
+        if not ext.lower().endswith(A.estensioni()) or base.startswith("."): skipped += 1; continue
         if os.path.basename(f).lower() in have: skipped += 1; continue
         have.add(os.path.basename(f).lower()); n += 1; new.append(os.path.abspath(f))
     if new:
@@ -1489,7 +1570,7 @@ def ricollega(cartella):
     idx = {}
     for root, _, fs in os.walk(cartella):
         for f in fs:
-            if f.lower().endswith((".jpg", ".jpeg")) and not f.startswith("."): idx.setdefault(f.lower(), os.path.join(root, f))
+            if f.lower().endswith(A.estensioni()) and not f.startswith("."): idx.setdefault(f.lower(), os.path.join(root, f))
     with LOCK:
         trovate = 0; ancora = []; nuovi = {}
         for m in A.M:
@@ -1614,8 +1695,21 @@ def restart():
         riavvia_processo()
     threading.Thread(target=go, daemon=True).start()
 
+def _porta_home():
+    try: return urlparse(HOME).port if HOME else None
+    except ValueError: return None
+
+def stato_aggiornamenti():
+    """stato degli aggiornamenti chiesto alla schermata dei progetti con il suo gettone ({} se non risponde)"""
+    pt = _porta_home(); g = sicurezza.gettone_di("home", pt) if pt else None
+    if not g: return {}
+    try: return sicurezza.chiedi(pt, "/api/aggiornamento", g)
+    except (OSError, ValueError) as e: log.debug("aggiornamenti non letti dalla schermata dei progetti: %s", e); return {}
+
 # ------------------------------------------------------------------ http
-class H(BaseHTTPRequestHandler):
+class H(Gestore):
+    COOKIE = ("/", "/api/fthumb")                     # pagina e immagini (img, CSS): anche con il solo cookie
+    COOKIE_PREFISSI = ("/img/", "/vai/")
     def log_message(self, *a): pass
     def send(self, body, ctype="application/json", code=200, etag=None):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
@@ -1626,7 +1720,11 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
-            if u.path == "/": self.send(risorse.leggi("index.html"), "text/html; charset=utf-8")
+            if u.path == "/": self.pagina("index.html")
+            elif u.path == "/vai/progetti":                                     # pulsante «Progetti»: indirizzo di avvio monouso della schermata
+                pt = _porta_home(); a = sicurezza.indirizzo_avvio("home", pt) if pt else None
+                self.send_response(303); self.send_header("Location", a or HOME or "/"); self.send_header("Content-Length", "0"); self.end_headers()
+            elif u.path == "/api/aggiornamento": self.send(stato_aggiornamenti())
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
@@ -1634,7 +1732,10 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/img/bruc": self.send(bruc_img(int(q["s"][0]), q["side"][0], int(q["idx"][0])), "image/png")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
-            elif u.path.startswith("/api/info/"): self.send(photo_info(u.path.rsplit("/", 1)[1]))
+            elif u.path.startswith("/api/info/"):
+                n = unquote(u.path.rsplit("/", 1)[1])                              # nomi con spazi, accenti, %, #, ?, + (BUG-002)
+                if n in A.IDX: self.send(photo_info(n))
+                else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
             elif u.path == "/api/log": self.send(LOG[-200:])
@@ -1643,19 +1744,22 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/versioni": self.send(versioni())
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
-                n = u.path.rsplit("/", 1)[1]; w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (n, w, PV.get(n, 0))
-                if self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
+                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8")).hexdigest()[:16], w, PV.get(n, 0))
+                if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
+                elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)
             else: self.send({"errore": "non trovato"}, code=404)
+        except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=500)
     def do_POST(self):
-        u = urlparse(self.path); n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}")
+        u = urlparse(self.path)
         try:
+            body = self.corpo()
             if u.path == "/api/op": do_op(body); self.send(state())
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
-                n, sk = do_import(body["paths"])
+                n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
                 if n: restart()
                 self.send({"importate": n, "saltate": sk, "riavvio": n > 0})
             elif u.path == "/api/modelli": modelli(body); self.send({"ok": True})
@@ -1664,16 +1768,19 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/ricollega":
                 c = body.get("cartella") or (pick("folder") or [""])[0]
                 if not c: self.send({"annullato": True})
-                else: self.send(ricollega(c))
+                else: self.send(ricollega(RADICI.controlla(c, "quella cartella")))
             elif u.path == "/api/prj_esporta":
                 d = body.get("dest") or (pick("folder") or [""])[0]
                 if not d: self.send({"annullato": True})
-                else: self.send({"cartella": esporta_progetto(dict(body, dest=d))})
+                else: self.send({"cartella": esporta_progetto(dict(body, dest=RADICI.controlla(d, "quella cartella")))})
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
-            elif u.path == "/api/export": LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": azioni.mostra(body["path"] if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
+            elif u.path == "/api/export":
+                if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "quella cartella")
+                LOG.clear(); self.send({"spread": run_export(body)})
+            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
+        except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio
@@ -1705,9 +1812,10 @@ def inizializza(progetto, home=""):
         importa_modelli_progetto()
 
 
-def crea_server(porta=0):
-    """server HTTP dell'editor su 127.0.0.1 (porta 0 = una libera: si legge da server_address). Non lo avvia: serve_forever()"""
-    return ServerLocale(("127.0.0.1", porta), H)
+def crea_server(porta=0, gettone=None):
+    """server HTTP dell'editor su 127.0.0.1 (porta 0 = una libera: si legge da server_address). Non lo avvia: serve_forever().
+    gettone: quello della sessione (None = uno nuovo); il file di sessione per la schermata dei progetti si scrive qui"""
+    return ServerLocale(("127.0.0.1", porta), H, tipo="editor", gettone=gettone, progetto=PROJ)
 
 
 _FERMI = []
@@ -1732,9 +1840,10 @@ def main(argv=None):
     ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
     args = ap.parse_args(argv)
+    giornale.configura("editor")
     inizializza(args.progetto, args.home)
     avvia_cicli()
-    srv = crea_server(args.porta)
+    srv = crea_server(args.porta, sicurezza.gettone_del_processo())          # stesso gettone dopo un riavvio (os.execv): la pagina resta collegata
     print(f"Editor album: http://127.0.0.1:{srv.server_address[1]}  | progetto: {PROJ}", flush=True)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass

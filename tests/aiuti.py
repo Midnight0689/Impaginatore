@@ -13,8 +13,12 @@ FOTO_SCENARIO = [("H01", 900, 600, "2026:05:23 10:00:01"), ("H02", 900, 600, "20
                  ("V10", 600, 900, "2026:05:23 10:00:10")]
 
 
+DATA_FILE = time.mktime((2026, 6, 1, 12, 0, 0, 0, 0, -1))     # data dei file sintetici (ora locale): è la data delle foto senza EXIF
+
+
 def crea_foto(cartella, elenco=FOTO_SCENARIO, orientamento=None, estensione=".jpg"):
-    """JPEG sintetici (orizzontali, verticali, quadrati; con e senza data EXIF). orientamento = {nome: valore EXIF 274}"""
+    """JPEG sintetici (orizzontali, verticali, quadrati; con e senza data EXIF), tutti con data del file DATA_FILE.
+    orientamento = {nome: valore EXIF 274}"""
     os.makedirs(cartella, exist_ok=True); out = []
     for k, (n, w, h, dt) in enumerate(elenco):
         im = Image.new("RGB", (w, h), (40 + 20 * k, 120, 200 - 15 * k)); d = ImageDraw.Draw(im)
@@ -26,25 +30,36 @@ def crea_foto(cartella, elenco=FOTO_SCENARIO, orientamento=None, estensione=".jp
         if o: ex[274] = o
         p = os.path.join(cartella, n + estensione)
         im.save(p, "JPEG", quality=92, exif=ex.tobytes() if (dt or o) else b"")
+        os.utime(p, (DATA_FILE, DATA_FILE))
         out.append(p)
     return out
 
 
 class Client:
-    """client JSON per i server locali (home ed editor)"""
+    """client JSON per i server locali (home ed editor), con il gettone della sessione del server (come la pagina)"""
 
-    def __init__(self, porta):
-        self.porta = porta
+    def __init__(self, porta, gettone):
+        self.porta, self.gettone = porta, gettone
 
     def url(self, path): return f"http://127.0.0.1:{self.porta}{path}"
 
     def raw(self, path, body=None, timeout=120):
-        r = urllib.request.Request(self.url(path), None if body is None else json.dumps(body).encode(), {"Content-Type": "application/json"})
+        h = {"Content-Type": "application/json", "X-Impaginatore-Gettone": self.gettone}
+        r = urllib.request.Request(self.url(path), None if body is None else json.dumps(body).encode(), h)
         with urllib.request.urlopen(r, timeout=timeout) as f: return f.read()
 
     def get(self, path, timeout=120): return json.loads(self.raw(path, timeout=timeout))
 
     def post(self, path, body=None, timeout=120): return json.loads(self.raw(path, body if body is not None else {}, timeout=timeout))
+
+    def codice(self, path, body=None, **intestazioni):
+        """codice HTTP della risposta (GET, o POST con body), con intestazioni in più o cambiate (None = toglila)"""
+        h = {"Content-Type": "application/json", "X-Impaginatore-Gettone": self.gettone}
+        h.update(intestazioni); h = {k: v for k, v in h.items() if v is not None}
+        r = urllib.request.Request(self.url(path), None if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode()), h)
+        try:
+            with urllib.request.urlopen(r, timeout=120) as f: f.read(); return f.status
+        except urllib.error.HTTPError as e: return e.code
 
     def prova(self, path, body=None):
         """(True, risposta) oppure (False, risposta d'errore) senza sollevare eccezioni HTTP"""

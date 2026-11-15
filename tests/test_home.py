@@ -18,10 +18,12 @@ class Finti(dialoghi.Dialoghi):
 
 def test_pagina_ed_elenco(home_srv):
     c = home_srv
-    assert b"<script>" in c.raw("/") and c.get("/api/ping") == {"ok": True}
+    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and "__NONCE__" not in html and f'content="{c.gettone}"' in html
+    assert c.get("/api/ping") == {"ok": True}
     r = c.get("/api/progetti"); assert r["progetti"] == [] and r["cartella"] == c.modulo.PROGETTI
-    a = c.get("/api/aggiornamento"); assert a["attuale"]["rel"] and a["errore"] and not a["da_aggiornare"]
-    assert c.get("/api/versioni") == {"versioni": []} and c.post("/api/controlla")["errore"]
+    a = c.get("/api/aggiornamento"); assert a["attuale"]["rel"] and not a["da_aggiornare"]
+    assert a["errore"] == "" and a["disponibile"] is False and "non disponibili" in a["motivo"], "spenti non è un errore di rete"
+    assert c.get("/api/versioni") == {"versioni": []} and c.post("/api/controlla")["motivo"]
     ok, r = c.prova("/api/aggiorna", {}); assert not ok and "non disponibili" in r["errore"].lower()
     ok, r = c.prova("/api/ripristina", {"codice": "abc1234"}); assert not ok
     ok, r = c.prova("/api/boh"); assert not ok and r["errore"] == "non trovato"
@@ -39,6 +41,8 @@ def test_nuovo_progetto(home_srv, tmp_path):
         ok, r = c.prova("/api/nuovo", d); assert not ok and msg in r["errore"], r
     # progetto accanto alle foto del cliente: <cartella>/Impaginatore, foto lasciate dove sono, in registro
     cli = tmp_path / "Cliente"; cli.mkdir()
+    ok, r = c.prova("/api/nuovo", {"nome": "Cliente", "w": 30, "h": 30, "foto": str(cli)}); assert not ok and "Scegli" in r["errore"], "cartella non scelta con la finestra"
+    dialoghi.imposta(Finti([str(cli)])); assert c.post("/api/scegli-foto")["path"] == str(cli)
     p2 = c.post("/api/nuovo", {"nome": "Cliente", "w": 30, "h": 30, "foto": str(cli) + os.sep})["path"]
     assert p2 == str(tmp_path / "Impaginatore"), "accanto alla cartella delle foto"
     ok, r = c.prova("/api/nuovo", {"nome": "X", "w": 30, "h": 30, "foto": str(tmp_path / "no")}); assert not ok
@@ -109,7 +113,7 @@ def test_cestino_e_finder(home_srv, tmp_path, monkeypatch):
 
 def test_apri_non_in_elenco(home_srv, tmp_path):
     ok, r = home_srv.prova("/api/apri", {"path": str(tmp_path)}); assert not ok and "elenco" in r["errore"]
-    assert home_srv.get("/api/pronto?porta=9") == {"pronto": False}
+    assert home_srv.get("/api/pronto?porta=9") == {"pronto": False, "indirizzo": None}
 
 
 def test_apri_riusa_editor_gia_attivo(home_srv, editor):
@@ -120,7 +124,7 @@ def test_apri_riusa_editor_gia_attivo(home_srv, editor):
     srv = editor.E.crea_server(pt); threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
         assert c.post("/api/apri", {"path": editor.progetto})["porta"] == pt and not c.modulo.EDITORS
-        assert c.get(f"/api/pronto?porta={pt}") == {"pronto": True}
+        r = c.get(f"/api/pronto?porta={pt}"); assert r["pronto"] and r["indirizzo"].startswith(f"http://127.0.0.1:{pt}/avvio?c=")
     finally: srv.shutdown(); srv.server_close()
 
 
@@ -165,11 +169,18 @@ def test_aggiornamenti_spenti_e_predefiniti(monkeypatch):
 def test_riavvio_dopo_aggiornamento(home, monkeypatch):
     from impaginatore.piattaforma import processi
     lanci, uscite = [], []
-    monkeypatch.setattr(processi, "rilancia_dopo", lambda argv, r: lanci.append(argv))
+    monkeypatch.setattr(processi, "rilancia_dopo", lambda argv, r, gettone=None: lanci.append((argv, gettone)))
     monkeypatch.setattr(home, "esci", lambda: uscite.append(1))
     home.riavvia_programma(); assert lanci == [], "IMPAGINATORE_SENZA_RIAVVIO: niente riavvio"
     monkeypatch.delenv("IMPAGINATORE_SENZA_RIAVVIO")
     monkeypatch.setattr(home.threading, "Thread", lambda target, daemon: type("T", (), {"start": lambda s: target()})())
     monkeypatch.setattr(home.time, "sleep", lambda s: None)
+    monkeypatch.setattr(home, "SERVER", None)
     home.riavvia_programma()
-    assert lanci[0][1:3] == ["-m", "impaginatore"] and "--no-browser" in lanci[0] and uscite == [1]
+    assert lanci[0][0][1:3] == ["-m", "impaginatore"] and "--no-browser" in lanci[0][0] and uscite == [1]
+    assert lanci[0][1] is None, "senza server niente gettone da passare"
+    from impaginatore import servizio
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None); monkeypatch.setattr(home, "SERVER", srv)
+    try: home.riavvia_programma()
+    finally: srv.server_close()
+    assert lanci[1][1] == srv.sessione.gettone, "il programma riavviato tiene il gettone: la pagina aperta resta collegata"

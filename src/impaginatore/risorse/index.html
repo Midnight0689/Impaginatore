@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
+<meta name="gettone" content="__GETTONE__">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Editor Album</title>
 <style>
@@ -534,17 +535,23 @@
 <div id="nmenu"><div data-n="blank">Spread vuoto<small>due pagine bianche, dopo questo</small></div><div data-n="pick">Scegli le foto…<small>vai alla scheda Foto: compaiono i modelli</small></div></div>
 <div id="qlook"><img alt=""><span></span></div>
 <div id="busy"><div><div class="spin"></div><div id="busymsg"></div></div></div>
-<div id="log"><span class="x" onclick="document.getElementById('log').style.display='none'">✕</span><div id="logbody"></div></div>
+<div id="log"><span class="x" id="logx">✕</span><div id="logbody"></div></div>
 <div id="toast"></div>
 
-<script>
+<script nonce="__NONCE__">
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
+const GETTONE = document.querySelector('meta[name="gettone"]').content;       // gettone di questa sessione: senza, il server non risponde (docs/architettura/SICUREZZA.md)
+const escH = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato (nomi dei file, EXIF, testi dei progetti) passa da qui prima di innerHTML
+const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // nomi delle foto negli indirizzi e negli url(...) dei CSS
+const rq = (path, o = {}) => fetch(path, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
+const lblFinder = () => ({ mac: "Mostra nel Finder", windows: "Mostra in Esplora risorse" }[S && S.sistema] || "Mostra nel gestore file");
+$("logx").onclick = () => { $("log").style.display = "none"; };
 
 function toast(msg, err) { const t = $("toast"); t.textContent = msg; t.className = err ? "err" : ""; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", err ? 4500 : 1800); }
 
 async function api(path, body) {
-  const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await rq(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
   if (j.errore) { toast(j.errore, true); throw new Error(j.errore); }
   return j;
@@ -571,7 +578,7 @@ function render() {
   $("undo").disabled = !S.canundo; $("redo").disabled = !S.canredo;
   $("status").textContent = S.saveerr ? "⚠ SALVATAGGIO NON RIUSCITO" : S.dirty ? "salvo…" : "tutto salvato"; $("status").className = S.saveerr ? "err" : S.dirty ? "dirty" : ""; $("status").title = S.saveerr || "";
   clearTimeout(render.t); if (S.dirty) render.t = setTimeout(async () => { try { const d = await api("/api/state"); S.saveerr = d.saveerr; if (!d.dirty) S.dirty = false; $("status").textContent = S.saveerr ? "⚠ SALVATAGGIO NON RIUSCITO" : S.dirty ? "salvo…" : "tutto salvato"; $("status").className = S.saveerr ? "err" : S.dirty ? "dirty" : ""; $("status").title = S.saveerr || ""; if (d.dirty) render.t = setTimeout(() => render(), 100); } catch (e) {} }, 3000);
-  if (S.home) { $("home").style.display = ""; $("home").href = S.home; if (!window._upd) { window._upd = 1; const chk = () => fetch(S.home + "/api/aggiornamento").then(r => r.json()).then(r => { $("home").title = r.attuale ? `Torna ai progetti · versione ${r.attuale.n}` : "Torna ai progetti"; $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").href = S.home; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
+  if (S.home) { $("home").style.display = ""; $("home").href = "/vai/progetti"; $("pxreveal").textContent = $("ereveal").textContent = lblFinder(); if (!window._upd) { window._upd = 1; const chk = () => rq("/api/aggiornamento").then(r => r.json()).then(r => { $("home").title = r.attuale ? `Torna ai progetti · versione ${r.attuale.n}` : "Torna ai progetti"; $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").href = "/vai/progetti"; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
   document.body.classList.toggle("foto", view === "foto"); $("tabF").classList.toggle("on", view === "foto"); $("tabA").classList.toggle("on", view === "album");
   renderLib();
   const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; ["sbarL", "sbarR", "spnav", "vistabox", "rwrap", "hint"].forEach(i => $(i).style.display = empty ? "none" : "");
@@ -642,7 +649,7 @@ function renderStage() {
     }
     if (it.k !== "t") {
       const warn = showCropWarn && it.crop > 1.25, to = [cur, it.side, it.idx];
-      d.innerHTML = `<span class="tag${warn ? " warn" : ""}">${it.name}${it.bw ? " · BN" : ""}${it.z !== 1 ? " · ×" + it.z : ""}${warn ? " · ritaglio ×" + it.crop.toFixed(2) : ""}</span>`;
+      d.innerHTML = `<span class="tag${warn ? " warn" : ""}">${escH(it.name)}${it.bw ? " · BN" : ""}${it.z !== 1 ? " · ×" + it.z : ""}${warn ? " · ritaglio ×" + it.crop.toFixed(2) : ""}</span>`;
       d.dataset.at = JSON.stringify(to);
       d.onpointerdown = e => { if (e.button !== 0 || e.target.closest(".chip")) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } if (cropMode && isSel) startPan(e, it, d); else startFree(e, it, "move"); };
       d.ondblclick = () => { sel = { s: cur, side: it.side, idx: it.idx }; setCrop(true); };
@@ -783,7 +790,7 @@ function startGroup(e, its, bb, kind) {
   const ax = kind.includes("w") ? bb.R : bb.L, ay = kind.includes("n") ? bb.B : bb.T;       // il bordo opposto resta fermo
   const corner = kind.length === 2; let sx = 1, sy = 1, moved = false, raf = 0, last = null, gd = []; const gh = [];
   const draw = () => { const sc = $("wrap").clientWidth / S.W;
-    if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url(/img/thumb/${it.name}?w=600)`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
+    if (!gh.length) { DRAG = true; document.body.classList.add("dragging"); its.forEach(it => { const d = document.createElement("div"); d.className = "ghost"; if (it.name) { d.style.backgroundImage = `url("/img/thumb/${encU(it.name)}?w=600")`; d.style.backgroundSize = "cover"; d.style.backgroundPosition = "center"; } $("ghosts").appendChild(d); gh.push(d); }); }
     its.forEach((it, j) => { const d = gh[j].style; d.left = (ax + (it.x - ax) * sx) * sc + "px"; d.top = (ay + (it.y - ay) * sy) * sc + "px"; d.width = it.w * sx * sc + "px"; d.height = it.h * sy * sc + "px"; });
     { const l = ax + (bb.L - ax) * sx, r = ax + (bb.R - ax) * sx, t = ay + (bb.T - ay) * sy, b = ay + (bb.B - ay) * sy; drawEq(edgeMarks({ x: Math.min(l, r), y: Math.min(t, b), w: Math.abs(r - l), h: Math.abs(b - t) }, its)); }       // distanze dai bordi, live
     document.querySelectorAll(".guide").forEach(x => x.remove());
@@ -969,28 +976,28 @@ const droppa = (names, t) => t.on != null ? addToSpread(names, t.on) : newSpread
 async function moveSp(a, b) { if (b < 0 || b >= S.spreads.length || a === b) return; await op({ op: "move", s: a, to: b }); cur = b; sel = null; render(); }
 function go(k) { if (k >= 0 && k < S.spreads.length) { cur = k; sel = null; msel = []; render(); } }
 const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
-const corrUrl = (it, w, over) => `/img/corr?n=${it.name}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
+const corrUrl = (it, w, over) => `/img/corr?n=${encU(it.name)}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
 function cropStyle(it) {
   const [l, t, r, b] = it.box, W = r - l, H = b - t, ratio = it.w / it.h;
-  return `width:min(100%,${Math.round(440 * ratio)}px,${(36 * ratio).toFixed(2)}vh);aspect-ratio:${it.w}/${it.h};background-image:url(${corrUrl(it, 500)});background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
+  return `width:min(100%,${Math.round(440 * ratio)}px,${(36 * ratio).toFixed(2)}vh);aspect-ratio:${it.w}/${it.h};background-image:url("${corrUrl(it, 500)}");background-size:${100 / W}% ${100 / H}%;background-position:${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`;
 }
 const fams = () => [...new Set(FONTS.map(f => f.fam))];
 const cssFont = ps => { const f = FONTS.find(x => x.ps === ps); if (!f) return `font-family:${ps}`; const st = f.sty.toLowerCase(); return `font-family:"${f.fam}";font-weight:${/black|heavy/.test(st) ? 900 : /extra ?bold|ultra/.test(st) ? 800 : /semi ?bold|demi/.test(st) ? 600 : /bold/.test(st) ? 700 : /medium/.test(st) ? 500 : /light|thin/.test(st) ? 300 : 400};font-style:${/italic|oblique/.test(st) ? "italic" : "normal"}`; };
 const hex = c => "#" + c.map(v => Math.round(v).toString(16).padStart(2, "0")).join("");
 function renderTextSide(it, P) {
   const f = FONTS.find(x => x.ps === it.font) || { fam: it.font, sty: "", ps: it.font }, at = [cur, it.side, it.idx], pt = it.size * 72 / S.ppi;
-  const fo = fams().map(n => `<option${n === f.fam ? " selected" : ""}>${n.replace(/</g, "&lt;")}</option>`).join(""), so = FONTS.filter(x => x.fam === f.fam).map(x => `<option value="${x.ps}"${x.ps === it.font ? " selected" : ""}>${x.sty}</option>`).join("");
+  const fo = fams().map(n => `<option${n === f.fam ? " selected" : ""}>${escH(n)}</option>`).join(""), so = FONTS.filter(x => x.fam === f.fam).map(x => `<option value="${escH(x.ps)}"${x.ps === it.font ? " selected" : ""}>${escH(x.sty)}</option>`).join("");
   P.innerHTML = `<div class="insp"><div class="nm">Livello di testo</div>
     <textarea id="ttx" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px"></textarea>
     <div class="sec">Stile</div>
-    <div class="erow"><select id="tstl" style="width:100%"><option value="">${it.stile ? "(scollega)" : "— nessuno —"}</option>${Object.keys(S.stili || {}).map(n => `<option${n === it.stile ? " selected" : ""}>${n.replace(/</g, "&lt;")}</option>`).join("")}</select></div>
-    ${it.stile ? `<div class="empty" style="margin:2px 0 4px">Le modifiche a carattere, corpo, colore e allineamento valgono per tutti i testi con lo stile «${it.stile.replace(/</g, "&lt;")}».</div>` : ""}
+    <div class="erow"><select id="tstl" style="width:100%"><option value="">${it.stile ? "(scollega)" : "— nessuno —"}</option>${Object.keys(S.stili || {}).map(n => `<option${n === it.stile ? " selected" : ""}>${escH(n)}</option>`).join("")}</select></div>
+    ${it.stile ? `<div class="empty" style="margin:2px 0 4px">Le modifiche a carattere, corpo, colore e allineamento valgono per tutti i testi con lo stile «${escH(it.stile)}».</div>` : ""}
     <div class="tools"><button id="tstsave">Salva come stile…</button>${it.stile ? `<button id="tstdel" class="danger" title="Elimina lo stile (i testi restano come sono)">Elimina stile</button>` : ""}</div>
     <div class="sec">Carattere</div>
     <div class="erow"><select id="tfam" style="width:100%">${fo}</select></div>
     <div class="erow"><select id="tsty" style="width:100%">${so}</select></div>
     <div class="sl"><b>Corpo:</b><input id="tsz" type="number" min="3" max="400" step="0.5" value="${pt.toFixed(1)}" style="width:70px"><span class="v">pt</span></div>
-    <div class="sl"><b>Spaziatura:</b><input id="ttr" type="range" min="-100" max="800" step="5" value="${it.tr}"><span class="v" id="ttrv">${it.tr}</span></div>
+    <div class="sl"><b>Spaziatura:</b><input id="ttr" type="range" min="-100" max="800" step="5" value="${escH(it.tr)}"><span class="v" id="ttrv">${escH(it.tr)}</span></div>
     <div class="sec">Paragrafo e colore</div>
     <div class="tools"><span class="seg2"><button id="tal-left" class="${it.al === "left" ? "on" : ""}" title="A sinistra">⇤</button><button id="tal-center" class="${it.al === "center" ? "on" : ""}" title="Centrato">↔</button><button id="tal-right" class="${it.al === "right" ? "on" : ""}" title="A destra">⇥</button></span>
       <input id="tcol" type="color" value="${hex(it.col)}" style="width:44px;height:28px;padding:0;border:none;background:none" title="Colore"></div>
@@ -1018,7 +1025,7 @@ function fontPopup(anchor, curFam, pick) {
   closeFpop(); const r = anchor.getBoundingClientRect(); fpop = document.createElement("div"); fpop.id = "fpop";
   fpop.style.cssText = `left:${Math.max(6, Math.min(r.left, innerWidth - 300))}px;top:${Math.min(r.bottom + 4, innerHeight - 380)}px`;
   fpop.innerHTML = `<input placeholder="Cerca un carattere…" id="fq"><div id="fl"></div>`; document.body.appendChild(fpop);
-  const all = fams(), draw = q => { $("fl").innerHTML = all.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 300).map(n => `<div data-f="${n.replace(/"/g, "&quot;")}" class="${n === curFam ? "on" : ""}"><span style="font-family:'${n.replace(/'/g, "")}'">${n.replace(/</g, "&lt;")}</span></div>`).join("") || `<div class="nof">Nessun carattere</div>`; };
+  const all = fams(), draw = q => { $("fl").innerHTML = all.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 300).map(n => `<div data-f="${escH(n)}" class="${n === curFam ? "on" : ""}"><span style="font-family:'${escH(n.replace(/'/g, ""))}'">${escH(n)}</span></div>`).join("") || `<div class="nof">Nessun carattere</div>`; };
   draw(""); $("fq").oninput = () => draw($("fq").value); $("fq").onkeydown = e => { e.stopPropagation(); if (e.key === "Escape") closeFpop(); if (e.key === "Enter") { const f = $("fl").querySelector("[data-f]"); if (f) { pick(f.dataset.f); closeFpop(); } } };
   $("fl").onclick = e => { const d = e.target.closest("[data-f]"); if (d) { pick(d.dataset.f); closeFpop(); } }; $("fq").focus();
   const cu = $("fl").querySelector(".on"); if (cu) cu.scrollIntoView({ block: "center" });
@@ -1029,7 +1036,7 @@ function renderTextBar(it) {
   const B = $("txbar"); if (!it || !S) { B.style.display = "none"; B.innerHTML = ""; closeFpop(); return; }
   const f = FONTS.find(x => x.ps === it.font) || { fam: it.font, sty: "", ps: it.font }, at = [cur, it.side, it.idx], pt = it.size * 72 / S.ppi, set = o => op({ op: "settext", at, ...o });
   const sts = FONTS.filter(x => x.fam === f.fam), lh = Math.round((it.lh || 1.2) * 100);
-  B.innerHTML = `<button id="tb-fam" class="fam" title="Carattere" style="font-family:'${f.fam.replace(/'/g, "")}'">${f.fam.replace(/</g, "&lt;")}<i>▾</i></button>
+  B.innerHTML = `<button id="tb-fam" class="fam" title="Carattere" style="font-family:'${escH(f.fam.replace(/'/g, ""))}'">${escH(f.fam)}<i>▾</i></button>
     <select id="tb-sty" title="Stile (Regular, Bold, Italic…)">${sts.map(x => `<option value="${x.ps}"${x.ps === it.font ? " selected" : ""}>${x.sty}</option>`).join("")}</select>
     <span class="sep"></span><label title="Corpo (pt)"><b>T</b><input id="tb-sz" type="number" min="3" max="400" step="0.5" value="${+pt.toFixed(1)}"></label><select id="tb-szl" title="Corpi comuni"><option value="">▾</option>${SIZES.map(n => `<option>${n}</option>`).join("")}</select>
     <label title="Interlinea (% del corpo)"><b>↕</b><input id="tb-lh" type="number" min="60" max="300" step="5" value="${lh}"><u>%</u></label>
@@ -1069,7 +1076,7 @@ $("wrap").addEventListener("pointerdown", e => {          // strumento Testo: cl
   };
   window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
 }, true);
-fetch("/api/fonts").then(r => r.json()).then(d => { FONTS = d.fonts; renderSide(); });
+rq("/api/fonts").then(r => r.json()).then(d => { FONTS = d.fonts; renderSide(); });
 function renderSide() {
   const it = selItem(), P = $("insp"); renderTextBar(it && it.k === "t" && it.kind === "txt" ? it : null);
   if (!it) { P.innerHTML = `<div class="insp"><div class="nm">Nessuna foto</div><div class="empty">Clicca una foto nello spread per vedere le sue impostazioni.<br><br>Puoi scegliere i modelli con <b>▦ Modelli</b> (M) e trascinare le guide dai righelli.</div></div>`; return; }
@@ -1081,22 +1088,22 @@ function renderSide() {
   const at = [sel.s, sel.side, sel.idx], lowppi = it.ppi < 200;
   P.innerHTML = `<div class="insp">
     <div class="sec">Design</div>
-    <div class="pvw"><div class="pv" style="${cropStyle(it)}"></div></div>
+    <div class="pvw"><div class="pv" style="${escH(cropStyle(it))}"></div></div>
     <div style="margin-top:12px">
-      <div class="sl st"><b>Scala</b><input id="z" style="--rb:linear-gradient(90deg,#555,#bbb)" type="range" min="1" max="2" step="0.01" value="${it.z}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
-      <div class="sl st"><b>Angolo</b><input id="ang" style="--rb:linear-gradient(90deg,#555,#999 50%,#555)" type="range" min="-15" max="15" step="0.1" value="${it.a}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
-      <div class="sl st"><b>Esposizione</b><input id="evp" style="--rb:linear-gradient(90deg,#111,#f2f2f2)" type="range" min="-2" max="2" step="0.05" value="${it.evp}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
-      <div class="sl st"><b>Opacità</b><input id="ocw" style="--rb:linear-gradient(90deg,#333,#ddd)" type="range" min="0" max="100" step="1" value="${it.oc ?? 100}"><span class="v" id="ocv">${it.oc ?? 100}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
+      <div class="sl st"><b>Scala</b><input id="z" style="--rb:linear-gradient(90deg,#555,#bbb)" type="range" min="1" max="2" step="0.01" value="${escH(it.z)}"><span class="v" id="zv">${Math.round(it.z * 100)}%</span><span class="x" id="zx" title="Ripristina">⊗</span></div>
+      <div class="sl st"><b>Angolo</b><input id="ang" style="--rb:linear-gradient(90deg,#555,#999 50%,#555)" type="range" min="-15" max="15" step="0.1" value="${escH(it.a)}"><span class="v" id="angv">${it.a.toFixed(1)}°</span><span class="x" id="angx" title="Ripristina">⊗</span></div>
+      <div class="sl st"><b>Esposizione</b><input id="evp" style="--rb:linear-gradient(90deg,#111,#f2f2f2)" type="range" min="-2" max="2" step="0.05" value="${escH(it.evp)}"><span class="v" id="evv">${fmt1(it.evp)}</span><span class="x" id="evx" title="Ripristina">⊗</span></div>
+      <div class="sl st"><b>Opacità</b><input id="ocw" style="--rb:linear-gradient(90deg,#333,#ddd)" type="range" min="0" max="100" step="1" value="${escH(it.oc ?? 100)}"><span class="v" id="ocv">${escH(it.oc ?? 100)}%</span><span class="x" id="ocx" title="Ripristina">⊗</span></div>
     </div>
     <div class="sec">Luce <span class="x" id="tnx" title="Azzera tutto il ritocco di questa foto" style="float:right">⊗ azzera</span></div>
     <div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>
     <div class="sec">Colore</div>
     <div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>
     <div class="sec">Cornice</div>
-    <div class="sl st"><b>Bordo</b><input id="bdw" style="--rb:linear-gradient(90deg,#555,#fff)" type="range" min="0" max="20" step="0.5" value="${it.bd ? it.bd[0] : 0}"><span class="v" id="bdv">${it.bd ? it.bd[0] + " mm" : "no"}</span></div>
+    <div class="sl st"><b>Bordo</b><input id="bdw" style="--rb:linear-gradient(90deg,#555,#fff)" type="range" min="0" max="20" step="0.5" value="${escH(it.bd ? it.bd[0] : 0)}"><span class="v" id="bdv">${escH(it.bd ? it.bd[0] + " mm" : "no")}</span></div>
     <div class="cl">Colore del bordo</div>
     <div class="cdots bdc ${it.bd ? "" : "off"}" id="bdc">${[["#ffffff", "bianco"], ["#f3ead8", "crema"], ["#9a9a9a", "grigio"], ["#000000", "nero"]].map(([c, n]) => `<i data-c="${c}" style="--c:${c}" title="Bordo ${n}" class="${it.bd && it.bd[1] === c ? "on" : ""}"></i>`).join("")}</div>
-    <div class="sl st"><b>Ombra</b><input id="shw" style="--rb:linear-gradient(90deg,#aaa,#000)" type="range" min="0" max="100" step="1" value="${it.sh || 0}"><span class="v" id="shv">${it.sh || "no"}</span></div>
+    <div class="sl st"><b>Ombra</b><input id="shw" style="--rb:linear-gradient(90deg,#aaa,#000)" type="range" min="0" max="100" step="1" value="${escH(it.sh || 0)}"><span class="v" id="shv">${escH(it.sh || "no")}</span></div>
     <div class="sec">Etichetta colore</div>
     <div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}" class="${((S.photos.find(x => x.n === it.name) || {}).col) === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" title="Nessun colore"></i></div>
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" title="Trascina la foto dentro la cornice (doppio clic sulla foto)">Sposta nella cornice</button><button id="bw" class="${it.bw ? "on" : ""}">Bianco e nero</button><button id="togrid" ${!it.free ? "disabled" : ""} title="Porta la cornice sulle celle più vicine della griglia">Alla griglia</button><button id="delf" class="danger" title="La foto torna libera (Canc)">Rimuovi</button></div>
@@ -1107,9 +1114,9 @@ function renderSide() {
     <div class="sec">Utilizzo</div>
     <div class="kv"><span>Usata</span><span>${it.uses} ${it.uses === 1 ? "volta" : "volte"}</span><span>Esposizione totale</span><span>${fmt1(it.ev)} EV</span>${it.crop > 1.25 ? `<span>Ritaglio</span><span class="bad">×${it.crop.toFixed(2)} (forte)</span>` : ""}</div>
   </div>`;
-  fetch("/api/info/" + it.name).then(r => r.json()).then(d => {
+  rq("/api/info/" + encU(it.name)).then(r => r.json()).then(d => {
     const el = $("info"); if (!el || !selItem() || selItem().name !== it.name) return;
-    [["Profilo colore", d.profilo], ["Tempo", d.tempo], ["Diaframma", d.diaframma], ["ISO", d.iso], ["Focale", d.focale], ["Data", d.data]].forEach(([k, v]) => { if (v) el.insertAdjacentHTML("beforeend", `<span>${k}</span><span>${v}</span>`); });
+    [["Profilo colore", d.profilo], ["Tempo", d.tempo], ["Diaframma", d.diaframma], ["ISO", d.iso], ["Focale", d.focale], ["Data", d.data]].forEach(([k, v]) => { if (v) el.insertAdjacentHTML("beforeend", `<span>${k}</span><span>${escH(v)}</span>`); });
   });
   $("crop").onclick = () => setCrop(!cropMode);
   const pv = P.querySelector(".pv"); pv.classList.add("pan"); pv.onpointerdown = e => { if (e.button === 0) startPan(e, it, null); };
@@ -1178,7 +1185,7 @@ function wireRit(it) {
 // ---- sposta l'immagine dentro la cornice (trascinando la foto o l'anteprima nel pannello)
 function setBg(el, it, l, t) {
   const W = it.box[2] - it.box[0], H = it.box[3] - it.box[1];
-  el.style.backgroundImage = `url(${corrUrl(it, 900)})`; el.style.backgroundSize = `${100 / W}% ${100 / H}%`;
+  el.style.backgroundImage = `url("${corrUrl(it, 900)}")`; el.style.backgroundSize = `${100 / W}% ${100 / H}%`;
   el.style.backgroundPosition = `${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`; if (it.bw) el.style.filter = "grayscale(1)";
 }
 function startPan(e, it, slotEl) {
@@ -1344,7 +1351,7 @@ function drawTono() {
     else if (!x.compl) act = "da guardare";
     else { const ch = []; const d2 = tdl(x.evp, x.compl.ev); if (d2) ch.push(`Esposizione ${d2 > 0 ? "+" : "−"}${fn1(d2)}`); for (const k in x.compl.rit) { const dv = Math.round((x.compl.rit[k] - ((x.rit0 || {})[k] || 0)) * tonoF); if (dv) ch.push(`${RITN[k][0].toUpperCase() + RITN[k].slice(1)} ${dv > 0 ? "+" : "−"}${Math.abs(dv)}`); } act = (ch.length ? ch.join(" · ") : "nessuna correzione") + (x.compl.bruc ? " · ⚠ luci" : ""); }
     const seg = [0, 1, 2, 3, 4].map(i => `<i class="${i === lvl ? "on " + (i === 2 ? "ok" : i === 1 || i === 3 ? "att" : "no") : ""}"></i>`).join("");
-    return `<div class="tcol tcard ${stt}${msel.includes(x.side + ":" + x.idx) ? " selc" : ""}" data-at="${x.side}:${x.idx}" title="${x.name} · luce media L* ${Math.round(L)} (standard ${Math.round(T.rif)}) · alte luci L* ${Math.round(x.H)} · ombre L* ${Math.round(x.S)} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tth"><img src="/img/thumb/${x.name}?w=240"><span class="tnn">${x.n}</span></div><div class="tseg">${seg}</div><div class="tnum"><span class="${esc ? "" : lvl === 2 ? "" : lvl === 1 || lvl === 3 ? "att" : "no"}" title="Di quanto la luce media (L* ${Math.round(L)}) si discosta dallo standard (L* ${Math.round(T.rif)}). Sta nello standard fino a ±${Math.round(ze)}">Scarto <b>${esc ? "–" : fL(x.d)}</b></span><span class="${esc ? "" : x.sh}" title="Alte luci (L*): zona ${T.hz[0]}–${T.hz[1]}">Luci <b>${Math.round(x.H)}</b></span><span class="${esc ? "" : x.ss}" title="Ombre (L*): fino a ${T.sz[0]}">Ombre <b>${Math.round(x.S)}</b></span><span class="${x.B > 1 ? "no" : x.B > 0.2 ? "att" : ""}" title="Bianchi bruciati: quota di pixel senza dettaglio. Passa il mouse sulla foto per vedere dove sono (in rosso)">Bruc. <b>${x.B < 0.1 ? "0" : x.B.toFixed(1).replace(".", ",")}%</b></span></div><b class="tw ${stt}">${word}</b><span class="tad2">${act}</span></div>`;
+    return `<div class="tcol tcard ${stt}${msel.includes(x.side + ":" + x.idx) ? " selc" : ""}" data-at="${x.side}:${x.idx}" title="${escH(x.name)} · luce media L* ${Math.round(L)} (standard ${Math.round(T.rif)}) · alte luci L* ${Math.round(x.H)} · ombre L* ${Math.round(x.S)} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tth"><img src="/img/thumb/${encU(x.name)}?w=240"><span class="tnn">${x.n}</span></div><div class="tseg">${seg}</div><div class="tnum"><span class="${esc ? "" : lvl === 2 ? "" : lvl === 1 || lvl === 3 ? "att" : "no"}" title="Di quanto la luce media (L* ${Math.round(L)}) si discosta dallo standard (L* ${Math.round(T.rif)}). Sta nello standard fino a ±${Math.round(ze)}">Scarto <b>${esc ? "–" : fL(x.d)}</b></span><span class="${esc ? "" : x.sh}" title="Alte luci (L*): zona ${T.hz[0]}–${T.hz[1]}">Luci <b>${Math.round(x.H)}</b></span><span class="${esc ? "" : x.ss}" title="Ombre (L*): fino a ${T.sz[0]}">Ombre <b>${Math.round(x.S)}</b></span><span class="${x.B > 1 ? "no" : x.B > 0.2 ? "att" : ""}" title="Bianchi bruciati: quota di pixel senza dettaglio. Passa il mouse sulla foto per vedere dove sono (in rosso)">Bruc. <b>${x.B < 0.1 ? "0" : x.B.toFixed(1).replace(".", ",")}%</b></span></div><b class="tw ${stt}">${word}</b><span class="tad2">${act}</span></div>`;
   }).join("");
   const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 2 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + Math.round(Math.abs(v)) + " L*"}</span>`;
   const fixable = no.filter(x => !C || x.compl), fixAtt = at.filter(x => !C || x.compl);
@@ -1388,7 +1395,7 @@ function renderPool() {
   const free = filterList(freeAll, PF), keep = P.scrollTop; P.innerHTML = "";
   if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna foto."}</span>`);
   free.forEach(f => {
-    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${n}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
+    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${encU(n)}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
     im.ondblclick = () => { if (used) { cur = f.sp; view = "album"; render(); return; } if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, POOLSELS.length > 1 && POOLSELS.includes(n) ? POOLSELS.slice() : [n], true);
     im.dataset.n = n; if (POOLSELS.includes(n)) im.classList.add("psel");
@@ -1552,7 +1559,7 @@ function startFree(e, it, kind) {
     if (!ghost) {
       ghost = document.createElement("div"); ghost.className = "ghost"; DRAG = true; document.body.classList.add("dragging");
       if (it.name) {       // la foto com'è inquadrata adesso (nello spostamento il ritaglio non cambia), nitida quanto basta per la sua misura
-        const wpx = Math.min(1600, Math.max(400, Math.ceil(it.w * sc * (window.devicePixelRatio || 1) / 100) * 100)); ghost.style.backgroundImage = `url(/img/thumb/${it.name}?w=${wpx})`;
+        const wpx = Math.min(1600, Math.max(400, Math.ceil(it.w * sc * (window.devicePixelRatio || 1) / 100) * 100)); ghost.style.backgroundImage = `url("/img/thumb/${encU(it.name)}?w=${wpx}")`;
         if (kind === "move" && it.box) { const [l, t, r, b] = it.box, W = r - l, H = b - t; ghost.style.backgroundSize = `${100 / W}% ${100 / H}%`; ghost.style.backgroundPosition = `${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`; }
         else { ghost.style.backgroundSize = "cover"; ghost.style.backgroundPosition = "center"; }
         if (it.bw) ghost.style.filter = "grayscale(1)"; }
@@ -1560,7 +1567,7 @@ function startFree(e, it, kind) {
       srcEl = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (srcEl && kind === "move") srcEl.classList.add("srcdrag");       // dove stava: segnaposto scuro
       if (kind === "move" && msel.length > 1 && inM(it)) S.spreads[cur].items.filter(o => inM(o) && !(o.side === it.side && o.idx === it.idx)).forEach(o => {       // selezione multipla: si muovono tutte insieme, ognuna con la sua fantasma
         const g = document.createElement("div"); g.className = "ghost";
-        if (o.name) { const wpx = Math.min(1600, Math.max(400, Math.ceil(o.w * sc * (window.devicePixelRatio || 1) / 100) * 100)); g.style.backgroundImage = `url(/img/thumb/${o.name}?w=${wpx})`;
+        if (o.name) { const wpx = Math.min(1600, Math.max(400, Math.ceil(o.w * sc * (window.devicePixelRatio || 1) / 100) * 100)); g.style.backgroundImage = `url("/img/thumb/${encU(o.name)}?w=${wpx}")`;
           if (o.box) { const [l, t, r, b] = o.box, W = r - l, H = b - t; g.style.backgroundSize = `${100 / W}% ${100 / H}%`; g.style.backgroundPosition = `${W < 1 ? l / (1 - W) * 100 : 0}% ${H < 1 ? t / (1 - H) * 100 : 0}%`; } else { g.style.backgroundSize = "cover"; g.style.backgroundPosition = "center"; }
           if (o.bw) g.style.filter = "grayscale(1)"; }
         g.style.cssText += `;left:${o.x * sc}px;top:${o.y * sc}px;width:${o.w * sc}px;height:${o.h * sc}px`; $("ghosts").appendChild(g); extra.push(g);
@@ -1621,7 +1628,7 @@ function startPhotoDrag(e, n) {
   const hit = ev => { const t = document.elementFromPoint(ev.clientX, ev.clientY); return t; };
   const mv = ev => {
     if (!g && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
-    if (!g) { g = document.createElement("img"); g.src = `/img/thumb/${n}?w=240`; g.style.cssText = "position:fixed;z-index:50;width:130px;opacity:.85;pointer-events:none;border:2px solid var(--accent);border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.5)"; document.body.appendChild(g); }
+    if (!g) { g = document.createElement("img"); g.src = `/img/thumb/${encU(n)}?w=240`; g.style.cssText = "position:fixed;z-index:50;width:130px;opacity:.85;pointer-events:none;border:2px solid var(--accent);border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.5)"; document.body.appendChild(g); }
     g.style.left = ev.clientX - 65 + "px"; g.style.top = ev.clientY - 40 + "px";
     document.querySelectorAll("#slots > div.over").forEach(x => x.classList.remove("over")); const t = hit(ev), sl = t && t.closest("#slots > div"); if (sl) sl.classList.add("over");
     tline(thumbTarget(ev));
@@ -1640,7 +1647,7 @@ function avvisoAgg(a) {
   const n = (a.nomi || []).length, ar = (a.ar || []).length;
   toast(`${n} ${n === 1 ? "foto aggiornata" : "foto aggiornate"} (modificate fuori dal programma)${ar ? ` · ${ar} con proporzioni cambiate: controlla il ritaglio` : ""}`, !!ar);
 }
-setInterval(async () => { try { const p = await (await fetch("/api/ping")).json();
+setInterval(async () => { try { const p = await (await rq("/api/ping")).json();
   if (S && S.boot && p.boot !== S.boot && !$("busy").style.display.includes("flex")) { location.reload(); return; }
   if (S && aggSeen !== null && p.agg !== aggSeen) { aggSeen = p.agg; S = await api("/api/state"); render(); if ($("prjd").style.display === "flex") prjInfo(); avvisoAgg(S.agg); }
 } catch (e) {} }, 4000);
@@ -1675,8 +1682,8 @@ try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPane
 function mkTile(t, label, onclick) {
   const c = document.createElement("div"); c.className = "tp" + (t.cur ? " cur" : "");
   const pv = document.createElement("div"); pv.className = "pv"; pv.style.paddingTop = (S.H / S.W * 100) + "%";
-  t.frames.forEach(f => { const i = document.createElement("i"); i.style.cssText = `left:${f.x / S.W * 100}%;top:${f.y / S.H * 100}%;width:${f.w / S.W * 100}%;height:${f.h / S.H * 100}%;background-image:url(/img/thumb/${f.n}?w=520)`; pv.appendChild(i); });
-  pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${label}</span>`); c.onclick = onclick; return c;
+  t.frames.forEach(f => { const i = document.createElement("i"); i.style.cssText = `left:${f.x / S.W * 100}%;top:${f.y / S.H * 100}%;width:${f.w / S.W * 100}%;height:${f.h / S.H * 100}%;background-image:url("/img/thumb/${encU(f.n)}?w=520")`; pv.appendChild(i); });
+  pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${escH(label)}</span>`); c.onclick = onclick; return c;
 }
 // ---- filtri, colori, ordinamento e zoom: uguali per la galleria Foto e per la striscia «foto libere» dell'album
 const COLS = [["rosso", "#ff453a"], ["arancio", "#ff9f0a"], ["giallo", "#ffd60a"], ["verde", "#30d158"], ["azzurro", "#0a84ff"], ["viola", "#bf5af2"], ["rosa", "#ff6bb5"]], COLC = Object.fromEntries(COLS);
@@ -1722,10 +1729,10 @@ function assignColor(v, names) { names = names || markTargets(); if (!names.leng
 // ---- scelta di una foto libera (sostituisci / aggiungi qui)
 function pickPhoto(titolo, onPick, withUsed) {
   let d = $("pickd"); if (d) d.remove(); d = document.createElement("div"); d.id = "pickd"; d.className = "veil"; d.style.display = "flex";
-  d.innerHTML = `<div class="dlg" style="width:760px"><h3 style="margin:0 0 4px">${titolo}</h3><div style="display:flex;gap:10px;align-items:center"><input id="pkq" type="search" placeholder="Cerca nome…" style="flex:1">${withUsed ? '<label style="cursor:pointer;color:var(--dim)"><input type="checkbox" id="pku"> anche quelle già usate</label>' : ""}</div><div class="grid" id="pkg"></div><div style="text-align:right"><button id="pkc">Annulla</button></div></div>`;
+  d.innerHTML = `<div class="dlg" style="width:760px"><h3 style="margin:0 0 4px">${escH(titolo)}</h3><div style="display:flex;gap:10px;align-items:center"><input id="pkq" type="search" placeholder="Cerca nome…" style="flex:1">${withUsed ? '<label style="cursor:pointer;color:var(--dim)"><input type="checkbox" id="pku"> anche quelle già usate</label>' : ""}</div><div class="grid" id="pkg"></div><div style="text-align:right"><button id="pkc">Annulla</button></div></div>`;
   document.body.appendChild(d);
   const draw = () => { const q = $("pkq").value.trim().toLowerCase(), used = $("pku") && $("pku").checked, g = $("pkg"); g.innerHTML = "";
-    S.photos.filter(p => (p.sp == null || used) && !p.tolta && (!q || p.n.toLowerCase().includes(q))).slice(0, 400).forEach(p => { const im = document.createElement("img"); im.loading = "lazy"; im.src = `/img/thumb/${p.n}?w=240`; im.title = p.n + (p.sp != null ? " · in spread " + (p.sp + 1) : ""); im.onclick = () => { d.remove(); onPick(p.n); }; g.appendChild(im); }); };
+    S.photos.filter(p => (p.sp == null || used) && !p.tolta && (!q || p.n.toLowerCase().includes(q))).slice(0, 400).forEach(p => { const im = document.createElement("img"); im.loading = "lazy"; im.src = `/img/thumb/${encU(p.n)}?w=240`; im.title = p.n + (p.sp != null ? " · in spread " + (p.sp + 1) : ""); im.onclick = () => { d.remove(); onPick(p.n); }; g.appendChild(im); }); };
   $("pkq").oninput = draw; $("pkq").onkeydown = e => { e.stopPropagation(); if (e.key === "Escape") d.remove(); }; if ($("pku")) $("pku").onchange = draw; $("pkc").onclick = () => d.remove(); d.onclick = e => { if (e.target === d) d.remove(); }; draw(); $("pkq").focus();
 }
 // ---- menu del tasto destro (foto della galleria, della striscia e dello spread)
@@ -1741,9 +1748,9 @@ function ctxMenu(e, items, kind = "x") {
   const close = () => { m.remove(); document.querySelectorAll(".csub").forEach(x => x.remove()); };
   const row = (it, host) => {
     if (it === "-") { host.insertAdjacentHTML("beforeend", "<hr>"); return; }
-    if (it.chips) { const r = document.createElement("div"); r.className = "chips"; r.innerHTML = `<span>${it.label}</span>`; it.chips.forEach(([l, f]) => { const b = document.createElement("b"); b.textContent = l; b.onclick = () => { bump(it); close(); f(); }; r.appendChild(b); }); host.appendChild(r); return; }
+    if (it.chips) { const r = document.createElement("div"); r.className = "chips"; r.innerHTML = `<span>${escH(it.label)}</span>`; it.chips.forEach(([l, f]) => { const b = document.createElement("b"); b.textContent = l; b.onclick = () => { bump(it); close(); f(); }; r.appendChild(b); }); host.appendChild(r); return; }
     if (it.colors) { const r = document.createElement("div"); r.className = "crow"; r.innerHTML = COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${k}"></i>`).join("") + '<i class="nc" data-k="" title="Nessun colore"></i>'; r.onclick = ev => { const d = ev.target.closest("i"); if (d) { assignColor(d.dataset.k || null, it.colors); close(); } }; host.appendChild(r); return; }
-    const d = document.createElement("div"); d.className = "mi" + (it.off ? " off" : ""); d.innerHTML = `<span>${it.t}</span>${it.k ? `<kbd>${it.k}</kbd>` : ""}`;
+    const d = document.createElement("div"); d.className = "mi" + (it.off ? " off" : ""); d.innerHTML = `<span>${escH(it.t)}</span>${it.k ? `<kbd>${escH(it.k)}</kbd>` : ""}`;
     if (!it.off) d.onclick = () => { bump(it); close(); it.f(); }; host.appendChild(d);
   };
   const m = document.createElement("div"); m.id = "cmenu";
@@ -1775,7 +1782,7 @@ function photoItems(names, where) {          // voci comuni a ogni foto, ovunque
     { t: "Incolla il ritocco" + (names.length > 1 ? " su " + names.length + " foto" : ""), off: !RITCLIP, f: () => op({ op: "rit", photos: names, copia: RITCLIP }).then(() => toast("Ritocco incollato")) },
     { t: "Azzera il ritocco", f: () => op({ op: "rit", photos: names, reset: true }) },
     one && P.col && P.rit && sameCol.length ? { t: `Applica questo ritocco a tutte le «${P.col}» (${sameCol.length})`, f: () => op({ op: "rit", photos: sameCol, copia: P.rit }).then(() => toast("Ritocco applicato a " + sameCol.length + " foto")) } : null, "-",
-    { t: "Mostra nel Finder", off: !one, f: () => api("/api/reveal", { foto: n0 }) },
+    { t: lblFinder(), off: !one, f: () => api("/api/reveal", { foto: n0 }) },
     { t: "Copia il nome", off: !one, f: () => { try { navigator.clipboard.writeText(n0); toast("Nome copiato: " + n0); } catch (x) {} } }];
 }
 const RITCLIPSRC = n => (S.photos.find(x => x.n === n) || {}).rit || {}; const RITCLIPOK = n => Object.keys(RITCLIPSRC(n)).length > 0;
@@ -1846,7 +1853,7 @@ function renderLib() {
   const MISS = missSet();
   VIS.forEach(p => {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
-    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${p.n}?w=${tw}" title="${p.n} · ${p.dt}">${p.star ? '<span class="st">★</span>' : ""}${p.col ? `<span class="cl" style="background:${COLC[p.col]}" title="${p.col}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
+    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${encU(p.n)}?w=${tw}" title="${escH(p.n)} · ${escH(p.dt)}${p.sd ? " (data del file: manca la data di scatto)" : ""}">${p.star ? '<span class="st">★</span>' : ""}${p.col ? `<span class="cl" style="background:${escH(COLC[p.col])}" title="${escH(p.col)}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">spread ${p.sp + 1}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
     d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; }; d.oncontextmenu = e => libMenu(e, p, SELP.includes(p.n) ? SELP : [p.n], false);
     d.onclick = e => {
@@ -1900,11 +1907,12 @@ async function loadProposals() {
 // ---- selettore di foto del programma (⌘A, ⌘-clic e Maiusc-clic funzionano sempre)
 let FB = { mode: "files", path: "", data: null, sel: [], last: null };
 async function fbLoad(p) {
-  try { const d = await (await fetch("/api/ls?p=" + encodeURIComponent(p || ""))).json(); if (d.errore) throw new Error(d.errore); FB.data = d; FB.path = d.path; FB.sel = []; FB.last = null; fbRender(); $("fbmain").scrollTop = 0; } catch (e) { toast(e.message, true); }
+  try { const d = await (await rq("/api/ls?p=" + encodeURIComponent(p || ""))).json(); if (d.errore) throw new Error(d.errore); FB.data = d; FB.path = d.path; FB.sel = []; FB.last = null; fbRender(); $("fbmain").scrollTop = 0; } catch (e) { toast(e.message, true); }
 }
 function fbRender() {
   const d = FB.data; $("fbtitle").textContent = "\u202A" + d.path; $("fbup").disabled = !d.parent; $("fbtitle").style.direction = "rtl";
   $("fbplaces").innerHTML = ""; d.places.forEach(pl => { const e = document.createElement("div"); e.className = "pl" + (d.path === pl.p ? " on" : ""); e.textContent = pl.n; e.onclick = () => fbLoad(pl.p); $("fbplaces").appendChild(e); });
+  const alt = document.createElement("div"); alt.className = "pl"; alt.textContent = "Altra cartella…"; alt.title = "Scegli un'altra cartella con la finestra del sistema"; alt.onclick = async () => { try { const r = await api("/api/pick", { kind: "folder" }); if (r.paths[0]) fbLoad(r.paths[0]); } catch (e) {} }; $("fbplaces").appendChild(alt);
   const M = $("fbmain"); M.innerHTML = ""; const g = document.createElement("div"); g.className = "grid"; M.appendChild(g);
   d.dirs.forEach(n => { const e = document.createElement("div"); e.className = "fbi"; e.innerHTML = '<div class="th">📁</div><div class="nm"></div>'; e.lastChild.textContent = n; e.title = n + " · doppio clic per aprire"; e.ondblclick = () => fbLoad(d.path.replace(/\/$/, "") + "/" + n); e.onclick = () => { if (FB.mode === "folder") fbLoad(d.path.replace(/\/$/, "") + "/" + n); }; g.appendChild(e); });
   d.files.forEach((f, i) => { const e = document.createElement("div"); e.className = "fbi" + (FB.sel.includes(f.n) ? " sel" : ""); e.dataset.n = f.n; e.title = f.n; e.innerHTML = '<div class="th"><img loading="lazy"></div><div class="nm"></div>'; e.querySelector("img").src = "/api/fthumb?w=240&p=" + encodeURIComponent(d.path.replace(/\/$/, "") + "/" + f.n); e.lastChild.textContent = f.n;
@@ -1938,7 +1946,7 @@ async function doImport(paths) {
     if (!res.riavvio) { toast(res.saltate ? `Nessuna foto nuova (${res.saltate} già presenti o non JPEG)` : "Nessuna foto trovata", true); return; }
     $("busymsg").innerHTML = `Importo ${res.importate} foto…<br><span style="color:var(--dim);font-size:12px">preparo miniature e riconoscimento volti: ci vuole un po'</span>`; $("busy").style.display = "flex";
     const boot = S.boot; await new Promise(r => setTimeout(r, 1500));
-    for (let i = 0; i < 600; i++) { try { const p = await (await fetch("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); }
+    for (let i = 0; i < 600; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); }
   } catch (e) { $("busy").style.display = "none"; }
 }
 $("impF").onclick = () => fbOpen("folder"); $("impP").onclick = () => fbOpen("files");
@@ -1954,10 +1962,10 @@ async function openTpl() {
   const ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
   const apply = t => async () => { closeTpl(); sel = null; await op({ op: "template", s: cur, L: t.L, R: t.R }); };
   const mod = async (body, msg) => { try { await api("/api/modelli", body); toast(msg); openTpl(); } catch (e) {} };
-  T.innerHTML = `<div class="bar"><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : "")}</span></div>
+  T.innerHTML = `<div class="bar"><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${escH(d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : ""))}</span></div>
     <div id="tut" style="display:none"><div class="sec" style="margin:10px 4px 4px">I tuoi modelli</div><div class="grid" id="gut"></div></div>
     <div id="tstd" style="display:none"><div class="sec" style="margin:10px 4px 4px">Modelli standard</div><div class="grid" id="gstd"></div></div>
-    <div class="empty" id="tnone" style="display:none">${d.nota || "Nessun modello per questo numero di foto."}</div>`;
+    <div class="empty" id="tnone" style="display:none">${escH(d.nota || "Nessun modello per questo numero di foto.")}</div>`;
   if ($("tsave")) $("tsave").onclick = async () => { const n = prompt(`Nome del modello (layout di questo spread, ${d.n} foto):`); if (n && n.trim()) mod({ azione: "salva", s: cur, nome: n.trim() }, "Modello salvato"); };
   ut.forEach(t => {
     const tile = mkTile(t, t.cur ? t.nome + " · attuale" : t.nome, apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
@@ -1979,7 +1987,7 @@ $("redo").onclick = () => op({ op: "redo" });
 let pxres = null;
 function prjInfo() {
   const m = S.mancanti || [], n = S.photos.length;
-  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${m.length} foto su ${n} non si trovano</b> (spostate, rinominate o disco scollegato):<br>${m.slice(0, 12).join(", ")}${m.length > 12 ? "…" : ""}<br>Premi «Ricollega foto…» e scegli la cartella dove sono ora.` : `${n} foto · tutte trovate`;
+  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${m.length} foto su ${n} non si trovano</b> (spostate, rinominate o disco scollegato):<br>${escH(m.slice(0, 12).join(", "))}${m.length > 12 ? "…" : ""}<br>Premi «Ricollega foto…» e scegli la cartella dove sono ora.` : `${n} foto · tutte trovate`;
 }
 function updMiss() { const m = S.mancanti || [], b = $("missb"); b.style.display = m.length ? "" : "none"; b.textContent = `⚠ ${m.length} foto mancanti`; }
 const openPrj = () => { prjInfo(); $("prjd").style.display = "flex"; };
@@ -2013,7 +2021,7 @@ $("verb").onclick = async () => {
   v.forEach(x => { const b = document.createElement("button"); b.style.textAlign = "left"; b.textContent = `${x.label}  ·  ${x.spread} spread`;
     b.onclick = async () => { if (!confirm(`Tornare alla versione del ${x.label} (${x.spread} spread)?\nLo stato attuale viene salvato prima.`)) return;
       const boot = S.boot; await api("/api/ripristina", { ts: x.ts }); $("verd").style.display = "none"; toast("Ripristino…");
-      await new Promise(r => setTimeout(r, 1500)); for (let i = 0; i < 120; i++) { try { const p = await (await fetch("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); } };
+      await new Promise(r => setTimeout(r, 1500)); for (let i = 0; i < 120; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); } };
     l.appendChild(b); });
 };
 $("save").onclick = async () => { try { S = await api("/api/save", {}); render(); toast("Salvato spec.py e progetto.json (copie in _backup_editor)"); } catch (e) {} };
@@ -2062,7 +2070,7 @@ $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 let qlName = null, qlSrc = "", qlPref = "";
 function qlook(n, src) {       // anteprima grande di una foto (tasto Z); stesso tasto o Esc o clic la chiude
   const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
-  qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${n}?w=1800`; q.querySelector("span").textContent = n + (qlSrc === "spread" ? " · spazio o Esc per chiudere" : " · ← → per scorrere · spazio o Esc per chiudere"); q.style.display = "flex";
+  qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${encU(n)}?w=1800`; q.querySelector("span").textContent = n + (qlSrc === "spread" ? " · spazio o Esc per chiudere" : " · ← → per scorrere · spazio o Esc per chiudere"); q.style.display = "flex";
 }
 $("qlook").onclick = () => qlook(null);
 document.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("#slots, #sbarR")) qlPref = "spread"; }, true);
@@ -2073,7 +2081,7 @@ function qlList() {       // le foto tra cui scorrere con le frecce: quelle che 
 }
 function qlStep(d) {
   if (qlSrc === "spread") return; const L = qlList(), i = L.indexOf(qlName); if (i < 0) return; const j = Math.min(Math.max(i + d, 0), L.length - 1); if (j === i) return; const n = L[j];
-  qlook(n); [L[j + d], L[j - d]].forEach(x => { if (x) new Image().src = `/img/thumb/${x}?w=1800`; });
+  qlook(n); [L[j + d], L[j - d]].forEach(x => { if (x) new Image().src = `/img/thumb/${encU(x)}?w=1800`; });
   if (view === "foto") { SELP = [n]; lastClick = n; render(); }
   else { POOLSEL = n; POOLSELS = [n]; document.querySelectorAll("#poolrow img").forEach(x => { x.classList.remove("psel"); if (x.src.includes("/thumb/" + n + "?")) { x.classList.add("psel"); x.scrollIntoView({ block: "nearest", inline: "nearest" }); } }); }
 }
@@ -2100,7 +2108,7 @@ function keysOpen() {
   const d = document.createElement("div"); d.id = "keys";
   const close = () => { d.remove(); document.removeEventListener("keydown", esc, true); }, esc = e => { if (e.key === "Escape" || e.key === "?") { e.preventDefault(); e.stopPropagation(); close(); } };
   const kb = t => t.split(/( · |  oppure  | \+ )/).map(x => /^( · |  oppure  | \+ )$/.test(x) ? `<i style="opacity:.5;font-style:normal"> ${x.trim() === "oppure" ? "oppure" : x.trim()} </i>` : x.split(" ").map(k => /^(⌘|⇧|⌥|⌫|Tab|Esc|Spazio|[A-Z0-9?+−\]\[{}↑↓←→…])$/.test(k) ? `<kbd>${k}</kbd>` : k).join(" ")).join("");
-  d.innerHTML = `<div class="kc"><div class="kh"><div><b>Scorciatoie da tastiera</b><span style="opacity:.55;font-size:12px;margin-left:10px">Impaginatore ${S && S.ver ? S.ver : ""}</span></div><button class="kx" title="Chiudi (Esc)">✕</button></div><div class="kb">` + KEYS.map(([t, r]) => `<div><h4>${t}</h4>${r.map(([a, b]) => `<div class="kr"><span>${a}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + `</div></div>`;
+  d.innerHTML = `<div class="kc"><div class="kh"><div><b>Scorciatoie da tastiera</b><span style="opacity:.55;font-size:12px;margin-left:10px">Impaginatore ${escH(S && S.ver ? S.ver : "")}</span></div><button class="kx" title="Chiudi (Esc)">✕</button></div><div class="kb">` + KEYS.map(([t, r]) => `<div><h4>${t}</h4>${r.map(([a, b]) => `<div class="kr"><span>${a}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + `</div></div>`;
   d.querySelector(".kx").onclick = close; d.onclick = e => { if (e.target === d) close(); };
   document.body.appendChild(d); document.addEventListener("keydown", esc, true);
 }
@@ -2155,7 +2163,8 @@ let STGL = false;
 function setStg(c) { STGL = c === "#ffffff"; document.documentElement.classList.toggle("stgl", STGL); document.documentElement.style.setProperty("--stg", c); if (S) drawRulers(); try { localStorage.stgBg = c; } catch (_) {} $("stgsw").innerHTML = STG.map(([k, n]) => `<i style="--c:${k}" data-c="${k}" title="Sfondo ${n.toLowerCase()}" class="${k === c ? "on" : ""}"></i>`).join(""); }
 $("stgsw").addEventListener("click", e => { const c = e.target.dataset && e.target.dataset.c; if (c) setStg(c); });
 setStg((() => { try { return localStorage.stgBg || "#1b1b1d"; } catch (_) { return "#1b1b1d"; } })());
-api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = S.spreads.length ? "album" : "foto"; render(); });
+api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = S.spreads.length ? "album" : "foto"; render();
+  if ((S.scartate || []).length) toast(`${S.scartate.length} file non aperti: ` + S.scartate.slice(0, 3).map(x => x.n + " (" + x.motivo + ")").join(" · ") + (S.scartate.length > 3 ? " …" : ""), true); });
 </script>
 </body>
 </html>

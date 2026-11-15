@@ -7,7 +7,6 @@ Per i testi confronta l'ingombro dell'inchiostro. Apre Photoshop: gira solo dove
 Variabili: SOLO_TESTO=1 (una sola geometria), KT=<scala dei testi> (default 1.0)."""
 import io
 import os
-import urllib.request
 
 import numpy as np
 import pytest
@@ -87,7 +86,7 @@ def test_fedelta_geometria(home, apri_editor, tmp_path):
     st = c.get("/api/state"); K = 0.5; fuori = []
     for si, (lab, prm) in enumerate(GEO):
         sp = st["spreads"][si]
-        pv = Image.open(io.BytesIO(urllib.request.urlopen(c.url(f"/img/spread/{si}?k={K}&h={sp['h']}"), timeout=600).read())).convert("RGB")
+        pv = Image.open(io.BytesIO(c.raw(f"/img/spread/{si}?k={K}&h={sp['h']}", timeout=600))).convert("RGB")
         ps = Image.open(os.path.join(dest, "flat_%02d.png" % (si + 1))).convert("RGB").resize(pv.size, Image.LANCZOS)
         a = np.asarray(pv).astype(np.int16); b = np.asarray(ps).astype(np.int16); df = np.abs(a - b).max(2)
         e, dx, dy = shift(a, b); bad = (df > 40).mean() * 100
@@ -96,7 +95,7 @@ def test_fedelta_geometria(home, apri_editor, tmp_path):
     K = KT
     for k, (lab, prm) in enumerate(TXT):
         si = n0 + k; sp = st["spreads"][si]
-        pv = Image.open(io.BytesIO(urllib.request.urlopen(c.url(f"/img/spread/{si}?k={K}&h={sp['h']}"), timeout=600).read())).convert("RGB")
+        pv = Image.open(io.BytesIO(c.raw(f"/img/spread/{si}?k={K}&h={sp['h']}", timeout=600))).convert("RGB")
         ps = Image.open(os.path.join(dest, "flat_%02d.png" % (si + 1))).convert("RGB").resize(pv.size, Image.LANCZOS)
         ia, ib = ink(np.asarray(pv), 170), ink(np.asarray(ps), 170)
         if not ia or not ib: fuori.append(lab + " (testo mancante)"); continue

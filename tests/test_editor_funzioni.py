@@ -5,6 +5,7 @@ import os
 import shutil
 import threading
 import time
+import urllib.parse
 import zipfile
 
 import pytest
@@ -17,6 +18,13 @@ from impaginatore.piattaforma import azioni, cartelle, dialoghi
 def _op(c, st, o): return c.post("/api/op", dict(cid="t", rev=st["rev"], **o))
 
 
+class Finti(dialoghi.Dialoghi):
+    """finestre di sistema finte: rispondono con i percorsi dati, uno per volta"""
+    def __init__(self, *risposte): self.risposte = list(risposte)
+
+    def _scegli(self, tipo, messaggio): return [self.risposte.pop(0)] if self.risposte else []
+
+
 def _due_spread(c):
     st = c.get("/api/state"); names = [p["n"] for p in st["photos"]]
     for k in range(2):
@@ -27,6 +35,8 @@ def _due_spread(c):
 def test_importa_foto_e_riavvio(editor, tmp_path):
     c = editor; nuove = tmp_path / "nuove"; crea_foto(str(nuove), [("N01", 400, 300, None), ("N02", 300, 400, None)])
     (nuove / "nota.txt").write_text("x", encoding="utf-8")
+    assert c.codice("/api/import", {"paths": [str(nuove)]}) == 403, "cartella mai scelta con la finestra di sistema"
+    dialoghi.imposta(Finti(str(nuove))); assert c.post("/api/pick", {"kind": "folder"}) == {"paths": [str(nuove)]}
     r = c.post("/api/import", {"paths": [str(nuove), str(nuove / "N01.jpg")]})
     assert r == {"importate": 2, "saltate": 2, "riavvio": True}
     attendi(lambda: c.riavvii == [1], 10)
@@ -42,7 +52,9 @@ def test_ricollega(editor, tmp_path):
     assert sorted(c.get("/api/state")["mancanti"]) == sorted(n + ".jpg" for n in names[:3])
     assert c.post("/api/ricollega") == {"annullato": True}
     ok, r = c.prova("/api/ricollega", {"cartella": str(tmp_path / "no")}); assert not ok
-    r = c.post("/api/ricollega", {"cartella": str(tmp_path / "spostate")})
+    assert c.codice("/api/ricollega", {"cartella": str(tmp_path / "spostate")}) == 403, "solo cartelle scelte con la finestra"
+    dialoghi.imposta(Finti(str(tmp_path / "spostate")))
+    r = c.post("/api/ricollega", {})
     assert r == {"trovate": 3, "mancanti": [], "totale": 10} and c.get("/api/state")["mancanti"] == []
 
 
@@ -86,7 +98,10 @@ def test_esporta_progetto_e_reimporta(editor, home_srv, tmp_path, casa):
     assert c.post("/api/prj_esporta") == {"annullato": True}
     ok, r = c.prova("/api/prj_esporta", {"dest": str(tmp_path / "no")}); assert not ok
     dest = tmp_path / "uscita"; dest.mkdir()
-    out = c.post("/api/prj_esporta", {"dest": str(dest), "zip": True, "foto": True})["cartella"]
+    assert c.codice("/api/prj_esporta", {"dest": str(dest)}) == 403, "destinazione mai scelta"
+    dialoghi.imposta(Finti(str(dest)))
+    out = c.post("/api/prj_esporta", {"zip": True, "foto": True})["cartella"]; dialoghi.imposta(None)
+    assert os.path.dirname(out) == str(dest)
     L = attendi_log(c); assert any(x.startswith("RISULTATO:") for x in L), L
     nomi = set(os.listdir(out)); assert {"spec.py", "progetto.json", "album_libere.py", "testo.py", "vib_lut.npz", "Foto", "_cache", "LEGGIMI.txt", "font_usati.txt"} <= nomi
     with open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8") as fh: assert "«Prova»" in fh.read()
@@ -134,19 +149,29 @@ def test_modelli_arrivati_con_un_progetto(progetto, apri_editor, casa):
 
 
 def test_selettore_di_foto(editor, casa, tmp_path, monkeypatch):
-    c = editor; (casa / "Desktop").mkdir()
-    r = c.get("/api/ls?p=" + str(tmp_path).replace(" ", "%20"))
-    assert r["path"] == str(tmp_path) and "casa" in r["dirs"] and r["parent"] == os.path.dirname(str(tmp_path))
-    assert any(x["n"] == "Scrivania" for x in r["places"])
-    radice = c.get("/api/ls?p=/"); assert radice["parent"] is None
-    assert c.get("/api/ls?p=/non/esiste")["path"] == str(casa)
-    foto = os.path.join(c.progetto, "Foto", "H01.jpg")
-    assert c.raw("/api/fthumb?p=" + foto.replace(" ", "%20"))[:2] == b"\xff\xd8"
-    ok, r = c.prova("/api/fthumb?p=/etc/passwd"); assert not ok
+    """il selettore del programma vede solo le cartelle del progetto e quelle scelte con la finestra di sistema (SEC-005)"""
+    c = editor; q = lambda p: urllib.parse.quote(str(p))
+    r = c.get("/api/ls"); fd = os.path.join(c.progetto, "Foto")
+    assert r["path"] == c.progetto and "Foto" in r["dirs"] and r["parent"] is None, "sopra il progetto non si sale"
+    assert [x["p"] for x in r["places"]][:2] == [c.progetto, fd]
+    r = c.get("/api/ls?p=" + q(fd)); assert r["parent"] == c.progetto and [f["n"] for f in r["files"]][:2] == ["H01.jpg", "H02.jpg"]
+    assert c.get("/api/ls?p=" + q(os.path.join(fd, "non-esiste")))["path"] == fd, "dentro una radice: la cartella esistente più vicina"
+    for p in ("/etc", "/", str(casa), os.path.join(c.progetto, "..", ".."), "/non/esiste"):
+        assert c.codice("/api/ls?p=" + q(p)) == 403, p
+    os.symlink("/etc", os.path.join(c.progetto, "scorciatoia"))
+    assert c.codice("/api/ls?p=" + q(os.path.join(c.progetto, "scorciatoia"))) == 403, "un collegamento non porta fuori"
+    foto = os.path.join(fd, "H01.jpg")
+    assert c.raw("/api/fthumb?p=" + q(foto))[:2] == b"\xff\xd8"
+    assert c.codice("/api/fthumb?p=/etc/passwd") == 403
     assert c.post("/api/pick", {"kind": "folder"}) == {"paths": []}
+    altre = tmp_path / "altre"; crea_foto(str(altre), [("A01", 300, 200, None)])
+    dialoghi.imposta(Finti(str(altre))); assert c.post("/api/pick", {"kind": "folder"}) == {"paths": [str(altre)]}
+    r = c.get("/api/ls?p=" + q(altre)); assert [f["n"] for f in r["files"]] == ["A01.jpg"] and str(altre) in [x["p"] for x in r["places"]]
+    assert c.raw("/api/fthumb?p=" + q(altre / "A01.jpg"))[:2] == b"\xff\xd8"
     fatti = []; monkeypatch.setattr(azioni, "mostra", lambda p: fatti.append(p))
-    c.post("/api/reveal", {"foto": "H01"}); c.post("/api/reveal", {"path": "/x"})
-    assert fatti == [foto, "/x"]
+    c.post("/api/reveal", {"foto": "H01"}); c.post("/api/reveal", {"path": fd})
+    assert c.codice("/api/reveal", {"path": "/x"}) == 403 and c.codice("/api/reveal", {"path": "-a/Applications/Calculator.app"}) == 403
+    assert fatti == [foto, fd]
 
 
 def test_errori_di_salvataggio(editor, monkeypatch):
@@ -156,9 +181,8 @@ def test_errori_di_salvataggio(editor, monkeypatch):
     ok, r = c.prova("/api/save", {}); assert not ok and "negato" in r["errore"]
 
 
-@pytest.mark.xfail(strict=True, reason="bug noto della 1.5.2 (non corretto in fase 1): con l'orientamento EXIF le proporzioni "
-                                       "usano la misura grezza del file mentre la miniatura è già ruotata")
 def test_foto_ruotata_da_exif(home, tmp_path, apri_editor):
+    """con l'orientamento EXIF (5-8) le proporzioni sono quelle della foto come si vede (come la miniatura), non quelle del file"""
     p = home.nuovo({"nome": "Ruotata", "w": 30, "h": 30})
     crea_foto(os.path.join(p, "Foto"), [("R01", 900, 600, "2026:01:01 10:00:00")], orientamento={"R01": 6})
     c = apri_editor(p)

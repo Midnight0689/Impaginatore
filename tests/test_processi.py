@@ -10,7 +10,7 @@ import sys
 import pytest
 from aiuti import Client, attendi
 
-from impaginatore import __version__
+from impaginatore import __version__, sicurezza
 
 
 def _avvia(args, env=None):
@@ -26,18 +26,19 @@ def test_programma_completo(tmp_path, foto_campione):
     progetti = tmp_path / "Progetti"
     home, hp = _avvia(["--porta", "0", "--no-browser", "--progetti", str(progetti)])
     try:
-        h = Client(hp)
+        h = Client(hp, sicurezza.gettone_di("home", hp))                 # come un client locale fidato: il gettone dal file di sessione
         p = h.post("/api/nuovo", {"nome": "Vero", "w": 30, "h": 30})["path"]
         for f in sorted(os.listdir(foto_campione))[:4]: shutil.copy(os.path.join(foto_campione, f), os.path.join(p, "Foto", f))
         ep = h.post("/api/apri", {"path": p})["porta"]
         attendi(lambda: h.get(f"/api/pronto?porta={ep}")["pronto"], 120)
         assert h.post("/api/apri", {"path": p})["porta"] == ep, "un solo editor per progetto"
-        e = Client(ep); st = e.get("/api/state"); assert len(st["photos"]) == 4 and st["home"] == f"http://127.0.0.1:{hp}"
+        e = Client(ep, sicurezza.gettone_di("editor", ep)); st = e.get("/api/state"); assert len(st["photos"]) == 4 and st["home"] == f"http://127.0.0.1:{hp}"
         assert e.get("/api/ping")["path"] == p
         # foto aggiunte: l'editor salva e riparte da solo con gli stessi argomenti (os.execv)
-        nuova = tmp_path / "nuova"; nuova.mkdir(); shutil.copy(os.path.join(foto_campione, "V10.jpg"), nuova / "Z99.jpg")
+        nuova = os.path.join(p, "nuova"); os.mkdir(nuova)                          # dentro il progetto: una cartella che l'editor può usare
+        shutil.copy(os.path.join(foto_campione, "V10.jpg"), os.path.join(nuova, "Z99.jpg"))
         r = e.post("/api/import", {"paths": [str(nuova)]}); assert r == {"importate": 1, "saltate": 0, "riavvio": True}
-        attendi(lambda: e.get("/api/ping")["boot"] != st["boot"], 120)
+        attendi(lambda: e.get("/api/ping")["boot"] != st["boot"], 120)          # riavviato con lo stesso gettone (variabile d'ambiente, non argomenti)
         assert len(e.get("/api/state")["photos"]) == 5
         el = h.get("/api/progetti")["progetti"]; assert el[0]["aperto"] and el[0]["foto"] == 5
         with open(os.path.join(str(progetti), "editor.log"), encoding="utf-8") as f: assert "Editor album" in f.read()
@@ -81,7 +82,7 @@ def test_gia_aperto_apre_solo_la_pagina(home_srv, monkeypatch, capsys):
     aperti = []
     monkeypatch.setattr(server.webbrowser, "open", lambda u: aperti.append(u))
     assert server.main(["--porta", str(home_srv.porta)]) == 0
-    assert aperti == [f"http://127.0.0.1:{home_srv.porta}/"] and "già aperto" in capsys.readouterr().out
+    assert len(aperti) == 1 and aperti[0].startswith(f"http://127.0.0.1:{home_srv.porta}/avvio?c=") and "già aperto" in capsys.readouterr().out
     assert server.main(["--porta", str(home_srv.porta), "--no-browser"]) == 0 and len(aperti) == 1
 
 

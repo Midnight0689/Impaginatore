@@ -211,9 +211,10 @@
   {
    "ar": 1.5,
    "col": null,
-   "dt": "None.00",
+   "dt": "2026:06:01 12:00:00",
    "n": "H08",
    "rit": null,
+   "sd": true,
    "sp": 4,
    "star": false,
    "tolta": false
@@ -221,9 +222,10 @@
   {
    "ar": 0.56,
    "col": null,
-   "dt": "None.00",
+   "dt": "2026:06:01 12:00:00",
    "n": "V07",
    "rit": null,
+   "sd": true,
    "sp": null,
    "star": false,
    "tolta": true

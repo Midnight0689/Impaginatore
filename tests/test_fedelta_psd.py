@@ -9,7 +9,6 @@ FEDELTA_MAX (scarto massimo su un pixel piatto, default 10)."""
 import colorsys
 import io
 import os
-import urllib.request
 
 import numpy as np
 import pytest
@@ -68,7 +67,7 @@ def test_fedelta_colori(home, apri_editor, tmp_path):
     appiattisci(dest, ns, str(tmp_path))
     st = c.get("/api/state"); lab = {nm: lb for nm, (lb, _) in zip(names, CASI)}; K = 0.5; rows = []
     for si, sp in enumerate(st["spreads"]):
-        pv = Image.open(io.BytesIO(urllib.request.urlopen(c.url(f"/img/spread/{si}?k={K}&h={sp['h']}"), timeout=600).read())).convert("RGB")
+        pv = Image.open(io.BytesIO(c.raw(f"/img/spread/{si}?k={K}&h={sp['h']}", timeout=600))).convert("RGB")
         ps = Image.open(os.path.join(dest, "flat_%02d.png" % (si + 1))).convert("RGB").resize(pv.size, Image.LANCZOS)
         A_ = np.asarray(pv).astype(np.int16); B_ = np.asarray(ps).astype(np.int16)
         for it in sp["items"]:
