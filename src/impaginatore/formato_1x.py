@@ -104,6 +104,7 @@ class _Lettore:
     def istruzione(self, n):
         if isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant) and isinstance(n.value.value, str): return       # descrizione
         if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute): return self.aggiungi(n.value)
+        if isinstance(n, ast.Expr): raise _NonRiconosciuto(n, (f"chiamata a «{n.value.func.id}»" if isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name) else "espressione da sola") + " non ammessa")
         if isinstance(n, ast.ImportFrom): return self.importa(n)
         if isinstance(n, ast.Assign):
             if len(n.targets) != 1 or not isinstance(n.targets[0], ast.Name): raise _NonRiconosciuto(n, "si può assegnare solo a un nome (NOME = …)")
@@ -111,7 +112,7 @@ class _Lettore:
         if isinstance(n, ast.AugAssign):
             if not isinstance(n.target, ast.Name) or not isinstance(n.op, ast.Add): raise _NonRiconosciuto(n, "è ammesso solo NOME += …")
             self.nomi[n.target.id] = ("v", self.somma(self.variabile(n.target), self.valore(n.value, 0), n)); return
-        raise _NonRiconosciuto(n, (_ISTRUZIONI.get(type(n)) or f"istruzione {type(n).__name__}") + " non ammessa")
+        raise _NonRiconosciuto(n, f"istruzione non ammessa ({_ISTRUZIONI.get(type(n)) or type(n).__name__})")
 
     def importa(self, n):
         if n.level or n.module not in COSTRUTTORI: raise _NonRiconosciuto(n, f"import dal modulo «{'.' * n.level}{n.module or ''}» non ammesso (solo album e album_libere)")
@@ -151,8 +152,7 @@ class _Lettore:
             return -v if isinstance(n.op, ast.USub) else v
         if isinstance(n, ast.BinOp): return self.operazione(n, prof)
         if isinstance(n, ast.Call): return self.chiamata(n, prof)
-        if isinstance(n, ast.Starred): raise _NonRiconosciuto(n, "*elenco solo dentro [ … ], ( … ) o negli argomenti")
-        raise _NonRiconosciuto(n, (_ESPRESSIONI.get(type(n)) or f"espressione {type(n).__name__}") + " non ammessa")
+        raise _NonRiconosciuto(n, f"espressione non ammessa ({_ESPRESSIONI.get(type(n)) or type(n).__name__})")
 
     def costante(self, n):
         v = n.value
@@ -217,12 +217,12 @@ def _numero(v): return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
 def _albero(testo, nome):
-    if len(testo) > MAX_BYTE: raise ErroreProgetto(f"{nome} è troppo grande per essere un album ({len(testo) // 2**20} MB)")
+    if len(testo) > MAX_BYTE: raise ErroreProgetto(f"{nome} è troppo grande per essere un album ({len(testo) // 1024} KB)")
     try: sorgente = testo.decode("utf-8-sig")
     except UnicodeDecodeError as e: raise ErroreProgetto(f"{nome} non è un testo UTF-8 (byte {e.start})") from None
     try: albero = ast.parse(sorgente, nome)
-    except SyntaxError as e: raise errore_istruzioni(nome, e.lineno or 0, f"il testo non è scritto correttamente ({e.msg})") from None
-    except (ValueError, RecursionError, MemoryError): raise errore_istruzioni(nome, 0, "il testo non si può leggere") from None
+    except (SyntaxError, ValueError, RecursionError, MemoryError) as e:          # ValueError e RecursionError: Python 3.10-3.11 (byte nulli, annidamenti)
+        raise errore_istruzioni(nome, getattr(e, "lineno", None) or 0, f"il testo non è scritto correttamente ({getattr(e, 'msg', e)})") from None
     if sum(1 for _ in ast.walk(albero)) > MAX_NODI: raise ErroreProgetto(f"{nome} è troppo complesso per essere un album")
     return albero
 
@@ -235,7 +235,6 @@ def leggi(testo, nome=SPEC, prova=False):
     try:
         for n in albero.body: let.istruzione(n)
     except _NonRiconosciuto as e: raise errore_istruzioni(nome, e.riga, e.motivo) from None
-    except RecursionError: raise errore_istruzioni(nome, 0, "espressione troppo annidata") from None
     sp = let.nomi.get("SPREADS")
     if sp is None or sp[0] != "v": raise ErroreProgetto(f"{nome}: manca SPREADS = [ … ] (l'elenco degli spread)")
     return _struttura(sp[1], nome)
