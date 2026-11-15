@@ -39,7 +39,7 @@
     {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "fatto", "nota": "Da far rivedere a un legale"},
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
-    {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "da_fare"},
+    {"id": "T-502", "fase": 5, "titolo": "Pagina di vendita", "ruolo": "Autore", "dipende_da": ["T-003", "T-004", "T-005", "T-501"], "stato": "in_verifica"},
     {"id": "T-503", "fase": 5, "titolo": "Modelli di email", "ruolo": "Autore", "dipende_da": ["T-004", "T-005"], "stato": "fatto"},
     {"id": "T-504", "fase": 5, "titolo": "Kit per i social", "ruolo": "Autore", "dipende_da": ["T-005", "T-501"], "stato": "da_fare"},
     {"id": "T-505", "fase": 5, "titolo": "Negozio sulla piattaforma scelta", "ruolo": "Go-to-market", "dipende_da": ["T-004"], "stato": "fatto"},

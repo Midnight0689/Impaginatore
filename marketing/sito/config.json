@@ -1,0 +1,48 @@
+{
+  "_nota": "Unico punto di configurazione del sito. Dopo ogni modifica: «python3 strumenti/sito.py configura» (riscrive solo gli attributi e i testi marcati nelle pagine) e «python3 strumenti/sito.py controlla». I prezzi NON stanno qui: vengono da docs/mercato/tier.json. Un link vuoto usa il ripiego mailto: verso l'indirizzo indicato. I valori con il dominio .example sono segnaposto: il controllo con --pubblicazione li rifiuta.",
+  "dominio": "https://impaginatore.example",
+  "percorso_base": "/",
+  "email": {
+    "contatti": "ciao@impaginatore.example",
+    "vendite": "ordini@impaginatore.example",
+    "lista_attesa": "avvisami@impaginatore.example",
+    "laboratori": "laboratori@impaginatore.example",
+    "assistenza": "assistenza@impaginatore.example"
+  },
+  "modulo_lista_attesa": "",
+  "link": {
+    "acquisto_essenziale": "",
+    "acquisto_pro": "",
+    "acquisto_studio": "",
+    "ore_ora_1": "",
+    "ore_ore_5": "",
+    "ore_ore_10": "",
+    "laboratori": "",
+    "download_mac": "",
+    "download_windows": "",
+    "download_linux": "",
+    "script_mac": "installa.sh",
+    "script_windows": "installa.ps1",
+    "impronte": "",
+    "privacy": "legale.html#privacy",
+    "termini": "legale.html#condizioni",
+    "licenza": "legale.html#licenza",
+    "condizioni_assistenza": "legale.html#assistenza",
+    "terze_parti": "legale.html#terze-parti",
+    "manuale": ""
+  },
+  "requisiti": {
+    "it": "macOS (Apple Silicon e Intel), Windows 10 e 11, Linux a 64 bit. Requisiti minimi di memoria e disco: da definire con le prove sui tre sistemi.",
+    "en": "macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems."
+  },
+  "data_lancio": "2027-02-23",
+  "data_fine_lancio": "2027-04-23",
+  "titolare": "{{titolare}}",
+  "partita_iva": "{{partita_iva}}",
+  "sede": "{{sede}}",
+  "interruttori": {
+    "in_vendita": false,
+    "mcp_disponibile": false,
+    "riprova_sociale": false
+  }
+}
