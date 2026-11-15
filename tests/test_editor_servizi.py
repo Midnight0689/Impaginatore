@@ -439,6 +439,7 @@ def test_informazioni_exif_della_foto(apri):
     assert i1 == {"dim": [900, 600], "profilo": i1["profilo"], "tempo": "1/250", "diaframma": "f/2.8", "iso": 400, "focale": "85 mm", "data": "2026:05:23 10:00:01"} and "sRGB" in i1["profilo"]
     assert c.get("/api/info/H02") == {"dim": [900, 600], "tempo": "2 s", "diaframma": "f/2.8", "iso": 100, "focale": "85 mm", "data": "2026:06:01 08:00:00"}
     i8 = c.get("/api/info/H08"); assert set(i8) == {"dim", "errore"} and "H08.jpg" in i8["errore"]
+    os.remove(os.path.join(fd, "H01.jpg")); assert c.get("/api/info/H01") == i1, "letti una volta sola"
 
 
 # ---------------------------------------------------------------- salvataggio
