@@ -1,0 +1,40 @@
+# Controlli veloci prima di ogni commit (i test e la sicurezza restano in strumenti/controlli.py e nella CI).
+#     uv tool run pre-commit install          una volta per checkout
+#     uv tool run pre-commit run --all-files  su tutto il repository
+# Revisioni fissate per SHA come nei workflow («pre-commit autoupdate --freeze» per aggiornarle);
+# la versione di ruff è la stessa di uv.lock.
+#
+# Esclusi dai controlli di testo: i progetti di riferimento in tests/dati (devono restare identici byte per byte),
+# i lanciatori della 1.x in legacy/, i testi di licenza dei caratteri copiati così come sono, CAMBIAMENTI.md (chiuso)
+# e i CSV (CRLF è la fine riga dello standard).
+exclude: ^(tests/dati/|legacy/|brand/font/|CAMBIAMENTI\.md$)
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: ef6cf06c079dd6b299dfc720b0f14400c9d168e1  # frozen: v0.17.5
+    hooks:
+      - id: ruff-check
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: mixed-line-ending         # fine riga uniformi in ogni file (corregge verso quella più frequente)
+        exclude: \.csv$
+      - id: end-of-file-fixer         # un solo a capo in fondo
+        exclude: \.csv$
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: \.csv$
+      - id: check-added-large-files   # file nuovi oltre 1 MB: vanno fuori dal repository o ricostruiti da uno script
+        args: [--maxkb=1024]
+      - id: check-yaml                # workflow, dependabot, modelli delle segnalazioni
+      - id: check-toml
+
+  - repo: local
+    hooks:
+      - id: registro
+        name: forma del registro (CHANGELOG.md)
+        entry: python strumenti/controlla_changelog.py
+        language: python
+        files: ^(CHANGELOG\.md|strumenti/controlla_changelog\.py)$
+        pass_filenames: false
