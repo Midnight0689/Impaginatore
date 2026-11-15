@@ -16,7 +16,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, risorse, sicurezza
+from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import testo as TX
@@ -1605,11 +1605,6 @@ def ricollega(cartella):
         CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
         formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
-
-def _file_programma(f):
-    """file del motore che un progetto esportato porta con sé (album_libere.py, testo.py, vib_lut.npz): sempre quelli di questa versione"""
-    if f.endswith(".py"): return os.path.join(os.path.dirname(os.path.abspath(A.__file__)), f)
-    return risorse.percorso(f)
 
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
