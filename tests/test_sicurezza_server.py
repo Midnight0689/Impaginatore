@@ -267,18 +267,21 @@ def test_finder_e_cestino_solo_dentro(home_srv, tmp_path, monkeypatch):
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="osascript finto: script di shell")
-def test_cestino_mac_con_osascript_finto(home_srv, tmp_path, monkeypatch):
-    """SEC-004 (riproduzione dell'audit): un progetto con virgolette nel nome, nel Cestino del Mac. Un osascript finto registra
-    gli argomenti: il percorso arriva come argomento a sé («on run argv»), lo script non lo contiene"""
+@pytest.mark.parametrize("nome", ['x" & (do shell script "touch /tmp/PWN") & "', "a'b\\c $HOME $(id) `id`", "Sposi àè ñ\nseconda riga"])
+def test_cestino_mac_con_osascript_finto(home_srv, tmp_path, monkeypatch, nome):
+    """SEC-004 (riproduzione dell'audit): un progetto con virgolette, apici, barre rovesciate, $, accenti o a capo nel nome, nel
+    Cestino del Mac. Un osascript finto registra gli argomenti: il percorso arriva come argomento a sé («on run argv»), lo
+    script non lo contiene"""
     import impaginatore.piattaforma as pf
     c = home_srv; bin_ = tmp_path / "bin"; bin_.mkdir(); reg = tmp_path / "argomenti.json"
     (bin_ / "osascript").write_text(f"#!{sys.executable}\nimport json, sys\njson.dump(sys.argv[1:], open({str(reg)!r}, 'w', encoding='utf-8'))\n", encoding="utf-8")
     os.chmod(bin_ / "osascript", 0o755)
     monkeypatch.setenv("PATH", str(bin_) + os.pathsep + os.environ["PATH"])
     monkeypatch.setattr(pf.sys, "platform", "darwin")
-    p = os.path.join(c.modulo.PROGETTI, 'x" & (do shell script "touch /tmp/PWN") & "')
-    os.makedirs(p); open(os.path.join(p, "progetto.json"), "w", encoding="utf-8").write("{}")
+    p = os.path.join(c.modulo.PROGETTI, nome)
+    os.makedirs(p)
+    with open(os.path.join(p, "progetto.json"), "w", encoding="utf-8") as f: f.write("{}")
     assert c.post("/api/cestino", {"path": p}) == {"ok": True}
     with open(reg, encoding="utf-8") as f: a = json.load(f)
     assert a[-1] == p, "il percorso è l'ultimo argomento, intero"
-    script = "\n".join(a[:-1]); assert "on run argv" in script and "item 1 of argv" in script and "PWN" not in script and p not in script
+    script = "\n".join(a[:-1]); assert "on run argv" in script and "item 1 of argv" in script and nome not in script

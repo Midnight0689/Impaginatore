@@ -258,6 +258,25 @@ def test_dialoghi_comandi(classe, uscita, atteso, reg):
     reg.rc = 1; assert classe()._scegli("foto", "Scegli") == [], "annullato"
 
 
+NOMI_CATTIVI = ['a"b', "a'b", "a\\b", "$HOME $(touch /tmp/PWN) `id`", "Sposi àèìòù ñ ü", "riga\nnuova", 'x" & (do shell script "touch /tmp/PWN") & "']
+
+
+@pytest.mark.parametrize("nome", NOMI_CATTIVI)
+def test_dati_strani_mai_nel_testo_degli_script(sistema, reg, tmp_path, monkeypatch, nome):
+    """SEC-004: virgolette, apici, barre rovesciate, $, accenti e a capo arrivano interi come argomento o variabile d'ambiente,
+    mai dentro il testo di AppleScript, PowerShell o JavaScript"""
+    def fuori(cmd): return not any(nome in a for a in cmd[:-1])                           # il dato è solo nell'ultimo argomento
+    p = "/progetti/" + nome
+    sistema("mac"); azioni.cestina(p); cmd = reg.cmd[-1]; assert cmd[-1] == p and fuori(cmd)
+    for tipo in ("cartella", "zip", "foto"):
+        dialoghi.Mac()._scegli(tipo, nome); cmd = reg.cmd[-1]; assert cmd[-1] == nome and fuori(cmd)
+    monkeypatch.setattr(photoshop, "CARTELLA_APPLICAZIONI", str(tmp_path)); (tmp_path / "Adobe Photoshop 2026" / "Adobe Photoshop 2026.app").mkdir(parents=True)
+    photoshop.esegui_jsx(p + ".jsx", 60); cmd = reg.cmd[-1]
+    assert fuori(cmd) and json.loads(cmd[-1][len("$.evalFile(new File("):-2]) == p + ".jsx", "nel JavaScript il percorso è un letterale JSON"
+    sistema("windows"); azioni.cestina("C:/x/" + nome); cmd = reg.cmd[-1]
+    assert not any(nome in a for a in cmd) and reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"].endswith(nome)
+
+
 def test_dialoghi_mac_messaggio_come_argomento(reg):
     """SEC-004: il messaggio arriva ad AppleScript come argomento (on run argv), mai nel testo dello script"""
     cattivo = 'Scegli" & (do shell script "touch /tmp/PWN") & "'
