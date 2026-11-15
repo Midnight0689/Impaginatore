@@ -1,0 +1,21 @@
+Buongiorno,
+
+vi riscrivo una volta sola, poi non insisto.
+
+Ho esportato un album di prova nel vostro formato {{formato_esempio}}, {{prodotto_esempio}}, seguendo le specifiche pubblicate sul vostro sito. Lo trovate qui:
+{{link_album_dimostrativo}}
+Se la prestampa trova qualcosa che non va, lo correggo.
+
+La proposta è un pilota di 90 giorni. Da 10 a 20 fotografi scelti da voi usano Impaginatore Pro senza costi per tutta la durata del pilota, con il vostro catalogo già impostato. Per i primi tre laboratori la configurazione del catalogo è gratuita. Misuriamo insieme quanti file arrivano conformi al primo invio, il tempo d’impaginazione e gli album ordinati per fotografo.
+
+Vi andrebbe una chiamata di 20 minuti con chi segue la prestampa? Ditemi il giorno che vi è più comodo e vi propongo due orari.
+
+Se non è il momento, rispondete pure «no»: non vi scriverò più.
+
+Un saluto,
+{{firma_nome}}
+{{firma_ruolo}} · {{firma_telefono}}
+{{sito_testo}}
+
+--
+{{titolare}} · P. IVA {{partita_iva}} · Informativa privacy: {{link_privacy}}

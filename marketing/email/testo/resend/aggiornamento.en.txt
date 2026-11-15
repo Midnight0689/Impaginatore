@@ -1,0 +1,27 @@
+A new version is out. It’s included in your licence, like every version 2 update.
+
+IMPAGINATORE [[versione]] IS OUT ([[data_versione]])
+
+- [[novita_1_titolo]]. [[novita_1_testo]]
+- [[novita_2_titolo]]. [[novita_2_testo]]
+- [[novita_3_titolo]]. [[novita_3_testo]]
+
+Fixes: [[correzioni]]
+
+HOW TO UPDATE
+Impaginatore offers the update next time you open it. Projects, layouts and licence stay as they are. If it doesn’t appear, the new version is also on the Install page: [[link_installa]]
+
+What’s new: [[link_note_versione]]
+
+If something goes wrong after updating, reply to this email: bug fixes are always free.
+
+[[firma_nome]]
+[[firma_ruolo]]
+
+--
+Yours to keep.
+You’re getting this email because you have an Impaginatore licence registered to {{{contact.email}}}. We only write when a new version comes out.
+Don’t want these emails any more? Unsubscribe in one click: {{{RESEND_UNSUBSCRIBE_URL}}}
+Choose which ones you get: {{{RESEND_UNSUBSCRIBE_URL}}}
+[[titolare]] · [[indirizzo]] · VAT [[partita_iva]]
+[[sito]] · [[email_supporto]] · Privacy notice: [[link_privacy]]

@@ -1,0 +1,91 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Le tue ore di assistenza</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Transazionale: conferma di un pacchetto di ore (FLUSSO-ACQUISTO.md §4.5), dopo il bonifico.
+         In allegato la fattura. Si prenota rispondendo: niente calendario esterno. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Pagamento ricevuto. Rispondi con due o tre orari e l’argomento: ti mandiamo il link della videochiamata.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">ASSISTENZA A ORE · RICHIESTA {{numero_richiesta}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Le tue ore di assistenza sono pronte.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, il{{else}}Il{{/if}} pagamento è arrivato: grazie. In allegato trovi la fattura.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:6px;padding:20px 24px;">
+            <table role="presentation" class="stack" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td class="stack-spazio" width="50%" valign="top" style="width:50%;padding-right:12px;">
+                  <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">ORE ACQUISTATE</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:44px;line-height:52px;font-weight:500;color:#181715;padding-top:4px;">{{ore_acquistate}}</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">a blocchi di 30 minuti</div>
+                </td>
+                <td width="50%" valign="top" style="width:50%;">
+                  <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">DA USARE ENTRO IL</div>
+                  <div class="serif c-testo" style="font-family:Newsreader,'Iowan Old Style',Georgia,'Times New Roman',serif;font-size:26px;line-height:52px;font-weight:500;color:#181715;padding-top:4px;">{{scadenza_ore}}</div>
+                  <div class="c-sec" style="font-size:14px;line-height:22px;color:#54524E;">12 mesi dal pagamento</div>
+                </td>
+              </tr>
+            </table>
+          </td></tr></table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">Come prenotare</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Rispondi a questa email e scrivi:</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:0 0 12px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:24px;font-weight:500;color:#236743;">01</td>
+              <td valign="top" class="c-testo" style="padding:0 0 12px;font-size:16px;line-height:24px;color:#181715;">due o tre orari che ti vanno bene;</td>
+            </tr>
+            <tr>
+              <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:0 0 12px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:24px;font-weight:500;color:#236743;">02</td>
+              <td valign="top" class="c-testo" style="padding:0 0 12px;font-size:16px;line-height:24px;color:#181715;">l’argomento: installazione, primo album, modelli, preset del laboratorio, o altro;</td>
+            </tr>
+            <tr>
+              <td width="36" valign="top" class="mono c-acc" style="width:36px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:24px;font-weight:500;color:#236743;">03</td>
+              <td valign="top" class="c-testo" style="font-size:16px;line-height:24px;color:#181715;">il sistema che usi: Mac, Windows o Linux.</td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>Ti mandiamo il link della videochiamata. Se serve lavorare sul tuo computer da remoto, ti spieghiamo come: il collegamento lo avvii tu e lo chiudi quando vuoi.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">DA SAPERE</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">Il tempo si conta a blocchi di 30 minuti.</b> Alla fine di ogni sessione ti scriviamo quante ore restano.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">I difetti del programma non consumano ore.</b> Se il problema è un nostro errore, la correzione è gratuita, come il manuale e le guide video.</td></tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>A presto,<br>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché hai acquistato ore di assistenza Impaginatore con l’indirizzo {{email}}. È un messaggio di servizio, senza pubblicità.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-servizio.mjml" />
+  </mj-body>
+</mjml>

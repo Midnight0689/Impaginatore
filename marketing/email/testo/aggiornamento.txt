@@ -1,0 +1,27 @@
+{{#if nome}}Ciao {{nome}}, è{{else}}È{{/if}} uscita una nuova versione. È inclusa nella tua licenza, come tutti gli aggiornamenti della versione 2.
+
+IMPAGINATORE {{versione}} È DISPONIBILE ({{data_versione}})
+
+- {{novita_1_titolo}}. {{novita_1_testo}}
+- {{novita_2_titolo}}. {{novita_2_testo}}
+- {{novita_3_titolo}}. {{novita_3_testo}}
+
+Correzioni: {{correzioni}}
+
+COME AGGIORNARE
+Impaginatore ti propone l’aggiornamento al prossimo avvio. Progetti, modelli e licenza restano come sono. Se non compare, la nuova versione è anche nella pagina Installa: {{link_installa}}
+
+Tutte le novità: {{link_note_versione}}
+
+Se qualcosa non va dopo l’aggiornamento, rispondi a questa email: le correzioni dei difetti sono sempre gratuite.
+
+{{firma_nome}}
+{{firma_ruolo}}
+
+--
+Resta tuo.
+Ricevi questa email perché hai una licenza Impaginatore registrata con l’indirizzo {{email}}. Ti scriviamo solo quando esce una nuova versione.
+Non vuoi più ricevere queste email? Disiscriviti con un clic: {{link_disiscrizione}}
+Scegli quali ricevere: {{link_preferenze}}
+{{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}
+{{sito}} · {{email_supporto}} · Informativa privacy: {{link_privacy}}

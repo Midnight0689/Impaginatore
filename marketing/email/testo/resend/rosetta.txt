@@ -1,0 +1,39 @@
+Ti scrivo per una cosa che riguarda molti fotografi con un Mac recente e un programma per album comprato anni fa.
+
+IL TUO PROGRAMMA PER ALBUM SI APRIRÀ ANCORA?
+
+Apple ha comunicato che macOS 27 sarà l’ultima versione con Rosetta completo, il componente che fa girare sui Mac con processore Apple i programmi scritti solo per i processori Intel. Da macOS 28, atteso nel 2027, Rosetta resterà solo per alcuni vecchi giochi: gli altri programmi solo Intel non si apriranno più.
+L’annuncio di Apple: https://developer.apple.com/news/?id=w5ngl9k2
+
+COME CONTROLLARE, IN UN MINUTO
+Nel Finder apri Applicazioni, seleziona il programma e premi ⌘I (Comando e I insieme). Alla voce Tipo leggi:
+- «Applicazione (Intel)»: oggi gira grazie a Rosetta, e con macOS 28 non si aprirà più.
+- «Applicazione (Universal)» o «(Apple Silicon)»: nessun problema, puoi ignorare questa email.
+
+Se il tuo Mac ha un processore Intel, per ora non cambia nulla: macOS 26 è l’ultima versione per quei Mac, e i tuoi programmi continuano a funzionare come oggi.
+
+PRIMA DI AGGIORNARE A MACOS 28
+Se il tuo programma è «Intel», esporta in PDF o JPG gli album che potresti dover riaprire, e conserva una copia dei progetti e delle foto. Così, qualunque programma userai dopo, i lavori consegnati restano consultabili.
+
+Una cosa da sapere: Impaginatore non apre i progetti di altri programmi. Gli album già consegnati restano dove sono; i nuovi li impagini qui.
+
+PER CHI È IN QUESTA SITUAZIONE: PRO A [[prezzo_rosetta_pro]], STUDIO A [[prezzo_rosetta_studio]]
+
+Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa [[prezzo_rosetta_pro]] e Studio [[prezzo_rosetta_studio]], IVA esclusa, fino al [[data_fine_rosetta]]. Anche questa licenza si paga una volta e non scade. Impaginatore gira in modo nativo sui Mac con processore Apple, oltre che su Windows e Linux.
+
+Per richiederla, rispondi a questa email con uno screenshot della licenza o della fattura del vecchio programma. Puoi coprire importi e dati che non servono: ci bastano il nome del programma e la licenza perpetua. Usiamo lo screenshot solo per l’offerta e lo cancelliamo dopo averti mandato la chiave.
+
+Come funziona l’offerta: [[link_rosetta]]
+
+Non serve decidere oggi. Puoi anche provare Impaginatore per 30 giorni, senza carta, sul Mac che hai già: [[link_prova]]
+
+[[firma_nome]]
+[[firma_ruolo]]
+
+--
+Resta tuo.
+Ricevi questa email perché sei iscritto alle notizie di Impaginatore con l’indirizzo {{{contact.email}}} e hai confermato l’iscrizione.
+Non vuoi più ricevere queste email? Disiscriviti con un clic: {{{RESEND_UNSUBSCRIBE_URL}}}
+Scegli quali ricevere: {{{RESEND_UNSUBSCRIBE_URL}}}
+[[titolare]] · [[indirizzo]] · P. IVA [[partita_iva]]
+[[sito]] · [[email_supporto]] · Informativa privacy: [[link_privacy]]

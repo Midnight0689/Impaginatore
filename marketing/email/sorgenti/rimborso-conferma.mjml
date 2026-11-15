@@ -1,0 +1,57 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Rimborso fatto</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Transazionale: si manda quando il bonifico di rimborso è partito e la chiave è revocata
+         (chiavi.py revoca --motivo rimborso). In allegato la nota di credito. Nessuna offerta. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Il bonifico di {{importo_rimborso}} è partito. I tuoi album restano sul tuo computer.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">RIMBORSO · RICHIESTA {{numero_richiesta}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Rimborso fatto.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, abbiamo{{else}}Abbiamo{{/if}} ricevuto la tua richiesta e il rimborso è già partito, per intero. In allegato trovi la nota di credito.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr><td class="riga-fil c-sec" width="40%" style="width:40%;border-top:1px solid #DEDAD2;padding:12px 16px 12px 0;font-size:14px;line-height:22px;color:#54524E;">Importo</td><td class="riga-fil c-testo" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:22px;font-weight:600;color:#181715;">{{importo_rimborso}}</td></tr>
+            <tr><td class="riga-fil c-sec" width="40%" style="width:40%;border-top:1px solid #DEDAD2;padding:12px 16px 12px 0;font-size:14px;line-height:22px;color:#54524E;">Bonifico partito il</td><td class="riga-fil c-testo" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:22px;color:#181715;">{{data_rimborso}}</td></tr>
+            <tr><td class="riga-fil c-sec" width="40%" style="width:40%;border-top:1px solid #DEDAD2;padding:12px 16px 12px 0;font-size:14px;line-height:22px;color:#54524E;">Sul conto</td><td class="riga-fil c-testo" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:22px;color:#181715;">lo stesso da cui hai pagato</td></tr>
+            <tr><td class="riga-fil c-sec" width="40%" style="width:40%;border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 16px 12px 0;font-size:14px;line-height:22px;color:#54524E;">Licenza</td><td class="riga-fil c-testo" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:22px;color:#181715;">Impaginatore {{fascia}}, revocata</td></tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Di solito un bonifico arriva entro uno o due giorni lavorativi; se è istantaneo, in pochi secondi. Se fra cinque giorni lavorativi non lo vedi, rispondi a questa email.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">I tuoi album restano tuoi</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>La chiave è revocata e non va più usata. Impaginatore controlla l’elenco delle chiavi revocate quando il computer è collegato a internet, e a quel punto passa in sola lettura. I progetti e le foto restano sul tuo computer e si aprono ancora; quello che hai già esportato resta tuo.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>Se ti va, rispondi con una riga su cosa non ha funzionato. Non è obbligatorio, e il rimborso non dipende dalla risposta: ci aiuta a fare meglio.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché hai chiesto il rimborso di una licenza Impaginatore acquistata con l’indirizzo {{email}}. È un messaggio di servizio, senza pubblicità.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-servizio.mjml" />
+  </mj-body>
+</mjml>

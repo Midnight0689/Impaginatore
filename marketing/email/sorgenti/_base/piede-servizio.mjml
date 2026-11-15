@@ -1,0 +1,9 @@
+<!-- Chiusura del piè di pagina per le email di servizio (transazionali): identità del mittente e recapiti. -->
+<mj-section padding="12px 40px 48px">
+  <mj-column>
+    <mj-text mj-class="nota">
+      {{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}<br>
+      <a class="lnk" href="{{sito}}">{{sito_testo}}</a> · <a class="lnk" href="mailto:{{email_supporto}}">{{email_supporto}}</a> · <a class="lnk" href="{{link_privacy}}">Informativa privacy</a>
+    </mj-text>
+  </mj-column>
+</mj-section>

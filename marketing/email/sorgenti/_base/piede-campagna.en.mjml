@@ -1,0 +1,10 @@
+<!-- Campaign footer: identity, one-click unsubscribe and preferences. -->
+<mj-section padding="12px 40px 48px">
+  <mj-column>
+    <mj-text mj-class="nota">
+      Don’t want these emails any more? <a class="lnk" href="{{link_disiscrizione}}">Unsubscribe in one click</a>, or <a class="lnk" href="{{link_preferenze}}">choose which ones you get</a>.<br>
+      {{titolare}} · {{indirizzo}} · VAT {{partita_iva}}<br>
+      <a class="lnk" href="{{sito}}">{{sito_testo}}</a> · <a class="lnk" href="mailto:{{email_supporto}}">{{email_supporto}}</a> · <a class="lnk" href="{{link_privacy}}">Privacy notice</a>
+    </mj-text>
+  </mj-column>
+</mj-section>

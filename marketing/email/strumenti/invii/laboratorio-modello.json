@@ -1,0 +1,9 @@
+{
+  "_nota": "Un file per laboratorio. Si rende con: python3 strumenti/converti.py --rendi strumenti/invii/<laboratorio>.json --uscita <cartella>, poi si copia il testo .txt nella propria casella. se_accordo_telefonico: «1» solo se il laboratorio ha accettato al telefono di ricevere l'email.",
+  "nome_laboratorio": "",
+  "se_accordo_telefonico": "",
+  "formato_esempio": "",
+  "prodotto_esempio": "",
+  "link_video": "",
+  "link_album_dimostrativo": ""
+}

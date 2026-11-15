@@ -1,0 +1,83 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>macOS 28 e i vecchi programmi per album</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Offerta «Rosetta / macOS 28» (PIANO-90-GIORNI.md §3.2), da approvare. Tono di servizio:
+         nessun marchio di concorrenti, né nell'oggetto né nel testo. Prima dell'invio: revisione legale,
+         verifica che Impaginatore sia nativo arm64 e del link alla fonte Apple (GUIDA-INVIO.md). -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Come controllare in un minuto se il tuo programma per album si aprirà ancora, e cosa fare prima di aggiornare.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">MAC CON PROCESSORE APPLE · MACOS 28</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Il tuo programma per album si aprirà ancora?</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, ti{{else}}Ti{{/if}} scrivo per una cosa che riguarda molti fotografi con un Mac recente e un programma per album comprato anni fa.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>Apple ha comunicato che macOS 27 sarà l’ultima versione con Rosetta completo, il componente che fa girare sui Mac con processore Apple i programmi scritti solo per i processori Intel. Da macOS 28, atteso nel 2027, Rosetta resterà solo per alcuni vecchi giochi: gli altri programmi solo Intel non si apriranno più. <a class="lnk" href="https://developer.apple.com/news/?id=w5ngl9k2">L’annuncio di Apple</a>.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="24px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="avv-info" bgcolor="#ECF5FD" style="background-color:#ECF5FD;border-left:3px solid #2A669F;padding:16px 20px;font-size:15px;line-height:24px;">
+            <b style="color:#2A669F;">Come controllare, in un minuto.</b> <span class="c-testo" style="color:#181715;">Nel Finder apri Applicazioni, seleziona il programma e premi ⌘I (Comando e I insieme). Alla voce Tipo leggi:</span>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:8px;">
+              <tr><td class="c-testo" style="padding:4px 0;font-size:15px;line-height:24px;color:#181715;"><b>Applicazione (Intel)</b>: oggi gira grazie a Rosetta, e con macOS 28 non si aprirà più.</td></tr>
+              <tr><td class="c-testo" style="padding:4px 0;font-size:15px;line-height:24px;color:#181715;"><b>Applicazione (Universal)</b> o <b>(Apple Silicon)</b>: nessun problema, puoi ignorare questa email.</td></tr>
+            </table>
+          </td></tr></table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Se il tuo Mac ha un processore Intel, per ora non cambia nulla: macOS 26 è l’ultima versione per quei Mac, e i tuoi programmi continuano a funzionare come oggi.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">Prima di aggiornare a macOS 28</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Se il tuo programma è «Intel», esporta in PDF o JPG gli album che potresti dover riaprire, e conserva una copia dei progetti e delle foto. Così, qualunque programma userai dopo, i lavori consegnati restano consultabili.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="piccolo">Una cosa da sapere: Impaginatore non apre i progetti di altri programmi. Gli album già consegnati restano dove sono; i nuovi li impagini qui.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-divider />
+        <mj-spacer height="32px" />
+        <mj-text mj-class="etichetta">PER CHI È IN QUESTA SITUAZIONE</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text mj-class="titolo2">Pro a {{prezzo_rosetta_pro}}, Studio a {{prezzo_rosetta_studio}}</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa {{prezzo_rosetta_pro}} e Studio {{prezzo_rosetta_studio}}, IVA esclusa, fino al {{data_fine_rosetta}}. Anche questa licenza si paga una volta e non scade. Impaginatore gira in modo nativo sui Mac con processore Apple, oltre che su Windows e Linux.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Per richiederla, rispondi a questa email con uno screenshot della licenza o della fattura del vecchio programma. Puoi coprire importi e dati che non servono: ci bastano il nome del programma e la licenza perpetua. Usiamo lo screenshot solo per l’offerta e lo cancelliamo dopo averti mandato la chiave.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-button href="{{link_rosetta}}">Come funziona l’offerta</mj-button>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="piccolo">Non serve decidere oggi. Puoi anche <a class="lnk" href="{{link_prova}}">provare Impaginatore per 30 giorni</a>, senza carta, sul Mac che hai già.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché sei iscritto alle notizie di Impaginatore con l’indirizzo {{email}} e hai confermato l’iscrizione.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.mjml" />
+  </mj-body>
+</mjml>

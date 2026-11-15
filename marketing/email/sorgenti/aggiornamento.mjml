@@ -1,0 +1,75 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Impaginatore {{versione}}</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Nuova versione, ai clienti. Novità e correzioni sono dati d'invio (--dati): tre novità, ognuna con
+         una misura o un fatto verificabile, mai aggettivi. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">{{novita_1_titolo}}, {{novita_2_titolo}} e altro. Inclusa nella tua licenza: te la propone il programma.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">VERSIONE {{versione}} · <span style="text-transform:uppercase;">{{data_versione}}</span></mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Impaginatore {{versione}} è disponibile.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, è{{else}}È{{/if}} uscita una nuova versione. È inclusa nella tua licenza, come tutti gli aggiornamenti della versione 2.</mj-text>
+        <mj-spacer height="24px" />
+        <!-- SEGNAPOSTO: schermata della novità principale. 1040 × 586 px, mostrata a 520 × 293. -->
+        <mj-image src="{{base_immagini}}/segnaposto/aggiornamento-novita.png" width="520px" height="293px" alt="La novità principale della versione {{versione}} di Impaginatore." />
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/spread.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/spread-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_1_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_1_testo}}</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 24px;"><img class="img-chiaro" src="{{base_immagini}}/icone/misura.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/misura-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 24px 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_2_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_2_testo}}</div></td>
+            </tr>
+            <tr>
+              <td width="40" valign="top" style="width:40px;padding:2px 0 0;"><img class="img-chiaro" src="{{base_immagini}}/icone/esporta.png" width="40" height="40" alt="" style="display:block;border:0;width:40px;height:40px;"><!--[if !mso]><!--><img class="img-scuro" src="{{base_immagini}}/icone/esporta-scuro.png" width="40" height="40" alt="" style="display:none;max-height:0;overflow:hidden;border:0;width:40px;height:40px;"><!--<![endif]--></td>
+              <td valign="top" style="padding:0 0 0 16px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">{{novita_3_titolo}}</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">{{novita_3_testo}}</div></td>
+            </tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="riga-fil" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:16px 0;">
+            <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">CORREZIONI</div>
+            <div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:6px;">{{correzioni}}</div>
+          </td></tr></table>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">COME AGGIORNARE</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>Impaginatore ti propone l’aggiornamento al prossimo avvio. Progetti, modelli e licenza restano come sono. Se non compare, la nuova versione è anche nella <a class="lnk" href="{{link_installa}}">pagina Installa</a>.</mj-text>
+        <mj-spacer height="24px" />
+        <mj-button href="{{link_note_versione}}">Leggi tutte le novità</mj-button>
+        <mj-spacer height="32px" />
+        <mj-text>Se qualcosa non va dopo l’aggiornamento, rispondi a questa email: le correzioni dei difetti sono sempre gratuite.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché hai una licenza Impaginatore registrata con l’indirizzo {{email}}. Ti scriviamo solo quando esce una nuova versione.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-campagna.mjml" />
+  </mj-body>
+</mjml>

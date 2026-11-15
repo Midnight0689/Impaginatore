@@ -1,0 +1,35 @@
+{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per averci scritto. In base a quello che ci hai raccontato, ecco cosa fare.
+{{#if se_chiave_non_valida}}
+«QUESTA CHIAVE NON È VALIDA»
+Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con IMP1-: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero, oppure apri il link.
+
+{{chiave_licenza}}
+(intestata a «{{intestatario}}»)
+
+Attiva in Impaginatore: {{link_attivazione}}
+{{/if}}{{#if se_link_attivazione}}
+IL PULSANTE NON APRE IMPAGINATORE
+Succede con alcuni programmi di posta e con la posta letta nel browser, che non lasciano aprire le app dai link. Non è un problema della chiave. Copia la chiave dall’email della licenza, apri Impaginatore e usa il menu Licenza › Attiva. Se l’hai appena installato, aprilo una prima volta e poi riprova il pulsante.
+{{/if}}{{#if se_installazione}}
+L’INSTALLAZIONE SI FERMA
+Con il comando di una riga, copia la riga intera e incollala in Terminale (Mac e Linux) o in PowerShell (Windows); non serve la password di amministratore. Il comando giusto è nella pagina Installa: {{link_installa}}
+
+Con l’installer classico, il sistema mostra un avviso perché non è firmato con i certificati di Apple e Microsoft:
+- Mac: Impostazioni di Sistema › Privacy e sicurezza, poi «Apri comunque» accanto al nome di Impaginatore.
+- Windows: sulla finestra blu premi «Ulteriori informazioni», poi «Esegui comunque».
+
+Prima di fidarti, puoi leggere cosa fa il comando, riga per riga, con l’impronta dei file da confrontare: {{link_cosa_fa_comando}}
+{{/if}}{{#if se_altri_computer}}
+TI SERVE SU PIÙ COMPUTER
+La tua licenza {{fascia}} vale per {{computer}} computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 80 € dal Pro o 120 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 40 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.
+{{/if}}
+Se non basta, rispondi con uno screenshot di quello che vedi e il sistema che usi. Per i problemi di attivazione ti rispondiamo per email, senza costi. Se preferisci farlo insieme in videochiamata, c’è l’assistenza a ore: {{link_assistenza}}
+
+{{firma_nome}}
+{{firma_ruolo}}
+
+--
+Resta tuo.
+Ricevi questa email perché hai scritto all’assistenza di Impaginatore dall’indirizzo {{email}}. È un messaggio di servizio, senza pubblicità.
+{{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}
+{{sito}} · {{email_supporto}} · Informativa privacy: {{link_privacy}}

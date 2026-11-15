@@ -1,0 +1,101 @@
+<mjml lang="it" dir="ltr">
+  <mj-head>
+    <mj-include path="./_base/testa.mjml" />
+    <mj-title>Sistemiamo l’attivazione</mj-title>
+  </mj-head>
+  <mj-body>
+    <!-- Risposta dell'assistenza a chi non riesce ad attivare o installare. Si valorizzano solo i casi che
+         servono (se_chiave_non_valida, se_link_attivazione, se_installazione, se_altri_computer): gli altri
+         paragrafi spariscono. Con Resend, che non ha condizioni, si usa converti.py --rendi. -->
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Cosa fare, passo per passo. Se non basta, rispondi con uno screenshot.</div></mj-raw>
+    <mj-include path="./_base/testata.mjml" />
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-text mj-class="etichetta">ASSISTENZA · ATTIVAZIONE</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="titolo">Sistemiamo l’attivazione.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per averci scritto. In base a quello che ci hai raccontato, ecco cosa fare.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-raw>{{#if se_chiave_non_valida}}</mj-raw>
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">«Questa chiave non è valida»</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con <span class="mono" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;">IMP1-</span>: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero, oppure usa il pulsante.</mj-text>
+        <mj-spacer height="16px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:4px;padding:16px 20px;">
+            <div class="mono c-ten" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:12px;line-height:16px;font-weight:500;letter-spacing:0.06em;color:#6B6964;">CHIAVE DI LICENZA · {{intestatario}}</div>
+            <div class="mono selez c-testo" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:14px;line-height:24px;font-weight:500;letter-spacing:0.02em;color:#181715;padding-top:8px;overflow-wrap:anywhere;word-break:break-word;-webkit-user-select:all;user-select:all;">{{chiave_licenza}}</div>
+          </td></tr></table>
+        </mj-text>
+        <mj-spacer height="16px" />
+        <mj-button href="{{link_attivazione}}">Attiva in Impaginatore</mj-button>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
+
+    <mj-raw>{{#if se_link_attivazione}}</mj-raw>
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">Il pulsante non apre Impaginatore</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Succede con alcuni programmi di posta e con la posta letta nel browser, che non lasciano aprire le app dai link. Non è un problema della chiave. Copia la chiave dall’email della licenza, apri Impaginatore e usa il menu <b>Licenza › Attiva</b>. Se l’hai appena installato, aprilo una prima volta e poi riprova il pulsante.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
+
+    <mj-raw>{{#if se_installazione}}</mj-raw>
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">L’installazione si ferma</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Con il comando di una riga, copia la riga intera e incollala in <b>Terminale</b> (Mac e Linux) o in <b>PowerShell</b> (Windows); non serve la password di amministratore. Il comando giusto è nella <a class="lnk" href="{{link_installa}}">pagina Installa</a>.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>Con l’installer classico, il sistema mostra un avviso perché non è firmato con i certificati di Apple e Microsoft:</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:24px;color:#54524E;"><b class="c-testo" style="color:#181715;">Mac</b> · Impostazioni di Sistema › Privacy e sicurezza, poi <b class="c-testo" style="color:#181715;">Apri comunque</b> accanto al nome di Impaginatore.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:24px;color:#54524E;"><b class="c-testo" style="color:#181715;">Windows</b> · sulla finestra blu premi <b class="c-testo" style="color:#181715;">Ulteriori informazioni</b>, poi <b class="c-testo" style="color:#181715;">Esegui comunque</b>.</td></tr>
+          </table>
+        </mj-text>
+        <mj-spacer height="12px" />
+        <mj-text mj-class="piccolo">Prima di fidarti, puoi leggere <a class="lnk" href="{{link_cosa_fa_comando}}">cosa fa il comando, riga per riga</a>, con l’impronta dei file da confrontare.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
+
+    <mj-raw>{{#if se_altri_computer}}</mj-raw>
+    <mj-section padding="32px 40px 0">
+      <mj-column>
+        <mj-text mj-class="titolo2">Ti serve su più computer</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>La tua licenza {{fascia}} vale per {{computer}} computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 80 € dal Pro o 120 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 40 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
+
+    <mj-section padding="40px 40px 0">
+      <mj-column>
+        <mj-divider />
+        <mj-spacer height="24px" />
+        <mj-text>Se non basta, rispondi con uno screenshot di quello che vedi e il sistema che usi. Per i problemi di attivazione ti rispondiamo per email, senza costi. Se preferisci farlo insieme in videochiamata, c’è l’<a class="lnk" href="{{link_assistenza}}">assistenza a ore</a>.</mj-text>
+        <mj-spacer height="12px" />
+        <mj-text>{{firma_nome}}<br><span class="c-sec" style="color:#54524E;">{{firma_ruolo}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-include path="./_base/piede-apertura.mjml" />
+    <mj-section padding="12px 40px 0">
+      <mj-column>
+        <mj-text mj-class="nota">Ricevi questa email perché hai scritto all’assistenza di Impaginatore dall’indirizzo {{email}}. È un messaggio di servizio, senza pubblicità.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-include path="./_base/piede-servizio.mjml" />
+  </mj-body>
+</mjml>

@@ -1,0 +1,8 @@
+{
+  "_nota": "21/02/2027: accesso anticipato di 48 ore alla lista d'attesa (PIANO-90-GIORNI.md §3.1). Uso: python3 strumenti/converti.py --dati strumenti/invii/lancio-accesso-anticipato.json",
+  "data_fine_lancio": "23 aprile 2027",
+  "data_fine_lancio.en": "23 April 2027",
+  "accesso_anticipato": "1",
+  "data_apertura": "23 febbraio 2027",
+  "data_apertura.en": "23 February 2027"
+}
