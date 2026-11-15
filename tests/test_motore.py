@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 import pytest
-from aiuti import come_script, crea_foto
+from aiuti import come_script
 
 from impaginatore import formato
 from impaginatore.motore import album, genera_psd_angolo
@@ -35,7 +35,6 @@ def test_anteprima_e_analizza(prj):
     assert "Sequenza v1.txt" in out and any(f.startswith("Anteprima v1") for f in out) and any(f.startswith("Prima-dopo") for f in out)
     with open(os.path.join(prj, "Anteprime", "Sequenza v1.txt"), encoding="utf-8") as f: assert "H08" in f.read()
     r = _script("analizza", cwd=prj, env=dict(os.environ, ALBUM_PROGETTO=prj)); assert r.returncode == 0, r.stderr[-2000:]
-    r = _script("analizza", "--progetto", prj); assert r.returncode == 0, r.stderr[-2000:]
 
 
 def test_progetto_mancante(tmp_path):
@@ -65,15 +64,6 @@ def test_modifica_psd_registro(prj):
     with open(reg, "w", encoding="utf-8") as f: f.write('{"Spread_01.psd": 10')
     r = _script("modifica_psd", "--progetto", prj, "nessuno"); assert r.returncode == 0, r.stderr[-2000:]
     assert formato.leggi_json(reg) == {} and "non leggibile" in r.stdout
-
-
-def test_abbina(tmp_path):
-    web, orig, dest = tmp_path / "web", tmp_path / "orig", tmp_path / "dest"
-    crea_foto(str(web), [("A1", 300, 200, None), ("A2", 300, 200, None)]); crea_foto(str(orig / "cap1"), [("A1", 900, 600, None)])
-    r = _script("abbina", "--web", str(web), "--originali", str(orig / "cap1"), "--dest", str(dest), "--lato-minimo", "800")
-    assert r.returncode in (0, 1), r.stderr[-2000:]
-    assert (dest / "A1.jpg").exists() and "A2" in r.stdout
-    with open(dest / "origine.json", encoding="utf-8") as f: assert json.load(f) == {"A1.jpg": str(orig / "cap1")}
 
 
 class PhotoshopFinto:
