@@ -97,6 +97,7 @@ def test_versioni_della_1x_e_copie_rovinate(editor):
     assert v == [("20250101-100000", 1), ("20250101-090000", 1), ("20250101-080000", 0)]
     with open(os.path.join(c.progetto, "album.json"), "rb") as fh: prima = fh.read()
     ok, r = c.prova("/api/ripristina", {"ts": "20250101-080000"}); assert not ok and "istruzioni non riconosciute" in r["errore"]
+    ok, r = c.prova("/api/ripristina", {"ts": "20000101-000000"}); assert not ok and "versione non trovata" in r["errore"]
     with open(os.path.join(c.progetto, "album.json"), "rb") as fh: assert c.riavvii == [] and fh.read() == prima, "la copia con codice non tocca il progetto"
     assert c.post("/api/ripristina", {"ts": "20250101-100000"}) == {"riavvio": True}
     attendi(lambda: c.riavvii == [1], 10)
