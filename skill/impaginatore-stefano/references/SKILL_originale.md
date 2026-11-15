@@ -16,9 +16,11 @@ breve, e manda sempre l'immagine di controllo. Quando qualcosa è sbagliato per 
 ## 0. Ambiente (una volta per Mac, anche sul MacBook Air)
 
 ```bash
-zsh <skill>/scripts/setup.sh        # crea ~/.album-tools/venv, ultima riga = python da usare
+zsh <programma>/legacy/macos/setup.sh        # crea ~/.album-tools/venv con il programma installato, ultima riga = python da usare
 ```
-Tutti gli script si lanciano con quel python, da `<skill>/scripts/`, con `--progetto <cartella del progetto>`.
+Nell'Impaginatore 2.0 gli script sono nel pacchetto: si lanciano con quel python come `python -m impaginatore.motore.<script>`
+(da qualunque cartella), con `--progetto <cartella del progetto>`. Negli esempi qui sotto `python X.py` vuol dire
+`python -m impaginatore.motore.X`.
 Serve Photoshop (2026) in /Applications. Font: Bodoni Moda Italic e Avenir Next; se mancano sul Mac, le anteprime
 usano font di sistema e nei PSD scegli font installati (`font_titolo_ps` / `font_testo_ps` in progetto.json).
 
@@ -38,7 +40,7 @@ esposizione, centri_volto, foto_extra, tolte, uscita_psd).
 ## 2. Foto in alta
 
 ```bash
-python abbina.py --web "<selezione cliente>" --originali "<cartella cap.1>" "<cartella cap.2>" --dest "<album>/Selezione Alta" --prova
+python -m impaginatore.motore.abbina --web "<selezione cliente>" --originali "<cartella cap.1>" "<cartella cap.2>" --dest "<album>/Selezione Alta" --prova
 ```
 Prima con `--prova`. Se dice che gli originali sono **identici alla versione web** o piccoli, Stefano non ha riesportato
 in alta da Lightroom: diglielo e aspetta che lo faccia, poi rilancia. Segnala nomi doppi tra cartelle e foto con
@@ -47,8 +49,8 @@ post-produzione diversa (chiedi quale versione usare). Poi senza `--prova` per c
 ## 3. Guarda le foto
 
 ```bash
-python analizza.py --progetto P provini       # tutte le foto numerate in ordine di scatto: guardale TUTTE
-python analizza.py --progetto P luminosita    # pelle L* per cartella: capitoli più scuri da uniformare per la stampa
+python -m impaginatore.motore.analizza --progetto P provini       # tutte le foto numerate in ordine di scatto: guardale TUTTE
+python -m impaginatore.motore.analizza --progetto P luminosita    # pelle L* per cartella: capitoli più scuri da uniformare per la stampa
 ```
 Raggruppa per momenti (capitoli), individua la foto più bella del soggetto (apertura e finale), le coppie che si
 "parlano", le quasi-doppie (primo piano su una delle due), i gruppi grandi e piccoli, i dettagli.
@@ -60,8 +62,8 @@ con le foto indicate per nome file. Segui `references/stile.md`: griglia 12x8, m
 bianche alternate, una protagonista per spread, BN come accento, capitoli, climax sul rito, finale sul soggetto.
 
 ```bash
-python anteprima.py --progetto P --nome v1                 # controllo + Anteprime/Anteprima v1 - N spread.jpg + Sequenza v1.txt
-python analizza.py --progetto P ritagli 3,6,9              # finestre di ritaglio sugli originali: nessuno tagliato
+python -m impaginatore.motore.anteprima --progetto P --nome v1                 # controllo + Anteprime/Anteprima v1 - N spread.jpg + Sequenza v1.txt
+python -m impaginatore.motore.analizza --progetto P ritagli 3,6,9              # finestre di ritaglio sugli originali: nessuno tagliato
 ```
 Il controllo deve dire: 0 problemi, 0 doppie, nessuna foto non usata (salvo quelle in "tolte"). Guarda TU l'anteprima
 con occhio critico prima di mandarla (spazi, ritagli, persone tagliate, ritmo), poi mandala con una spiegazione breve
@@ -76,17 +78,17 @@ pallini colorati = raggruppa per colore). Interpreta, e quando un segno è ambig
 Le foto in stampa escono più scure: proponi `esposizione.globale` (es. +0,25), una base per cartella per i capitoli più
 scuri e correzioni singole. Mostra il confronto prima di applicare:
 ```bash
-python anteprima.py --progetto P --prima-dopo 3,4
-python analizza.py --progetto P colore 20        # dominanti e guadagni proposti per bilanciamento_bianco
+python -m impaginatore.motore.anteprima --progetto P --prima-dopo 3,4
+python -m impaginatore.motore.analizza --progetto P colore 20        # dominanti e guadagni proposti per bilanciamento_bianco
 ```
 Le correzioni diventano livelli agganciati e modificabili nei PSD (Esposizione, Bilanciamento bianco).
 
 ## 6. PSD in Photoshop
 
 ```bash
-python genera_psd.py --progetto P --spread 1,14     # prima una prova su 1-2 spread (uno con testo), falla vedere
-python genera_psd.py --progetto P                   # poi tutti
-python verifica_psd.py --progetto P --confronta-spec
+python -m impaginatore.motore.genera_psd --progetto P --spread 1,14     # prima una prova su 1-2 spread (uno con testo), falla vedere
+python -m impaginatore.motore.genera_psd --progetto P                   # poi tutti
+python -m impaginatore.motore.verifica_psd --progetto P --confronta-spec
 ```
 Poi esporta un JPG di controllo da Photoshop e guardalo. Mostra a Stefano lo spread di prova prima di generarli tutti.
 
@@ -94,10 +96,10 @@ Poi esporta un JPG di controllo da Photoshop e guardalo. Mostra a Stefano lo spr
 
 Se un PSD è stato salvato dopo la generazione, **è suo**: genera_psd.py lo salta da solo. Modificalo sul posto:
 ```bash
-python modifica_psd.py --progetto P scambia 4:_DSC3457 5:_DSC3513
-python modifica_psd.py --progetto P sostituisci 23:_DSC8801 _DSC9355
-python modifica_psd.py --progetto P colore 15:_DSC0299        # oppure: bn, esposizione 4:_DSC3674 0.95
-python modifica_psd.py --progetto P rifai-pagina 9 sinistra   # dopo aver aggiornato spec.py: rifà solo quella pagina
+python -m impaginatore.motore.modifica_psd --progetto P scambia 4:_DSC3457 5:_DSC3513
+python -m impaginatore.motore.modifica_psd --progetto P sostituisci 23:_DSC8801 _DSC9355
+python -m impaginatore.motore.modifica_psd --progetto P colore 15:_DSC0299        # oppure: bn, esposizione 4:_DSC3674 0.95
+python -m impaginatore.motore.modifica_psd --progetto P rifai-pagina 9 sinistra   # dopo aver aggiornato spec.py: rifà solo quella pagina
 ```
 Ogni comando fa una copia di sicurezza in `PSD_vecchi/backup_<data-ora>/`; dillo a Stefano. Dopo: verifica_psd.py
 ed esportazione di controllo. Leggi i valori attuali dai PSD (Stefano ritocca le esposizioni a mano): non rimetterli ai
@@ -106,8 +108,8 @@ valori di progetto.json. Foto nuove prese dalle cartelle complete vanno aggiunte
 ## 8. PDF per il cliente
 
 ```bash
-python esporta_pdf.py --progetto P --nome "Album Anita - bozza" --copertina _DSC9383,_DSC9376   # ipotesi A/B
-python esporta_pdf.py --progetto P --nome "Album Anita - definitivo" --copertina _DSC8814
+python -m impaginatore.motore.esporta_pdf --progetto P --nome "Album Anita - bozza" --copertina _DSC9383,_DSC9376   # ipotesi A/B
+python -m impaginatore.motore.esporta_pdf --progetto P --nome "Album Anita - definitivo" --copertina _DSC8814
 ```
 Esporta i PSD come sono (anche modificati a mano), ~5 MB: va su WhatsApp. Controlla la pagina 1 prima di mandarlo.
 

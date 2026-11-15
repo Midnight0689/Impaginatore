@@ -15,7 +15,7 @@
 - Costruire i documenti a 72 ppi (così px = pt per i testi) e alla fine `resizeImage(undefined, undefined, ppi, ResampleMethod.NONE)`.
 - Errore di una pagina: chiudere il documento senza salvare, così il file su disco non cambia.
 
-## Action Manager (vedi scripts/photoshop.py, JS_LIB)
+## Action Manager (vedi src/impaginatore/motore/photoshop.py, JS_LIB)
 - Cornice: `make` di `framedGroupSection` con `framedGroupRect` (classFloatRect top/left/bottom/right).
 - Foto nella cornice: con la cornice selezionata, `placeEvent` (linked=false). Poi ridimensionare e spostare il livello
   oggetto avanzato: la cornice (gruppo) resta ferma, il contenuto si muove dentro.
