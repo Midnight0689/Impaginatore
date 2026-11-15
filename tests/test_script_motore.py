@@ -7,12 +7,13 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import types
 
 import numpy as np
 import pytest
 from aiuti import come_script
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from impaginatore import formato
 
@@ -32,6 +33,21 @@ def _tinta(prj, nome, colore, misura=(900, 600)):
 def _rossi(im, soglia=60):
     a = np.asarray(im.convert("RGB")).astype(int)
     return int(((a[..., 0] > 200) & (a[..., 1] < soglia) & (a[..., 2] < soglia)).sum())
+
+
+# ---------------------------------------------------------------- motore (album.py)
+def test_ritaglio_sui_volti_ed_esposizione_per_cartella(prj):
+    """il ritaglio si centra sui volti grandi (un volto piccolissimo, sotto il 15 % del più grande, non conta); l'esposizione
+    somma globale, cartella d'origine (da origine.json, se no la cartella della foto) e foto"""
+    cfg = formato.leggi_json(os.path.join(prj, "progetto.json"))
+    cfg["esposizione"]["per_cartella"] = {os.path.join(prj, "Foto"): 0.5, "/originali/Cerimonia": -1.0}
+    formato.scrivi_json(os.path.join(prj, "progetto.json"), cfg)
+    formato.scrivi_json(os.path.join(prj, "Foto", "origine.json"), {"H02.jpg": "/originali/Cerimonia"})
+    _faces(prj, {"H01.jpg": [[0.7, 0.3, 0.9, 0.6], [0.0, 0.0, 0.02, 0.02]]})
+    A = _carica(prj); i = A.IDX["H01"] - 1
+    l, t, r, b = A.crop(i, 500, 1000)                      # foto 3:2 in una cornice 1:2: si tiene un terzo della larghezza
+    assert (round(l, 4), t, round(r, 4), b) == (0.6333, 0, 0.9667, 1), "centrato sul volto grande (0.8), non a metà strada con quello piccolo"
+    assert [A.ev_for(A.IDX[n] - 1) for n in ("H01", "H02", "V03")] == [0.75, -0.75, 1.25]
 
 
 # ---------------------------------------------------------------- analizza
@@ -393,3 +409,62 @@ def test_esporta_pdf_ipotesi_di_copertina(prj, monkeypatch, capsys):
     assert _pagine_pdf(os.path.join(prj, "Album - bozza.pdf")) == 3
     with Image.open(os.path.join(prj, "_cache", "pdf_pagina1.jpg")) as p1:
         assert _vicino(_colore(p1, (230, 180)), (30, 60, 220)) and _vicino(_colore(p1, (570, 180)), (240, 200, 20)), "A a sinistra, B a destra"
+
+
+# ---------------------------------------------------------------- abbina
+def _scatto(p, w, h, colore):
+    """foto sintetica: fondo di un colore con un cerchio chiaro (a misure diverse resta «la stessa foto»)"""
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    im = Image.new("RGB", (w, h), colore); ImageDraw.Draw(im).ellipse((w // 4, h // 4, 3 * w // 4, 3 * h // 4), fill=(240, 230, 200)); im.save(p, quality=92)
+
+
+def test_abbina(tmp_path, monkeypatch, capsys):
+    """per ogni foto scelta (versione web): trovata negli originali, nome in due cartelle (si sceglie quella con la foto
+    uguale), originale identico alla versione web o piccolo (non si copia), visivamente diverso (si copia e si avvisa);
+    un file già nella destinazione e diverso non si sovrascrive; origine.json dice da che cartella viene ogni foto"""
+    web, cap1, cap2, dest = (str(tmp_path / n) for n in ("web", "cap1", "cap2", "dest"))
+    for n, c in (("A1", (200, 60, 60)), ("A2", (60, 200, 60)), ("A3", (60, 60, 200)), ("A4", (120, 120, 30)), ("A5", (30, 120, 120)), ("A6", (150, 30, 150))):
+        _scatto(os.path.join(web, n + ".jpg"), 300, 200, c)
+    _scatto(os.path.join(web, ".A7.jpg"), 300, 200, (0, 0, 0)); open(os.path.join(web, "note.txt"), "w").close()
+    _scatto(os.path.join(cap1, "A1.jpg"), 900, 600, (200, 60, 60))
+    _scatto(os.path.join(cap1, "A3.jpg"), 900, 600, (60, 60, 200)); _scatto(os.path.join(cap2, "A3.jpg"), 900, 600, (230, 230, 30))
+    shutil.copy(os.path.join(web, "A4.jpg"), os.path.join(cap1, "A4.jpg"))
+    _scatto(os.path.join(cap1, "A5.jpg"), 500, 300, (30, 120, 120))
+    _scatto(os.path.join(cap2, "A6.jpg"), 900, 600, (10, 10, 10)); _scatto(os.path.join(cap2, ".A1.jpg"), 900, 600, (0, 0, 0))
+    _scatto(os.path.join(dest, "A6.jpg"), 50, 50, (1, 2, 3)); gia = pathlib.Path(dest, "A6.jpg").read_bytes()
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", Image.MAX_IMAGE_PIXELS)          # lo script lo toglie (foto enormi): solo per lui
+    come_script(monkeypatch, "abbina", "--web", web, "--originali", cap1, cap2, "--dest", dest, "--lato-minimo", "800")
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "selezione: 6 foto | pronte da copiare: 3 | da controllare: 5"
+    assert out[1] == "  - A2.jpg: NON trovata negli originali"
+    assert re.fullmatch(r"  - A3\.jpg: nome presente in 2 cartelle -> uso cap1 \(differenza [\d.]+\)", out[2])
+    assert out[3] == "  - A4.jpg: l'originale è IDENTICO alla versione web -> forse non riesportato in alta"
+    assert out[4] == "  - A5.jpg: originale piccolo (500x300) -> controlla l'esportazione"
+    assert re.fullmatch(r"  - A6\.jpg: l'originale è visivamente diverso dalla scelta \(differenza [\d.]+\): post-produzione cambiata\?", out[5])
+    assert out[6:] == ["per cartella: {'cap1': 2, 'cap2': 1}", "  esiste già diverso, non sovrascrivo: A6.jpg", "copiate e verificate: 2 | errori di copia: ['A6.jpg']"]
+    assert sorted(os.listdir(dest)) == ["A1.jpg", "A3.jpg", "A6.jpg", "origine.json"] and pathlib.Path(dest, "A6.jpg").read_bytes() == gia
+    assert pathlib.Path(dest, "A3.jpg").read_bytes() == pathlib.Path(cap1, "A3.jpg").read_bytes()
+    assert formato.leggi_json(os.path.join(dest, "origine.json")) == {"A1.jpg": cap1, "A3.jpg": cap1, "A6.jpg": cap2}
+
+
+def test_abbina_prova_non_copia(tmp_path, monkeypatch, capsys):
+    web, orig, dest = (str(tmp_path / n) for n in ("web", "orig", "dest"))
+    _scatto(os.path.join(web, "A1.jpg"), 300, 200, (200, 60, 60)); _scatto(os.path.join(orig, "A1.jpg"), 900, 600, (200, 60, 60))
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", Image.MAX_IMAGE_PIXELS)
+    come_script(monkeypatch, "abbina", "--web", web, "--originali", orig, "--dest", dest, "--lato-minimo", "800", "--prova")
+    assert capsys.readouterr().out.splitlines() == ["selezione: 1 foto | pronte da copiare: 1 | da controllare: 0", "per cartella: {'orig': 1}"]
+    assert not os.path.exists(dest)
+
+
+# ---------------------------------------------------------------- anteprima
+def test_anteprima_segnala_spazi_e_basta_il_foglio(prj, monkeypatch, capsys):
+    """cornici libere a una distanza diversa dallo spazio del progetto: il controllo lo dice; senza --spread e --prima-dopo
+    si fanno solo il foglio con tutti gli spread e la sequenza"""
+    _faces(prj, {})
+    with open(os.path.join(prj, "spec.py"), "w", encoding="utf-8") as f:
+        f.write("from album import *\nfrom album_libere import *\nSPREADS = [\n    (W(FREE('H01', 0.0, 0.1, 0.4, 0.5), FREE('H02', 0.45, 0.1, 0.4, 0.5)), W()),\n]\n")
+    come_script(monkeypatch, "anteprima", "--progetto", prj)
+    out = capsys.readouterr().out
+    assert re.search(r"^  S01 spazio \d+px tra H01 e H02$", out, re.M) and "problemi 1" in out
+    assert sorted(os.listdir(os.path.join(prj, "Anteprime"))) == ["Anteprima - 1 spread.jpg", "Sequenza.txt"]
+    with open(os.path.join(prj, "Anteprime", "Sequenza.txt"), encoding="utf-8") as f: assert f.read() == "Spread 01  sx: [bianca] H01, H02  |  dx: [bianca] \n"

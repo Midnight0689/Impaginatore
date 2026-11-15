@@ -157,8 +157,24 @@ def test_genera_psd_base_e_registro_rovinato(prj, monkeypatch, capsys):
     assert "SALTATO spread 2: è aperto in Photoshop" in capsys.readouterr().out
 
 
-def test_album_senza_progetto_non_legge_niente():
-    r = subprocess.run([sys.executable, "-c", "from impaginatore.motore import album as a; print(a.PROJ, a.CFG, a.M)"], capture_output=True, text=True, encoding="utf-8")
-    assert r.stdout.strip() == "None None []"
+# album.py da solo (come lo usano gli script delle 1.x, senza album_libere che ne sostituisce layout e zcrop): griglia 12 x 8,
+# pagina immersiva (tutta la mezza pagina meno metà spazio alla piega) e bianca (dentro il margine), ritaglio centrato
+ALBUM_DA_SOLO = """from impaginatore.motore import album as a
+print(a.PROJ, a.CFG, a.M)
+a.CW, a.CH, a.B, a.G, a.MG = 1190, 800, 0, 10, 50; a.FOLD = a.CW / 2; a.TW, a.TH = a.CW, a.CH
+a.M, a.F, a.FACE_FIX = [{"n": "x.jpg", "ar": 1.5}], {}, {}
+L = a.layout([("I", [a.P(1, 0, 0, 6, 8)]), ("W", [a.P(1, 0, 0, 12, 8)])])
+print([(it["side"], it["x"], it["y"], it["W"], it["H"]) for it in L])
+print([round(v, 4) for v in a.zcrop(L[0])])
+"""
+
+
+def test_album_senza_progetto_non_legge_niente(tmp_path, monkeypatch):
+    r = subprocess.run([sys.executable, "-c", ALBUM_DA_SOLO], capture_output=True, text=True, encoding="utf-8")
+    assert r.stdout.splitlines() == ["None None []", "[('L', 0, 0, 290, 800), ('R', 645, 50, 495, 700)]", "[0.3792, 0, 0.6208, 1]"], r.stderr[-2000:]
     assert album.progetto_da_argv(["x", "--progetto", "rel"]) == os.path.abspath("rel")
+    monkeypatch.delenv("ALBUM_PROGETTO", raising=False); monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit, match="Progetto non trovato"): album.progetto_da_argv(["x"])
+    (tmp_path / "progetto.json").write_text("{}", encoding="utf-8")
+    assert album.progetto_da_argv(["x"]) == str(tmp_path), "nella cartella del progetto basta lanciare lo script"
 
