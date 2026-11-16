@@ -227,8 +227,11 @@ def test_editor_che_riparte_conta_come_aperto(home, monkeypatch):
     _sessione(9, progetto=p, pid=finito.pid, riavvio=adesso)
     assert e.poll() is None and home.apri(p) == 9 and [x["aperto"] for x in home.progetti() if x["path"] == p] == [True], "il figlio ha segnato il riavvio"
     _sessione(9, progetto=p, pid=os.getpid()); assert e.poll() is None, "l'editor nuovo ha scritto la sessione e non risponde ancora"
+    # Windows con un ambiente virtuale: il figlio è il python.exe dell'ambiente, l'editor (che segna il riavvio) è suo figlio
+    _sessione(9, progetto=p, pid=2**22 + 12345, genitore=finito.pid, riavvio=adesso)
+    assert e.poll() is None and [x["aperto"] for x in home.progetti() if x["path"] == p] == [True], "riavvio segnato dal figlio del figlio"
     for campi in (dict(pid=finito.pid, riavvio=vecchio), dict(pid=finito.pid), dict(pid=finito.pid, riavvio="ieri"), dict(pid=os.getpid(), creato=vecchio),
-                  dict(pid=2**22 + 12345), dict(pid=finito.pid, riavvio=adesso, progetto="/altro")):
+                  dict(pid=2**22 + 12345), dict(pid=finito.pid, riavvio=adesso, progetto="/altro"), dict(pid=2**22 + 12345, genitore=2**22 + 12346, riavvio=adesso)):
         _sessione(9, **dict(dict(progetto=p), **campi)); assert e.poll() == 0, campi
     # fermato mentre riparte: wait aspetta l'editor nuovo; quando risponde si segue e si ferma subito
     _sessione(9, progetto=p, pid=finito.pid, riavvio=adesso)

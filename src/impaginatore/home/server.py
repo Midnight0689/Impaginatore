@@ -160,7 +160,8 @@ class Editor:
     pid del figlio): fino a quando il nuovo risponde conta come aperto, così «Apri» non ne avvia un secondo. Poi si segue
     quello nuovo, se il file di sessione della stessa porta ha un altro pid per lo stesso progetto e /api/ping, con il
     gettone di quel file, lo conferma (stesso progetto, stesso pid). Su macOS e Linux os.execv tiene il processo: si segue
-    sempre il figlio"""
+    sempre il figlio. Su Windows, in un ambiente virtuale, il figlio è il python.exe dell'ambiente e l'editor è suo figlio:
+    il riavvio segnato conta anche quando è il genitore dell'editor («genitore» nel file di sessione)"""
 
     def __init__(self, processo, progetto, porta): self.processo, self.progetto, self.porta, self.fermato = processo, progetto, porta, False
 
@@ -180,10 +181,11 @@ class Editor:
         return None if self._in_partenza(s) else r
 
     def _in_partenza(self, s):
-        """l'editor sta ripartendo: il figlio l'ha scritto prima di finire («riavvio», con il suo pid), oppure il processo
+        """l'editor sta ripartendo: il figlio l'ha scritto prima di finire («riavvio», con il suo pid o, se l'editor è suo
+        figlio, come «genitore»), oppure il processo
         nuovo ha già scritto il file di sessione e non risponde ancora («creato»). Vale per ATTESA_RIAVVIO secondi"""
         pid = s.get("pid")
-        t = s.get("riavvio") if pid == self.processo.pid else s.get("creato") if processi.vivo(pid) else None
+        t = s.get("riavvio") if self.processo.pid in (pid, s.get("genitore")) else s.get("creato") if processi.vivo(pid) else None
         return type(t) in (int, float) and 0 <= time.time() - t < ATTESA_RIAVVIO
 
     def _riavviato(self, s):

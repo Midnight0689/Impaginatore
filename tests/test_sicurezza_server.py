@@ -173,6 +173,7 @@ def test_file_di_sessione(home_srv, casa):
     c = home_srv; f = os.path.join(sicurezza.cartella_sessioni(), f"home-{c.porta}.json")
     d = sicurezza.leggi_sessione("home", c.porta)
     assert d["gettone"] == c.gettone and d["porta"] == c.porta and d["pid"] == os.getpid() and d["progetti"] == c.modulo.PROGETTI
+    assert d["genitore"] == os.getppid(), "anche il genitore: su Windows, in un ambiente virtuale, è il processo avviato dalla schermata"
     if sys.platform != "win32":
         assert stat.S_IMODE(os.stat(f).st_mode) == 0o600 and stat.S_IMODE(os.stat(os.path.dirname(f)).st_mode) == 0o700
     assert [x["porta"] for x in sicurezza.sessioni("home")] == [c.porta]

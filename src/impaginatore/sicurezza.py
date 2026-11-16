@@ -129,13 +129,15 @@ def _file(tipo, porta):
 
 
 def scrivi_sessione(tipo, porta, gettone, **info):
-    """scrive il file di sessione (0600, in una cartella 0700) in modo atomico; restituisce il percorso"""
+    """scrive il file di sessione (0600, in una cartella 0700) in modo atomico; restituisce il percorso. Con il pid del
+    processo c'è quello del genitore: su Windows, in un ambiente virtuale, il processo che la schermata avvia è il
+    python.exe dell'ambiente, che lancia l'interprete vero (questo processo) come suo figlio"""
     d = cartella_sessioni()
     os.makedirs(d, mode=0o700, exist_ok=True)
     try: os.chmod(d, 0o700)
     except OSError as e: log.warning("permessi della cartella delle sessioni non impostati: %s", e.strerror)
     p = _file(tipo, porta); tmp = f"{p}.{os.getpid()}.tmp"
-    dati = dict(tipo=tipo, porta=int(porta), gettone=gettone, pid=os.getpid(), creato=time.time(), **info)
+    dati = dict(tipo=tipo, porta=int(porta), gettone=gettone, pid=os.getpid(), genitore=os.getppid(), creato=time.time(), **info)
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as f: json.dump(dati, f)
     os.replace(tmp, p)
