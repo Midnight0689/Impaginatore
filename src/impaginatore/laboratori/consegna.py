@@ -81,7 +81,7 @@ def riepilogo(album, pr, info, file, spread, problemi, filigrana):
               t("laboratori.riepilogo_file_" + ("spread" if c["file"] == "spread" else "pagine"), formato=c["formato"].upper(), qualita=str(c["qualita"]), px="{} × {}".format(*misure_px(p)))]
     lim = ([t("laboratori.riepilogo_almeno", n=str(p["spread_min"]))] if "spread_min" in p else []) + ([t("laboratori.riepilogo_al_massimo", n=str(p["spread_max"]))] if "spread_max" in p else [])
     righe.append(t("laboratori.riepilogo_spread_limiti", n=str(spread), limiti=lingua.elenco(lim)) if lim else t("laboratori.riepilogo_spread", n=str(spread)))
-    righe.append(t("laboratori.riepilogo_controllo", blocca=str(problemi.get("blocca", 0)), guarda=str(problemi.get("guarda", 0))))
+    righe.append(t("laboratori.riepilogo_controllo", blocca=lingua.tn("laboratori.riepilogo_bloccano", problemi.get("blocca", 0)), guarda=str(problemi.get("guarda", 0))))
     if filigrana: righe.append(t("laboratori.riepilogo_filigrana"))
     if "copertina" in p: righe += ["", t("laboratori.riepilogo_copertina", testo=p["copertina"])]
     righe += ["", t("laboratori.riepilogo_elenco_file", n=str(len(file)))] + [f"  {f}" for f in file]

@@ -4,6 +4,7 @@ miniatura non c'è; la stampa non ne è toccata (legge gli originali)."""
 import io
 import json
 import os
+import shutil
 import threading
 
 import pytest
@@ -13,6 +14,26 @@ from PIL import Image
 from impaginatore.editor import server as E
 from impaginatore.motore import album as A
 from impaginatore.motore import album_libere as FL
+
+
+CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_import_con_nomi_gia_presenti_nella_pagina(editor, tmp_path):
+    """le foto lasciate fuori perché hanno il nome di una foto dell'album: l'avviso dice quante, perché e che cosa fare,
+    con il singolare giusto («1 foto ha», non «1 hanno»)"""
+    from cdp import Browser
+    c = editor
+    doppia = os.path.join(c.progetto, "Doppia"); crea_foto(doppia, [("H01", 300, 200, None)])
+    miste = os.path.join(c.progetto, "Miste"); crea_foto(miste, [("H02", 300, 200, None), ("V03", 200, 300, None), ("N01", 300, 200, None)])
+    with Browser(tmp_path) as b:
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        avviso = lambda p: b.js(f"(async () => {{ await doImport({json.dumps([p])}); return $('toast').textContent; }})()")
+        assert avviso(doppia).startswith("Nessuna foto aggiunta: 1 foto ha lo stesso nome di una già nell'album. Se è un'altra foto, rinominala e importala di nuovo.")
+        assert avviso(miste).startswith("1 foto aggiunta · 2 non aggiunte: hanno lo stesso nome di foto già nell'album")
+        assert not b.problemi(), b.problemi()
 
 
 def grigio(dati, quota=0.95):

@@ -77,3 +77,6 @@ Con la licenza Essenziale JPG e PDF sono senza filigrana; i PSD ci sono solo con
 - **«N foto di questi spread sono danneggiate o incomplete…»**: ricopia quelle foto nella loro cartella.
 - **«Non posso scrivere in …»**: la cartella è protetta o il disco è pieno. Scegli un'altra cartella.
 - **«N spread non esportati: …»**: gli altri spread sono stati esportati. Il motivo è nella finestra «Esporta».
+- **«Problemi che bloccano la stampa»** (consegna al laboratorio): la consegna non parte e la finestra elenca i
+  problemi. Premi «Controlla l'album» per vederli e correggerli. «Consegna lo stesso» prepara i file così come sono: il
+  riepilogo della consegna dice quanti problemi c'erano.

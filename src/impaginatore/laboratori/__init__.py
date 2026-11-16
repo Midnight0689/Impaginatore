@@ -8,6 +8,10 @@ Prodotto di un progetto: progetto.json ha la chiave facoltativa «prodotto», un
 da cui viene (per_progetto). Un progetto senza la chiave, o con una chiave che questa versione non capisce, si apre come
 sempre: il prodotto si ignora (dal_progetto) e la chiave resta com'era nel file.
 
+Lingua: il file di un catalogo è il dato, e progetto.json ne tiene la copia com'è. Quello del programma (il Generico) è
+scritto in italiano e si mostra nella lingua in uso con i testi della tabella (tradotto, tradotto_progetto); i cataloghi
+dei laboratori si mostrano come li ha scritti il laboratorio.
+
 Licenza: i cataloghi dei laboratori (non generici) sono la funzione «preset_laboratori» di tier.json; il Generico è di
 tutti. Questo modulo non usa la rete e non tocca le foto.
 """
@@ -23,6 +27,7 @@ from . import catalogo as C
 
 INTERNI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cataloghi")
 TOLLERANZA_CM = 0.05                     # mezzo millimetro: un album di 30 × 30 cm va bene per un prodotto di 30 × 30
+TESTI = {"generico": "laboratori.cat_generico"}      # cataloghi del programma con i testi in tabella: nome, laboratorio, fonte, note e un testo per prodotto (id con «_» al posto di «-»)
 log = logging.getLogger("impaginatore.laboratori")
 
 
@@ -66,11 +71,31 @@ def controlla_licenza(cat):
 
 
 def elenco():
-    """cataloghi e prodotti per le pagine e per l'assistente (solo dati: nessun percorso)"""
+    """cataloghi e prodotti per le pagine e per l'assistente (solo dati: nessun percorso), nella lingua in uso (tradotto)"""
     lst, problemi = cataloghi(); st = licenze.stato()
     return dict(cataloghi=[dict({k: c[k] for k in ("id", "nome", "laboratorio", "data", "generico", "stato", "verificato", "verifica", "interno")},
-                                consentito=consentito(c, st), prodotti=c["prodotti"], **{k: c[k] for k in ("fonte", "note") if k in c}) for c in lst],
+                                consentito=consentito(c, st), prodotti=c["prodotti"], **{k: c[k] for k in ("fonte", "note") if k in c}) for c in map(tradotto, lst)],
                 problemi=problemi)
+
+
+def tradotto(cat):
+    """il catalogo da mostrare: uno del programma con i testi in tabella (TESTI) esce nella lingua in uso, nome dei prodotti
+    compreso; gli altri restano come sono. Solo per mostrarlo: progetto.json e stato() usano il catalogo del file"""
+    base = TESTI.get(cat["id"]) if cat.get("interno") else None
+    if base is None: return cat
+    t = lingua.t
+    return dict(cat, **{k: t(f"{base}.{k}") for k in ("nome", "laboratorio", "fonte", "note") if k in cat},
+                prodotti=[dict(p, nome=t(f"{base}.{p['id'].replace('-', '_')}")) for p in cat["prodotti"]])
+
+
+def tradotto_progetto(pr):
+    """il prodotto di progetto.json (per_progetto) da mostrare: nella lingua in uso se è lo stesso identico prodotto di un
+    catalogo del programma con i testi in tabella; altrimenti com'è (anche un «generico» cambiato, di un progetto ricevuto)"""
+    for c in cataloghi()[0]:
+        if c["id"] == pr["catalogo"] and c["id"] in TESTI and c["interno"] and pr["prodotto"] in c["prodotti"]:
+            m = tradotto(c); p = next(x for x in m["prodotti"] if x["id"] == pr["prodotto"]["id"])
+            return dict(pr, nome_catalogo=m["nome"], laboratorio=m["laboratorio"], prodotto=dict(pr["prodotto"], nome=p["nome"]))
+    return pr
 
 
 def trova(id_catalogo, id_prodotto):

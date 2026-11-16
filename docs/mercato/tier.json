@@ -4,6 +4,7 @@
   "aliquota_iva_riferimento": 0.22,
   "nota_iva": "prezzo_ivato calcolato con IVA italiana 22%; il Merchant of Record applica l'IVA del paese dell'acquirente (B2C UE) o il reverse charge (B2B UE con partita IVA valida).",
   "semantica_funzioni": "true = inclusa (per le funzioni con limite numerico significa tutti/illimitati); false = esclusa; numero intero = limite massimo. Le chiavi sono stabili: non rinominarle, aggiungerne di nuove.",
+  "nota_modelli_autore": "modelli_autore dell'Essenziale (30) non è applicato: nessun cancello del programma lo legge e 30 non corrisponde a un elenco di modelli. Nel programma (editor/server.py) ci sono 23 modelli d'autore a spread intero (SPM_KEYS, 46 con le versioni specchiate) e 23 moduli di pagina, compresa la pagina bianca (BUILD; 40 combinazioni nella galleria dei modelli, LAYS). Prima di applicare il limite va deciso quali modelli comprende l'Essenziale (docs/architettura/LICENZE.md, Cosa manca).",
   "tiers": [
     {
       "id": "essenziale",
@@ -21,7 +22,7 @@
       },
       "supporto": {
         "canale": "ore_prepagate",
-        "incluso": "documentazione, guide video, correzione dei difetti",
+        "incluso": "documentazione, correzione dei difetti",
         "ore_assistenza_incluse": 0
       },
       "funzioni": {
@@ -60,7 +61,7 @@
       },
       "supporto": {
         "canale": "ore_prepagate",
-        "incluso": "documentazione, guide video, correzione dei difetti",
+        "incluso": "documentazione, correzione dei difetti",
         "ore_assistenza_incluse": 0
       },
       "funzioni": {
@@ -99,7 +100,7 @@
       },
       "supporto": {
         "canale": "ore_prepagate",
-        "incluso": "documentazione, guide video, correzione dei difetti",
+        "incluso": "documentazione, correzione dei difetti",
         "ore_assistenza_incluse": 1
       },
       "funzioni": {

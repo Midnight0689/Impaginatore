@@ -34,7 +34,9 @@ def ambiente(casa, lingua="it"):
 
 
 def foto_finte(cartella, n=36):
-    """foto sintetiche dai toni calmi (cielo, terra, un soggetto chiaro), orizzontali, verticali e quadrate, con la data"""
+    """foto sintetiche dai toni calmi (cielo, terra, un soggetto chiaro), orizzontali, verticali e quadrate, con la data:
+    tre momenti della giornata (alle 10, alle 13 e alle 17.30, uno scatto ogni 5 minuti), così la bozza delle schermate
+    ha i suoi capitoli (più di 30 minuti fra due scatti, motore/bozza.py)"""
     from PIL import Image, ImageDraw, ImageFilter
     os.makedirs(cartella, exist_ok=True)
     tinte = [((196, 206, 214), (120, 110, 96)), ((226, 214, 196), (96, 104, 82)), ((178, 190, 200), (70, 74, 80)), ((232, 222, 210), (150, 126, 104)),
@@ -49,7 +51,8 @@ def foto_finte(cartella, n=36):
         cx, cy, r = int(w * (0.3 + 0.4 * ((k * 37) % 10) / 10)), int(orizz - h * 0.08), int(min(w, h) * 0.13)
         d.ellipse([cx - r, cy - r * 2, cx + r, cy + r * 2], fill=(236, 228, 218)); d.ellipse([cx - r // 2, cy - r * 3, cx + r // 2, cy - r * 2], fill=(214, 186, 160))
         im = im.filter(ImageFilter.GaussianBlur(2))
-        ex = Image.Exif(); ex.get_ifd(0x8769)[36867] = f"2026:06:13 {10 + k // 6:02d}:{(k * 7) % 60:02d}:00"
+        momento = min(k // 12, 2); minuti = (10 * 60, 13 * 60, 17 * 60 + 30)[momento] + (k - 12 * momento) * 5
+        ex = Image.Exif(); ex.get_ifd(0x8769)[36867] = f"2026:06:13 {minuti // 60:02d}:{minuti % 60:02d}:00"
         im.save(os.path.join(cartella, f"IMG_{4100 + k}.jpg"), "JPEG", quality=85, exif=ex.tobytes())
 
 

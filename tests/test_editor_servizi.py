@@ -496,9 +496,16 @@ def test_controlli_prima_di_esportare(apri, monkeypatch):
     assert errore(fmt="jpg") == "Non c'è nessuno spread da esportare"
     _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
     assert errore(fmt="jpg", range=" , ;") == "Nessuno spread nell'intervallo scelto"
-    with pytest.raises(ValueError, match="^Lo spread 3 non esiste: gli spread sono 2$"): E.preflight({}, [1, 3], c.progetto, "jpg")
+    with pytest.raises(ValueError, match="^Lo spread 3 non esiste: l'album ne ha 2$"): E.preflight({}, [1, 3], c.progetto, "jpg")
+    monkeypatch.setattr(A, "DANNEGGIATE", {"V03.jpg"})
+    with pytest.raises(ValueError, match=r"^1 foto di questi spread è danneggiata o incompleta \(V03.jpg\): ricopiala nella cartella delle foto$"): E.preflight({}, [2], c.progetto, "jpg")
+    monkeypatch.setattr(A, "DANNEGGIATE", {"V03.jpg", "V04.jpg"})
+    with pytest.raises(ValueError, match=r"^2 foto di questi spread sono danneggiate o incomplete \(V03.jpg, V04.jpg\): ricopiale"): E.preflight({}, [2], c.progetto, "jpg")
+    monkeypatch.setattr(A, "DANNEGGIATE", set())
     monkeypatch.setattr(shutil, "disk_usage", lambda p: Disco(10**9, 10**9, 2 * 10**7))
     assert errore(fmt="jpg") == "Spazio insufficiente: servono circa 0,1 GB e ne restano 0,0 GB. Libera spazio o scegli un altro disco"
+    os.remove(os.path.join(c.progetto, "Foto", "H02.jpg"))
+    with pytest.raises(ValueError, match=r"^1 foto di questi spread non si trova più \(H02.jpg\): ricollegala da"): E.preflight({}, [1], c.progetto, "jpg")
     assert c.get("/api/log") == [], "niente è partito"
 
 
@@ -547,7 +554,7 @@ def _psd_finto(monkeypatch, dest, crea=(), righe=(), codice=0):
 
 ESITI_PSD = {
     "tutti": (dict(crea=(1, 2), righe=["spread 1 ok", "spread 2 ok"]), ["PSD creati: 2 su 2"], True),
-    "uno a mano": (dict(crea=(1,), righe=["spread 1 ok", "@@SALTATO 2 modificato", "SALTATO spread 2: modificato a mano dopo la generazione -> usa modifica_psd.py"]), ["PSD creati: 1 su 2 (1 lasciati com'erano perché modificati a mano)"], True),
+    "uno a mano": (dict(crea=(1,), righe=["spread 1 ok", "@@SALTATO 2 modificato", "SALTATO spread 2: modificato a mano dopo la generazione -> usa modifica_psd.py"]), ["PSD creati: 1 su 2; modificati a mano e lasciati com'erano: 1"], True),
     "nessuno": (dict(), ["SALTATO spread 1 -> il PSD non è stato creato", "SALTATO spread 2 -> il PSD non è stato creato", "PSD creati: 0 su 2"], False),
     "photoshop": (dict(righe=["Error 8800: General Photoshop error occurred."], codice=1),
                   ["SALTATO spread 1 -> il PSD non è stato creato", "SALTATO spread 2 -> il PSD non è stato creato",
@@ -735,7 +742,7 @@ def test_esito_riuscita_e_registro_in_inglese(apri, monkeypatch):
     _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
     c.post("/api/export", {"fmt": "jpg", "res": "bozza"}); L = attendi_log(c); dest = os.path.join(c.progetto, "Esportazioni", "JPG")
-    assert L == [f"Exporting 2 spreads as JPG → {dest}", "  spread 1: Prova - Spread 01.jpg", "  spread 2: Prova - Spread 02.jpg", "Exported 2 of 2 spreads", f"RISULTATO:{dest}", "[finito]"]
+    assert L == [f"Exporting 2 spreads as JPG → {dest}", "  spread 1: Prova - Spread 01.jpg", "  spread 2: Prova - Spread 02.jpg", "Spreads exported: 2 of 2", f"RISULTATO:{dest}", "[finito]"]
     assert c.get("/api/esito") == dict(vuoto, dest=dest, formato="jpg", totale=2, fatti=2, risultato=dest, finito=True)
     c.post("/api/export", {"fmt": "jpg", "res": "bozza", "range": "1"}); L = attendi_log(c)
     assert L[0] == f"Exporting 1 spread as JPG → {dest}" and c.get("/api/esito")["totale"] == 1
@@ -753,12 +760,12 @@ def test_esito_con_spread_saltati_in_inglese(apri, monkeypatch):
     monkeypatch.setattr(E, "_scrivi_img", scrivi); monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
     c.post("/api/export", {"fmt": "jpg", "res": "bozza"}); L = attendi_log(c); dest = os.path.join(c.progetto, "Esportazioni", "JPG")
     assert L == [f"Exporting 2 spreads as JPG → {dest}", "Skipped spread 1: file is empty", "Skipped spread 2: the disk is full: free up space or choose another disk",
-                 "Exported 0 of 2 spreads", "Error: 2 spreads weren't exported (see above)", "[finito]"]
+                 "Spreads exported: 0 of 2", "Error: 2 spreads weren't exported (see above)", "[finito]"]
     assert c.get("/api/esito") == dict(dest=dest, formato="jpg", totale=2, fatti=0, risultato=None, finito=True, errori=["2 spreads weren't exported (see above)"],
                                        saltati=[dict(spread=1, motivo="file is empty"), dict(spread=2, motivo="the disk is full: free up space or choose another disk")])
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); c.post("/api/export", {"fmt": "jpg", "res": "bozza", "range": "1"}); attendi_log(c)
     assert c.get("/api/esito")["saltati"] == [dict(spread=1, motivo="il disco è pieno: libera spazio o scegli un altro disco")]
-    assert c.get("/api/esito")["errori"] == ["1 spread non esportati (vedi sopra)"]
+    assert c.get("/api/esito")["errori"] == ["1 spread non esportato (vedi sopra)"]
 
 
 def test_esito_errore_del_pdf_e_progetto_esportato(apri, monkeypatch, tmp_path):
@@ -773,7 +780,7 @@ def test_esito_errore_del_pdf_e_progetto_esportato(apri, monkeypatch, tmp_path):
     assert L[0] == f"Exporting the project to {out}" and "  creating the ZIP…" in L and L[-3].startswith("Done: ") and L[-2] == f"RISULTATO:{out}.zip"
     assert c.get("/api/esito") == dict(dest=out, formato="progetto", totale=10, fatti=10, saltati=[], errori=[], risultato=out + ".zip", finito=True)
     leggimi = open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8").read()
-    assert "choose the ⋯ menu › “Open existing album…”" in leggimi and "(or “Import ZIP…” if you have the .zip file)" in leggimi and "The photos are in the Foto folder" in leggimi
+    assert "choose the ⋯ menu › “Open existing album…”" in leggimi and "(or “Import ZIP…” if you have the .zip file)" in leggimi and "The photos are in the folder named “Foto”" in leggimi
     assert open(os.path.join(out, "font_usati.txt"), encoding="utf-8").read().startswith("Fonts used in the text (install them on the computer where you open the project):\n")
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); dialoghi.imposta(Finti(str(dest)))
     out = c.post("/api/prj_esporta", {"foto": False})["cartella"]; attendi_log(c)

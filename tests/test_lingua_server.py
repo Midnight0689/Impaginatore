@@ -168,6 +168,22 @@ def test_spiegazione_delle_immagini_nelle_due_lingue(monkeypatch):
     assert "fuori dal tuo computer" in it and "outside your computer" in en
 
 
+def test_cosa_riceve_l_assistente_di_serie(monkeypatch):
+    """la finestra «Assistente AI» e la risposta con le immagini spente dicono cosa parte anche senza immagini: i nomi degli
+    album e delle cartelle, i testi scritti negli album (spesso nomi di clienti), e che arriva anche al fornitore. Lo stesso
+    in tutte e due le lingue (e quello che gli strumenti mandano davvero: nomi dei progetti e delle cartelle, testi)"""
+    from impaginatore import risorse
+    from impaginatore.mcp import strumenti as S
+    for lg, voci in (("it", ("nomi degli album", "cartelle", "nomi dei file delle foto", "date di scatto", "stelle ed etichette", "testi", "negli album", "fornitore")),
+                     ("en", ("names of", "albums", "folders", "photo file names", "shooting dates", "stars and labels", "texts", "in albums", "provider"))):
+        monkeypatch.setenv("IMPAGINATORE_LINGUA", lg); t = risorse.testi(lg)
+        for testo in (t["home.assist_testo"], consenso.spiegazione()):
+            assert [v for v in voci if v not in testo] == [], (lg, testo)
+        assert "solo testo:" not in t["home.assist_testo"] and "text only:" not in t["home.assist_testo"], "non più «solo» quello che c'era"
+    codice = open(S.__file__, encoding="utf-8").read()
+    assert 'nome=dato(p["nome"]), cartella=dato(os.path.basename(p["path"]))' in codice and '"testo": dato(e["tx"], 300)' in codice, "se cambia cosa mandano gli strumenti, cambiano anche i testi qui sopra"
+
+
 def test_sdk_mancante_in_inglese(inglese, capsys, monkeypatch):
     import sys
     from impaginatore import mcp
@@ -184,6 +200,7 @@ def test_aiuto_in_inglese(inglese, capsys):
 
 
 def test_strumenti_dell_assistente_in_inglese(inglese):
+    pytest.importorskip("mcp", reason="extra «mcp» non installato (uv sync --locked --extra dev --extra mcp)")       # come i test del server MCP
     from impaginatore.mcp import server
     assert server.istruzioni().startswith("Impaginatore lays out photo albums")
     srv = server.crea(S.Assistente())

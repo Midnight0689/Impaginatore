@@ -3,6 +3,9 @@ JavaScript nella pagina e raccoglie errori della console, eccezioni e blocchi de
 
     with Browser(tmp_path) as b:
         b.apri(url); b.js("document.title"); assert not b.problemi()
+
+Controllo generale: un blocco della CSP visto durante il «with» fa fallire il test all'uscita, anche se il test non
+guarda problemi() (una risorsa che la CSP blocca è un difetto della pagina, mai un caso previsto).
 """
 import base64
 import json
@@ -88,10 +91,15 @@ class Browser:
         for m in ("Page.enable", "Runtime.enable", "Log.enable", "Network.enable"): self.chiama(m)
         return self
 
-    def __exit__(self, *a):
+    def __exit__(self, tipo, *a):
+        if tipo is None:                              # ultimi eventi della pagina, poi il controllo generale della CSP
+            try: self.pausa(0.2)
+            except OSError: pass
         self.ws.chiudi(); self.p.terminate()
         try: self.p.wait(10)
         except subprocess.TimeoutExpired: self.p.kill()
+        v = self.violazioni_csp()
+        if tipo is None and v: raise AssertionError("bloccato dalla Content-Security-Policy: " + " | ".join(v))
 
     def chiama(self, metodo, **parametri):
         self.n += 1; mio = self.n
@@ -139,6 +147,11 @@ class Browser:
             elif m["method"] == "Runtime.consoleAPICalled" and p.get("type") in ("error", "assert"): out.append("console: " + " ".join(str(a.get("value", a.get("description"))) for a in p.get("args", [])))
             elif m["method"] == "Log.entryAdded" and p["entry"].get("level") == "error": out.append(f"{p['entry'].get('source')}: {p['entry'].get('text')} {p['entry'].get('url', '')}")
         return out
+
+    def violazioni_csp(self):
+        """blocchi della Content-Security-Policy visti finora (immagini, script, stili, connessioni)"""
+        return [p["entry"].get("text", "").strip() for m in self.eventi if m.get("method") == "Log.entryAdded"
+                for p in [m["params"]] if "Content Security Policy" in p["entry"].get("text", "")]
 
     def risposte(self):
         """[(stato HTTP, url)] delle risposte ricevute dalla pagina"""

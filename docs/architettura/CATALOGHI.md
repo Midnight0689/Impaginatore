@@ -23,7 +23,10 @@ Guida per chi scrive un catalogo: [`docs/laboratori/SCRIVERE-UN-CATALOGO.md`](..
 ## Dove stanno i cataloghi
 
 - **Del programma**: `src/impaginatore/laboratori/cataloghi/*.json`. Oggi solo `generico.json` («Generico»,
-  `generico: true`). Solo questi possono dirsi generici; il Generico è di tutte le fasce.
+  `generico: true`). Solo questi possono dirsi generici; il Generico è di tutte le fasce. Il file è scritto in
+  italiano ed è il dato (progetto.json ne copia il prodotto com'è); pagine e assistente lo mostrano nella lingua in uso
+  con i testi `laboratori.cat_generico.*` della tabella (`laboratori.tradotto`, e `tradotto_progetto` per il prodotto
+  di un album, solo se è identico a quello del catalogo installato). Un prodotto nuovo nel Generico vuole il suo testo.
 - **Dell'utente**: `<dati dell'utente>/cataloghi/` (`piattaforma.cartelle.dati_utente()`: su macOS
   `~/Library/Application Support/Impaginatore/cataloghi`, su Windows `%APPDATA%\Impaginatore\cataloghi`, su Linux
   `~/.local/share/impaginatore/cataloghi`). Ci finiscono con «Importa il catalogo di un laboratorio…» nella finestra
@@ -205,6 +208,12 @@ alza le foto per spread quanto basta, e se gli spread sono ancora troppi tiene i
 Editor, Esporta → **Consegna** (`/api/export` con `fmt: "consegna"`), o l'assistente con `esporta(formato="consegna")`:
 
 1. Controlli prima di cominciare: c'è il prodotto, l'album ha il suo formato e almeno la sua abbondanza, licenza.
+   Poi il controllo dell'album (`controlla`, senza tono): se negli spread da consegnare, o nell'album intero (numero di
+   spread), c'è un problema di livello «blocca», la consegna **non parte** e risponde 409 con `codice:
+   "problemi_bloccanti"`, `conta` e i primi 50 `problemi` (come in `/api/controlla`). La pagina li mostra in un foglio
+   (Annulla, «Controlla l'album», «Consegna lo stesso»); l'assistente li riceve come risultato di `esporta`, con
+   `partita: false`. Si consegna lo stesso solo richiedendo con `conferma_problemi: true`: il registro lo scrive
+   («ATTENZIONE: consegna confermata con N problemi…») e il riepilogo ha l'esito del controllo.
 2. Cartella **nuova**: di serie `Esportazioni/Consegna/<prodotto> <data ora>`; una cartella scelta si usa se non esiste
    o è vuota, altrimenti se ne crea una nuova dentro. Non si sovrascrive mai niente.
 3. Per ogni spread: il motore disegna dagli originali, con l'abbondanza dell'album (come i JPG «stampa»); si toglie
@@ -224,7 +233,8 @@ cartella sul computer; il caricamento sul sito del laboratorio lo fa il fotograf
 
 Nessun argomento nuovo è un percorso: i prodotti si nominano con `"catalogo/prodotto"` (solo identificativi).
 `elenca_prodotti` (lettura), `imposta_prodotto` (modifica, un passo d'annulla dell'editor), `crea_progetto` con
-`prodotto` (le misure non servono), `esporta` con `formato: "consegna"` (cartella nuova costruita dal server). Il
+`prodotto` (le misure non servono), `esporta` con `formato: "consegna"` (cartella nuova costruita dal server; con
+problemi che bloccano la stampa non parte e li elenca, e `conferma_problemi: true` va usato solo se l'utente lo chiede). Il
 riassunto di `apri_progetto` dice il prodotto dell'album. I cataloghi non si importano dall'assistente: li sceglie
 l'utente nella finestra del sistema.
 

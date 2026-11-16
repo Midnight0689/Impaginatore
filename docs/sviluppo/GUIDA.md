@@ -35,11 +35,17 @@ Dove un comando non è stato provato, è scritto.
 Dalla cartella del codice:
 
 ```bash
-uv sync --extra dev --extra mcp
+uv sync --locked --extra dev --extra mcp
 ```
 
 Crea `.venv` con il programma installato in modo modificabile, gli strumenti di sviluppo (`pytest`, `pytest-cov`,
-`coverage`, `ruff`) e l'SDK MCP. Gli extra:
+`coverage`, `ruff`) e l'SDK MCP, nelle versioni di `uv.lock` (`--locked`: se il lock non è aggiornato si ferma invece di
+cambiarlo).
+
+**La suite completa e la copertura al 100 % vogliono tutti e due gli extra, `dev` e `mcp`.** Con il solo `dev` i test
+del server MCP (`tests/test_mcp_server.py`, `test_import_dei_moduli_degli_extra_senza_effetti`,
+`test_strumenti_dell_assistente_in_inglese`) si saltano con il motivo «extra «mcp» non installato» e la copertura di
+`mcp/server.py` non arriva al 100 %. `python3 strumenti/controlli.py` usa sempre i due extra. Gli extra:
 
 | Extra | Cosa aggiunge |
 |---|---|
@@ -89,8 +95,8 @@ uv run pytest -m "not lento and not browser and not finestra and not photoshop" 
 ```
 
 I test segnati `browser`, `finestra` e `photoshop` si saltano da soli se manca quello che serve, e il riepilogo dice
-perché (`-ra` è già nelle opzioni). Su Linux con Chrome la suite completa fa 880 test e ne salta 3 (finestra senza
-pywebview, due con Photoshop), in circa 12 minuti.
+perché (`-ra` è già nelle opzioni). Su Linux con Chrome la suite completa fa 1113 test e ne salta 3 (finestra senza
+pywebview, due con Photoshop), in circa 23 minuti con la copertura.
 
 ### Le fixture principali (`tests/conftest.py`)
 
@@ -131,7 +137,7 @@ Lo script gira con il Python del sistema (3.9 o successivo) e usa uv per l'ambie
 |---|---|---|
 | `python3 strumenti/controlli.py lint` | ruff e forma di `CHANGELOG.md` | sì: ok |
 | `python3 strumenti/controlli.py test` | pytest | sì, tramite `copertura` |
-| `python3 strumenti/controlli.py copertura` | pytest con copertura | sì: ok, 880 passati, 3 saltati, 100 % |
+| `python3 strumenti/controlli.py copertura` | pytest con copertura | sì: ok, 1110 passati, 3 saltati, 100 % |
 | `python3 strumenti/controlli.py bandit` | analisi statica di `src/` | sì: ok |
 | `python3 strumenti/controlli.py dipendenze` | pip-audit sulle versioni di `uv.lock` | no: con uv 0.6.6 lo script dice «NON ESEGUITO» e chiede uv 0.8 |
 | `python3 strumenti/controlli.py segreti` | gitleaks su tutta la storia (lo scarica la prima volta) | sì: ok |

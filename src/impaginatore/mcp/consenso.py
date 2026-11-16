@@ -7,7 +7,11 @@ l'utente non l'ha permesso in uno di questi due modi, gli unici:
 - l'opzione esplicita all'avvio del server MCP, scritta dall'utente nella configurazione dell'assistente:
   «impaginatore mcp --consenti-immagini»;
 - l'impostazione del programma, salvata in <dati dell'utente>/assistente.json (0600) da imposta(): la scrive solo il
-  programma quando l'utente accende l'interruttore (l'interfaccia arriva con T-205). Nessuno strumento MCP la cambia.
+  programma quando l'utente accende l'interruttore «L'assistente può vedere le immagini» (schermata Album, ⋯ ›
+  Assistente AI…). Nessuno strumento MCP la cambia.
+
+Anche con le immagini spente l'assistente riceve testo (nomi degli album, delle cartelle e dei file, testi scritti negli
+album, ...): spiegazione() e la finestra della schermata lo dicono.
 
 Solo libreria standard: questo modulo non usa l'SDK MCP.
 """
