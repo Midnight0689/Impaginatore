@@ -327,8 +327,25 @@ def test_font_di_ripiego_e_interlinea(monkeypatch):
     monkeypatch.setattr(testo._pfont, "font_ripiego", lambda: (None, 0))
     assert testo.font_file("Manca-Regular") == ("/System/Library/Fonts/Helvetica.ttc", 0)
     monkeypatch.setattr(testo, "font_file", lambda ps: ("/non/esiste.ttf", 0))
-    assert testo._font("Manca-Regular", 40).getlength("abc") == ImageFont.load_default().getlength("abc")
+    assert testo._font("Manca-Regular", 40).getlength("abc") == ImageFont.load_default(40).getlength("abc"), "quello di Pillow, alla misura chiesta"
     assert [testo.lead({"lh": v}) for v in ("x", 10, 0.1, 1.5)] == [1.2, 3.0, 0.6, 1.5] and testo.lead({}) == 1.2
+
+
+def test_font_che_freetype_non_disegna_a_quella_misura(monkeypatch):
+    """su macOS 26 un font di sistema si apre ma FreeType non ne carica i glifi alla misura delle miniature dell'editor
+    (OSError «division by zero»): la miniatura usava quel font e dava errore 500. Ora si disegna con il font di Pillow"""
+    from PIL import ImageFont
+
+    from impaginatore.motore import testo
+
+    class Rotto:
+        def getlength(self, *a, **k): raise OSError("division by zero")
+    monkeypatch.setattr(testo, "_CACHE_F", {}); monkeypatch.setattr(testo, "font_file", lambda ps: ("/System/Library/Fonts/Helvetica.ttc", 0))
+    vero = ImageFont.truetype                                            # lo usa anche load_default, con il font interno di Pillow
+    monkeypatch.setattr(ImageFont, "truetype", lambda f, *a, **k: Rotto() if f == "/System/Library/Fonts/Helvetica.ttc" else vero(f, *a, **k))
+    assert testo._font("Helvetica", 6.2).getlength("Testo") == ImageFont.load_default(6).getlength("Testo")
+    im = testo.render({"tx": "Testo", "font": "Helvetica", "size": 124, "W": 1000, "H": 200, "al": "center"}, 0.05)
+    assert im.size == (50, 10) and im.getbbox(), "il testo c'è, con l'altro font"
 
 
 def test_testo_a_capo_centrato_e_righe_vuote():
