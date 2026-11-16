@@ -605,5 +605,8 @@
   "editor.zoom.adatta": "Adatta",
   "editor.pool.usata": "già nello spread {n} · doppio clic per andarci",
   "editor.pool.nuovo": "Nuovo spread {n} con {foto} foto",
-  "editor.pool.aggiunte": "Foto aggiunte allo spread {n}"
+  "editor.pool.aggiunte": "Foto aggiunte allo spread {n}",
+  "editor.menu.inverti": "Inverti le pagine",
+  "editor.menu.verticali": "Tutte verticali",
+  "editor.menu.orizzontali": "Tutte orizzontali"
 }

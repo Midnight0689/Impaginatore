@@ -2029,7 +2029,8 @@ function spreadMenu(e, k, btn) {                   // tasto destro su una miniat
   ctxMenu(e, [btn ? null : { t: t("editor.menu.vai_spread", { n: nomeSpread(k) }), f: () => go(k) }, btn ? null : "-",
     { t: t("editor.menu.nuovo_dopo"), f: async () => { await op({ op: "blank", pos: k + 1 }); cur = k + 1; sel = null; msel = []; render(); } },
     { t: t("editor.menu.duplica"), k: k === cur ? "⌘ D" : "", f: async () => { cur = k; await dupSpread(); } },
-    { t: t("editor.menu.sposta_prima"), off: k === 0, f: async () => { cur = k; await moveSp(k, k - 1); } }, { t: t("editor.menu.sposta_dopo"), off: k === n - 1, f: async () => { cur = k; await moveSp(k, k + 1); } }, "-",
+    { t: t("editor.menu.sposta_prima"), off: k === 0, f: async () => { cur = k; await moveSp(k, k - 1); } }, { t: t("editor.menu.sposta_dopo"), off: k === n - 1, f: async () => { cur = k; await moveSp(k, k + 1); } },
+    { t: t("editor.menu.inverti"), f: async () => { cur = k; sel = null; msel = []; await op({ op: "swappages", s: k }); } }, "-",
     { t: t("editor.menu.modelli"), k: "M", f: () => { go(k); openTpl(); } }, { t: t("editor.menu.esporta_jpg"), f: () => exportOne(k) }, "-",
     { t: t("editor.menu.elimina_spread"), off: n < 2, danger: true, f: () => eliminaSpread(k) }], "sp");
 }
@@ -2042,6 +2043,7 @@ function frameMenu(e, it) {                   // tasto destro su una foto/testo 
     photos.length ? "-" : null, photos.length ? { t: t("editor.menu.stessa"), off: !many, f: () => op({ op: "equalize", s: cur, ...selOrder() }) } : null,
     photos.length ? { label: t("editor.menu.proporzioni"), chips: [["1:1", 1], ["3:2", 1.5], ["2:3", 2 / 3], ["4:5", 0.8], ["5:4", 1.25], ["16:9", 16 / 9]].map(([l, r]) => [l, () => op({ op: "ratio", s: cur, ats: at, r })]) } : null,
     photos.length ? { t: t("editor.menu.tutta_pagina"), f: () => op({ op: "fullpage", s: cur, ats: at }) } : null, photos.length ? { t: t("editor.menu.originali"), f: () => op({ op: "origar", s: cur, ats: at }) } : null,
+    photos.length ? { t: t("editor.menu.verticali"), f: () => op({ op: "orient", s: cur, dir: "v", ats: at }) } : null, photos.length ? { t: t("editor.menu.orizzontali"), f: () => op({ op: "orient", s: cur, dir: "h", ats: at }) } : null,
     photos.length ? "-" : null, photos.length ? { t: t(photos.every(i => i.bd) ? "editor.menu.togli_bordo" : "editor.menu.bordo"), f: async () => { const v = photos.every(i => i.bd) ? null : [3, "#ffffff"]; for (const i of photos) await op({ op: "set", at: [cur, i.side, i.idx], bd: v }); } } : null,
     photos.length ? { t: t(photos.every(i => i.sh) ? "editor.menu.togli_ombra" : "editor.menu.ombra"), f: async () => { const v = photos.every(i => i.sh) ? 0 : 40; for (const i of photos) await op({ op: "set", at: [cur, i.side, i.idx], sh: v }); } } : null];
   const list = [];
@@ -2301,7 +2303,6 @@ function esportazione(on, f) {                       // esportazione in corso: s
   ESPORTO = on; const b = $("expb"); b.classList.toggle("busy", on); b.querySelector(".lbl").textContent = on ? t("editor.exp.in_corso", { f: (f || "").toUpperCase() }) : t("editor.top.esporta");
   b.title = on ? t("editor.exp.non_chiudere") : conTasto(t("editor.top.esporta_tit"), "⌘ E"); $("eavv").hidden = !on; document.body.classList.toggle("esporto", on);
 }
-window.addEventListener("beforeunload", e => { if (ESPORTO) { e.preventDefault(); e.returnValue = ""; } });
 $("wrap").addEventListener("contextmenu", e => { if (!S || e.target.closest(".slot") || textTool) return; bgMenu(e); });
 $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 
