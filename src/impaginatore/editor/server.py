@@ -927,6 +927,17 @@ class Conflitto(ValueError):
     codice «altra_scheda», che pagina e server MCP riconoscono senza leggere il testo (che segue la lingua)"""
 
 
+MAX_PROBLEMI_RISPOSTA = 50                 # problemi nella risposta di una consegna rifiutata (la conta li dice tutti)
+
+
+class ProblemiBloccanti(ValueError):
+    """la consegna al laboratorio con problemi che bloccano la stampa non parte finché chi esporta non conferma
+    (conferma_problemi): la risposta ha codice «problemi_bloccanti», quanti sono e i primi MAX_PROBLEMI_RISPOSTA"""
+
+    def __init__(self, problemi):
+        super().__init__(lingua.tn("server.consegna_problemi", len(problemi))); self.problemi = problemi
+
+
 def do_op(o):
     """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
     stato resta com'era. Restituisce lo stato per la pagina"""
@@ -2048,6 +2059,13 @@ def _consegna(pr, info, nums, dest, con_filigrana, nome):
     if len(fatti) < len(nums): _log_errore(lingua.tn("server.log_non_esportati", len(nums) - len(fatti)))
 
 
+def _bloccano_la_consegna(nums):
+    """problemi del controllo che bloccano la stampa negli spread da consegnare (numeri da 1) o nell'album intero (numero
+    di spread o formato rispetto al prodotto): la consegna li dice prima di partire (UX-013)"""
+    voluti = {k - 1 for k in nums}
+    return [p for p in controlla(None, False)["problemi"] if p["livello"] == "blocca" and (p["s"] is None or p["s"] in voluti)]
+
+
 def run_export(o):
     """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente), PSD (Photoshop) o la consegna al
     laboratorio (T-208: i file come li chiede il prodotto dell'album, in una cartella nuova, con il riepilogo)"""
@@ -2063,6 +2081,8 @@ def run_export(o):
     try: os.makedirs(dest, exist_ok=True)
     except OSError as e: raise ValueError(lingua.t("server.cartella_non_creata", dest=dest, motivo=e.strerror or e))
     preflight(o, nums, dest, fmt)
+    bloccano = _bloccano_la_consegna(nums) if fmt == "consegna" else []
+    if bloccano and o.get("conferma_problemi") is not True: raise ProblemiBloccanti(bloccano)
     if fmt == "consegna" and nuova: dest = CONSEGNA.cartella_nuova(dest, pr["prodotto"]["nome"])
     nome = CFG.get("nome", "Album")
     with LOCK:
@@ -2073,6 +2093,7 @@ def run_export(o):
         try:
             _esito(dest=dest, formato=fmt, totale=len(nums))
             LOG.append(lingua.tn("server.log_esporto", len(nums), formato=fmt.upper(), dest=dest))
+            if bloccano: LOG.append(lingua.tn("server.log_consegna_confermata", len(bloccano)))
             if fmt == "consegna": _consegna(pr, info, nums, dest, con_filigrana, nome)
             elif fmt == "jpg":
                 stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
@@ -2524,6 +2545,7 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except Conflitto as e: self.send({"errore": str(e), "codice": "altra_scheda"}, code=400)
+        except ProblemiBloccanti as e: self.send({"errore": str(e), "codice": "problemi_bloccanti", "conta": len(e.problemi), "problemi": e.problemi[:MAX_PROBLEMI_RISPOSTA]}, code=409)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio

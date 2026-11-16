@@ -597,8 +597,8 @@ async function api(path, body) {
   const j = await r.json();
   if (j.errore) {
     if (j.licenza) foglio(t("editor.lic.non_compresa_tit"), j.errore, [{ t: t("comune.chiudi"), v: false }, { t: t("editor.lic.vedi"), v: true, main: true }]).then(v => { if (v) vaiProgetti(); });       // 403 della licenza: spiegato, non un errore secco
-    else toast(j.codice === "altra_scheda" ? t("editor.msg.altra_finestra") : j.errore, true);
-    const e = new Error(j.errore); e.licenza = !!j.licenza; e.codice = j.codice || ""; throw e;
+    else if (j.codice !== "problemi_bloccanti") toast(j.codice === "altra_scheda" ? t("editor.msg.altra_finestra") : j.errore, true);      // problemi_bloccanti: li mostra chi ha chiesto (Esporta)
+    const e = new Error(j.errore); e.licenza = !!j.licenza; e.codice = j.codice || ""; e.dati = j; throw e;
   }
   return j;
 }
@@ -2357,11 +2357,23 @@ document.querySelectorAll("input[name=er]").forEach(r => r.onchange = updCount);
 $("expb").onclick = openExp; $("ecancel").onclick = () => $("exp").style.display = "none";
 $("echoose").onclick = async () => { const r = await api("/api/pick", { kind: "folder" }); if (r.paths[0]) $("edest").value = r.paths[0].replace(/\/$/, ""); };
 let epoll = null, eres = null;
+async function consegnaLoStesso(d) {                            // true: consegna lo stesso; «Controlla l'album» chiude Esporta e apre il controllo
+  const righe = d.problemi.slice(0, 8).map(p => "• " + (p.s != null ? t("editor.ctl.dove", { n: nomeSpread(p.s) }) + ": " : "") + p.testo.replace(/^Spread \d+: /, ""));
+  if (d.conta > righe.length) righe.push(tn("editor.ctl.altri", d.conta - righe.length));
+  const v = await foglio(t("editor.exp.bloccano_tit"), tn("editor.exp.bloccano_testo", d.conta) + "\n\n" + righe.join("\n"),
+    [{ t: t("editor.exp.consegna_stesso"), v: "si", danger: true }, { t: t("editor.ctl.titolo"), v: "ctl" }, { t: t("comune.annulla"), v: false, main: true }]);
+  if (v === "ctl") { $("exp").style.display = "none"; apriControlla(true); }
+  return v === "si";
+}
 $("ego").onclick = async () => {
   const body = { fmt: EF, range: document.querySelector('input[name=er]:checked').value === "all" ? "" : $("erange").value, dest: $("edest").value, ev: +$("eev").value || 0,
     res: $("ejq").value, q: EF === "jpg" ? +$("ejqq").value : 80, width: +$("epw").value, numeri: $("epn").checked, force: $("epf").checked };
   if (EF === "psd" && !(await foglio(t("editor.exp.psd_tit"), t("editor.exp.psd_testo"), [{ t: t("comune.annulla"), v: false }, { t: t("editor.exp.psd_ok"), v: true, main: true }]))) return;
-  try { await api("/api/export", body); } catch (e) { return; }
+  try { await api("/api/export", body); }
+  catch (e) {                                                   // consegna con problemi che bloccano la stampa: li dice e chiede (UX-013)
+    if (e.codice !== "problemi_bloccanti" || !(await consegnaLoStesso(e.dati))) return;
+    try { await api("/api/export", Object.assign(body, { conferma_problemi: true })); } catch (x) { return; }
+  }
   $("ego").disabled = true; $("elog").style.display = "block"; $("elog").textContent = t("editor.exp.avvio"); eres = null; esportazione(true, EF);
   clearInterval(epoll);
   epoll = setInterval(async () => {

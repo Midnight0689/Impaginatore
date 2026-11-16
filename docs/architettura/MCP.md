@@ -139,7 +139,7 @@ Convenzioni:
 | `sistema_album` | `progetto`, `spread`, `spazi`, `tono`, `gruppo` | spread con spazi corretti, foto con tono corretto | modifica |
 | `annulla` / `ripeti` | `progetto` | il passo annullato o rifatto, con il nome | modifica |
 | `salva` | `progetto` | salvato (con copia della versione precedente in `_backup_editor`) | modifica |
-| `esporta` | `progetto`, `formato` (`jpg`/`pdf`/`consegna`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`) | esito (spread fatti, saltati, errori) e cartella; `consegna`: i file come li chiede il prodotto dell'album, con il riepilogo (CATALOGHI.md); aspetta fino a 45 s | modifica |
+| `esporta` | `progetto`, `formato` (`jpg`/`pdf`/`consegna`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`), `conferma_problemi` (di serie `false`) | esito (spread fatti, saltati, errori) e cartella; `consegna`: i file come li chiede il prodotto dell'album, con il riepilogo (CATALOGHI.md); con problemi che bloccano la stampa non parte e risponde `partita: false`, `problemi_bloccanti` (quanti) e `problemi` (come `controlla_album`); `conferma_problemi: true` consegna lo stesso, solo se l'utente lo chiede; aspetta fino a 45 s | modifica |
 | `stato_esportazione` | `progetto` | esito dell'ultima esportazione chiesta dall'assistente | lettura |
 | `anteprima_spread` | `progetto`, `spread`, `larghezza` (200–1200) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |
 | `miniatura_foto` | `progetto`, `foto`, `lato` (64–512) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |
