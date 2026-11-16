@@ -15,7 +15,12 @@ Punti di estensione: lo script JavaScript ha delle parti con nome (PARTI) che ge
 (angoli, tono, ritocco, bordi, livelli di testo, profilo sRGB); con estesa=True anche le voci delle foto e dei testi
 portano i dati che servono a quelle parti. Niente codice viene modificato come testo o eseguito con exec.
 """
-import sys, os, json, argparse
+import sys, os, json, argparse, re
+
+from .. import lingua
+
+MOTIVI = dict(aperto="motore.psd_aperto", esiste="motore.psd_esiste", modificato="motore.psd_modificato")      # codice del motivo -> chiave del testo
+PROTOCOLLO_SALTATO = re.compile(r"@@SALTATO (\d+) (" + "|".join(MOTIVI) + ")$")                              # riga di protocollo per il server dell'editor: indipendente dalla lingua
 
 TESTO_JS = '''  var L1 = title ? [TX.nome,TX.serif,380,0, it.x+it.w/2, it.y+it.h/2+82] : [TX.nome,TX.serif,170,0, it.x, it.y+it.h-247];
   var L2 = title ? [TX.sotto,TX.sans,62,355, it.x+it.w/2, it.y+it.h/2+307] : [TX.sotto,TX.sans,62,225, it.x+6, it.y+it.h-124];
@@ -98,7 +103,7 @@ def _registro(path):
     esistente si sovrascrive senza --forza)"""
     from .. import formato
     try: reg = formato.leggi_json(path) if os.path.exists(path) else {}
-    except (OSError, ValueError) as e: print(f"psd_generati.json non leggibile ({e}): lo rifaccio", flush=True); return {}
+    except (OSError, ValueError) as e: print(lingua.t("motore.psd_registro_illeggibile", motivo=e), flush=True); return {}
     if not isinstance(reg, dict): return {}
     return {k: v for k, v in reg.items() if isinstance(k, str) and isinstance(v, (int, float)) and not isinstance(v, bool)}
 
@@ -121,12 +126,14 @@ def main(argv=None, parti=None, estesa=False):
     skip = []
     for n in nums:
         fn = f"Spread_{n:02d}.psd"; p = os.path.join(OUT, fn)
-        if any(d == fn for d, _ in open_docs): skip.append((n, "è aperto in Photoshop")); continue
+        if any(d == fn for d, _ in open_docs): skip.append((n, "aperto")); continue
         if os.path.exists(p) and not a.forza:
-            if fn not in reg: skip.append((n, "esiste e non l'ho generato io")); continue
-            if os.path.getmtime(p) > reg[fn] + 5: skip.append((n, "modificato a mano dopo la generazione")); continue
+            if fn not in reg: skip.append((n, "esiste")); continue
+            if os.path.getmtime(p) > reg[fn] + 5: skip.append((n, "modificato")); continue
     todo = [n for n in nums if n not in {s for s, _ in skip}]
-    for n, why in skip: print(f"SALTATO spread {n}: {why} -> usa modifica_psd.py o --forza se l'utente vuole davvero rigenerarlo")
+    for n, codice in skip:
+        if os.environ.get("IMPAGINATORE_PROTOCOLLO"): print(f"@@SALTATO {n} {codice}")      # per il server dell'editor (lo lancia con questa variabile): niente testo, solo il codice
+        print(lingua.t("motore.psd_saltato", n=n, motivo=lingua.t(MOTIVI[codice])))
     if not todo: return 0
 
     T = A.CFG.get("testo", {})
@@ -149,7 +156,7 @@ def main(argv=None, parti=None, estesa=False):
             if line.endswith(" ok"):
                 fn = line.split()[0] + ".psd"; reg[fn] = os.path.getmtime(os.path.join(OUT, fn))
     formato.scrivi_json(REG, reg, indent=1)
-    print("Ora: python verifica_psd.py --progetto", A.PROJ)
+    print(lingua.t("motore.psd_verifica", progetto=A.PROJ))
     return 0
 
 

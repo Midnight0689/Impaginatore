@@ -43,10 +43,10 @@ def test_importa_foto_e_riavvio(editor, tmp_path):
     assert c.codice("/api/import", {"paths": [str(nuove)]}) == 403, "cartella mai scelta con la finestra di sistema"
     dialoghi.imposta(Finti(str(nuove))); assert c.post("/api/pick", {"kind": "folder"}) == {"paths": [str(nuove)]}
     r = c.post("/api/import", {"paths": [str(nuove), str(nuove / "N01.jpg")]})
-    assert r == {"importate": 2, "saltate": 2, "riavvio": True}
+    assert r == {"importate": 2, "saltate": 1, "riavvio": True}        # nota.txt non è una foto: non si conta; N01 c'è già due volte nella richiesta
     attendi(lambda: c.riavvii == [1], 10)
     assert len(c.E.CFG["foto_extra"]) == 2
-    assert c.post("/api/import", {"paths": [str(nuove)]}) == {"importate": 0, "saltate": 3, "riavvio": False}
+    assert c.post("/api/import", {"paths": [str(nuove)]}) == {"importate": 0, "saltate": 2, "riavvio": False}
     c.E.inizializza(c.progetto); assert len(c.get("/api/state")["photos"]) == 12
 
 

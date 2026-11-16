@@ -2293,8 +2293,8 @@ $("pxgo").onclick = async () => {
   const lg = $("pxlog"); try {
     const r = await api("/api/prj_esporta", { foto: $("pxfoto").checked, zip: $("pxzip").checked, v1x: $("pxv1x").checked }); if (r.annullato) return;
     lg.style.display = "block"; lg.textContent = "…"; $("pxgo").disabled = true; $("pxreveal").style.display = "none"; pxres = null;
-    for (let i = 0; i < 3000; i++) { await new Promise(z => setTimeout(z, 800)); const L = await api("/api/log"); lg.textContent = L.filter(x => !x.startsWith("RISULTATO:")).join("\n"); lg.scrollTop = lg.scrollHeight;
-      const rs = L.find(x => x.startsWith("RISULTATO:")); if (rs) pxres = rs.slice(10); if (L.includes("[finito]")) break; }
+    for (let i = 0; i < 3000; i++) { await new Promise(z => setTimeout(z, 800)); const L = await api("/api/log"), e = await api("/api/esito"); lg.textContent = L.filter(x => !x.startsWith("RISULTATO:") && x !== "[finito]").join("\n"); lg.scrollTop = lg.scrollHeight;
+      if (e.risultato) pxres = e.risultato; if (e.finito) break; }
     if (pxres) $("pxreveal").style.display = "";
   } catch (e) {} $("pxgo").disabled = false;
 };
@@ -2361,11 +2361,12 @@ $("ego").onclick = async () => {
   clearInterval(epoll);
   epoll = setInterval(async () => {
     let l; try { l = await api("/api/log"); } catch (e) { return; }
-    $("elog").textContent = l.filter(x => !x.startsWith("RISULTATO:")).join("\n"); $("elog").scrollTop = 1e6;
-    const r = l.find(x => x.startsWith("RISULTATO:")); if (r) eres = r.slice(10);
-    if (l.length && l[l.length - 1].startsWith("[finito")) {
-      clearInterval(epoll); esportazione(false); $("ego").disabled = false; const sk = l.filter(x => x.startsWith("SALTATO")), er = l.find(x => /ERRORE|errore/.test(x));
-      if (sk.length) toast(t("editor.exp.saltati", { n: sk.length, primo: sk[0].replace(/ -> .*/, "") }), true); else if (er) toast(t("editor.exp.errore"), true); else if (eres) toast(t("editor.exp.finita"), false, { t: lblFinder(), f: () => api("/api/reveal", { path: eres }) });
+    $("elog").textContent = l.filter(x => !x.startsWith("RISULTATO:") && x !== "[finito]").join("\n"); $("elog").scrollTop = 1e6;
+    let e; try { e = await api("/api/esito"); } catch (x) { return; }
+    if (e.risultato) eres = e.risultato;
+    if (e.finito) {
+      clearInterval(epoll); esportazione(false); $("ego").disabled = false; const sk = e.saltati, er = e.errori.length;
+      if (sk.length) toast(t("editor.exp.saltati", { n: sk.length, primo: "spread " + sk[0].spread + " (" + sk[0].motivo + ")" }), true); else if (er) toast(t("editor.exp.errore"), true); else if (eres) toast(t("editor.exp.finita"), false, { t: lblFinder(), f: () => api("/api/reveal", { path: eres }) });
       if (eres) $("ereveal").style.display = ""; render();
     }
   }, 800);

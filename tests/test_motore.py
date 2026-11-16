@@ -341,3 +341,31 @@ def test_testo_a_capo_centrato_e_righe_vuote():
     j = testo.job_x(it)
     assert 0 <= j["gy"] < 40 and 0 < j["gx"] < 100 and j["lh"] == 1.2
 
+
+
+@pytest.mark.parametrize("lg, riga", [("it", "SALTATO spread 1: esiste e non l'ho generato io -> usa modifica_psd.py"),
+                                      ("en", "Skipped spread 1: it exists and I didn't generate it -> use modifica_psd.py")])
+def test_genera_psd_saltati_con_riga_di_protocollo(prj, monkeypatch, capsys, lg, riga):
+    """il processo dei PSD scrive i suoi motivi nella lingua in uso e, solo se il server dell'editor lo chiede, una riga di
+    protocollo fissa («@@SALTATO <spread> <codice>») che il server riconosce in qualunque lingua"""
+    from impaginatore.motore import genera_psd
+    from impaginatore.piattaforma import photoshop
+    ps = PhotoshopFinto()
+    for n in ("trova", "esegui_js", "esegui_jsx"): monkeypatch.setattr(photoshop, n, getattr(ps, n))
+    assert genera_psd.main(["--progetto", prj, "--spread", "1,2"]) == 0
+    with open(os.path.join(prj, "_cache", "psd_generati.json"), "w", encoding="utf-8") as f: f.write("{rotto")
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", lg); capsys.readouterr()
+    assert genera_psd.main(["--progetto", prj, "--spread", "1"]) == 0
+    senza = capsys.readouterr().out; assert riga in senza and "@@" not in senza
+    monkeypatch.setenv("IMPAGINATORE_PROTOCOLLO", "1")
+    assert genera_psd.main(["--progetto", prj, "--spread", "1"]) == 0
+    con = capsys.readouterr().out.splitlines(); assert "@@SALTATO 1 esiste" in con and any(x.startswith(riga) for x in con)
+    assert [genera_psd.PROTOCOLLO_SALTATO.match(x) is not None for x in ("@@SALTATO 1 esiste", "@@SALTATO 2 aperto", "@@SALTATO 3 modificato", "@@SALTATO 4 altro", "SALTATO spread 1")] == [True, True, True, False, False]
+    assert set(genera_psd.MOTIVI) == {"aperto", "esiste", "modificato"}
+
+
+def test_motivo_senza_photoshop_in_inglese(monkeypatch):
+    from impaginatore.piattaforma import photoshop
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    for s, parte in (("mac", "wasn't found in /Applications"), ("windows", "Program Files\\Adobe"), ("linux", "isn't available for Linux")):
+        monkeypatch.setattr(photoshop, "sistema", lambda s=s: s); assert parte in photoshop.motivo_assente(), s

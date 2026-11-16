@@ -14,6 +14,7 @@ import os
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import tempfile
 
+from .. import lingua
 from . import sistema
 from .processi import ambiente_figli
 
@@ -49,11 +50,9 @@ def disponibile(): return trova() is not None
 
 
 def motivo_assente():
-    """frase per l'utente quando i PSD non si possono fare"""
+    """frase per l'utente quando i PSD non si possono fare (nella lingua in uso)"""
     s = sistema()
-    if s == "mac": return "Photoshop non è stato trovato in /Applications: serve per creare i PSD (JPG e PDF funzionano anche senza)"
-    if s == "windows": return "Photoshop non è stato trovato nella cartella Programmi\\Adobe: serve per creare i PSD (JPG e PDF funzionano anche senza)"
-    return "I PSD si creano con Photoshop, che non esiste per Linux: esporta in JPG o PDF (oppure apri il progetto su un Mac o un PC Windows con Photoshop)"
+    return lingua.t("motore.photoshop_mac" if s == "mac" else "motore.photoshop_windows" if s == "windows" else "motore.photoshop_linux")
 
 
 def quota_applescript(s):
