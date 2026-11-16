@@ -74,13 +74,18 @@ nascosto); il programma compilato non usa copie.
 ## Una release
 
 Una release su GitHub (tag `v2.0.1`, **pubblicata**, non bozza e non «pre-release»: l'API `releases/latest` restituisce
-solo l'ultima release pubblicata che non è né l'una né l'altra) con tre asset:
+solo l'ultima release pubblicata che non è né l'una né l'altra). Gli asset che il programma legge sono tre:
 
 | Asset | Contenuto |
 |---|---|
 | `impaginatore-2.0.1-py3-none-any.whl` | la wheel del programma (`uv build --wheel`) |
 | `manifesto.json` | descrizione firmata della versione (sotto) |
 | `manifesto.json.sig` | firma Ed25519, 128 cifre esadecimali, di `IMPAGINATORE-AGGIORNAMENTO-v1\0` + i byte esatti di `manifesto.json` |
+
+Accanto ci sono i pacchetti del programma compilato per chi installa (`Impaginatore-2.0.1-<chiave>.<dmg|exe|deb>`, con
+`.sha256` e `.componenti.json`), `SHA256SUMS` e `verifiche.json` (esito della prova di ogni pacchetto nella pipeline).
+Una pre-release (versione `a`, `b` o `rc`, per esempio una beta `v2.0.0b1`) ha gli stessi file ma non arriva ai
+programmi installati: serve a dare i pacchetti a chi prova la beta.
 
 ```json
 {
@@ -94,12 +99,17 @@ solo l'ultima release pubblicata che non è né l'una né l'altra) con tre asset
 
 Nome, testo e misure della release su GitHub non contano: tutto ciò che il programma usa sta nel manifesto firmato. Le
 novità si mostrano nella lingua in uso (altrimenti in inglese, poi in italiano), al massimo 30 righe di 300 caratteri.
-`pacchetti` può avere anche un pacchetto per sistema (`mac-arm64`, `mac-x86_64`, `windows`, `linux`: le chiavi di
-`installazione.chiave_pacchetto()`) per il programma compilato, con misura e sha256 come la wheel. Li aggiunge
-`aggiornamento.py firma … --compilato chiave=file` (una volta per pacchetto), di solito attraverso
-`strumenti/rilascio.py prepara`, che fa anche `SHA256SUMS` e le note (`DISTRIBUZIONE.md`, «Rilascio»).
+`pacchetti` può avere anche un pacchetto per sistema (`mac-arm64`, `mac-x86_64`, `windows`, `linux`, `linux-arm64`: le
+chiavi di `installazione.chiave_pacchetto()`; Windows su ARM usa `windows`, il pacchetto x64 che esegue in emulazione)
+per il programma compilato, con misura e sha256 come la wheel. Li aggiunge `aggiornamento.py firma … --compilato
+chiave=file` (una volta per pacchetto), di solito attraverso `strumenti/rilascio.py pubblica` (o `prepara`), che fa
+anche `SHA256SUMS` e le note (`DISTRIBUZIONE.md`, «Rilascio»).
 
 ## Come si pubblica
+
+Dal 16/11/2026 la release si fa in due tempi: la pipeline crea la release **in bozza** con i pacchetti, sul computer di
+chi pubblica `strumenti/rilascio.py pubblica` firma il manifesto e la pubblica. La procedura passo per passo è in
+`DISTRIBUZIONE.md`, «Rilascio»; qui sotto la parte della chiave e, per chi pubblica solo la wheel, il giro a mano.
 
 Una volta sola:
 
@@ -111,7 +121,8 @@ Una volta sola:
 3. Mettere il repository delle release in `src/impaginatore/aggiornamenti/sorgenti.py`: `REPOSITORY = "proprietario/nome"`
    (pubblico: il programma lo legge senza autenticazione; 60 richieste all'ora per indirizzo IP, ne basta una al giorno).
 
-A ogni versione:
+A ogni versione, a mano (solo la wheel, senza pacchetti compilati; con i pacchetti si usa la pipeline e `rilascio.py
+pubblica`, `DISTRIBUZIONE.md`):
 
 1. Versione in `src/impaginatore/__init__.py` (unico posto), `CHANGELOG.md`, test (`ruff check`, `pytest`).
 2. Elenco delle revoche, se ci sono licenze revocate: `python3 marketing/negozio/chiavi/chiavi.py revoche --uscita
@@ -201,7 +212,8 @@ modo silenzioso e chiusura del programma; macOS: sostituzione del bundle notariz
 - Il repository delle release (pubblico) e chi tiene la chiave privata dei rilasci.
 - Solo stessa versione maggiore (proposto) o anche le successive.
 - Un canale «beta» per chi ha la licenza beta (release marcate «pre-release», lette da `/releases` invece che da
-  `/releases/latest`): oggi le pre-release non arrivano a nessuno.
+  `/releases/latest`): oggi le pre-release non arrivano a nessuno. `rilascio.py pubblica` pubblica le versioni a/b/rc
+  come pre-release proprio per questo: si scaricano dalla pagina della release, ma i programmi installati non le vedono.
 - Controllo automatico acceso di serie (proposto) e una volta al giorno.
 
 ## Stato delle chiavi al 16/11/2026
