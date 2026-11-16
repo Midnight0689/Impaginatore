@@ -25,6 +25,8 @@ import threading
 import time
 import urllib.request
 
+from .piattaforma import anche_se_aperto
+
 INTESTAZIONE = "X-Impaginatore-Gettone"
 VARIABILE = "IMPAGINATORE_GETTONE"
 MAX_CORPO = 4 * 1024 * 1024                  # corpo massimo di una richiesta (byte): il più grande legittimo è un elenco di percorsi
@@ -140,7 +142,7 @@ def scrivi_sessione(tipo, porta, gettone, **info):
     dati = dict(tipo=tipo, porta=int(porta), gettone=gettone, pid=os.getpid(), genitore=os.getppid(), creato=time.time(), **info)
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as f: json.dump(dati, f)
-    os.replace(tmp, p)
+    anche_se_aperto(os.replace, tmp, p)                     # su Windows la schermata può star leggendo il file in questo momento
     return p
 
 
@@ -173,7 +175,7 @@ def togli_sessione(tipo, porta, gettone):
     """toglie il file di sessione, solo se è ancora il nostro (un server nuovo sulla stessa porta l'ha già riscritto)"""
     d = leggi_sessione(tipo, porta)
     if d and uguali(d["gettone"], gettone):
-        try: os.remove(_file(tipo, porta))
+        try: anche_se_aperto(os.remove, _file(tipo, porta))
         except OSError as e: log.debug("file di sessione non tolto: %s", e)
 
 

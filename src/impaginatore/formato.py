@@ -20,6 +20,7 @@ import tempfile
 import time
 
 from . import formato_1x, lingua
+from .piattaforma import anche_se_aperto
 from .validazione import FORMATO, PAGINE, ErroreProgetto
 from . import validazione as V
 
@@ -92,7 +93,7 @@ def _sostituisci(path, scrivi):
     try:
         with os.fdopen(fd, "wb") as f: scrivi(f); f.flush(); os.fsync(f.fileno())
         os.chmod(tmp, modo)
-        os.replace(tmp, path)
+        anche_se_aperto(os.replace, tmp, path)          # su Windows la schermata dei progetti può star leggendo il file
     except BaseException:
         try: os.remove(tmp)
         except OSError: pass

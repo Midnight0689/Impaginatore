@@ -409,6 +409,30 @@ def test_cestino_freedesktop_altro_disco(tmp_path, monkeypatch):
     assert d.exists() and os.listdir(tmp_path / "T" / "info") == []
 
 
+def test_file_aperto_da_un_altro_processo(sistema, monkeypatch):
+    """su Windows os.replace e os.remove di un file che un altro processo legge danno PermissionError finché quello non
+    lo chiude: si riprova. Sugli altri sistemi, e per gli altri errori, l'errore arriva subito"""
+    def azione(esiti):
+        chiamate = []
+        def f(*a):
+            chiamate.append(a); e = esiti.pop(0) if esiti else None
+            if e: raise e
+            return "fatto"
+        return f, chiamate
+    sistema("windows"); f, chiamate = azione([PermissionError(13, "aperto"), PermissionError(13, "aperto")])
+    assert piattaforma.anche_se_aperto(f, "a", "b") == "fatto" and chiamate == [("a", "b")] * 3
+    f, chiamate = azione([FileNotFoundError(2, "no")])
+    with pytest.raises(FileNotFoundError): piattaforma.anche_se_aperto(f)
+    assert len(chiamate) == 1, "un errore che non è di un file aperto non si riprova"
+    monkeypatch.setattr(piattaforma, "ATTESA_FILE_APERTO", 0.05); f, chiamate = azione([PermissionError(13, "aperto")] * 1000)
+    with pytest.raises(PermissionError): piattaforma.anche_se_aperto(f)
+    assert len(chiamate) > 1, "riprovato fino al tempo massimo, poi l'errore"
+    for s in ("linux", "mac"):
+        sistema(s); f, chiamate = azione([PermissionError(13, "permesso")])
+        with pytest.raises(PermissionError): piattaforma.anche_se_aperto(f)
+        assert len(chiamate) == 1, s
+
+
 # ---------------------------------------------------------------- processi
 def test_processi(sistema, monkeypatch, reg):
     e = processi.ambiente_figli({"A": "1"}); assert e == {"A": "1", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}

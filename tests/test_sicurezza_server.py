@@ -7,12 +7,13 @@ import os
 import socket
 import stat
 import sys
+import threading
 import time
 import urllib.parse
 
 import pytest
 
-from impaginatore import percorsi, servizio, sicurezza
+from impaginatore import formato, percorsi, servizio, sicurezza
 from impaginatore.piattaforma import processi
 
 SERVER = ["home_srv", "editor"]
@@ -221,6 +222,28 @@ def test_file_di_sessione_casi_limite(casa, monkeypatch):
     sicurezza.togli_sessione("editor", 5, "g")
     assert sicurezza.indirizzo_avvio("editor", 5, timeout=0.5) is None, "il server non risponde"
     assert sicurezza.indirizzo_avvio("editor", 6) is None, "nessun file di sessione"
+
+
+def test_file_sostituiti_mentre_un_altro_li_legge(casa, tmp_path):
+    """la schermata dei progetti legge il file di sessione e progetto.json mentre l'editor li riscrive (al salvataggio,
+    prima di ripartire, appena ripartito). Su Windows un file aperto non si sostituisce: os.replace dà PermissionError (il
+    motivo di piattaforma.anche_se_aperto) e la scrittura aspetta che chi legge lo chiuda. Altrove si sostituisce subito"""
+    windows = sys.platform.startswith("win")
+    q = str(tmp_path / "progetto.json"); formato.scrivi_json(q, {"n": 1})
+    casi = ((sicurezza.scrivi_sessione("editor", 5001, "primo"), lambda: sicurezza.scrivi_sessione("editor", 5001, "secondo"),
+             lambda: sicurezza.gettone_di("editor", 5001) == "secondo"),
+            (q, lambda: formato.scrivi_json(q, {"n": 2}), lambda: formato.leggi_json(q) == {"n": 2}))
+    for percorso, scrivi, scritto in casi:
+        lettore = open(percorso, "rb"); chiudi = threading.Timer(0.5, lettore.close); chiudi.start()
+        try:
+            if windows:
+                altro = tmp_path / "altro.json"; altro.write_text("{}", encoding="utf-8")
+                with pytest.raises(PermissionError): os.replace(altro, percorso)
+            scrivi()
+            assert scritto(), percorso
+            assert lettore.closed or not windows, "su Windows la sostituzione ha aspettato che chi legge chiudesse il file"
+        finally:
+            chiudi.join(); lettore.close()
 
 
 def _porta_spenta():
