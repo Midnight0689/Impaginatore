@@ -32,7 +32,9 @@ File sul computer dell'utente, in `<dati dell'utente>/licenza/` (cartella 0700, 
 - `chiave.txt`: il testo della chiave attivata. Resta anche se si reinstalla il programma;
 - `prova.json`: `{"formato": 1, "inizio": …, "visto": …}`, inizio della prova e ultima ora vista, in secondi.
 
-Nient'altro: nessun identificativo del computer, nessuna impronta dell'hardware, nessun dato che esca.
+Nient'altro: nessun identificativo del computer, nessuna impronta dell'hardware, nessun dato che esca per la licenza.
+Le statistiche d'uso della beta privata (sotto, «Beta privata») sono un'altra cosa: hanno la loro cartella, partono solo
+dal «sì» del tester e sono descritte in `STATISTICHE.md`.
 
 ## Stati
 
@@ -54,6 +56,23 @@ si esportano JPG, PDF o PSD.
 
 Ogni stato ha un messaggio per l'utente in `stato()["messaggio"]`, e i rifiuti dicono perché e dove si trova la funzione
 («Il PSD a livelli non fa parte della prova gratuita: c'è nelle licenze Pro e Studio.»).
+
+### Beta privata
+
+Una chiave con il bit `beta` (chiavi di `chiavi.py emetti-beta`: fascia Studio, formato 2 con scadenza,
+`FORMATO-CHIAVE.md`) è una licenza `attiva` come le altre fino all'ultimo giorno compreso, poi `scaduta` (sola lettura).
+`stato()` ha tre campi in più, presenti sempre:
+
+| Campo | Valore |
+|---|---|
+| `beta` | `true` se la chiave salvata ha il bit beta e la firma si verifica (anche se è scaduta o revocata) |
+| `etichetta_beta` | «Beta privata» (tradotta) per una chiave beta attiva, scaduta o revocata; altrimenti `null` |
+| `riga_beta` | la riga breve da mostrare accanto al nome: «Beta privata · scade il 31/01/2027», dopo la scadenza «Beta privata · finita il 31/01/2027», revocata o senza scadenza solo «Beta privata»; `null` se la chiave non è beta o non si verifica |
+
+Il messaggio dice fino a quando valgono le funzioni e che dopo gli album restano apribili in sola lettura; dopo la
+scadenza «La beta privata è finita il …». La schermata Album mostra `riga_beta` al posto del nome della licenza, l'editor
+nel distintivo accanto al titolo (`licb`). Solo con una chiave beta valida la schermata Album chiede, al primo avvio, se
+condividere le statistiche d'uso (`STATISTICHE.md`).
 
 ## Dove si controlla
 
@@ -105,11 +124,12 @@ registro. Dettagli in `FORMATO-CHIAVE.md`, § 4.
 2. Rigenerare `licenze/revoche.json` con `chiavi.py revoche --uscita …`.
 3. Controllare che `licenze/tier.json` sia uguale a `docs/mercato/tier.json` (lo fa un test).
 
-Il punto 1 è protetto da `tests/test_licenze.py::test_un_rilascio_non_parte_con_il_segnaposto`: con una versione finale
-(`2.0.0`, senza `.dev`, `a`, `b`, `rc`) e il segnaposto, la suite fallisce, quindi la CI e il rilascio si fermano. Quando
-ci sarà la pipeline di rilascio (T-303) conviene ripetere il controllo come passo esplicito prima della costruzione:
+**Stato al 16/11/2026: il punto 1 è fatto.** Nel codice c'è la chiave pubblica vera (id 1); la chiave privata è stata
+generata con `chiavi.py genera-coppia` e sta fuori dal repository, in `~/.impaginatore-negozio/` sul computer del
+titolare (file leggibili solo da lui). Va copiata subito anche offline: senza, non si possono più emettere licenze
+valide per le copie già distribuite. `tests/test_licenze.py::test_un_rilascio_non_parte_con_il_segnaposto` ferma
+chiunque rimetta il segnaposto, in ogni versione; la pipeline di rilascio ripete il controllo:
 `python -c "from impaginatore.licenze import chiave as K; assert not K.problemi_per_il_rilascio()"`.
-Con il segnaposto nessuna chiave è valida: una copia di sviluppo vive di prova gratuita.
 
 Nei test la coppia di firma nasce a ogni sessione (`tests/conftest.py`, fixture `licenza`): ogni test gira con una
 licenza Studio, salvo quelli che provano gli altri stati. Gli editor lanciati come processi a parte non vedono quella

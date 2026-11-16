@@ -90,9 +90,10 @@ def test_licenza_attiva(licenza, ora):
     assert s["funzioni"] == licenze.funzioni_di("studio") and s["seriale"] == 1 and s["emessa"] == "2026-11-01" and s["scade"] is None
     assert s["messaggio"] == "Licenza Studio attiva, intestata a «Studio Prova», per 5 computer. Tutti gli aggiornamenti della versione 2 sono inclusi."
     assert "IMP1" not in json.dumps(s) and K.da_testo(licenza.chiavi.studio)[-64:].hex() not in json.dumps(s), "il testo della chiave non esce mai"
-    licenza.usa(licenza.chiavi.chiave(fascia="pro", intestatario="", flag=K.FLAG_OMAGGIO | K.FLAG_BETA, computer=2))
+    licenza.usa(licenza.chiavi.chiave(fascia="pro", intestatario="", flag=K.FLAG_OMAGGIO, computer=2))
     s = licenze.stato()
-    assert s["messaggio"] == "Licenza Pro attiva per 2 computer. Tutti gli aggiornamenti della versione 2 sono inclusi." and s["omaggio"] and s["beta"]
+    assert s["messaggio"] == "Licenza Pro attiva per 2 computer. Tutti gli aggiornamenti della versione 2 sono inclusi." and s["omaggio"] and not s["beta"]
+    assert s["etichetta_beta"] is None and s["riga_beta"] is None, "la beta privata ha i suoi testi: tests/test_licenze_beta.py"
 
 
 def test_prova_gratuita_dalla_prima_apertura(licenza, ora):
@@ -319,12 +320,11 @@ def test_segnaposto_della_chiave_pubblica(licenza):
 
 
 def test_un_rilascio_non_parte_con_il_segnaposto(licenza):
-    """versione finale (es. 2.0.0) con il segnaposto nel codice: nessuna chiave venduta funzionerebbe. Questo test la ferma.
-    Nelle versioni di sviluppo (2.0.0.dev0, 2.0.0rc1) il segnaposto è atteso: vale la prova gratuita"""
-    finale = re.fullmatch(r"\d+\.\d+\.\d+", __version__) is not None
+    """con il segnaposto nel codice nessuna chiave venduta funzionerebbe: dal 16/11/2026 nel codice c'è la chiave pubblica
+    vera (la privata sta fuori dal repository) e questo test ferma chi rimettesse il segnaposto, in ogni versione"""
     problemi = K.problemi_per_il_rilascio(licenza.pubbliche_vere)
-    assert not (finale and problemi), f"rilascio {__version__} con la chiave pubblica di prova: {problemi} (docs/architettura/LICENZE.md, «Prima del rilascio»)"
-    if not finale: assert problemi, "copia di sviluppo: la chiave pubblica vera arriva al rilascio"
+    assert problemi == [], f"{__version__} senza la chiave pubblica vera: {problemi} (docs/architettura/LICENZE.md, «Prima del rilascio»)"
+    assert K.problemi_per_il_rilascio({1: K.Pubblica(K.SEGNAPOSTO)}), "il segnaposto resta riconosciuto come problema"
 
 
 def test_le_licenze_non_usano_la_rete():

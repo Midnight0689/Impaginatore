@@ -97,12 +97,11 @@ def test_nomi_dei_file_del_pacchetto(nome, ok):
 
 
 def test_un_rilascio_non_parte_con_il_segnaposto():
-    """versione finale (es. 2.0.0) con il segnaposto nel codice: nessun aggiornamento arriverebbe mai. Questo test la ferma.
-    Nelle versioni di sviluppo (2.0.0.dev0, 2.0.0rc1) il segnaposto è atteso: gli aggiornamenti si provano con una release finta"""
-    finale = re.fullmatch(r"\d+\.\d+\.\d+", __version__) is not None
+    """con il segnaposto nel codice nessun aggiornamento arriverebbe mai: dal 16/11/2026 nel codice c'è la chiave pubblica
+    vera dei rilasci (la privata sta fuori dal repository) e questo test ferma chi rimettesse il segnaposto"""
     problemi = firmati.problemi_per_il_rilascio()
-    assert not (finale and problemi), f"rilascio {__version__} con la chiave degli aggiornamenti di prova: {problemi} (docs/architettura/AGGIORNAMENTI.md, «Prima del rilascio»)"
-    if not finale: assert problemi, "copia di sviluppo: la chiave pubblica vera arriva al rilascio"
+    assert problemi == [], f"{__version__} senza la chiave pubblica vera degli aggiornamenti: {problemi} (docs/architettura/AGGIORNAMENTI.md, «Prima del rilascio»)"
+    assert firmati.problemi_per_il_rilascio({1: firmati.SEGNAPOSTO}), "il segnaposto resta riconosciuto come problema"
     assert firmati.problemi_per_il_rilascio({}) == ["nessuna chiave pubblica degli aggiornamenti"] and firmati.problemi_per_il_rilascio({1: PUB}) == []
     assert firmati.pubblica(firmati.SEGNAPOSTO) is None and firmati.pubblica(None) is None and firmati.pubblica("ab") is None and firmati.pubblica(PUB) == bytes.fromhex(PUB)
 
@@ -110,7 +109,7 @@ def test_un_rilascio_non_parte_con_il_segnaposto():
 def test_chiave_di_prova_solo_nelle_versioni_di_sviluppo(tmp_path, monkeypatch):
     d = release(tmp_path / "rel", id_firma=0); s = sorgenti.SorgenteFinta(d)
     assert firmati.chiavi_con_prova(s, {1: PUB}) == {1: PUB, 0: PUB}, "2.0.0.dev0: la chiave accanto alla release finta vale"
-    assert firmati.chiavi_con_prova(s)[0] == PUB and firmati.chiavi_con_prova(s)[1] == firmati.SEGNAPOSTO
+    assert firmati.chiavi_con_prova(s)[0] == PUB and firmati.chiavi_con_prova(s)[1] == firmati.CHIAVI_FIDATE[1]
     assert firmati.chiavi_con_prova(sorgenti.SorgenteFinta(tmp_path / "manca"), {}) == {}
     (tmp_path / "rel" / "chiave-prova.txt").write_text("non una chiave", encoding="utf-8")
     assert firmati.chiavi_con_prova(s, {}) == {}

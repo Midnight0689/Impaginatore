@@ -20,7 +20,7 @@
     {"id": "T-201", "fase": 2, "titolo": "Finestra desktop con pywebview", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "in_verifica"},
     {"id": "T-202", "fase": 2, "titolo": "Licenze, fasce e prova gratuita", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102", "T-004"], "stato": "in_verifica"},
     {"id": "T-203", "fase": 2, "titolo": "Server MCP", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "in_verifica"},
-    {"id": "T-204", "fase": 2, "titolo": "Strumentazione e telemetria con consenso", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-204", "fase": 2, "titolo": "Strumentazione e telemetria con consenso", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "in_verifica"},
     {"id": "T-209", "fase": 2, "titolo": "Analisi UI/UX e proposte di semplificazione", "ruolo": "Progettista UI/UX", "dipende_da": ["T-102"], "stato": "fatto", "nota": "Richiesta del titolare (16/11/2026): azioni «un pulsante», da fare prima di chiudere la 2.0"},
     {"id": "T-205", "fase": 2, "titolo": "Interfaccia ridisegnata con la marca", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-005", "T-105", "T-209"], "stato": "in_verifica"},
     {"id": "T-206", "fase": 2, "titolo": "Italiano e inglese", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-205"], "stato": "in_verifica"},

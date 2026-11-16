@@ -50,7 +50,7 @@ FILE_PROVA = "chiave-prova.txt"         # chiave pubblica di prova accanto a una
 # nel repository. Con il segnaposto nessun manifesto è valido. Un rilascio con il segnaposto non passa i test:
 # tests/test_aggiornamenti_firmati.py::test_un_rilascio_non_parte_con_il_segnaposto (vedi AGGIORNAMENTI.md).
 SEGNAPOSTO = "SEGNAPOSTO-CHIAVE-PUBBLICA-DEGLI-AGGIORNAMENTI-DA-SOSTITUIRE-AL-RILASCIO"
-CHIAVI_FIDATE = {1: SEGNAPOSTO}
+CHIAVI_FIDATE = {1: "6a23294a5490a56a0f9c1ec5788fb057a11c4ee9d38b8b955678a6e8f2ff65d0"}
 # ---------------------------------------------------------------------------------------------------------------------
 
 _ESA64 = re.compile(r"[0-9a-f]{64}")
