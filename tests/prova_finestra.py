@@ -35,7 +35,7 @@ def attendi(cond, secondi=60):
             v = cond()
             if v: return v
         except Exception: pass
-        time.sleep(.2)
+        time.sleep(.2)                                          # passo tra due controlli
     raise AssertionError("tempo scaduto")
 
 
@@ -119,6 +119,8 @@ def main(cartella):
             # fuori dal programma: un altro servizio locale, un file, un sito, anche in una finestra nuova. (Non con
             # Window.load_url: pywebview azzera l'evento «loaded» prima di caricare e, se il filtro ferma il caricamento,
             # le chiamate che lo aspettano scadono. Il programma usa load_url solo verso le sue pagine)
+            # controlli negativi: la navigazione deve NON avvenire, e un «non è successo» non ha un evento da aspettare; si
+            # lascia al filtro il tempo di fermarla (o, se sbagliasse, alla pagina di cambiare) e poi si guarda dov'è la finestra
             for i, u in enumerate((locale, "file:///etc/hostname", sito)):
                 w.run_js(f"location.href = {json.dumps(u)}; 0"); time.sleep(1.5)
                 esito[f"dopo_{i}"] = w.get_current_url()
