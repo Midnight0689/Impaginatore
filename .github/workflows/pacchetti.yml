@@ -1,54 +1,71 @@
-# Pacchetti di installazione (T-302): programma compilato con Nuitka e pacchetto per ogni sistema, provati davvero.
-#     macOS arm64 e Intel   Impaginatore-<v>-mac-arm64.dmg, -mac-x86_64.dmg   (firma ad hoc, senza notarizzazione)
-#     Windows               Impaginatore-<v>-windows.exe                       (Inno Setup, per l'utente, senza firma)
-#     Linux                 Impaginatore-<v>-linux.deb                         (Ubuntu 24.04 e derivate)
-# Come e perché: docs/architettura/DISTRIBUZIONE.md. In locale lo stesso giro è
+# Pacchetti di installazione (T-302): programma compilato con Nuitka e pacchetto per ogni sistema e architettura, provati
+# davvero, e sui tag la release in bozza.
+#     macOS chip Apple e Intel   Impaginatore-<v>-mac-arm64.dmg, -mac-x86_64.dmg   (firma ad hoc, senza notarizzazione)
+#     Windows x64                Impaginatore-<v>-windows.exe   (Inno Setup, per l'utente, senza firma); sui PC Windows
+#                                con processore ARM gira in emulazione: il job «windows-arm» lo installa e lo prova lì
+#     Linux x86_64 e arm64       Impaginatore-<v>-linux.deb, -linux-arm64.deb   (Ubuntu 24.04 e derivate)
+# Un pacchetto Windows nativo arm64 non c'è: OpenCV (e cryptography, per il server MCP) non hanno ruote win_arm64
+# (DISTRIBUZIONE.md, «Sistemi e architetture»). Come e perché: docs/architettura/DISTRIBUZIONE.md. In locale lo stesso giro è
 #     python strumenti/compila.py  e  python strumenti/verifica_pacchetto.py <eseguibile> --finestra
 #
-# Quando parte e quali pacchetti fa (un giro costa: vedi «Consumo» sotto; i minuti macOS valgono 10, Windows 2):
-#     tag v*                         tutti e quattro, dopo i test, con la wheel: è il giro di un rilascio
+# Quando parte e quali pacchetti fa (job «scelta»):
+#     tag v*                         tutti, dopo i test, con la wheel e la release in bozza: è il giro di un rilascio
 #     avvio manuale                  quelli scelti (di serie solo Linux), dopo i test, con la wheel; vale solo quando il
 #                                    file è sul ramo principale (Actions > Pacchetti > Run workflow)
-#     push su pacchetti/<chiave>     un solo pacchetto, senza test né wheel: pacchetti/linux, pacchetti/windows,
-#                                    pacchetti/mac-arm64, pacchetti/mac-x86_64; pacchetti/tre = Linux, Mac chip Apple e
-#                                    Windows; pacchetti/tutti e pacchetti/prova = tutti e quattro; ogni altro
-#                                    pacchetti/** = solo Linux
-# Un push nuovo sullo stesso ramo di prova annulla il giro precedente (sui tag mai). NON pubblica niente: i pacchetti
-# restano come artefatti dell'esecuzione (30 giorni sui tag, 7 altrimenti). La release si prepara e si firma sul computer
-# di chi pubblica con strumenti/rilascio.py: la chiave privata dei rilasci non entra mai qui. Nessun segreto, permessi in
-# sola lettura. Il repository è pubblico, e con lui registri e artefatti: nell'artefatto vanno solo il pacchetto (con
-# impronta ed elenco dei componenti) e il riepilogo della verifica (rapporto e fotografie della finestra); la diagnosi
-# di un controllo che non va resta nel registro del job.
+#     push su pacchetti/<chiave>     un solo pacchetto, senza test né wheel: pacchetti/linux, pacchetti/linux-arm64,
+#                                    pacchetti/windows, pacchetti/mac-arm64, pacchetti/mac-x86_64; pacchetti/arm = Linux
+#                                    arm64, Mac chip Apple e Windows (provato anche su ARM); pacchetti/tre = Linux, Mac chip
+#                                    Apple e Windows; pacchetti/tutti e pacchetti/prova = tutti; ogni altro pacchetti/** =
+#                                    solo Linux
+# Ogni giro che costruisce il pacchetto Windows lo prova anche su Windows 11 ARM (job «windows-arm»).
+# Un push nuovo sullo stesso ramo di prova annulla il giro precedente (sui tag mai).
+#
+# Artefatti di ogni giro (30 giorni sui tag, 7 altrimenti): «pacchetto-<chiave>» con il pacchetto, la sua impronta
+# (.sha256), l'elenco dei componenti (.componenti.json) e il riepilogo della verifica (verifica-<chiave>.json e le
+# fotografie della finestra); «verifica-windows-arm64» con la prova su ARM; sui tag e con l'avvio manuale «wheel».
+#
+# Release (solo sui tag v*): il job «release» crea su GitHub una release IN BOZZA (pre-release se la versione lo è) con i
+# pacchetti verificati, le loro impronte, gli elenchi dei componenti, la wheel e SHA256SUMS; se rigira (un job rilanciato)
+# aggiorna la stessa bozza, e una release già pubblicata non la tocca. Non firma niente e non pubblica niente: il
+# manifesto firmato degli aggiornamenti si firma sul computer di chi pubblica, con la chiave privata che non entra mai
+# qui, e lo stesso comando pubblica la release (strumenti/rilascio.py pubblica, DISTRIBUZIONE.md «Rilascio»). Nessun
+# segreto oltre GITHUB_TOKEN; permessi in sola lettura, con contents: write solo nel job «release». Il repository è
+# pubblico, e con lui registri e artefatti: negli artefatti vanno solo pacchetti, impronte, elenchi dei componenti e
+# riepilogo della verifica; la diagnosi di un controllo che non va resta nel registro del job.
 #
 # Sui tag e con l'avvio manuale prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), che
 # devono passare; sui rami pacchetti/** i test non girano (li fa ci.yml sui rami prodotto/**) e si compila subito. Poi un
 # job per pacchetto: compila, impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso,
-# il DMG montato) e avvia il programma installato con strumenti/verifica_pacchetto.py --finestra: schermata di avvio con
-# lo stato della licenza, schermata, editor, esportazioni JPG e PDF, progetto 1.x, PSD fino a Photoshop, server MCP,
-# chiusura e la finestra vera, con la schermata Album caricata dentro (Linux dentro xvfb, con le fotografie giudicate;
-# macOS e Windows nella sessione grafica del runner, con la fotografia dello schermo come documento). Esiti, tempi e
-# misure nel riepilogo dell'esecuzione; rapporto e fotografie nell'artefatto.
+# il DMG montato) e avvia il programma installato con strumenti/verifica_pacchetto.py --finestra: architettura
+# dell'eseguibile, schermata di avvio con lo stato della licenza, schermata, editor, esportazioni JPG e PDF, progetto 1.x,
+# PSD fino a Photoshop, server MCP, chiusura e la finestra vera, con la schermata Album caricata dentro (Linux dentro
+# xvfb, con le fotografie giudicate; macOS e Windows nella sessione grafica del runner, con la fotografia dello schermo
+# come documento). Esiti, tempi e misure nel riepilogo dell'esecuzione; rapporto e fotografie nell'artefatto.
+#
+# macOS: versione minima esplicita (compila.MACOS_MINIMO: 13.0 sui Mac con chip Apple, 14.0 sui Mac Intel). Con
+# MACOSX_DEPLOYMENT_TARGET e «uv sync --python-platform» uv sceglie le ruote per quella versione (numpy macosx_11_0_arm64
+# invece di 14_0), compila.py la scrive in Info.plist e controlla con otool che nessun binario del bundle chieda di più.
 #
 # Cache: uv (ruote, e su Mac Intel la cryptography costruita dal sorgente) e Nuitka (NUITKA_CACHE_DIR: ccache su Linux e
 # macOS, clcache di Nuitka su Windows). La cache di Nuitka si salva subito dopo la compilazione, anche se dopo qualcosa
 # non va: la compilazione successiva rifà solo i file C cambiati.
 #
-# Consumo: il repository è pubblico, i runner standard non si pagano. Tempi misurati e costo se tornasse privato in
-# DISTRIBUZIONE.md («Pipeline», «Consumo»). Ogni job ha un tempo massimo per sistema, perché un blocco non tenga
-# occupato un runner per ore.
+# Consumo: il repository è pubblico, i runner standard (compresi quelli ARM) non si pagano. Tempi misurati in
+# DISTRIBUZIONE.md («Pipeline», «Consumo»). Ogni job ha un tempo massimo per sistema, perché un blocco non tenga occupato
+# un runner per ore.
 name: Pacchetti
 
 on:
   workflow_dispatch:
     inputs:
       pacchetti:
-        description: "Pacchetti da costruire: linux, windows, mac-arm64, mac-x86_64, tre (Linux, Mac chip Apple, Windows) o tutti"
+        description: "Pacchetti: linux, linux-arm64, windows, mac-arm64, mac-x86_64, arm (Linux arm64, Mac chip Apple, Windows), tre (Linux, Mac chip Apple, Windows) o tutti"
         type: choice
-        options: [linux, windows, mac-arm64, mac-x86_64, tre, tutti]
+        options: [linux, linux-arm64, windows, mac-arm64, mac-x86_64, arm, tre, tutti]
         default: linux
   push:
     tags: ["v*"]
-    branches: ["pacchetti/**"]      # prova dei pacchetti senza tag, un sistema per ramo (sopra)
+    branches: ["pacchetti/**"]      # prova dei pacchetti senza tag (sopra)
 
 permissions:
   contents: read
@@ -73,17 +90,46 @@ defaults:
     shell: bash
 
 jobs:
+  scelta:
+    name: Scelta dei pacchetti
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      chiavi: ${{ steps.s.outputs.chiavi }}
+      test: ${{ steps.s.outputs.test }}
+    steps:
+      - name: Pacchetti e sistemi dei test
+        id: s
+        env:
+          SCELTA: ${{ github.event_name == 'workflow_dispatch' && inputs.pacchetti || '' }}
+        run: |
+          tutti='["linux","linux-arm64","windows","mac-x86_64","mac-arm64"]'
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then s=tutti
+          elif [ -n "$SCELTA" ]; then s="$SCELTA"
+          else s="${GITHUB_REF_NAME#pacchetti/}"; fi
+          case "$s" in
+            tutti|prova) chiavi="$tutti" ;;
+            arm) chiavi='["linux-arm64","windows","mac-arm64"]' ;;
+            tre) chiavi='["linux","windows","mac-arm64"]' ;;
+            linux|linux-arm64|windows|mac-arm64|mac-x86_64) chiavi="[\"$s\"]" ;;
+            *) chiavi='["linux"]' ;;
+          esac
+          # test: Linux sempre (con la copertura), macOS e Windows se c'è un loro pacchetto
+          test=$(jq -cn --argjson c "$chiavi" '["ubuntu-24.04"] + (if any($c[]; startswith("mac")) then ["macos-15-intel"] else [] end) + (if any($c[]; . == "windows") then ["windows-2025"] else [] end)')
+          echo "chiavi=$chiavi" >> "$GITHUB_OUTPUT"; echo "test=$test" >> "$GITHUB_OUTPUT"
+          echo "Pacchetti: $chiavi; test (sui tag e con l'avvio manuale): $test" | tee -a "$GITHUB_STEP_SUMMARY"
+
   test:
     name: Test (${{ matrix.os }})
-    # obbligatori sui tag e con l'avvio manuale; sui rami pacchetti/** no (sotto, «pacchetto» e «wheel»). Linux sempre
-    # (con la copertura), macOS e Windows solo se fra i pacchetti scelti c'è il loro (sui tag tutti e tre)
+    needs: scelta
+    # obbligatori sui tag e con l'avvio manuale; sui rami pacchetti/** no (sotto, «pacchetto» e «wheel»)
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: true
       matrix:
-        os: ${{ fromJSON('{"tag":["ubuntu-24.04","macos-15-intel","windows-2025"],"tutti":["ubuntu-24.04","macos-15-intel","windows-2025"],"tre":["ubuntu-24.04","macos-15-intel","windows-2025"],"linux":["ubuntu-24.04"],"windows":["ubuntu-24.04","windows-2025"],"mac-arm64":["ubuntu-24.04","macos-15-intel"],"mac-x86_64":["ubuntu-24.04","macos-15-intel"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || inputs.pacchetti] || fromJSON('["ubuntu-24.04","macos-15-intel","windows-2025"]') }}
+        os: ${{ fromJSON(needs.scelta.outputs.test) }}
     env:
       UV_PROJECT_ENVIRONMENT: .venv
     steps:
@@ -115,20 +161,20 @@ jobs:
 
   pacchetto:
     name: Pacchetto ${{ matrix.chiave }}
-    needs: test
+    needs: [scelta, test]
     # test passati, oppure (solo sui rami pacchetti/**) non eseguiti
-    if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
-    # runner e tempo massimo (minuti) per pacchetto. La versione minima di macOS la decidono le librerie (14.0), non il
-    # runner. Il 16/11/2026, dopo il passaggio del repository a pubblico, GitHub ha annullato tre volte il job arm64 dopo
-    # 15 minuti in coda senza un runner libero (macos-26, macos-15; «capacity constraints» per i Mac arm64); macos-14 non
-    # c'è più («configuration 'macos-14-arm64-us-default' is not supported»)
-    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
-    timeout-minutes: ${{ fromJSON('{"linux":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
+    if: ${{ !cancelled() && needs.scelta.result == 'success' && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
+    # runner e tempo massimo (minuti) per pacchetto. La versione minima di macOS la decide compila.MACOS_MINIMO, non il
+    # runner. Il 16/11/2026, dopo il passaggio del repository a pubblico, GitHub ha lasciato in coda per ore i job macOS
+    # arm64 e li ha annullati dopo 15 minuti senza un runner libero (macos-26, macos-15; «capacity constraints»);
+    # macos-14 non c'è più («configuration 'macos-14-arm64-us-default' is not supported»). Si rilancia il solo job:
+    # gh run rerun <id> --failed
+    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","linux-arm64":"ubuntu-24.04-arm","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
+    timeout-minutes: ${{ fromJSON('{"linux":120,"linux-arm64":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
     strategy:
       fail-fast: false
       matrix:
-        # quali pacchetti (testa del file): tag -> tutti; avvio manuale -> la scelta; pacchetti/<chiave> -> quello; altro -> linux
-        chiave: ${{ fromJSON('{"tag":["linux","mac-arm64","mac-x86_64","windows"],"tutti":["linux","mac-arm64","mac-x86_64","windows"],"tre":["linux","mac-arm64","windows"],"linux":["linux"],"windows":["windows"],"mac-arm64":["mac-arm64"],"mac-x86_64":["mac-x86_64"],"pacchetti/tutti":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/prova":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/tre":["linux","mac-arm64","windows"],"pacchetti/linux":["linux"],"pacchetti/windows":["windows"],"pacchetti/mac-arm64":["mac-arm64"],"pacchetti/mac-x86_64":["mac-x86_64"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || (github.event_name == 'workflow_dispatch' && inputs.pacchetti || github.ref_name)] || fromJSON('["linux"]') }}
+        chiave: ${{ fromJSON(needs.scelta.outputs.chiavi) }}
     steps:
       - name: Fine riga come nel repository
         if: runner.os == 'Windows'
@@ -146,6 +192,14 @@ jobs:
           python-version: "3.12"
           enable-cache: true
           cache-dependency-glob: uv.lock
+
+      # versione minima di macOS (compila.MACOS_MINIMO, che compila.py confronta con questa): uv sceglie le ruote per lei
+      # e la cryptography costruita qui sul Mac Intel la scrive nei suoi binari
+      - name: Versione minima di macOS
+        if: runner.os == 'macOS'
+        run: |
+          echo "MACOSX_DEPLOYMENT_TARGET=${{ fromJSON('{"mac-arm64":"13.0","mac-x86_64":"14.0"}')[matrix.chiave] }}" >> "$GITHUB_ENV"
+          echo "PIATTAFORMA_UV=${{ fromJSON('{"mac-arm64":"aarch64-apple-darwin","mac-x86_64":"x86_64-apple-darwin"}')[matrix.chiave] }}" >> "$GITHUB_ENV"
 
       # cryptography (server MCP, via pyjwt) non ha ruote per i Mac Intel dalla 49: uv la costruisce dal sorgente con il
       # Rust del runner e l'OpenSSL 3 di Homebrew, collegato in modo statico (nessuna libreria di Homebrew nel programma:
@@ -168,7 +222,9 @@ jobs:
 
       - name: Ambiente di compilazione (Python 3.12, finestra, MCP, Nuitka)
         timeout-minutes: 20
-        run: uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
+        run: |
+          piattaforma=(); [ -n "${PIATTAFORMA_UV:-}" ] && piattaforma=(--python-platform "$PIATTAFORMA_UV")
+          uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione "${piattaforma[@]}"
 
       - name: Python dell'ambiente
         id: py
@@ -205,7 +261,7 @@ jobs:
 
       - name: Compila e impacchetta
         id: compila
-        timeout-minutes: ${{ fromJSON('{"linux":100,"mac-arm64":100,"mac-x86_64":130,"windows":150}')[matrix.chiave] }}
+        timeout-minutes: ${{ fromJSON('{"linux":100,"linux-arm64":100,"mac-arm64":100,"mac-x86_64":130,"windows":150}')[matrix.chiave] }}
         run: |
           inizio=$(date +%s)
           ${{ steps.py.outputs.python }} strumenti/compila.py
@@ -223,7 +279,7 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 10
         run: |
-          sudo apt-get install -y -q --no-install-recommends xvfb xauth x11-apps ./dist/pacchetti/Impaginatore-*-linux.deb
+          sudo apt-get install -y -q --no-install-recommends xvfb xauth x11-apps ./dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.deb
           echo "PROGRAMMA=/usr/bin/impaginatore" >> "$GITHUB_ENV"
 
       - name: Monta il DMG (macOS)
@@ -233,6 +289,10 @@ jobs:
           hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/dmg" dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.dmg
           codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/dmg/Impaginatore.app"
           echo "PROGRAMMA=$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app" >> "$GITHUB_ENV"
+          # versione minima e architettura lette dal binario, nel registro (compila.py le ha già controllate)
+          app="$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app"
+          lipo -archs "$app"; vtool -show-build "$app" | grep -E "platform|minos|sdk"
+          plutil -extract LSMinimumSystemVersion raw "$RUNNER_TEMP/dmg/Impaginatore.app/Contents/Info.plist"
 
       # «//» perché la shell di Git per Windows non scambi le opzioni per percorsi; l'installatore aspetta la fine
       - name: Installa con l'installatore silenzioso (Windows, per l'utente)
@@ -252,6 +312,7 @@ jobs:
         run: |
           prima=(); [ "$RUNNER_OS" = "Linux" ] && prima=(xvfb-run -a -s "-screen 0 1280x800x24")
           "${prima[@]}" ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra \
+            --architettura ${{ fromJSON('{"linux":"x86_64","linux-arm64":"arm64","mac-arm64":"arm64","mac-x86_64":"x86_64","windows":"x86_64"}')[matrix.chiave] }} \
             --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json --riepilogo "$GITHUB_STEP_SUMMARY"
 
       - name: Disinstalla (Windows)
@@ -291,6 +352,80 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
+  windows-arm:
+    name: Windows su ARM (pacchetto x64 in emulazione)
+    needs: [scelta, pacchetto]
+    # ogni volta che c'è il pacchetto Windows: Windows 11 su ARM esegue i programmi x64 in emulazione, e questo job prova
+    # che il pacchetto x64 si installa e funziona lì, finestra WebView2 compresa (un pacchetto nativo arm64 non c'è)
+    if: ${{ !cancelled() && needs.pacchetto.result != 'skipped' && contains(fromJSON(needs.scelta.outputs.chiavi), 'windows') }}
+    runs-on: windows-11-arm
+    timeout-minutes: 45
+    steps:
+      - name: Fine riga come nel repository
+        run: git config --global core.autocrlf false
+
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv e Python 3.12
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: false
+
+      - name: Pacchetto Windows di questo giro
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: pacchetto-windows
+          path: dist/pacchetti
+
+      - name: Macchina
+        shell: pwsh
+        run: |
+          "Sistema: " + [System.Runtime.InteropServices.RuntimeInformation]::OSDescription + " " + [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+          "Processore: " + (Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Name)
+          $v = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -ErrorAction SilentlyContinue
+          "WebView2: " + $(if ($v) { $v.pv } else { "non trovato nel registro" })
+
+      - name: Installa con l'installatore silenzioso (per l'utente)
+        timeout-minutes: 10
+        run: |
+          (cd dist/pacchetti && sha256sum -c Impaginatore-*-windows.exe.sha256)
+          installatore=(./dist/pacchetti/Impaginatore-*-windows.exe)
+          "${installatore[0]}" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART //LOG="$RUNNER_TEMP\\installazione.log"
+          DEST="$(cygpath -u "$LOCALAPPDATA")/Programs/Impaginatore"
+          test -f "$DEST/impaginatore.exe"
+          echo "DEST=$DEST" >> "$GITHUB_ENV"
+          echo "PROGRAMMA=$(cygpath -w "$DEST/impaginatore.exe")" >> "$GITHUB_ENV"
+
+      # la prova gira con un Python arm64 nativo (le serve solo Pillow, per le foto della prova); il programma è x64
+      - name: Prova il programma installato
+        timeout-minutes: 25
+        run: |
+          uv run --no-project --python 3.12 --with pillow==13.0.0 python strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --architettura x86_64 \
+            --rapporto dist/verifica/verifica-windows-arm64.json --riepilogo "$GITHUB_STEP_SUMMARY"
+
+      - name: Disinstalla
+        timeout-minutes: 5
+        run: |
+          "$DEST/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
+          for _ in $(seq 30); do [ ! -f "$DEST/impaginatore.exe" ] && break; sleep 2; done
+          test ! -f "$DEST/impaginatore.exe"
+
+      - name: Artefatto
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verifica-windows-arm64
+          path: |
+            dist/verifica/verifica-windows-arm64.json
+            dist/verifica/*.png
+          if-no-files-found: error
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
+
   wheel:
     name: Wheel (aggiornamenti delle installazioni Python)
     needs: test
@@ -318,3 +453,64 @@ jobs:
           path: dist/wheel/*.whl
           if-no-files-found: error
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
+
+  release:
+    name: Release in bozza
+    needs: [scelta, pacchetto, windows-arm, wheel]
+    # solo sui tag v*, con la wheel. Anche se un pacchetto manca o non ha passato la prova: la bozza si crea con quelli
+    # verificati e dice in testa cosa manca, e il job finisce in errore. Rilanciato il job che mancava («gh run rerun
+    # <id> --failed»), questo rigira e completa la stessa bozza
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.wheel.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write                 # solo qui: crea e aggiorna la release in bozza
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: false
+
+      - name: Artefatti di questo giro
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist/artefatti
+
+      # controlla versione del tag, impronte e prove; copia in dist/release solo i pacchetti verificati (con impronta ed
+      # elenco dei componenti), la wheel e SHA256SUMS; scrive le note e l'esito
+      - name: File della release
+        run: |
+          uv run --no-project --python 3.12 strumenti/rilascio.py bozza dist/artefatti --tag "$TAG" --uscita dist/release \
+            --note dist/note.md --esito dist/esito.json --esecuzione "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          cat dist/note.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Crea o aggiorna la release in bozza
+        run: |
+          versione=$(jq -r .versione dist/esito.json)
+          if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" != "true" ]; then
+              echo "::error::La release $TAG è già pubblicata: la pipeline non la cambia"; exit 1
+            fi
+            gh release upload "$TAG" dist/release/* --clobber
+            gh release edit "$TAG" --title "Impaginatore $versione" --notes-file dist/note.md
+          else
+            pre=(); [ "$(jq -r .prerelease dist/esito.json)" = "true" ] && pre=(--prerelease)
+            gh release create "$TAG" dist/release/* --draft --verify-tag "${pre[@]}" --title "Impaginatore $versione" --notes-file dist/note.md
+          fi
+          gh release view "$TAG" --json name,isDraft,isPrerelease,assets --jq '"\(.name): bozza \(.isDraft), pre-release \(.isPrerelease), \(.assets | length) file"' | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Tutti i pacchetti?
+        run: |
+          mancano=$(jq -r '.mancanti | join(", ")' dist/esito.json)
+          if [ -n "$mancano" ]; then echo "::error::Release in bozza incompleta, mancano: $mancano"; exit 1; fi
