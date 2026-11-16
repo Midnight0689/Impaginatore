@@ -13,11 +13,14 @@ strumenti/aggiornamento.py, docs/architettura/AGGIORNAMENTI.md):
         cosa manca per un rilascio vero: chiavi pubbliche (licenze e aggiornamenti), repository delle release, versione
         finale, sezione della versione in CHANGELOG.md
     python strumenti/rilascio.py bozza CARTELLA_ARTEFATTI --tag v<v> --uscita DIR --note FILE --esito FILE [--esecuzione URL]
+                                       [--repository PROPRIETARIO/NOME]
         (nella pipeline, senza chiavi) dagli artefatti scaricati del giro: controlla che la wheel sia della versione del
         tag, l'impronta (.sha256) e la prova (verifica-<chiave>.json) di ogni pacchetto e la prova del pacchetto Windows
         su Windows ARM; copia in DIR i pacchetti verificati (con .sha256 e .componenti.json), la wheel, SHA256SUMS e
         verifiche.json; scrive le note della bozza e l'esito (JSON: versione, prerelease, pacchetti, mancanti). Un
-        pacchetto senza prova passata non entra e risulta fra i mancanti
+        pacchetto senza prova passata non entra e risulta fra i mancanti. Le note sono corte: pacchetti con dimensione e
+        impronta, cosa manca, come controllare l'impronta, la guida (sul repository, alla versione del tag) e le voci del
+        registro in una sezione ripiegata
     python strumenti/rilascio.py pubblica v<v> [--repo PROPRIETARIO/NOME] [--dir CHIAVI] [--id 1] [--novita-it "…"]
                                          [--novita-en "…"] [--senza CHIAVE] [--cartella DIR] [--prova] [--si]
         (sul computer di chi pubblica, con «gh» autenticato) scarica la release in bozza, ricontrolla impronte e prove,
@@ -140,26 +143,45 @@ def riassunto_verifica(r):
                 controlli={c["nome"]: c["esito"] for c in r.get("controlli", []) if isinstance(c, dict) and "nome" in c})
 
 
-def tabella_sistemi(pacchetti, componenti=None):
-    """righe Markdown: per ogni sistema il file da scaricare (con la versione minima di macOS dei pacchetti per Mac)"""
-    t = ["| Sistema | File |", "|---|---|"]
+def megabyte(byte):
+    return f"{byte / 1e6:.1f}".replace(".", ",") + " MB"
+
+
+def tabella_sistemi(pacchetti, impronte, componenti=None):
+    """righe Markdown: per ogni sistema il file da scaricare (con la versione minima di macOS dei pacchetti per Mac), la
+    dimensione e l'impronta SHA-256. pacchetti: {sistema: percorso}; impronte: righe «impronta  nome» di SHA256SUMS"""
+    per_nome = {nome: h for h, _, nome in (r.partition("  ") for r in impronte)}
+    t = ["| Sistema | File | Dimensione | SHA-256 |", "|---|---|---|---|"]
     for k in SISTEMI:
         if k not in pacchetti: continue
-        minimo = ((componenti or {}).get(k) or {}).get("macos_minimo")
-        t.append(f"| {DESCRIZIONI[k]}{f', macOS {minimo} o successivo' if minimo else ''} | `{pacchetti[k]}` |")
+        p = Path(pacchetti[k]); minimo = ((componenti or {}).get(k) or {}).get("macos_minimo")
+        t.append(f"| {DESCRIZIONI[k]}{f', macOS {minimo} o successivo' if minimo else ''} | `{p.name}` | {megabyte(p.stat().st_size)} | `{per_nome.get(p.name) or impronta(p)}` |")
     return t
 
 
-def note(versione, impronte, problemi_trovati, mancanti, changelog=RADICE / "CHANGELOG.md", pacchetti=None, componenti=None, testa=None):
+def note(versione, impronte, problemi_trovati, mancanti, changelog=RADICE / "CHANGELOG.md", pacchetti=None, componenti=None, testa=None, guida=None):
+    """note della release, corte: pacchetti con dimensione e impronta, cosa manca, come controllare l'impronta, la guida;
+    le voci del registro in una sezione ripiegata. guida: indirizzo della guida di installazione (altrimenti il percorso)"""
     t = list(testa or [])
     if problemi_trovati: t += ["> **PROVA: NON PUBBLICARE.** Mancano:", *[f"> - {p}" for p in problemi_trovati], ""]
-    t += [f"# Impaginatore {versione}", "", f"Come si installa, sistema per sistema, e cosa dicono gli avvisi del sistema: `{GUIDA}`.",
-          "I pacchetti non sono firmati con un certificato Apple o Microsoft: al primo avvio macOS e Windows mostrano un avviso, come spiega la guida.", ""]
-    if pacchetti: t += [*tabella_sistemi(pacchetti, componenti), ""]
+    t += [f"# Impaginatore {versione}", ""]
+    if pacchetti: t += [*tabella_sistemi(pacchetti, impronte, componenti), ""]
     if mancanti: t += [f"Questa versione non ha il pacchetto per: {', '.join(mancanti)}.", ""]
-    t += ["## Novità", "", *[r for r in sezione_changelog(versione, changelog) if r.strip()], "", "## Impronte SHA-256", "",
-          "Il file scaricato deve avere esattamente questa impronta (la guida spiega come controllarla):", "", "```", *impronte, "```", ""]
+    t += ["**Prima di installare** controlla l'impronta SHA-256 del file scaricato: deve essere identica a quella della tabella "
+          f"(le stesse impronte, con quelle degli altri file, sono in `{SOMME}`).", "",
+          "- macOS (Terminale): `shasum -a 256 <file>`",
+          "- Windows (PowerShell): `Get-FileHash <file> -Algorithm SHA256`",
+          f"- Linux: `sha256sum <file>`, oppure `sha256sum -c {SOMME} --ignore-missing` nella cartella dei file scaricati", "",
+          f"Come si installa, sistema per sistema: {f'[guida di installazione]({guida})' if guida else f'`{GUIDA}`'}. I pacchetti non sono firmati con un "
+          "certificato Apple o Microsoft: al primo avvio macOS e Windows mostrano un avviso, e la guida spiega cosa fare.", ""]
+    voci = [r for r in sezione_changelog(versione, changelog) if r.strip()]
+    if voci: t += ["<details>", f"<summary>Novità: le voci del registro (CHANGELOG.md, {sum(1 for r in voci if r.startswith('- '))})</summary>", "", *voci, "", "</details>", ""]
     return "\n".join(t)
+
+
+def indirizzo_guida(repo, tag):
+    """la guida di installazione alla versione del tag, sul repository (None se il repository non si sa)"""
+    return f"https://github.com/{repo}/blob/{tag}/{GUIDA}" if repo else None
 
 
 # ---------------------------------------------------------------- controlla
@@ -211,7 +233,7 @@ def cmd_bozza(a):
              f"> pubblica dal computer di chi ha la chiave dei rilasci con `python strumenti/rilascio.py pubblica {a.tag}`, che firma il",
              "> manifesto degli aggiornamenti, lo carica con SHA256SUMS completo e pubblica" + (" (come pre-release)." if pre else "."), ""]
     if mancanti: testa += ["> **Incompleta.** Mancano:", *[f"> - {m}" for m in mancanti], ""]
-    Path(a.note).write_text(note(versione, impronte, [], [], pacchetti={k: p.name for k, p in inclusi.items()}, componenti=componenti, testa=testa), encoding="utf-8")
+    Path(a.note).write_text(note(versione, impronte, [], [], pacchetti=inclusi, componenti=componenti, testa=testa, guida=indirizzo_guida(a.repository, a.tag)), encoding="utf-8")
     esito = dict(versione=versione, tag=a.tag, prerelease=pre, pacchetti=sorted(inclusi), mancanti=mancanti)
     Path(a.esito).write_text(json.dumps(esito, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"Bozza {a.tag}: {', '.join(sorted(inclusi)) or 'nessun pacchetto'}" + (f"; mancano {'; '.join(mancanti)}" if mancanti else "; completa"))
@@ -257,7 +279,7 @@ def cmd_prepara(a):
     for p in (wheel, *pacchetti.values()): shutil.copy2(p, uscita / p.name)
     m, impronte = firma_e_somme(a, wheel, pacchetti, uscita)
     mancanti = [s for s in SISTEMI if s not in pacchetti]
-    (uscita / "NOTE.md").write_text(note(versione, impronte, trovati, mancanti, pacchetti={k: p.name for k, p in pacchetti.items()}), encoding="utf-8")
+    (uscita / "NOTE.md").write_text(note(versione, impronte, trovati, mancanti, pacchetti={k: uscita / p.name for k, p in pacchetti.items()}), encoding="utf-8")
     print(f"Release {versione} in {uscita}: {', '.join(sorted(m['pacchetti']))}" + (f"; senza {', '.join(mancanti)}" if mancanti else ""))
     if trovati: print("PROVA: non pubblicare (vedi NOTE.md).")
     return 0
@@ -311,7 +333,7 @@ def cmd_pubblica(a):
     m, impronte = firma_e_somme(a, wheel, pacchetti, cartella)                # SHA256SUMS della bozza, già controllato, diventa quello completo
     componenti = {k: leggi_json(f"{p}.componenti.json") or {} for k, p in pacchetti.items()}
     mancanti = [s for s in SISTEMI if s not in pacchetti]
-    (cartella / "NOTE.md").write_text(note(versione, impronte, trovati, mancanti, pacchetti={k: p.name for k, p in pacchetti.items()}, componenti=componenti), encoding="utf-8")
+    (cartella / "NOTE.md").write_text(note(versione, impronte, trovati, mancanti, pacchetti=pacchetti, componenti=componenti, guida=indirizzo_guida(a.repo, a.tag)), encoding="utf-8")
     print(f"Manifesto firmato: versione {m['versione']}, pacchetti {', '.join(sorted(m['pacchetti']))}; file in {cartella}")
     if a.prova:
         print(f"PROVA: niente caricato né pubblicato. La release {a.tag} resta in bozza ({info.get('url')}).")
@@ -330,7 +352,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="comando", required=True)
     sub.add_parser("controlla")
     b = sub.add_parser("bozza"); b.add_argument("artefatti"); b.add_argument("--tag", required=True); b.add_argument("--uscita", required=True)
-    b.add_argument("--note", required=True); b.add_argument("--esito", required=True); b.add_argument("--esecuzione")
+    b.add_argument("--note", required=True); b.add_argument("--esito", required=True); b.add_argument("--esecuzione"); b.add_argument("--repository")
     for nome in ("prepara", "pubblica"):
         p = sub.add_parser(nome); p.add_argument("artefatti" if nome == "prepara" else "tag")
         p.add_argument("--dir"); p.add_argument("--id", type=int, default=1); p.add_argument("--python-minimo", default="3.11")
