@@ -67,6 +67,8 @@
   .dlg { background: rgba(44,44,47,.96); border: 1px solid var(--line); border-radius: 16px; padding: 24px 28px; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
   .dlg h3 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
   .spin { border-color: rgba(255,255,255,.18); border-top-color: var(--blue); }
+  #lic.warn { background: #e0a526; color: #1a1a1a; font-weight: 700; }
+  .dlg textarea { width: 100%; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--text); background: #1b1b1d; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; resize: vertical; }
   #credit { position: fixed; right: 18px; bottom: 12px; font-size: 12px; color: var(--dim); letter-spacing: .02em; pointer-events: none; user-select: none; } #credit b { color: inherit; font-weight: 600; opacity: .9; }
 </style>
 </head>
@@ -75,6 +77,7 @@
   <h1>Impaginatore</h1>
   <button id="verb" title="Versione in uso e controllo aggiornamenti"><i id="vdot"></i><span id="vtxt">Versione…</span></button>
   <button id="upd" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700" title="">⬆ Aggiornamento disponibile</button>
+  <button id="lic" title="Licenza, prova gratuita e chiave">Licenza…</button>
   <button id="add" title="Apri un progetto che sta in un'altra cartella (quella con progetto.json)">Apri progetto esistente…</button>
   <button id="addzip" title="Importa un progetto esportato come file ZIP (Esporta progetto dall'editor)">Importa ZIP…</button>
   <button id="quit" title="Chiude il programma">Chiudi programma</button>
@@ -109,6 +112,16 @@
   </div></div>
   <div class="err" id="err"></div>
   <div class="btns"><button id="cancel">Annulla</button><button class="primary" id="create">Crea</button></div>
+</div></div>
+
+<div class="veil" id="vlic"><div class="dlg">
+  <h3>Licenza</h3>
+  <div id="lstato" style="line-height:1.6"></div>
+  <label for="lkey">Chiave di licenza (è nell'email d'acquisto e inizia con IMP1-)</label>
+  <textarea id="lkey" rows="4" spellcheck="false" autocomplete="off" placeholder="IMP1-…"></textarea>
+  <div class="info">La chiave si controlla qui, su questo computer, senza internet: non viene inviata a nessuno.</div>
+  <div class="err" id="lerr"></div>
+  <div class="btns"><button id="lrim" style="display:none">Togli da questo computer</button><button id="lclose">Chiudi</button><button class="primary" id="lgo">Attiva</button></div>
 </div></div>
 
 <div class="veil" id="vwait"><div class="dlg" style="text-align:center;width:300px"><div class="spin"></div><div id="wmsg">Apro il progetto…</div></div></div>
@@ -201,6 +214,18 @@ $("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (
 $("vclose").onclick = () => $("vver").style.display = "none";
 $("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
 $("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };
+// ---- licenza (T-202): stato, prova gratuita, chiave controllata su questo computer
+function showLic(s) {
+  const b = $("lic"); b.className = s.sola_lettura ? "warn" : "";
+  b.textContent = s.stato === "attiva" ? `Licenza ${s.nome_fascia}` : s.stato === "prova" ? `Prova gratuita · ${s.prova.giorni_rimasti} giorni` : s.sola_lettura ? "Sola lettura · inserisci la licenza" : `Chiave non valida · prova ${s.prova.giorni_rimasti} giorni`;
+  $("lstato").textContent = s.messaggio; $("lrim").style.display = s.chiave_presente ? "" : "none";
+}
+async function loadLic() { try { showLic(await api("/api/licenza")); } catch (e) {} }
+$("lic").onclick = () => { $("lerr").textContent = ""; $("lkey").value = ""; $("vlic").style.display = "flex"; loadLic(); $("lkey").focus(); };
+$("lclose").onclick = () => $("vlic").style.display = "none";
+$("lgo").onclick = async () => { const b = $("lgo"); b.disabled = true; $("lerr").textContent = ""; try { showLic(await api("/api/licenza/attiva", { chiave: $("lkey").value })); $("lkey").value = ""; } catch (e) { $("lerr").textContent = e.message; } b.disabled = false; };
+$("lrim").onclick = async () => { if (!confirm("Togliere la licenza da questo computer? Potrai attivarla su un altro. I progetti restano qui; senza licenza si aprono con la prova gratuita, se non è finita, o in sola lettura.")) return; try { showLic(await api("/api/licenza/rimuovi", {})); } catch (e) { $("lerr").textContent = e.message; } };
+loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load();
 </script>
