@@ -82,6 +82,16 @@ LICENZE_AMMESSE = (
     "Apache-2.0 OR BSD-3-Clause",                               # cryptography (extra «mcp», via pyjwt[crypto]): a scelta tra due licenze già ammesse
 )
 
+# Dipendenze con una licenza ammessa che i loro metadati non dichiarano (pip-licenses le vede «UNKNOWN» e le rifiuta):
+# controllate a mano sul file di licenza della ruota, per nome E versione. pip-licenses le salta solo a quella versione:
+# con una versione nuova nel lock il controllo torna a fallire finché qualcuno non rilegge la licenza e aggiorna qui
+# (un test confronta queste versioni con uv.lock).
+LICENZE_CONTROLLATE_A_MANO = {
+    # solo su Windows (pywebview > pythonnet): METADATA 2.4 senza License né License-Expression né classificatore;
+    # clr_loader-0.3.1.dist-info/licenses/LICENSE è la licenza MIT (copyright Benedikt Reinartz)
+    "clr-loader:0.3.1": "MIT",
+}
+
 
 class Mancante(Exception):
     """manca qualcosa per eseguire i controlli (uscita 2)"""
@@ -170,7 +180,8 @@ def licenze():
                 ok = False
                 continue
             interprete = ambiente / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-            ok = esegui(strumento(PIP_LICENSES, "pip-licenses", "--python", interprete, "--from=mixed", "--allow-only=" + ";".join(LICENZE_AMMESSE))) and ok
+            ok = esegui(strumento(PIP_LICENSES, "pip-licenses", "--python", interprete, "--from=mixed", "--allow-only=" + ";".join(LICENZE_AMMESSE),
+                                  "--ignore-packages", *LICENZE_CONTROLLATE_A_MANO)) and ok
     return ok
 
 
