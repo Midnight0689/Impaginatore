@@ -112,8 +112,11 @@ def versione_debian(versione):
 
 # ---------------------------------------------------------------- compilazione
 def argomenti_nuitka(sis, versione, uscita, rapporto, motore_1x):
-    """riga di comando di Nuitka per il sistema sis ("linux", "mac", "windows")"""
-    a = [sys.executable, "-m", "nuitka", "--mode=app" if sis == "mac" else "--mode=standalone", f"--output-dir={uscita}",
+    """riga di comando di Nuitka per il sistema sis ("linux", "mac", "windows"). Nuitka gira in modalità UTF-8 («-X utf8»)
+    perché il programma compilato la eredita da lui: il compilato non legge PYTHONUTF8 (Nuitka ignora le variabili PYTHON*)
+    e senza su Windows scriverebbe in cp1252 nei tubi e nei registri, mentre il pacchetto Python dà UTF-8 a ogni processo
+    figlio (processi.ambiente_figli)"""
+    a = [sys.executable, "-X", "utf8", "-m", "nuitka", "--mode=app" if sis == "mac" else "--mode=standalone", f"--output-dir={uscita}",
          f"--output-filename={ESEGUIBILE[sis]}", "--include-package=impaginatore", "--include-package-data=impaginatore",
          f"--include-data-files={motore_1x}{os.sep}*.txt=impaginatore/risorse/{CARTELLA_MOTORE_1X}/", "--noinclude-data-files=webview/lib/*.jar",
          "--python-flag=no_docstrings", f"--report={rapporto}", "--assume-yes-for-downloads"]
@@ -289,11 +292,23 @@ def pacchetto_dmg(prog, uscita, versione, k):
     shutil.copytree(prog, vol / prog.name, symlinks=True); (vol / "Applicazioni").symlink_to("/Applications")
     out = uscita / nome_pacchetto(versione, k)
     if out.exists(): out.unlink()
-    subprocess.run(["hdiutil", "create", "-volname", NOME, "-srcfolder", str(vol), "-fs", "HFS+", "-format", "UDZO", "-ov", str(out)], check=True)  # nosec B603, B607
+    ripeti(["hdiutil", "create", "-volname", NOME, "-srcfolder", str(vol), "-fs", "HFS+", "-format", "UDZO", "-ov", str(out)])
     return out
 
 
+def ripeti(cmd, volte=4, attesa=10):
+    """esegue cmd e, se non va, lo riprova fino a `volte` volte: «hdiutil create» sui Mac di GitHub a volte risponde «Resource
+    busy» (un altro processo del sistema tiene ancora aperti i file appena scritti) e va alla volta dopo"""
+    for i in range(1, volte + 1):
+        try: return subprocess.run(cmd, check=True)  # nosec B603  # strumenti del sistema di costruzione, argomenti in lista
+        except subprocess.CalledProcessError:
+            if i == volte: raise
+            print(f"{cmd[0]} non è andato (tentativo {i} di {volte}): riprovo tra {attesa * i} s", flush=True)
+            time.sleep(attesa * i)
+
+
 def iscc():
+    """ISCC.exe di Inno Setup 6: nel PATH o nella cartella dove lo mette il suo installatore"""
     for c in (shutil.which("iscc"), shutil.which("ISCC"), r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe", r"C:\Program Files\Inno Setup 6\ISCC.exe"):
         if c and Path(c).is_file(): return c
     raise SystemExit("Inno Setup 6 non trovato (ISCC.exe): https://jrsoftware.org/isinfo.php")

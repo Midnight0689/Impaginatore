@@ -1,6 +1,7 @@
-; Installatore di Impaginatore per Windows (Inno Setup 6). Lo usa strumenti/compila.py, che passa le definizioni con /D:
+﻿; Installatore di Impaginatore per Windows (Inno Setup 6). Lo usa strumenti/compila.py, che passa le definizioni con /D:
 ; Versione, VersioneFile, Sorgente (cartella del programma compilato), Uscita, NomeFile, Icona, Autore, Licenze.
 ; Come e perché: docs/architettura/DISTRIBUZIONE.md. Guida per chi installa: docs/manuale/00-installazione.md.
+; Il file è in UTF-8 con BOM: senza, Inno Setup può leggerlo nella codifica ANSI del sistema e rovinare lettere accentate e «».
 ;
 ; - Si installa per l'utente, senza permessi di amministratore: %LOCALAPPDATA%\Programs\Impaginatore.
 ; - Non è firmato (Authenticode): Windows mostra l'avviso di SmartScreen al primo avvio dell'installatore. Niente qui lo

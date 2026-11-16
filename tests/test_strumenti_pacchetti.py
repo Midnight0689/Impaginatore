@@ -53,7 +53,7 @@ def test_nomi_dei_pacchetti():
 @pytest.mark.parametrize("sis", ["linux", "mac", "windows"])
 def test_argomenti_di_nuitka(sis, tmp_path):
     a = compila.argomenti_nuitka(sis, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
-    assert a[:3] == [sys.executable, "-m", "nuitka"] and a[-1] == str(compila.ENTRATA)
+    assert a[:5] == [sys.executable, "-X", "utf8", "-m", "nuitka"] and a[-1] == str(compila.ENTRATA), "Nuitka in modalità UTF-8: il programma compilato la eredita"
     assert ("--mode=app" in a) == (sis == "mac") and ("--mode=standalone" in a) == (sis != "mac")
     for o in ("--include-package=impaginatore", "--include-package-data=impaginatore", "--python-flag=no_docstrings", "--nofollow-import-to=gi", "--noinclude-data-files=webview/lib/*.jar",
               "--nofollow-import-to=pytest", "--nofollow-import-to=pillow_heif", f"--report={tmp_path / 'r.xml'}"):
@@ -155,6 +155,19 @@ def test_controllo_del_programma(tmp_path):
     with pytest.raises(SystemExit, match="file sorgente"): compila.controlla_programma(prog)
 
 
+def test_ripete_i_comandi_che_a_volte_non_vanno(monkeypatch):
+    """«hdiutil create» sui Mac di GitHub a volte risponde «Resource busy»: si riprova, e alla fine l'errore passa"""
+    esiti = [1, 1, 0]; chiamate = []
+    def run(cmd, check):
+        chiamate.append(cmd); e = esiti.pop(0)
+        if e: raise subprocess.CalledProcessError(e, cmd)
+        return types.SimpleNamespace(returncode=0)
+    monkeypatch.setattr(compila.subprocess, "run", run); monkeypatch.setattr(compila.time, "sleep", lambda s: None)
+    assert compila.ripeti(["hdiutil", "create"]).returncode == 0 and len(chiamate) == 3
+    esiti[:] = [1, 1]
+    with pytest.raises(subprocess.CalledProcessError): compila.ripeti(["hdiutil", "create"], volte=2)
+
+
 def test_testi_del_pacchetto_deb():
     c = compila.controllo_deb("2.0.0.dev0", 123456)
     assert "Version: 2.0.0~~dev0\n" in c and "Installed-Size: 123456\n" in c and "Depends: python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1\n" in c
@@ -164,6 +177,7 @@ def test_testi_del_pacchetto_deb():
     assert d["NomeFile"] == "Impaginatore-2.0.1rc1-windows" and d["VersioneFile"] == "2.0.1.0"
     iss = open(compila.ISS, encoding="utf-8").read()
     assert all("{#" + k + "}" in iss for k in d if k != "Licenze") and "PrivilegesRequired=lowest" in iss
+    assert iss.startswith("﻿"), "UTF-8 con BOM: Inno Setup legge giusti gli accenti e le «» dei messaggi"
 
 
 @pytest.mark.skipif(not shutil.which("dpkg-deb") or os.name == "nt", reason="serve dpkg-deb")
