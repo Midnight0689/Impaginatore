@@ -1371,7 +1371,7 @@ def state():
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
-                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE))
+                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato())
 
 TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
@@ -1386,7 +1386,7 @@ def _tono_img(L):
     i = L["i"]; l, t, r, b = A.crop(i, L["W"], L["H"], 1.0); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
     if key not in TONO_IM:
         if len(TONO_IM) > 400: TONO_IM.clear()
-        with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+        im = A.foto_rgb(i)                                              # la miniatura, o il riquadro grigio se non è ancora pronta (UX-012)
         W, H = im.size; bw_, bh_ = max(1.0, (r - l) * W), max(1.0, (b - t) * H)
         sm = im.resize((112, max(16, round(112 * bh_ / bw_))), Image.LANCZOS, box=(l * W, t * H, r * W, b * H)); import numpy as np
         a = np.asarray(sm); w, h = sm.size; x0, x1, y0, y1 = 0, w, 0, h                  # bordo bianco (o nero) della foto stessa: non fa parte del tono
@@ -1578,7 +1578,7 @@ def corr_thumb(n, w, over):
             if "ev" in over:
                 if abs(float(over["ev"])) >= 0.005: E[n] = float(over["ev"])
                 else: E.pop(n, None)
-            with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+            im = A.foto_rgb(i)
             im.thumbnail((w, w)); FL._CUR[0] = i
             im = A.apply_ev(im, A.ev_for(i), A.WB.get(n))
         finally:
@@ -1682,9 +1682,9 @@ TH = {}
 def thumb_jpg(n, w):
     key = (n, w); v = da_cache(TH, key)
     if v is None:
-        with Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"])) as im0:
-            im = im0.convert("RGB")
-        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = in_cache(TH, key, buf.getvalue(), TH_VOCI, TH_BYTE)
+        i = A.IDX[n] - 1; pronta = os.path.exists(os.path.join(A.THUMBS, A.M[i]["n"])); im = A.foto_rgb(i)
+        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = buf.getvalue()
+        if pronta: v = in_cache(TH, key, v, TH_VOCI, TH_BYTE)            # il riquadro grigio di una miniatura in preparazione non si tiene
     return v
 
 INFO = {}
@@ -2241,7 +2241,7 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"]})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
@@ -2271,8 +2271,10 @@ class H(Gestore):
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
                 n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
-                if n: restart()
-                self.send({"importate": n, "saltate": sk, "riavvio": n > 0})
+                if body.get("a_caldo") is True: self.send({"importate": n, "saltate": sk, "riavvio": False, "aggiunte": aggiungi_a_caldo() if n else 0})
+                else:
+                    if n: restart()
+                    self.send({"importate": n, "saltate": sk, "riavvio": n > 0})
             elif u.path == "/api/modelli": modelli(body); self.send({"ok": True})
             elif u.path == "/api/aggiorna_foto":
                 ok, ars, ko = aggiorna_foto(foto_cambiate()); self.send(dict(aggiornate=ok, proporzioni=ars, errori=ko))
@@ -2296,15 +2298,17 @@ class H(Gestore):
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio
-def inizializza(progetto, home=""):
+def inizializza(progetto, home="", sottofondo=False):
     """apre il progetto: ripara i percorsi, carica motore, foto e impaginazione, azzera annulla/ripeti e le cache.
-    Si può richiamare per passare a un altro progetto (uno alla volta per processo)."""
+    Si può richiamare per passare a un altro progetto (uno alla volta per processo). sottofondo=True (UX-012): l'editor è
+    pronto con i soli metadati; miniature e volti si preparano mentre si lavora (prepara_in_sottofondo)"""
+    ferma_preparazione()
     global PROJ, HOME, CFG, UT_FILE, SP, GD, UNDO, REDO, CLIP, LOG, SAVED, REV, LASTC, BL, VW, VH, BOOT, TONO_C, TONO_IM, CACHE, PV, AGG, TH, INFO, FT
     with LOCK:
         PROJ = os.path.abspath(progetto); HOME = home or ""
         _ripara_percorsi()
         _raccogli_foto()
-        A.carica_progetto(PROJ)                              # carica progetto.json, foto, miniature, volti
+        A.carica_progetto(PROJ, sottofondo)                  # carica progetto.json, foto, miniature, volti
         CFG = A.CFG
         CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
         CFG.setdefault("centri_volto", {})
@@ -2321,6 +2325,90 @@ def inizializza(progetto, home=""):
         TONO_C, TONO_IM, CACHE, PV, TH, INFO, FT = {}, {}, {}, {}, {}, {}, {}
         AGG = dict(n=0, t=0, nomi=[], ar=[])
         LAST.update(op=0.0, backup=0.0); SAVE_ERR[0] = ""; LASTDIR[0] = None
+        PREP.update(fatte=0, totale=0, volti=True, attivo=False)
+    if sottofondo: prepara_in_sottofondo()
+
+
+# ------------------------------------------------------------------ foto preparate in sottofondo e import a caldo (UX-012)
+PREP = dict(gen=0, fatte=0, totale=0, volti=True, attivo=False)          # avanzamento: miniature fatte su quante, volti pronti
+PREP_FILO = [None]                                                       # il filo che prepara (uno alla volta)
+
+
+def prep_stato(): return {k: PREP[k] for k in ("fatte", "totale", "volti", "attivo")}
+
+
+def ferma_preparazione():
+    """ferma la preparazione in corso (cambio di progetto, chiusura) e aspetta che finisca la foto che sta facendo"""
+    with LOCK: PREP["gen"] += 1
+    t = PREP_FILO[0]
+    if t is not None and t is not threading.current_thread(): t.join(60)
+    PREP_FILO[0] = None
+
+
+def prepara_in_sottofondo():
+    """prepara le miniature che mancano (in ordine di scatto, su tutti i core meno uno) e poi i volti, mentre si lavora.
+    Ogni miniatura pronta si vede subito: cambia la versione della foto (PV) e le anteprime si rifanno. I volti arrivano
+    alla fine e centrano i ritagli delle foto che l'utente non ha già centrato a mano (FACE_FIX ha la precedenza)"""
+    ferma_preparazione()
+    with LOCK:
+        mini, volti = A.da_preparare(); gen = PREP["gen"]; cartella = A.THUMBS
+        PREP.update(fatte=0, totale=len(mini), volti=not volti, attivo=bool(mini or volti))
+    if not (mini or volti): return
+    PREP_FILO[0] = threading.Thread(target=_prepara, args=(gen, mini, volti, cartella), daemon=True, name="prepara-foto"); PREP_FILO[0].start()
+
+
+def _prepara(gen, mini, volti, cartella):
+    try: trovati = _prepara_foto(gen, mini, volti, cartella)
+    except Exception as ex:                                             # disco pieno, cartella sparita…: si smette, l'editor resta com'è
+        trovati = None; LOG.append(f"preparazione delle foto interrotta: {ex}")
+    with LOCK:
+        if PREP["gen"] == gen:
+            if trovati is None: PREP["attivo"] = False
+            else: _volti_pronti(trovati)
+
+
+def _prepara_foto(gen, mini, volti, cartella):
+    """miniature (pubblicate una per una) e poi volti, su un gruppo di fili: {nome: volti}; {} se intanto il progetto è cambiato"""
+    from concurrent.futures import ThreadPoolExecutor
+    n = max(1, (os.cpu_count() or 2) - 1); ex = ThreadPoolExecutor(n, thread_name_prefix="prepara")
+    try:
+        lavori = [ex.submit(A.prepara_miniatura, m, cartella) for m in mini]
+        tutte = all(_pubblica(gen, m, f.result()) for m, f in zip(mini, lavori))       # all() si ferma alla prima non pubblicata
+        parti = [volti[k::n] for k in range(n) if volti[k::n]]
+        return {k: v for d in ex.map(A._build_faces, parti) for k, v in d.items()} if tutte and PREP["gen"] == gen else {}
+    finally: ex.shutdown(wait=True, cancel_futures=True)                # quelle non ancora cominciate non servono più
+
+
+def _volti_pronti(trovati):
+    """(con LOCK preso) volti trovati in sottofondo: nel motore e in faces.json; le foto con volti nuovi si ridisegnano"""
+    A.F.update(trovati); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
+    for k in trovati:
+        if trovati[k]: n = k.rsplit(".", 1)[0]; PV[n] = PV.get(n, 0) + 1          # il ritaglio si centra sui volti: anteprime da rifare
+    PREP.update(volti=True, attivo=False)
+
+
+def _pubblica(gen, m, errore):
+    """miniatura pronta (o foto che non si legge): si vede subito. False se intanto il progetto è cambiato"""
+    with LOCK:
+        uguale = PREP["gen"] == gen
+        if uguale:
+            if errore is not None: A.segna_danneggiata(m)
+            n = m["n"].rsplit(".", 1)[0]; PV[n] = PV.get(n, 0) + 1; PREP["fatte"] += 1
+    return uguale
+
+
+def aggiungi_a_caldo():
+    """import senza riavvio (UX-012): le foto aggiunte a foto_extra entrano in coda all'elenco con i soli metadati (la
+    numerazione non cambia), annulla e ripeti restano; miniature e volti si preparano in sottofondo. Quante sono entrate"""
+    with LOCK:
+        A._togli_riservate(CFG)                                         # come alla riapertura (VER-004)
+        nuove = A._nuove(CFG.get("foto_extra", []), A.M)
+        A.SCARTATE[:] = list({(x["n"], x["motivo"]): x for x in A.SCARTATE}.values())        # un doppione già segnalato non si ripete
+        if nuove:
+            A.M.extend(nuove); A.IDX.update({m["n"].rsplit(".", 1)[0]: len(A.M) - len(nuove) + k + 1 for k, m in enumerate(nuove)})
+            formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M)
+    if nuove: prepara_in_sottofondo()
+    return len(nuove)
 
 
 def crea_server(porta=0, gettone=None):
@@ -2340,8 +2428,9 @@ def avvia_cicli():
 
 
 def ferma():
-    """ferma i cicli di sottofondo (il server si chiude con shutdown()/server_close())"""
+    """ferma i cicli di sottofondo e la preparazione delle foto (il server si chiude con shutdown()/server_close())"""
     while _FERMI: _FERMI.pop().set()
+    ferma_preparazione()
 
 
 def main(argv=None):
@@ -2349,10 +2438,11 @@ def main(argv=None):
     ap.add_argument("--progetto", required=True, help="cartella con progetto.json e album.json")
     ap.add_argument("--porta", type=int, default=8765)
     ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
+    ap.add_argument("--sottofondo", action="store_true", help="apre subito: miniature e volti si preparano mentre si lavora (UX-012)")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
     args = ap.parse_args(argv)
     giornale.configura("editor")
-    inizializza(args.progetto, args.home)
+    inizializza(args.progetto, args.home, args.sottofondo)
     avvia_cicli()
     srv = crea_server(args.porta, sicurezza.gettone_del_processo())          # stesso gettone dopo un riavvio (os.execv): la pagina resta collegata
     print(f"Editor album: http://127.0.0.1:{srv.server_address[1]}  | progetto: {PROJ}", flush=True)

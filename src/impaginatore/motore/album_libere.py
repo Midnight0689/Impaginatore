@@ -104,7 +104,8 @@ def _photo_rot(_orig):
         if not a: return _orig(it, K, corrected, **kw)
         l, t, r, b = _a.zcrop(it); Wo, Ho = max(1, round(it["W"] * K)), max(1, round(it["H"] * K)); th = math.radians(a); c, s = math.cos(th), math.sin(th)
         if kw.get("originale"): im = _a.foto_rgb(it["i"], True, (Wo / max(r - l, 1e-6), Ho / max(b - t, 1e-6)))
-        else: im = _a.leggi_rgb(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"]))
+        elif hasattr(_a, "foto_rgb"): im = _a.foto_rgb(it["i"])       # motore del pacchetto: la miniatura o, se non è ancora pronta (UX-012), il riquadro grigio
+        else: im = _a.leggi_rgb(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"]))     # motore 1.x (progetto esportato per la 1.x): la miniatura c'è sempre
         iw, ih = im.size; sc = (r - l) * iw / Wo; cx, cy = (l + r) / 2 * iw, (t + b) / 2 * ih
         data = (sc * c, sc * s, cx - sc * (c * Wo / 2 + s * Ho / 2), -sc * s, sc * c, cy - sc * (-s * Wo / 2 + c * Ho / 2))
         if kw.get("originale"):         # solo la parte della foto che la cornice inclinata mostra (con il margine del filtro): le correzioni costano meno memoria, il risultato è lo stesso

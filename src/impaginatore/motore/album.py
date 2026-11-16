@@ -13,7 +13,7 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import io, logging, math, os, struct, sys, time
+import contextlib, io, logging, math, os, struct, sys, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -45,9 +45,12 @@ def progetto_da_argv(argv=None):
     raise SystemExit("Progetto non trovato: passa --progetto <cartella con progetto.json> o imposta ALBUM_PROGETTO")
 
 
-def carica_progetto(cartella):
+def carica_progetto(cartella, sottofondo=False):
     """legge progetto.json, aggiorna l'elenco delle foto (metadati, miniature, volti) e prepara geometria, correzioni e testi.
-    Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo)."""
+    Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo).
+    sottofondo=True (UX-012): solo i metadati, che si leggono dall'intestazione dei file in millisecondi; miniature e volti
+    che mancano li prepara chi apre il progetto (da_preparare, prepara_miniatura, _build_faces), mentre si lavora. Una foto
+    nuova che si apre ma non si decodifica non resta fuori: diventa danneggiata quando si prova a farne la miniatura"""
     global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
     Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear(); DANNEGGIATE.clear()
     PROJ = os.path.abspath(cartella)
@@ -66,17 +69,17 @@ def carica_progetto(cartella):
     new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
     new += _nuove(CFG.get("foto_extra", []), M + new)
-    rotte = set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
+    rotte = set() if sottofondo else set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
     SCARTATE.extend(dict(n=m["n"], motivo=DANNEGGIATA) for m in new if m["n"] in rotte)
     new = [m for m in new if m["n"] not in rotte]
     if new:
         first = not M
         M += sorted(new, key=lambda x: x["dt"]) if first else new
         _scrivi_json(mp, M)
-    _build_thumbs(M)
+    if not sottofondo: _build_thumbs(M)
     F = _cache_valida(fp, _V.volti, {})
     missing = [m for m in M if m["n"] not in F]
-    if missing: F.update(_build_faces(missing)); _scrivi_json(fp, F)
+    if missing and not sottofondo: F.update(_build_faces(missing)); _scrivi_json(fp, F)
     IDX = {m["n"].rsplit(".", 1)[0]: k + 1 for k, m in enumerate(M)}      # nome file senza estensione -> numero foto
     # origine di ogni foto (cartella completa da cui viene): scritta da abbina.py, serve per le correzioni per capitolo
     ORIGINE = {}
@@ -272,19 +275,45 @@ def _build_thumbs(meta, segnaposto=True):
     quelle che esistono ma non si decodificano vanno in DANNEGGIATE e SCARTATE"""
     rotte = []
     for m in meta:
-        p = os.path.join(THUMBS, m["n"])
-        if os.path.exists(p): continue
-        try:
-            with apri_foto(m["src"]) as im0:
-                im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
-            im.thumbnail((1200, 1200)); im.save(p, "JPEG", quality=85)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
-        except ERRORI_FOTO as e:
-            rotte.append(m["n"]); log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
-            if not segnaposto: continue
-            riquadro_grigio(m).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
-            if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
-                DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+        e = prepara_miniatura(m)
+        if e is None: continue
+        rotte.append(m["n"])
+        if segnaposto: segna_danneggiata(m)
     return rotte
+
+
+def prepara_miniatura(m, cartella=None):
+    """fa la miniatura della foto m se manca (1200 px, JPEG). None se c'è, altrimenti l'errore della foto che non si legge.
+    Il file si scrive accanto e poi si rinomina: chi legge le miniature mentre si preparano (UX-012) non ne trova mai una a metà.
+    cartella: quella delle miniature (di serie THUMBS; in sottofondo quella del progetto di quando è partita la preparazione)"""
+    cartella = cartella or THUMBS; p = os.path.join(cartella, m["n"])
+    if os.path.exists(p): return None
+    try:
+        with apri_foto(m["src"]) as im0:
+            im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
+        im.thumbnail((1200, 1200)); t = os.path.join(cartella, f".{m['n']}.{os.urandom(4).hex()}.tmp")
+        try: im.save(t, "JPEG", quality=85); os.replace(t, p)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
+        finally:
+            with contextlib.suppress(FileNotFoundError): os.remove(t)
+    except ERRORI_FOTO as e:
+        log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
+        return e
+    return None
+
+
+def segna_danneggiata(m):
+    """la foto m (già del progetto) non si legge: riquadro grigio con data 0 al posto della miniatura, così resta dov'è e,
+    appena il file torna buono (o si ricollega), l'editor la vede cambiata e la rifà; se il file c'è va tra le danneggiate"""
+    p = os.path.join(THUMBS, m["n"])
+    riquadro_grigio(m).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
+    if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
+        DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+
+
+def da_preparare():
+    """(foto senza miniatura in ordine di scatto, foto senza volti): il lavoro che resta dopo un'apertura in sottofondo"""
+    mini = sorted((m for m in M if not os.path.exists(os.path.join(THUMBS, m["n"]))), key=lambda m: m["dt"])
+    return mini, [m for m in M if m["n"] not in F]
 def _build_faces(meta):
     import cv2
     d = cv2.data.haarcascades
