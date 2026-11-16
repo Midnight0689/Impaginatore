@@ -92,6 +92,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-022` **editor** — Un errore interno di una richiesta GET lascia causa e punto nel registro dell'editor. _File:_ `src/impaginatore/editor/server.py`.
 - `MOD-023` **test** — Le prove nel browser trovano Chrome anche su Windows e macOS, aspettano condizioni invece di pause fisse e partono senza estensioni; i test girano su Windows con percorsi nativi e casi equivalenti per i nomi che Windows non ammette; i test dei riavvii veri dicono, allo scadere, che cosa è rimasto. _File:_ `tests/cdp.py`, `tests/aiuti.py`, `tests/conftest.py`, `tests/test_processi.py`.
 - `MOD-024` **ci** — Storia git intera nei test; su macOS e Windows prove nel browser in un job a parte; un push nuovo annulla l'esecuzione superata; macOS 15 al posto di macOS 26 finché GitHub non ne assegna le macchine; tempi misurati nel commento. _File:_ `.github/workflows/ci.yml`.
+- `MOD-025` **installer** — La prova del pacchetto controlla la finestra vera su tutti i sistemi, va avanti dopo un errore con la diagnosi, scrive il riepilogo per la pipeline e su Windows lavora fuori da AppData. _File:_ `strumenti/verifica_pacchetto.py`. _Rif:_ `T-302`.
+- `MOD-026` **ci** — `pacchetti.yml`: un pacchetto per ramo `pacchetti/<chiave>` (`pacchetti/prova` e `pacchetti/tutti` li fanno tutti e quattro), giri superati annullati, cache di Nuitka, tempi massimi per sistema, artefatti con solo pacchetto e verifica; test di macOS su macchine Intel finché quelle arm64 non sono disponibili. _File:_ `.github/workflows/pacchetti.yml`, `.github/workflows/ci.yml`, `tests/test_interfaccia.py`. _Rif:_ `T-302`.
 
 ### Corretto
 
@@ -139,6 +141,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-042` **piattaforma** — Su Windows le risposte di Photoshop (nomi dei documenti, messaggi) arrivano con le lettere accentate giuste. _File:_ `src/impaginatore/piattaforma/photoshop.py`.
 - `COR-043` **motore** — Un carattere che il sistema non disegna alla misura delle miniature (visto su macOS 26) non dà più un errore interno: si usa il carattere di riserva alla stessa misura. _File:_ `src/impaginatore/motore/testo.py`, `tests/test_motore.py`.
 - `COR-044` **editor** — Il menu del tasto destro chiuso subito dopo l'apertura non dà più un errore nella pagina. _File:_ `src/impaginatore/risorse/index.html`.
+- `COR-045` **desktop** — Su Windows la finestra del programma si apre: riceve l'icona `.ico` (con il PNG il sistema sollevava un'eccezione e il programma si chiudeva), anche nel pacchetto Python. _File:_ `src/impaginatore/desktop/finestra.py`, `src/impaginatore/risorse/icona.ico`. _Rif:_ `T-302`.
+- `COR-046` **installer** — Programma compilato in modalità UTF-8; installatore di Windows in UTF-8; il `.dmg` conserva la firma ad hoc; il rapporto di Nuitka si legge sempre come UTF-8. _File:_ `strumenti/compila.py`, `strumenti/compilazione/impaginatore.iss`. _Rif:_ `T-302`.
 
 ### Sicurezza
 
@@ -228,3 +232,4 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `DOC-050` **documenti** — Manuale: il sì alle statistiche resta dopo la beta finché non si spegne; la guida di installazione spiega «Aggiornamenti non ancora attivi»; LEGGIMI rimanda ai pacchetti. _File:_ `docs/manuale/14-beta-e-statistiche.md`, `docs/manuale/00-installazione.md`, `LEGGIMI.md`.
 - `DOC-051` **documenti** — Schermate 2.0 (italiano e inglese), avvio della beta e tre immagini del manuale rifatte con l'interfaccia di oggi, senza il nome dell'autore nel piede. _File:_ `docs/prodotto/ux/schermate/2.0/`, `docs/manuale/immagini/`.
 - `DOC-052` **brand** — Card prezzo dell'anteprima e stylebook senza «30 modelli d'autore» né «guide video». _File:_ `brand/strumenti/anteprima.modello.html`, `brand/anteprima.html`, `brand/STYLEBOOK.md`.
+- `DOC-053` **documenti** — Che cosa è provato su Linux, Windows e Mac Intel (Mac con chip Apple non provato per indisponibilità delle macchine di GitHub), tempi misurati, problemi trovati; nella guida la versione minima di macOS (14) e la domanda «reti locali». _File:_ `docs/architettura/DISTRIBUZIONE.md`, `docs/manuale/00-installazione.md`. _Rif:_ `T-302`.

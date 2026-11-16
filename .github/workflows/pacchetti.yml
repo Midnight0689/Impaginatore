@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: ${{ fromJSON('{"tag":["ubuntu-24.04","macos-26","windows-2025"],"tutti":["ubuntu-24.04","macos-26","windows-2025"],"tre":["ubuntu-24.04","macos-26","windows-2025"],"linux":["ubuntu-24.04"],"windows":["ubuntu-24.04","windows-2025"],"mac-arm64":["ubuntu-24.04","macos-26"],"mac-x86_64":["ubuntu-24.04","macos-26"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || inputs.pacchetti] || fromJSON('["ubuntu-24.04","macos-26","windows-2025"]') }}
+        os: ${{ fromJSON('{"tag":["ubuntu-24.04","macos-15-intel","windows-2025"],"tutti":["ubuntu-24.04","macos-15-intel","windows-2025"],"tre":["ubuntu-24.04","macos-15-intel","windows-2025"],"linux":["ubuntu-24.04"],"windows":["ubuntu-24.04","windows-2025"],"mac-arm64":["ubuntu-24.04","macos-15-intel"],"mac-x86_64":["ubuntu-24.04","macos-15-intel"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || inputs.pacchetti] || fromJSON('["ubuntu-24.04","macos-15-intel","windows-2025"]') }}
     env:
       UV_PROJECT_ENVIRONMENT: .venv
     steps:
