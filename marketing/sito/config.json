@@ -32,8 +32,8 @@
     "manuale": ""
   },
   "requisiti": {
-    "it": "È fatto per macOS, Windows e Linux. I test automatici girano sui tre sistemi; le prove su computer Mac e Windows veri, e con loro i requisiti minimi di memoria e di disco, sono in arrivo. Su Linux i PSD a livelli non si possono fare.",
-    "en": "It is made for macOS, Windows and Linux. The automated tests run on all three; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs."
+    "it": "È fatto per macOS, Windows e Linux. Il pacchetto per Linux (Ubuntu 24.04 e derivate) è provato; quelli per macOS e Windows sono in collaudo, e con le prove su computer Mac e Windows veri arriveranno i requisiti minimi di memoria e di disco. Su Linux i PSD a livelli non si possono fare.",
+    "en": "It is made for macOS, Windows and Linux. The Linux package (Ubuntu 24.04 and derivatives) has been tested; the macOS and Windows ones are being tested, and the tests on real Mac and Windows computers will set the minimum memory and disk requirements. On Linux you can’t make layered PSDs."
   },
   "data_lancio": "2027-02-23",
   "data_fine_lancio": "2027-04-23",

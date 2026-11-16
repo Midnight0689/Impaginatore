@@ -45,7 +45,7 @@ sys.path.insert(0, QUI)
 # pagine pubblicate (percorso relativo alla radice del sito) e loro gemelle nell'altra lingua
 PAGINE = ["index.html", "prezzi.html", "installa.html", "grazie.html", "legale.html", "404.html", "en/index.html", "en/installa.html"]
 GEMELLE = {"index.html": "en/index.html", "installa.html": "en/installa.html"}
-NELLA_MAPPA = ["index.html", "prezzi.html", "legale.html", "en/index.html"]   # installa.html resta fuori finché dice solo «in arrivo» (README.md)
+NELLA_MAPPA = ["index.html", "prezzi.html", "legale.html", "en/index.html"]   # installa.html resta fuori finché non ha i collegamenti della prima release (README.md)
 ASSOLUTE = {"404.html"}            # servita dall'hosting a qualunque profondità: percorsi dalla radice del sito
 ATTESI = {"installa.sh", "installa.ps1"}   # file previsti ma prodotti da altri (script d'installazione): mancano finché non esistono
 
@@ -65,7 +65,7 @@ _SCHERMATE = [
          cosa="Finestra «Esporta», linguetta «PSD a livelli» (licenza Pro): serve Photoshop su questo computer"),
     dict(nome="nuovo-album", misura=(960, 1014), larghezze=(480, 960),
          cosa="Finestra «Nuovo album» con un prodotto del catalogo Generico (formati comuni, nessun laboratorio)"),
-    dict(nome="assistente", misura=(960, 904), larghezze=(480, 960),
+    dict(nome="assistente", misura=(960, 1038), larghezze=(480, 960),
          cosa="Finestra «Assistente AI» della schermata Album: immagini spente (di serie)"),
 ]
 SCHERMATE = [dict(s, nome=s["nome"] + suff, sorgente=s["nome"] + suff + ".png", stato="2.0") for s in _SCHERMATE for suff in ("", "-en")]

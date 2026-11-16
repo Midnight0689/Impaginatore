@@ -130,6 +130,9 @@ programma», che si apre dal numero di versione nella schermata Album). Se c'è,
 pagina della versione. Il programma non si sostituisce da solo: scarichi il file e lo installi come la prima volta
 (controllando l'impronta). Album, impostazioni e licenza restano.
 
+Se nella finestra «Versione del programma» leggi «Aggiornamenti non ancora attivi», questa versione non cerca le
+versioni nuove e non si collega a internet per farlo: può succedere con le versioni della beta privata.
+
 - **macOS**: trascina il nuovo Impaginatore in Applicazioni e scegli «Sostituisci». Il primo avvio può chiedere di nuovo
   «Apri comunque».
 - **Windows**: esegui il nuovo installatore; sostituisce la versione installata.

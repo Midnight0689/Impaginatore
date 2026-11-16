@@ -9,7 +9,7 @@ Versione in sviluppo: 2.0 (ramo `prodotto/2.0`). Il ramo `main` è la versione a
 
 | Per chi | Dove |
 |---|---|
-| Chi usa il programma | [Manuale](docs/manuale/INDICE.md) |
+| Chi usa il programma | [Manuale](docs/manuale/INDICE.md), con la [guida di installazione](docs/manuale/00-installazione.md) dei pacchetti (beta privata) |
 | Chi collega un assistente AI (Claude) | [Guida all'assistente](docs/manuale/assistente/INDICE.md) |
 | Chi sviluppa | [Guida per sviluppatori](docs/sviluppo/GUIDA.md), [regole del repository](AGENTS.md), [architettura](docs/architettura/ARCHITETTURA.md) |
 | Chi segue il progetto | [Piano](docs/PIANO.md), [registro delle modifiche](CHANGELOG.md) |
@@ -68,7 +68,9 @@ computer: nell'editor «⋯» › «Progetto e foto…» › «Copia del progett
 - `src/impaginatore/` il programma (schermata Album, editor, motore di impaginazione, licenze, server MCP, piattaforma)
 - `tests/` test automatici (`pytest`)
 - `docs/` piano, architettura, manuali, audit, documenti legali e di mercato
-- `strumenti/` controlli della CI in locale, controllo del registro, schermate dell'interfaccia
+- `strumenti/` controlli della CI in locale, controllo del registro, schermate dell'interfaccia, compilazione e pacchetti
+  (`compila.py`, `docs/architettura/DISTRIBUZIONE.md`: `.deb` provato su Linux, `.dmg` ed `.exe` in collaudo), rilascio,
+  lettura delle statistiche della beta
 - `brand/` identità di marca; `marketing/` sito, email, social
 - `legacy/macos/` lanciatori per il Mac delle versioni 1.x (app, .command, setup.sh)
 - `skill/impaginatore-stefano/` istruzioni per Claude (la skill che collega `legacy/macos/Installa.command`)

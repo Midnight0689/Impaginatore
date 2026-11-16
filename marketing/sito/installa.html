@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Installare Impaginatore · in arrivo</title>
-<meta name="description" content="Gli installatori di Impaginatore per macOS, Windows e Linux sono in arrivo: che cosa c’è adesso e come sapere quando escono.">
+<title>Installare Impaginatore</title>
+<meta name="description" content="I file d’installazione di Impaginatore per macOS, Windows e Linux: che cosa c’è, che cosa è provato e perché la prima volta il sistema mostra un avviso.">
 <link rel="canonical" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="it" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="en" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="Impaginatore">
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="Installare Impaginatore">
-<meta property="og:description" content="Gli installatori per macOS, Windows e Linux sono in arrivo.">
+<meta property="og:description" content="Un file d’installazione per macOS, Windows e Linux, e l’avviso al primo avvio spiegato.">
 <meta property="og:url" data-url="installa.html" content="https://impaginatore.example/installa.html">
 <meta property="og:image" data-url="img/og/og-it.jpg" content="https://impaginatore.example/img/og/og-it.jpg">
 <meta property="og:image:width" content="1200">
@@ -76,16 +76,25 @@
 </header>
 
 <main id="contenuto" class="semplice">
-  <!-- Pagina ridotta finché non esistono gli installatori (T-301, T-302): niente comandi, niente impronte, niente avvisi
-       di macOS e di Windows da indovinare. Il giorno del lancio va riscritta con i file veri (vedi README.md). -->
+  <!-- I pacchetti esistono (T-302, docs/architettura/DISTRIBUZIONE.md) ma non c'è ancora una release: niente collegamenti
+       di scaricamento, niente impronte, niente etichette degli avvisi di macOS e Windows da indovinare (non sono provati
+       su computer veri). Il giorno della prima release la pagina riceve i collegamenti e le impronte (README.md). -->
   <div class="pagina">
     <div class="testo">
       <span class="etichetta">Installazione</span>
-      <h1>Gli installatori sono in arrivo.</h1>
-      <p class="attacco">Impaginatore non si può ancora scaricare. Gli installatori per macOS, Windows e Linux sono in preparazione: quando ci sono, questa pagina spiega come scaricarli e come aprirli la prima volta.</p>
+      <h1>Installare Impaginatore.</h1>
+      <p class="attacco">C’è un file d’installazione per ogni sistema. Da qui non si scarica ancora: per ora i file arrivano a chi partecipa alla beta privata. Quando esce la prima versione, questa pagina avrà i collegamenti.</p>
 
-      <h2 id="adesso">Che cosa c’è adesso</h2>
-      <p>Il programma è in sviluppo. I test automatici girano su macOS, Windows e Linux; le prove su computer Mac e Windows veri, e con loro i requisiti minimi di memoria e di disco, sono in arrivo. Su Linux i PSD a livelli non si possono fare, perché Photoshop non c’è.</p>
+      <h2 id="file">Un file per ogni sistema</h2>
+      <ul>
+        <li><b>Mac con chip Apple e Mac con processore Intel:</b> un file <code>.dmg</code> per ciascuno.</li>
+        <li><b>Windows 10 e 11, 64 bit:</b> un installatore <code>.exe</code> che non chiede la password di amministratore.</li>
+        <li><b>Linux:</b> un pacchetto <code>.deb</code> per Ubuntu 24.04 e le distribuzioni basate su di lei.</li>
+      </ul>
+      <p>Il pacchetto per Linux è provato. Quelli per macOS e Windows sono in collaudo: non li abbiamo ancora provati su computer Mac e Windows veri, e con quelle prove fisseremo i requisiti minimi di memoria e di disco. Su Linux i PSD a livelli non si possono fare, perché Photoshop non c’è.</p>
+
+      <h2 id="primo-avvio">L’avviso al primo avvio</h2>
+      <p>I file non sono firmati con i certificati di Apple e Microsoft. Per questo, la prima volta che apri Impaginatore, macOS e Windows ti avvisano che non possono verificare chi ha fatto il programma. Non è un errore: è il sistema che ti chiede di decidere. La guida d’installazione spiega passo per passo come aprirlo e come controllare prima l’impronta del file, cioè che sia proprio quello che abbiamo pubblicato. Nessun passo ti chiede di spegnere le protezioni del computer.</p>
 
       <h2 id="avviso">Vuoi sapere quando esce?</h2>
       <p>Iscriviti alla <a href="index.html#lista">lista d’attesa</a>: ti scriviamo il giorno del lancio. Per qualsiasi domanda scrivici a <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
