@@ -450,6 +450,12 @@ def test_avvio_non_riuscito(monkeypatch):
     monkeypatch.setattr(C.subprocess, "Popen", Lento); monkeypatch.setattr(C, "PASSO", 0.01)
     with pytest.raises(C.Errore, match="non risponde ancora"): C.avvia_programma(attesa=0.05)
 
+    class Passato(Lento):
+        """uscito subito con 0: su Windows il lanciatore ha avviato la versione installata in un processo nuovo"""
+        def poll(self): return 0
+    monkeypatch.setattr(C.subprocess, "Popen", Passato)
+    with pytest.raises(C.Errore, match="non risponde ancora"): C.avvia_programma(attesa=0.05)
+
 
 # ---------------------------------------------------------------- collegamento
 def test_client_locale(editor, monkeypatch):

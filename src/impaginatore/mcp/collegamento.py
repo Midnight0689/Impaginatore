@@ -108,6 +108,6 @@ def avvia_programma(attesa=ATTESA_AVVIO):
     while time.monotonic() < fine:
         s = programma()
         if s: return s
-        if p.poll() is not None: raise Errore(503, lingua.t("mcp.non_partito", porta=str(PORTA_PROGRAMMA)))
+        if p.poll() not in (None, 0): raise Errore(503, lingua.t("mcp.non_partito", porta=str(PORTA_PROGRAMMA)))      # 0: ha passato la mano (su Windows il lanciatore avvia la versione installata in un processo nuovo) o ha trovato la schermata già aperta
         time.sleep(PASSO)
     raise Errore(503, lingua.t("mcp.non_risponde_ancora"))
