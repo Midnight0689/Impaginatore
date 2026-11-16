@@ -2527,7 +2527,9 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
-        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=500)          # T-204: tipo e punto del codice, solo con le statistiche accese
+        except Exception as e:                        # errore del programma: il dettaglio nel registro dell'editor (editor.log, 0600)
+            log.exception("GET %s: errore interno", u.path)
+            statistiche.errore(e); self.send({"errore": str(e)}, code=500)          # T-204: tipo e punto del codice, solo con le statistiche accese
     def do_POST(self):
         u = urlparse(self.path)
         try:
