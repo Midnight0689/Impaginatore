@@ -1354,6 +1354,7 @@ function renderLicenza() {
   const L = S.licenza, b = $("licb"); if (!L) { b.hidden = true; return; }
   const testo = L.sola_lettura ? t("editor.lic.sola_lettura") : L.stato === "prova" ? (L.giorni === 1 ? t("editor.lic.prova_1") : t("editor.lic.prova", { n: L.giorni })) : /^non valida$/.test(L.stato) ? t("editor.lic.non_valida") : "";      // «non valida» è il codice di stato che manda il server, non un testo
   b.hidden = !testo; b.textContent = testo; b.className = L.sola_lettura ? "ro" : L.stato === "prova" && L.giorni != null && L.giorni <= 3 ? "fine" : ""; b.title = L.messaggio || "";
+  if (L.beta && L.riga_beta && !L.sola_lettura) { b.hidden = false; b.textContent = L.riga_beta; }          // licenza beta privata: «Beta privata · scade il …», il testo lo compone il server
   b.onclick = () => foglio(L.nome_fascia ? t("editor.lic.titolo_fascia", { fascia: L.nome_fascia }) : t("editor.lic.titolo"), L.messaggio, [{ t: t("comune.chiudi"), v: false }, { t: t("editor.lic.vedi"), v: true, main: true }]).then(v => { if (v) vaiProgetti(); });
   document.body.classList.toggle("solalettura", !!L.sola_lettura);
 }

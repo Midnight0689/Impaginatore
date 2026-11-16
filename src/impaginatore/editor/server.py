@@ -1520,7 +1520,7 @@ def licenza_pagina():
     """la licenza come la mostra l'editor (T-205): stato, giorni di prova rimasti, sola lettura e, per le funzioni di
     fascia, se ci sono e la frase che spiega dove si trovano (così la pagina lo dice prima, non con un 403)"""
     st = licenze.stato(); f = {k: licenze.consentita(k, st) for k in FUNZIONI_PAGINA}
-    return dict(stato=st["stato"], sola_lettura=st["sola_lettura"], filigrana=st["filigrana"], nome_fascia=st["nome_fascia"],
+    return dict(stato=st["stato"], sola_lettura=st["sola_lettura"], filigrana=st["filigrana"], nome_fascia=st["nome_fascia"], beta=st["beta"], riga_beta=st["riga_beta"],
                 giorni=st["prova"]["giorni_rimasti"] if st["stato"] in ("prova", "non valida") else None, messaggio=st["messaggio"],  # non tradotto: codice di stato della licenza, non un testo
                 funzioni=f, motivi={k: licenze.motivo(k, st) for k, v in f.items() if not v})
 

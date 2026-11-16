@@ -566,6 +566,7 @@ function showLic(s) {
   const n = s.prova && s.prova.giorni_rimasti, vista = s.stato === "prova" && n <= 7;                // negli ultimi 7 giorni di prova, la riga in basso
   $("prova").hidden = !vista; document.body.classList.toggle("con-prova", vista);
   if (vista) $("provatxt").textContent = n <= 1 ? t("home.prova_ultimo") : t("home.prova_restano", { n });
+  if (s.beta && s.riga_beta && !s.sola_lettura) b.textContent = s.riga_beta;          // licenza beta privata: «Beta privata · scade il …», composta dal server
 }
 async function loadLic() { try { showLic(await api("/api/licenza")); } catch (e) {} }
 function showLicFinestra() { $("lerr").textContent = ""; $("lkey").value = ""; apri("vlic", $("lkey")); loadLic(); }
