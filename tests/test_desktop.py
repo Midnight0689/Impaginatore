@@ -571,7 +571,7 @@ def test_dialoghi_della_finestra(wv):
     f.risposta = None
     assert d.scegli_cartella() == "" and d.scegli_percorsi() == [], "annullata"
     assert f.scelte[0] == (20, {}, {"linux.openFolder": "Scegli la cartella con le foto"})
-    assert f.scelte[1] == (10, dict(file_types=("ZIP (*.zip;*.ZIP)",)), {"linux.openFolder": "Scegli la cartella con le foto", "linux.openFile": "Scegli il file ZIP del progetto"})
+    assert f.scelte[1] == (10, dict(file_types=("ZIP (*.zip;*.ZIP)",)), {"linux.openFolder": "Scegli la cartella con le foto", "linux.openFile": "Scegli il file ZIP dell'album"})
     assert f.scelte[2][:2] == (10, dict(allow_multiple=True, file_types=(D.filtro_foto(),))) and f.scelte[2][2]["linux.openFiles"] == "Scegli le foto"
     assert "*.heic" in D.filtro_foto() and D.filtro_foto().startswith("Foto (*.jpg;")
 

@@ -17,6 +17,7 @@ sui computer degli utenti senza altra verifica (SEC-007). Le installazioni da pa
 Le funzioni si implementano quando ci sarà il canale dei rilasci (serve una libreria Ed25519, es. «cryptography», da
 aggiungere alle dipendenze). Fino ad allora questa classe dichiara il contratto e non fa niente: predefiniti() non la sceglie.
 """
+from .. import lingua
 from . import Aggiornamenti, NonDisponibili
 
 CHIAVI_FIDATE = ()         # chiavi pubbliche Ed25519 (32 byte, base64) dei rilasci: vuote finché il canale non esiste
@@ -25,12 +26,12 @@ CHIAVI_FIDATE = ()         # chiavi pubbliche Ed25519 (32 byte, base64) dei rila
 class PacchettiFirmati(Aggiornamenti):
     """aggiornamenti da pacchetti con manifesto firmato Ed25519 (vedi il docstring del modulo). Non ancora attivo"""
 
-    MOTIVO = "Aggiornamenti a pacchetti firmati: non ancora attivi in questa versione"
+    CHIAVE = "sistema.agg_firmati"          # il motivo si compone quando serve, nella lingua in uso
 
     def __init__(self, fonte="", riavvia=None):
         self.fonte, self.riavvia = fonte, riavvia or (lambda: None)
 
-    def stato(self): return NonDisponibili(self.MOTIVO).stato()
+    def stato(self): return NonDisponibili(self.CHIAVE).stato()
 
     def controlla(self): return self.stato()
 
@@ -38,18 +39,18 @@ class PacchettiFirmati(Aggiornamenti):
 
     def manifesto(self):
         """manifesto della fonte, solo se firmato da una chiave fidata: dict (passi 1-2)"""
-        raise NotImplementedError(self.MOTIVO)
+        raise NotImplementedError(lingua.t(self.CHIAVE))
 
     def verifica(self, dati, firma, chiavi=CHIAVI_FIDATE):
         """True se firma (Ed25519) dei byte dati è valida per una delle chiavi (passo 2)"""
-        raise NotImplementedError(self.MOTIVO)
+        raise NotImplementedError(lingua.t(self.CHIAVE))
 
     def scarica(self, manifesto):
         """percorso del pacchetto scaricato e controllato (dimensione, sha256) (passo 3)"""
-        raise NotImplementedError(self.MOTIVO)
+        raise NotImplementedError(lingua.t(self.CHIAVE))
 
-    def aggiorna(self): raise ValueError(self.MOTIVO)
+    def aggiorna(self): raise ValueError(lingua.t(self.CHIAVE))
 
-    def ripristina(self, codice): raise ValueError(self.MOTIVO)
+    def ripristina(self, codice): raise ValueError(lingua.t(self.CHIAVE))
 
     def ciclo(self, fermo, ogni=10 * 60): return

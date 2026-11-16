@@ -13,7 +13,7 @@ firma si usa lo stesso ma è «non verificato»; una firma presente che non corr
 """
 import re
 
-from .. import ed25519
+from .. import ed25519, lingua
 from .. import validazione as V
 from ..licenze import chiave as K
 
@@ -46,7 +46,7 @@ class CatalogoNonValido(V.ErroreProgetto):
 
 
 def _id(v, dove):
-    if not isinstance(v, str) or not _ID.fullmatch(v): raise CatalogoNonValido(f"{dove}: deve essere un identificativo di lettere minuscole, cifre e trattini (al massimo 40)")
+    if not isinstance(v, str) or not _ID.fullmatch(v): raise CatalogoNonValido(lingua.t("laboratori.id_non_valido", dove=dove))
     return v
 
 
@@ -64,12 +64,12 @@ def modello_nome(v, dove, per_pagine):
     V.testo(v, dove, 80)
     trovati = _SEGNAPOSTO.findall(v); resto = _SEGNAPOSTO.sub("", v)
     for s in trovati:
-        if s not in SEGNAPOSTI: V.errore(dove, f"segnaposto sconosciuto «{{{s}}}»: valgono " + ", ".join("{" + x + "}" for x in SEGNAPOSTI))
-    if len(trovati) > MAX_SEGNAPOSTI: V.errore(dove, f"troppi segnaposti (al massimo {MAX_SEGNAPOSTI})")
-    if "{" in resto or "}" in resto: V.errore(dove, "graffe non chiuse: le graffe servono solo per i segnaposti")
-    if _VIETATI.search(resto): V.errore(dove, "contiene un carattere che non può stare nel nome di un file (< > : \" / \\ | ? *)")
+        if s not in SEGNAPOSTI: V.errore(dove, "laboratori.segnaposto_sconosciuto", segnaposto="{" + s + "}", validi=", ".join("{" + x + "}" for x in SEGNAPOSTI))
+    if len(trovati) > MAX_SEGNAPOSTI: V.errore(dove, "laboratori.troppi_segnaposti", massimo=MAX_SEGNAPOSTI)
+    if "{" in resto or "}" in resto: V.errore(dove, "laboratori.graffe")
+    if _VIETATI.search(resto): V.errore(dove, "laboratori.carattere_nome_file", caratteri='< > : " / \\ | ? *')
     serve = "{pagina}" if per_pagine else "{n}"
-    if serve not in v: V.errore(dove, f"deve contenere {serve}: ogni file deve avere un nome diverso")
+    if serve not in v: V.errore(dove, "laboratori.serve_segnaposto", segnaposto=serve)
     return v
 
 
@@ -97,11 +97,11 @@ def _prodotto(v, dove):
     out["pagina_cm"] = [V.numero(w, d("pagina_cm, larghezza"), 5, 150), V.numero(h, d("pagina_cm, altezza"), 5, 200)]
     for k in ("spread_min", "spread_max"):
         if k in v: out[k] = V.numero(v[k], d(k), 1, 500, intero=True)
-    if out.get("spread_min", 1) > out.get("spread_max", 500): V.errore(d("spread_max"), "non può essere minore di spread_min")
+    if out.get("spread_min", 1) > out.get("spread_max", 500): V.errore(d("spread_max"), "laboratori.spread_max")
     out["abbondanza_mm"] = V.numero(v["abbondanza_mm"], d("abbondanza_mm"), 0, 20)
     out["sicurezza_mm"] = V.numero(v.get("sicurezza_mm", 0), d("sicurezza_mm"), 0, 50)
     out["piega_mm"] = V.numero(v.get("piega_mm", 0), d("piega_mm"), 0, 50)
-    if 2 * out["sicurezza_mm"] >= 10 * min(out["pagina_cm"]): V.errore(d("sicurezza_mm"), "la zona di sicurezza copre tutta la pagina")
+    if 2 * out["sicurezza_mm"] >= 10 * min(out["pagina_cm"]): V.errore(d("sicurezza_mm"), "laboratori.sicurezza_troppa")
     out["ppi"] = V.numero(v["ppi"], d("ppi"), 150, 600, intero=True)
     out["ppi_minimi"] = V.numero(v.get("ppi_minimi", min(PPI_MINIMI, out["ppi"])), d("ppi_minimi"), 72, out["ppi"], intero=True)
     out["ppi_consigliati"] = V.numero(v.get("ppi_consigliati", max(out["ppi_minimi"], min(PPI_CONSIGLIATI, out["ppi"]))), d("ppi_consigliati"), out["ppi_minimi"], 1200, intero=True)
@@ -113,13 +113,13 @@ def _prodotto(v, dove):
 
 def formato(v, dove):
     """il numero del formato: FORMATO e nient'altro"""
-    if isinstance(v, bool) or v != FORMATO: V.errore(dove, f"deve essere {FORMATO}")
+    if isinstance(v, bool) or v != FORMATO: V.errore(dove, "laboratori.formato_atteso", atteso=FORMATO)
     return v
 
 
 def _data(v, dove):
     V.testo(v, dove, 10)
-    if not _DATA.fullmatch(v): V.errore(dove, "deve essere una data AAAA-MM-GG")
+    if not _DATA.fullmatch(v): V.errore(dove, "laboratori.data")
     return v
 
 
@@ -130,24 +130,24 @@ def valida(doc, dove="catalogo", interno=False):
 
 
 def _valida(doc, dove, interno):
-    if not isinstance(doc, dict): V.errore(dove, "deve contenere un oggetto { … }")
+    if not isinstance(doc, dict): V.errore(dove, "progetto.contiene_oggetto")
     f = doc.get("formato_catalogo")
-    if isinstance(f, int) and not isinstance(f, bool) and f > FORMATO: V.errore(dove, "è di un formato più recente di questa versione di Impaginatore: aggiorna il programma")
+    if isinstance(f, int) and not isinstance(f, bool) and f > FORMATO: V.errore(dove, "laboratori.formato_piu_recente")
     V.oggetto(doc, dove, CHIAVI, CHIAVI_FACOLTATIVE)
     d = lambda k: f"{dove}, {k}"
     formato(f, d("formato_catalogo"))
     out = dict(id=_id(doc["id"], d("id")), nome=V.testo(doc["nome"], d("nome"), 80), laboratorio=V.testo(doc["laboratorio"], d("laboratorio"), 80),
                data=_data(doc["data"], d("data")), generico=V.booleano(doc.get("generico", False), d("generico")),
                stato=V.scelta(doc.get("stato", "confermato"), d("stato"), STATI))
-    if out["generico"] and not interno: V.errore(d("generico"), "solo i cataloghi che vengono con il programma sono generici")
+    if out["generico"] and not interno: V.errore(d("generico"), "laboratori.generico")
     for k, n in (("fonte", 300), ("note", 1000)):
         if k in doc: out[k] = V.testo(doc[k], d(k), n, libero=k == "note")
     lst = V.lista(doc["prodotti"], d("prodotti"), MAX_PRODOTTI)
-    if not lst: V.errore(d("prodotti"), "deve avere almeno un prodotto")
-    out["prodotti"] = [_prodotto(p, f"{dove}, prodotto {k}") for k, p in enumerate(lst, 1)]
+    if not lst: V.errore(d("prodotti"), "laboratori.almeno_un_prodotto")
+    out["prodotti"] = [_prodotto(p, f"{dove}, {lingua.t('laboratori.dove_prodotto', n=str(k))}") for k, p in enumerate(lst, 1)]
     ids = [p["id"] for p in out["prodotti"]]
     doppi = sorted({i for i in ids if ids.count(i) > 1})
-    if doppi: V.errore(d("prodotti"), "lo stesso id per più prodotti: " + ", ".join(doppi))
+    if doppi: V.errore(d("prodotti"), "laboratori.id_prodotti_doppi", ids=", ".join(doppi))
     return out
 
 
@@ -169,15 +169,15 @@ def verifica(doc, pubbliche=None):
     motivo lo dice"""
     pubbliche = K.CHIAVI_PUBBLICHE if pubbliche is None else pubbliche
     idf, fh = doc.get("id_firma"), doc.get("firma")
-    if idf is None and fh is None: return False, "il catalogo non è firmato"
+    if idf is None and fh is None: return False, lingua.t("laboratori.non_firmato")
     if isinstance(idf, bool) or not isinstance(idf, int) or not isinstance(fh, str) or not re.fullmatch(r"[0-9a-f]{128}", fh):
-        raise CatalogoNonValido("catalogo: firma incompleta (servono «id_firma», un numero, e «firma», 128 cifre esadecimali)")
+        raise CatalogoNonValido(lingua.t("laboratori.firma_incompleta"))
     p = pubbliche.get(idf)
-    if p is None: return False, f"è firmato con una chiave che questa versione di Impaginatore non conosce (n. {idf})"
+    if p is None: return False, lingua.t("laboratori.chiave_sconosciuta", numero=str(idf))
     pub = K._bytes_pubblica(p)
-    if pub is None: return False, "questa copia di Impaginatore non ha la chiave per verificare le firme (versione di sviluppo)"
+    if pub is None: return False, lingua.t("laboratori.senza_chiave")
     if not ed25519.verifica(pub, DOMINIO_CATALOGO + canonico(doc), bytes.fromhex(fh)):
-        raise CatalogoNonValido("catalogo: la firma non corrisponde al contenuto (il file è stato cambiato dopo la firma): chiedine una copia nuova a chi te l'ha dato")
+        raise CatalogoNonValido(lingua.t("laboratori.firma_non_corrisponde"))
     if p.emesse_fino and doc["data"] > p.emesse_fino:
-        raise CatalogoNonValido("catalogo: è firmato con una chiave di firma ritirata: chiedine una copia nuova a chi te l'ha dato")
-    return True, "firmato dal produttore di Impaginatore"
+        raise CatalogoNonValido(lingua.t("laboratori.firma_ritirata"))
+    return True, lingua.t("laboratori.firmato_dal_produttore")

@@ -10,7 +10,7 @@ import os
 import re
 import time
 
-from .. import nomi
+from .. import lingua, nomi
 
 RIEPILOGO = "Riepilogo consegna.txt"
 _SEGNAPOSTO = re.compile(r"\{(album|n|pagina|prodotto)\}")
@@ -43,7 +43,7 @@ def immagini(im, ppi, abbondanza_px, prod):
     intero, 0 e 1 per la sinistra e la destra. ValueError se l'album ha meno abbondanza di quella del prodotto"""
     from PIL import Image
     ab = round(prod["abbondanza_mm"] / 25.4 * ppi); taglio = abbondanza_px - ab
-    if taglio < 0: raise ValueError("l'album ha meno abbondanza di quella che chiede il prodotto")
+    if taglio < 0: raise ValueError(lingua.t("laboratori.meno_abbondanza"))
     if taglio: im = im.crop((taglio, taglio, im.width - taglio, im.height - taglio))
     misura = misure_px(prod)
     porta = lambda x: x if x.size == misura else x.resize(misura, Image.LANCZOS)
@@ -60,26 +60,29 @@ def cartella_nuova(base, nome):
         except FileExistsError: q = f"{p} ({k})"; k += 1
 
 
-def _cm(v): return f"{v:g}".replace(".", ",")
+def _cm(v): return lingua.num(v)
 
 
 def riepilogo(album, pr, info, file, spread, problemi, filigrana):
-    """testo del riepilogo della consegna. pr: il prodotto del progetto (laboratori.per_progetto), info: laboratori.stato(pr),
-    file: nomi dei file fatti, spread: quanti nell'album, problemi: conta del controllo {blocca, guarda}, filigrana: prova"""
-    p = pr["prodotto"]; w, h = p["pagina_cm"]
-    righe = [f"Consegna dell'album «{album}»", f"Preparata il {time.strftime('%d/%m/%Y alle %H:%M')} con Impaginatore", "",
-             f"Laboratorio: {pr['laboratorio']}", f"Catalogo: {pr['nome_catalogo']} ({pr['catalogo']}, {pr['data']})",
-             "Firma del catalogo: " + ("verificato" if info["verificato"] else "NON verificato") + f" ({info['verifica']})",
-             f"Prodotto: {p['nome']} ({p['id']})"]
-    if pr["stato"] == "da_confermare": righe.append("ATTENZIONE: le specifiche di questo catalogo sono DA CONFERMARE con il laboratorio prima di stampare")
-    righe += ["", f"Pagina: {_cm(w)} × {_cm(h)} cm (spread aperto {_cm(round(2 * w, 2))} × {_cm(h)} cm)", f"Abbondanza: {_cm(p['abbondanza_mm'])} mm per lato, compresa nei file",
-              f"Zona di sicurezza: {_cm(p['sicurezza_mm'])} mm dal bordo", f"Zona della piega: {_cm(p['piega_mm'])} mm per lato",
-              f"Risoluzione: {p['ppi']} ppi · profilo colore {p['profilo_colore']} incorporato", f"File: {p['consegna']['formato'].upper()} qualità {p['consegna']['qualita']}, "
-              + ("uno per spread" if p["consegna"]["file"] == "spread" else "uno per pagina") + " · " + "{} × {} px".format(*misure_px(p))]
-    lim = [f"almeno {p['spread_min']}" if "spread_min" in p else "", f"al massimo {p['spread_max']}" if "spread_max" in p else ""]
-    righe.append(f"Spread nell'album: {spread}" + (f" (il prodotto ne vuole {' e '.join(x for x in lim if x)})" if any(lim) else ""))
-    righe.append(f"Controllo dell'album: {problemi.get('blocca', 0)} problemi che bloccano, {problemi.get('guarda', 0)} da guardare")
-    if filigrana: righe.append("Prova gratuita: i file hanno la filigrana e non vanno stampati")
-    if "copertina" in p: righe += ["", f"Copertina (da preparare a parte, Impaginatore non la esporta): {p['copertina']}"]
-    righe += ["", f"File ({len(file)}):"] + [f"  {f}" for f in file]
+    """testo del riepilogo della consegna, nella lingua in uso (da leggere, e da mandare al laboratorio con i file). pr: il prodotto
+    del progetto (laboratori.per_progetto), info: laboratori.stato(pr), file: nomi dei file fatti, spread: quanti nell'album,
+    problemi: conta del controllo {blocca, guarda}, filigrana: prova"""
+    t = lingua.t
+    p = pr["prodotto"]; w, h = p["pagina_cm"]; ora = time.time()
+    righe = [t("laboratori.riepilogo_titolo", album=album), t("laboratori.riepilogo_preparata", data=lingua.data(ora), ora=lingua.ora(ora)), "",
+             t("laboratori.riepilogo_laboratorio", nome=pr["laboratorio"]), t("laboratori.riepilogo_catalogo", nome=pr["nome_catalogo"], id=pr["catalogo"], data=pr["data"]),
+             t("laboratori.riepilogo_firma_verificata" if info["verificato"] else "laboratori.riepilogo_firma_non_verificata", motivo=info["verifica"]),
+             t("laboratori.riepilogo_prodotto", nome=p["nome"], id=p["id"])]
+    if pr["stato"] == "da_confermare": righe.append(t("laboratori.riepilogo_da_confermare"))
+    c = p["consegna"]
+    righe += ["", t("laboratori.riepilogo_pagina", w=_cm(w), h=_cm(h), doppia=_cm(round(2 * w, 2))), t("laboratori.riepilogo_abbondanza", mm=_cm(p["abbondanza_mm"])),
+              t("laboratori.riepilogo_sicurezza", mm=_cm(p["sicurezza_mm"])), t("laboratori.riepilogo_piega", mm=_cm(p["piega_mm"])),
+              t("laboratori.riepilogo_risoluzione", ppi=str(p["ppi"]), profilo=p["profilo_colore"]),
+              t("laboratori.riepilogo_file_" + ("spread" if c["file"] == "spread" else "pagine"), formato=c["formato"].upper(), qualita=str(c["qualita"]), px="{} × {}".format(*misure_px(p)))]
+    lim = ([t("laboratori.riepilogo_almeno", n=str(p["spread_min"]))] if "spread_min" in p else []) + ([t("laboratori.riepilogo_al_massimo", n=str(p["spread_max"]))] if "spread_max" in p else [])
+    righe.append(t("laboratori.riepilogo_spread_limiti", n=str(spread), limiti=lingua.elenco(lim)) if lim else t("laboratori.riepilogo_spread", n=str(spread)))
+    righe.append(t("laboratori.riepilogo_controllo", blocca=str(problemi.get("blocca", 0)), guarda=str(problemi.get("guarda", 0))))
+    if filigrana: righe.append(t("laboratori.riepilogo_filigrana"))
+    if "copertina" in p: righe += ["", t("laboratori.riepilogo_copertina", testo=p["copertina"])]
+    righe += ["", t("laboratori.riepilogo_elenco_file", n=str(len(file)))] + [f"  {f}" for f in file]
     return "\n".join(righe) + "\n"
