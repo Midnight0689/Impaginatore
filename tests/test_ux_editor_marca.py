@@ -117,6 +117,8 @@ def test_altra_disposizione_sostituisci_e_annulla_con_il_nome(editor, tmp_path):
         assert b.js("document.querySelector('#pill span').textContent").startswith(("Foto sostituita", "Disposizione adattata", "Pagina adattata"))
         b.js("(async () => { await annulla(); })()")
         assert b.js("document.getElementById('toast').textContent").startswith("Annullato: Sostituisci")
+        assert b.js("CAMBIATE.length") >= 1 and b.js("document.querySelectorAll('#slots > .slot.cambiata').length") == b.js("CAMBIATE.length"), "le cornici cambiate si contornano (UX-003)"
+        b.pausa(0.6); assert b.js("document.querySelectorAll('#slots > .slot.cambiata').length") == 0, "per 400 ms"
         assert libera not in [i.get("name") for i in stato(c)["spreads"][0]["items"]]
         # elimina spread: niente conferma, un avviso con «Annulla»
         b.js("(async () => { await eliminaSpread(1); })()"); assert len(stato(c)["spreads"]) == 1
@@ -178,7 +180,7 @@ def test_bozza_dal_foglio_e_stato_vuoto(editor, tmp_path):
     c = editor
     with Browser(tmp_path) as b:
         b.apri(c.srv.indirizzo_avvio(), 2)
-        b.js("view = 'album'; render()")
+        assert b.js("view") == "album", "un album senza spread si apre su «Impagina», sullo stato vuoto (UX-008)"
         assert b.js("document.querySelectorAll('#nospread .azioni button.primary').length") == 1, "stato vuoto: una sola azione principale"
         assert b.js("document.querySelector('#nospread .azioni button.primary').textContent") == "Prepara la bozza…"
         b.js("document.querySelector('#nospread .azioni button.primary').click()"); b.pausa(1.5)
@@ -278,4 +280,36 @@ def test_modifica_dell_assistente_si_vede_e_si_annulla(editor, tmp_path):
         assert aspetta(b, "S.spreads.length === 1")
         assert b.js("document.getElementById('toast').textContent") == "Album aggiornato: è stato modificato in un'altra finestra"
         assert b.js("document.querySelector('#toast button')") is None
+        assert not b.problemi(), b.problemi()
+
+
+TELA = "(() => { const r = document.getElementById('main').getBoundingClientRect(); return r.width * r.height / innerWidth / innerHeight * 100; })()"
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_tela_grande_e_foglio_sotto_i_1280(editor, tmp_path):
+    """UX-016: lo spread 60 × 22,5 occupa almeno il 24 % della finestra a 1280 × 800 con tutti i pannelli aperti e almeno
+    il 30 % a 1024 × 700; sotto i 1280 px il pannello di destra è un foglio che si apre sopra la tela senza rimpicciolirla,
+    si chiude con Esc, e la colonna degli spread mostra solo i numeri"""
+    from cdp import Browser
+    c = editor; album(c, 2)
+    with Browser(tmp_path) as b:
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False)
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        assert b.js("panels()") == [True, True, True] and b.js(TELA) >= 24, b.js(TELA)
+        assert b.js("document.getElementById('sideb').getBoundingClientRect().width") == 0, "a 1280 px il pannello sta al suo posto"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False)
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        assert b.js("panels()") == [True, False, True], "finestra stretta: il foglio parte chiuso, la colonna degli spread resta"
+        assert b.js("document.querySelector('#thumbs .sth img').getBoundingClientRect().width") == 0
+        assert b.js("document.querySelector('#thumbs .sth span').textContent") == "01–02" and b.js("document.getElementById('list').getBoundingClientRect().width") <= 80
+        tela = b.js(TELA); assert tela >= 30, tela
+        b.js("document.getElementById('sideb').click()"); b.pausa(0.3)
+        assert b.js("panels()[1]") is True and b.js(TELA) == tela, "il foglio si apre sopra la tela"
+        assert b.js("document.getElementById('sideb').getAttribute('aria-pressed')") == "true"
+        lati = b.js("(() => { const a = document.getElementById('side').getBoundingClientRect(), s = document.getElementById('stage').getBoundingClientRect(); return [a.right, s.right, a.width]; })()")
+        assert lati == [1024, 1024, 272]
+        tasto(b, "Escape"); assert b.js("panels()[1]") is False, "Esc chiude il foglio"
+        tasto(b, "c"); b.pausa(0.3); assert b.js("panels()[1]") is True and b.js("CTL.aperto") is True, "Controlla apre il foglio"
         assert not b.problemi(), b.problemi()
