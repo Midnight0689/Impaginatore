@@ -99,6 +99,7 @@
   .dlg .tre { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .dlg .pre { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .dlg .pre button { height: 24px; padding: 0 8px; font-family: var(--imp-font-numeri); font-size: 12px; font-weight: 400; }
   .dlg .info { min-height: 17px; margin-top: 8px; color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .dlg select { width: 100%; height: 28px; padding: 0 8px; font: inherit; color: inherit; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); background: var(--imp-app-tela); }   /* prodotto del laboratorio (T-208) */
   .dlg .avanzate { display: none; } .dlg .avanzate.on { display: block; }
   .dlg .err { min-height: 16px; margin-top: 12px; color: var(--imp-errore); font-size: 12px; }
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
@@ -173,6 +174,10 @@
   <label for="nome" data-t="home.nome_label"></label><input id="nome" data-t-ph="home.nome_ph" autocomplete="off">
   <label for="fdir" data-t="home.foto_label"></label>
   <div class="foto"><input id="fdir" readonly data-t-ph="home.foto_ph"><button id="fpick" type="button" data-t="home.scegli"></button></div>
+  <label for="prod" data-t="home.prodotto_label"></label>
+  <select id="prod"></select>
+  <div class="info" id="prodi"></div>
+  <button id="pimp" type="button" class="link" data-t="home.importa_catalogo"></button>
   <label for="w" data-t="home.dim_label"></label>
   <div class="due"><input id="w" class="num" inputmode="decimal" value="60" data-t-aria="home.larghezza" data-t-ph="home.larghezza"><span class="tenue">×</span><input id="h" class="num" inputmode="decimal" value="22,5" data-t-aria="home.altezza" data-t-ph="home.altezza"></div>
   <div class="pre"><button type="button" data-p="60,22.5"></button><button type="button" data-p="70,25"></button><button type="button" data-p="50,20"></button><button type="button" data-p="40,30"></button></div>
@@ -264,7 +269,7 @@ const errore = e => avviso(e.message || String(e), "errore");
 
 // ---- finestre: Esc chiude, il fuoco torna dove era, Tab resta dentro
 const PILA = [];
-const focalizzabili = r => [...r.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter(e => !e.disabled && e.offsetParent !== null);
+const focalizzabili = r => [...r.querySelectorAll('button, input, select, textarea, [tabindex="0"]')].filter(e => !e.disabled && e.offsetParent !== null);
 function apri(id, fuoco) {
   const v = $(id); PILA.push({ id, origine: document.activeElement }); v.style.display = "flex";
   const f = fuoco || focalizzabili(v.firstElementChild)[0]; if (f) f.focus();
@@ -394,8 +399,37 @@ function pinfo() { const w = parse($("w").value), h = parse($("h").value); $("pi
 function avanzate(on) { $("adv").classList.toggle("on", on); $("advt").setAttribute("aria-expanded", String(on)); $("advt").textContent = (on ? "▾ " : "▸ ") + t("home.avanzate"); }
 function openNew(scelta) {
   $("err").textContent = ""; $("nome").value = scelta ? scelta.nome || "" : ""; $("fdir").value = scelta ? scelta.path || "" : ""; avanzate(false);
+  $("prod").value = ""; prodotto(); cataloghi();
   apri("vnew", $("nome")); pinfo();
 }
+// ---- prodotti dei laboratori (T-208): il prodotto dà formato e abbondanza; i testi dei cataloghi restano testo (textContent, Option)
+let CAT = [];
+async function cataloghi() {
+  try { CAT = (await api("/api/cataloghi")).cataloghi; } catch (e) { CAT = []; }
+  const sel = $("prod"), ora = sel.value; sel.replaceChildren(new Option(t("home.prodotto_libero"), ""));
+  for (const c of CAT) {
+    const g = document.createElement("optgroup");
+    g.label = c.nome + " · " + c.laboratorio + (c.verificato ? "" : " · " + t("home.non_verificato")) + (c.stato === "da_confermare" ? " · " + t("home.da_confermare") : "");
+    for (const p of c.prodotti) { const o = new Option(p.nome, c.id + "/" + p.id); o.disabled = !c.consentito; g.append(o); }
+    sel.append(g);
+  }
+  sel.value = [...sel.options].some(o => o.value === ora) ? ora : ""; prodotto();
+}
+function prodotto() {
+  const [ci, pi] = $("prod").value.split("/"), c = CAT.find(x => x.id === ci), p = c && c.prodotti.find(x => x.id === pi);
+  ["w", "h", "abb"].forEach(k => $(k).disabled = !!p); document.querySelector(".pre").hidden = !!p;
+  if (p) { $("w").value = cm(2 * p.pagina_cm[0]); $("h").value = cm(p.pagina_cm[1]); $("abb").value = cm(p.abbondanza_mm); }
+  $("prodi").textContent = p ? t("home.prodotto_info", { lab: c.laboratorio, w: cm(p.pagina_cm[0]), h: cm(p.pagina_cm[1]), abb: cm(p.abbondanza_mm), ppi: p.ppi }) : "";
+  pinfo();
+}
+$("prod").onchange = prodotto;
+$("pimp").onclick = async () => {
+  try {
+    const r = await api("/api/importa-catalogo", {}); if (r.annullato) return;
+    await cataloghi(); $("err").textContent = "";
+    $("prodi").textContent = r.verificato ? t("home.catalogo_importato", { nome: r.nome, n: r.prodotti }) : t("home.catalogo_non_verificato", { nome: r.nome, n: r.prodotti, perche: r.verifica });
+  } catch (e) { $("err").textContent = e.message; }
+};
 $("w").oninput = $("h").oninput = pinfo;
 document.querySelectorAll(".pre button").forEach(b => { const [w, h] = b.dataset.p.split(","); b.textContent = cm(w) + " × " + cm(h); b.onclick = () => { $("w").value = cm(w); $("h").value = cm(h); pinfo(); }; });
 $("advt").onclick = () => avanzate(!$("adv").classList.contains("on"));
@@ -410,7 +444,7 @@ $("cancel").onclick = () => chiudi("vnew");
 $("create").onclick = async () => {
   const b = $("create"); b.disabled = true;
   try {
-    const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value });
+    const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value, prodotto: $("prod").value || undefined });
     chiudi("vnew"); await load(); const p = LIST.find(x => x.path === r.path); if (p) openProject(p);
   } catch (e) { $("err").textContent = e.message; }
   b.disabled = false;

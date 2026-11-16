@@ -28,6 +28,8 @@ from ..piattaforma import font as pfont
 from ..piattaforma import photoshop as pps
 from ..servizio import Gestore, RichiestaNonValida, ServerLocale, numero
 from .. import licenze                               # T-202: fasce, prova gratuita e sola lettura (docs/architettura/LICENZE.md)
+from .. import laboratori as LAB                     # T-208: cataloghi dei laboratori, prodotto del progetto (docs/architettura/CATALOGHI.md)
+from ..laboratori import consegna as CONSEGNA
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
@@ -206,8 +208,10 @@ LOG = []
 def _ver_programma():       # numero di rilascio: serve a vedere quale versione sta girando
     return __version__
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"], "tL": CFG.get("tono_L"), "tZ": CFG.get("tono_Z")})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"], "tL": CFG.get("tono_L"), "tZ": CFG.get("tono_Z"),
+                                 "pr": CFG.get("prodotto")})                                   # prodotto del laboratorio (T-208) o None
 SAVED = None                                         # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
+PRODOTTO_FILE = [None]                               # «prodotto» di progetto.json che questa versione non capisce (T-208): si riscrive com'era
 def restore(s):
     global SP, GD
     d = json.loads(s); SP = d["sp"]; GD = d["gd"]
@@ -218,6 +222,7 @@ def restore(s):
     for k, c in (("tono_L", "tL"), ("tono_Z", "tZ")):
         if d.get(c) is None: CFG.pop(k, None)
         else: CFG[k] = d[c]
+    CFG["prodotto"] = d.get("pr")
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -539,6 +544,7 @@ def apply(o):
     elif t == "bozza": applica_bozza(o)
     elif t == "spazi": ESITO.update(corretti=correggi_spazi(o["s"], o.get("modo", "std"), o.get("cm")), diversi=stato_spazi(o["s"], o.get("modo", "std"), o.get("cm"))["diversi"])
     elif t == "sistema": sistema(_elenco_spread(o.get("spread")), o.get("spazi", True) is not False, o.get("tono"), o.get("modo", "std"), o.get("cm"))
+    elif t == "prodotto": imposta_prodotto(o.get("prodotto"))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
@@ -817,7 +823,8 @@ NOMI_OP = dict(                # nome di ogni operazione per «Annulla …» e �
     stile_scollega="Scollega stile", testo="Testo", settext="Modifica testo", addtext="Aggiungi testo", blank="Nuovo spread vuoto",
     new="Nuovo spread", dup="Duplica spread", delete="Elimina spread", swappages="Inverti pagine", newspread="Nuovo spread",
     newspreadsel="Nuovo spread", addtospread="Aggiungi foto allo spread", template="Cambia disposizione", setrects="Disposizione a mano",
-    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", spazi="Correggi spazi", sistema="Sistema album", bozza="Bozza dell'album")
+    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", spazi="Correggi spazi", sistema="Sistema album", bozza="Bozza dell'album",
+    prodotto="Prodotto del laboratorio")
 
 
 def _intero_o_none(x): return x if isinstance(x, int) and not isinstance(x, bool) else None
@@ -1098,7 +1105,9 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
     tono = _con_tono(tono)
     with LOCK:
         P = []; usi = {}; mancanti = set(foto_mancanti()); tutti = range(len(SP)) if spreads is None else spreads
-        piega = A.FOLD - BL; cm1 = PIEGA_CM / 2.54 * A.PPI; conta_sistema = dict(spazi=0, tono=0)
+        pr = _prodotto(); ris_blocca, ris_guarda = (pr["ppi_minimi"], pr["ppi_consigliati"]) if pr else (RIS_BLOCCA, RIS_GUARDA)       # T-208: le soglie del laboratorio
+        piega = A.FOLD - BL; cm1 = (pr["piega_mm"] / 10 if pr and pr["piega_mm"] else PIEGA_CM) / 2.54 * A.PPI; conta_sistema = dict(spazi=0, tono=0)
+        sic = pr["sicurezza_mm"] / 25.4 * A.PPI if pr else 0
         for s in range(len(SP)):
             for pg in SP[s]:
                 for it in pg[1]:
@@ -1112,12 +1121,15 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                 fuori = e["x"] < -BL - 1 or e["y"] < -BL - 1 or e["x"] + e["w"] > VW + BL + 1 or e["y"] + e["h"] > VH + BL + 1
                 if e["k"] == "t":
                     if is_txt(e) and (e["x"] < 0 or e["y"] < 0 or e["x"] + e["w"] > VW or e["y"] + e["h"] > VH): add("blocca", "fuori_pagina", "un testo esce dalla pagina e si taglia in stampa", e)
+                    elif sic and is_txt(e) and (e["x"] < sic or e["y"] < sic or e["x"] + e["w"] > VW - sic or e["y"] + e["h"] > VH - sic):
+                        add("guarda", "sicurezza", f"un testo è a meno di {pr['sicurezza_mm']:g} mm dal bordo: il laboratorio lo può tagliare", e)
+                    if pr and pr["piega_mm"] and is_txt(e) and e["x"] < piega + cm1 and e["x"] + e["w"] > piega - cm1: add("guarda", "piega", "un testo è nella zona della piega", e)
                     continue
                 n = e["name"]; i = A.IDX[n] - 1; m = A.M[i]
                 if m["n"] in mancanti: add("blocca", "mancante", f"la foto {n} non si trova: ricollegala", e)
                 elif m["n"] in A.DANNEGGIATE: add("blocca", "danneggiata", f"la foto {n} è danneggiata e non si stampa", e)
-                elif e["ppi"] < RIS_BLOCCA: add("blocca", "risoluzione", f"{n} è troppo piccola per questa cornice ({e['ppi']} ppi, ne servono almeno {RIS_BLOCCA})", e)
-                elif e["ppi"] < RIS_GUARDA: add("guarda", "risoluzione", f"{n} è al limite per questa cornice ({e['ppi']} ppi)", e)
+                elif e["ppi"] < ris_blocca: add("blocca", "risoluzione", f"{n} è troppo piccola per questa cornice ({e['ppi']} ppi, ne servono almeno {ris_blocca})", e)
+                elif e["ppi"] < ris_guarda: add("guarda", "risoluzione", f"{n} è al limite per questa cornice ({e['ppi']} ppi)", e)
                 if fuori: add("blocca", "fuori_pagina", f"{n} esce dalla pagina oltre l'abbondanza", e)
                 if e["crop"] / max(e["z"], 1e-9) > RITAGLIO_MAX: add("guarda", "ritaglio", f"{n} è tagliata molto (×{e['crop'] / max(e['z'], 1e-9):.2f}) per stare nella cornice", e)
                 volti = _volti_visibili(e)
@@ -1131,6 +1143,8 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                     if t["stato"] == "no":
                         e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
                         add("guarda", "tono", f"{t['name']} è {'più chiara' if t['d'] > 0 else 'più scura'} del resto dell'album", e, sistema=True); conta_sistema["tono"] += 1
+        if spreads is None and pr:
+            for testo in _problemi_prodotto(pr): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
         if spreads is None:
             stelle = set(CFG["stelle"]); tolte = set(CFG.get("tolte", []))
             for n in unused():
@@ -1193,8 +1207,13 @@ def bozza(o):
     taglia}], capitoli, foto, per_spread}. Le anteprime: /img/bozza/<n>. Licenza: impaginazione_automatica_album"""
     _cancello("impaginazione_automatica_album")
     with LOCK:
-        ritmo, per, stelle, seme = _opzioni_bozza(o); foto = _foto_bozza(BZ.MIN_FOTO)
+        ritmo, per, stelle, seme = _opzioni_bozza(o); liberi = _spread_liberi(); foto = _foto_bozza(BZ.MIN_FOTO)
+        if liberi is not None: per = max(per, min(len(foto) / liberi, BZ.MAX_GRUPPO))           # T-208: gli spread che il prodotto ammette ancora
         p = BZ.proposta(foto, tpl_options, ritmo, per, stelle, seme)
+        if liberi is not None and len(p["spreads"]) > liberi:
+            fuori = p["spreads"][liberi:]; p["spreads"] = p["spreads"][:liberi]; n = sum(len(s["foto"]) for s in p["spreads"])
+            p.update(foto=n, capitoli=len({s["capitolo"] for s in p["spreads"]}), per_spread=round(n / liberi, 1),
+                     limite_prodotto=dict(spread_max=_prodotto()["spread_max"], foto_escluse=sum(len(s["foto"]) for s in fuori)))
         for s in p["spreads"]: s["nomi"] = [A.name(i) for i in s["foto"]]
         BOZZA.clear(); BOZZA.update(spreads=p["spreads"])
         return p
@@ -1204,9 +1223,63 @@ def applica_bozza(o):
     """operazione «bozza»: gli spread della proposta (o["spreads"], come li ha mostrati il foglio; altrimenti una proposta
     nuova con le stesse opzioni) dopo quelli che ci sono (o nel punto pos); gli spread esistenti non si toccano"""
     _cancello("impaginazione_automatica_album")
-    spreads = o.get("spreads") or bozza(o)["spreads"]; pos = o["pos"]
+    spreads = o.get("spreads") or bozza(o)["spreads"]; pos = o["pos"]; liberi = _spread_liberi()
+    if liberi is not None and len(spreads) > liberi: raise ValueError(_troppi_spread(len(spreads), liberi))
     for k, s in enumerate(spreads): apply(dict(op="newspread", pos=pos + k, L=s["L"], R=s["R"]))
     ESITO.update(spread=len(spreads), foto=sum(len(s["L"]["photos"]) + len(s["R"]["photos"]) for s in spreads), da=pos)
+
+
+def _prodotto():
+    """il prodotto del laboratorio scelto per questo album (laboratori.per_progetto()["prodotto"]) o None"""
+    return (CFG.get("prodotto") or {}).get("prodotto")
+
+
+def _spread_liberi():
+    """quanti spread il prodotto ammette ancora (None: nessun limite); ValueError se non ne ammette più"""
+    pr = _prodotto()
+    if not pr or "spread_max" not in pr: return None
+    if len(SP) >= pr["spread_max"]: raise ValueError(_troppi_spread(1, 0))
+    return pr["spread_max"] - len(SP)
+
+
+def _troppi_spread(n, liberi):
+    pr = _prodotto()
+    return (f"Il prodotto «{pr['nome']}» ammette al massimo {pr['spread_max']} spread e l'album ne ha {len(SP)}: "
+            + (f"se ne possono aggiungere ancora {liberi}, non {n}" if liberi else "non se ne possono aggiungere altri"))
+
+
+def _problemi_prodotto(pr):
+    """problemi dell'album intero rispetto al prodotto: numero di spread, formato e abbondanza"""
+    out = []; n = len(SP)
+    if n < pr.get("spread_min", 0): out.append(f"L'album ha {n} spread, il prodotto «{pr['nome']}» ne vuole almeno {pr['spread_min']}")
+    if n > pr.get("spread_max", n): out.append(f"L'album ha {n} spread, il prodotto «{pr['nome']}» ne ammette al massimo {pr['spread_max']}")
+    m = LAB.incompatibile(CFG, pr)
+    if m: out.append(m)
+    return out
+
+
+def imposta_prodotto(v):
+    """operazione «prodotto»: il prodotto del laboratorio per questo album ({catalogo, prodotto} o «catalogo/prodotto»), None
+    per toglierlo. Il formato dell'album non cambia: un prodotto di un altro formato si rifiuta con il motivo"""
+    if v is None: CFG["prodotto"] = None; return
+    cat, prod = LAB.scelta(v)                                     # licenza compresa: i cataloghi dei laboratori sono «preset_laboratori»
+    m = LAB.incompatibile(CFG, prod)
+    if m: raise ValueError(m)
+    CFG["prodotto"] = LAB.per_progetto(cat, prod); ESITO.update(prodotto=prod["nome"], laboratorio=cat["laboratorio"])
+
+
+def prodotto_pagina():
+    """il prodotto dell'album come lo mostra la pagina (None se non c'è): copia del progetto, stato rispetto ai cataloghi
+    installati (verificato, generico) e il motivo per cui non va, se l'album non ha il suo formato"""
+    pr = CFG.get("prodotto")
+    return dict(pr, **LAB.stato(pr), avviso=LAB.incompatibile(CFG, pr["prodotto"])) if pr else None
+
+
+def prodotti_pagina():
+    """cataloghi e prodotti installati, con il motivo per cui un prodotto non va per questo album (formato diverso)"""
+    e = LAB.elenco()
+    for c in e["cataloghi"]: c["prodotti"] = [dict(p, incompatibile=LAB.incompatibile(CFG, p)) for p in c["prodotti"]]
+    return e
 
 
 def _valida_bozza(o):
@@ -1384,7 +1457,7 @@ def photo_list():
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
 FUNZIONI_PAGINA = ("editor_completo", "export_jpg", "export_pdf", "export_psd_livelli", "impaginazione_automatica_album",
-                   "correzione_spaziature_album", "uniformita_tono", "modelli_personali")
+                   "correzione_spaziature_album", "uniformita_tono", "modelli_personali", "preset_laboratori")
 
 
 def licenza_pagina():
@@ -1402,7 +1475,7 @@ def state():
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
-                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato(), licenza=licenza_pagina())
+                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato(), licenza=licenza_pagina(), prodotto=prodotto_pagina())
 
 TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
@@ -1765,6 +1838,9 @@ def _da_salvare(base):
     if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
     if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
     else: out.pop("guide", None)
+    if CFG.get("prodotto"): out["prodotto"] = CFG["prodotto"]
+    elif PRODOTTO_FILE[0] is not None: out["prodotto"] = PRODOTTO_FILE[0]       # uno che questa versione non capisce: resta com'era (T-208)
+    else: out.pop("prodotto", None)
     return out
 
 def save(backup=True):
@@ -1861,25 +1937,66 @@ def preflight(o, nums, dest, fmt):
         with open(t, "w", encoding="utf-8") as f: f.write("x")
         os.remove(t)
     except OSError as e: raise ValueError(f"Non posso scrivere in «{dest}»: {e.strerror or e}. Scegli un'altra cartella")
-    stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums)}[fmt]
+    stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums), "consegna": 35e6 * len(nums)}[fmt]
     libero = shutil.disk_usage(dest).free
     if libero < stima * 1.2: raise ValueError(f"Spazio insufficiente: servono circa {stima / 1e9:.1f} GB e ne restano {libero / 1e9:.1f} GB. Libera spazio o scegli un altro disco")
     if fmt == "psd":
         if not pps.disponibile(): raise ValueError(pps.motivo_assente())          # sul Mac: «Photoshop non è stato trovato in /Applications…»; su Linux non c'è
 
+def _consegna_prima(o, dest):
+    """controlli della consegna al laboratorio (T-208) prima di cominciare: il prodotto c'è, l'album ha il suo formato, la
+    licenza comprende il catalogo. Restituisce (prodotto del progetto, stato del prodotto, serve una cartella nuova): la
+    cartella scelta si usa se è nuova o vuota, altrimenti (o con quella di serie) se ne crea una nuova dentro, dopo i
+    controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote)"""
+    with LOCK: pr = copy.deepcopy(CFG.get("prodotto"))
+    if not pr: raise ValueError("Questo album non ha ancora il prodotto del laboratorio: sceglilo in Esporta → Consegna")
+    m = LAB.incompatibile(CFG, pr["prodotto"])
+    if m: raise ValueError(m)
+    info = LAB.stato(pr)
+    if not info["generico"]: _cancello("preset_laboratori")
+    return pr, info, not (o.get("dest") and (not os.path.exists(dest) or (os.path.isdir(dest) and not os.listdir(dest))))
+
+
+def _consegna(pr, info, nums, dest, con_filigrana, nome):
+    """file della consegna (nel filo dell'esportazione): uno per spread o per pagina, con i nomi, la misura, l'abbondanza, la
+    risoluzione e il profilo del prodotto; poi il riepilogo. Righe del registro come per i JPG"""
+    p = pr["prodotto"]; q = p["consegna"]["qualita"]; icc = srgb_icc(); fatti = []; file = []
+    for k in nums:
+        try:
+            with LOCK: tup = spread_tuple(k - 1)
+            nomi_k = []
+            for pagina, im in CONSEGNA.immagini(A.render(tup, 1.0, True, originale=True), A.PPI, round(A.B), p):
+                if con_filigrana: im = licenze.applica_filigrana(im)
+                f = os.path.join(dest, CONSEGNA.nome_file(p, nome, k, None if pagina is None else 2 * k - 1 + pagina))
+                _scrivi_img(im, f, quality=q, dpi=(p["ppi"], p["ppi"]), icc_profile=icc, subsampling=0 if q >= 90 else 2)
+                if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
+                nomi_k.append(os.path.basename(f))
+            fatti.append(k); file += nomi_k; LOG.append(f"  spread {k}: {', '.join(nomi_k)}")
+        except Exception as ex: LOG.append(f"SALTATO spread {k} -> {_spiega(ex)}")
+    LOG.append(f"ESPORTATI {len(fatti)} spread su {len(nums)}")
+    with LOCK: n_sp = len(SP)
+    testo = CONSEGNA.riepilogo(nome, pr, info, file, n_sp, controlla(None, False)["conta"], con_filigrana)
+    formato.scrivi_atomico(os.path.join(dest, CONSEGNA.RIEPILOGO), testo); LOG.append(f"  riepilogo: {CONSEGNA.RIEPILOGO}")
+    if fatti: LOG.append("RISULTATO:" + dest)
+    if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
+
+
 def run_export(o):
-    """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente) o PSD (Photoshop)"""
+    """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente), PSD (Photoshop) o la consegna al
+    laboratorio (T-208: i file come li chiede il prodotto dell'album, in una cartella nuova, con il riepilogo)"""
     with LOCK: n = len(SP)
     nums = parse_range(o.get("range", ""), n); fmt = o["fmt"]
-    dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", fmt.upper())
+    dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", "Consegna" if fmt == "consegna" else str(fmt).upper())
     dest = os.path.expanduser(o.get("dest") or dflt)
-    if fmt not in ("jpg", "pdf", "psd"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    if fmt not in ("jpg", "pdf", "psd", "consegna"): raise ValueError(f"Formato sconosciuto: {fmt}")
     con_filigrana = licenze.controlla_esportazione(fmt)                                                             # formato della fascia; prova: con la filigrana
+    if fmt == "consegna": pr, info, nuova = _consegna_prima(o, dest)
     qualita = round(numero({"q": [str(o.get("q", 92 if fmt == "jpg" else 80))]}, "q", 92, 1, 100))                  # VER-014: qualità JPEG da 1 a 100
     larghezza = round(numero({"width": [str(o.get("width", 2000))]}, "width", 2000, 500, 6000))                     # PDF: da 500 a 6000 px (la pagina offre 2000, 3500, 5000)
     try: os.makedirs(dest, exist_ok=True)
     except OSError as e: raise ValueError(f"Non riesco a creare la cartella «{dest}»: {e.strerror or e}")
     preflight(o, nums, dest, fmt)
+    if fmt == "consegna" and nuova: dest = CONSEGNA.cartella_nuova(dest, pr["prodotto"]["nome"])
     nome = CFG.get("nome", "Album")
     with LOCK:
         if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: do_op(dict(op="evg", value=o["ev"]))          # controllata come ogni operazione (VER-001)
@@ -1888,7 +2005,8 @@ def run_export(o):
     def go():
         try:
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
-            if fmt == "jpg":
+            if fmt == "consegna": _consegna(pr, info, nums, dest, con_filigrana, nome)
+            elif fmt == "jpg":
                 stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
                 fatti = []
                 for k in nums:
@@ -2261,6 +2379,7 @@ class H(Gestore):
                 self.send({"indirizzo": a or HOME or "/"})
             elif u.path == "/api/aggiornamento": self.send(stato_aggiornamenti())
             elif u.path == "/api/state": self.send(state())
+            elif u.path == "/api/prodotti": self.send(prodotti_pagina())
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
             elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], round(numero(q, "w", 500, 16, 1200)), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
@@ -2347,6 +2466,8 @@ def inizializza(progetto, home="", sottofondo=False):
         CFG.setdefault("centri_volto", {})
         CFG.setdefault("tono", {}); CFG.setdefault("tono_escl", []); CFG.setdefault("tolte", []); CFG.setdefault("colori", {}); CFG.setdefault("ritocco", {}); CFG.setdefault("stelle", []); CFG.setdefault("testo", {}); CFG.setdefault("stili", {})
         _conta_nph()
+        grezzo = CFG.pop("prodotto", None); CFG["prodotto"] = LAB.dal_progetto(grezzo)          # T-208: un prodotto che questa versione non capisce si ignora...
+        PRODOTTO_FILE[0] = grezzo if CFG["prodotto"] is None else None                              # ...e il file lo tiene com'è
         UT_FILE = cartelle.file_dati("modelli_utente.json")
         SP = [[[mode, [dict(it) for it in items]] for (mode, items) in sp] for sp in A.load_spec()]
         GD = [dict(v=list(g.get("v", [])), h=list(g.get("h", []))) for g in CFG.get("guide", [])][:len(SP)]

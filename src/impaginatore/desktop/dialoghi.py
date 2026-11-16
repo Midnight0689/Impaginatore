@@ -1,4 +1,4 @@
-"""Finestre di scelta (cartelle, foto, ZIP) quando c'è la finestra del programma.
+"""Finestre di scelta (cartelle, foto, ZIP, cataloghi) quando c'è la finestra del programma.
 
 - Nella schermata dei progetti (lo stesso processo della finestra): DialoghiFinestra, le finestre native di pywebview
   (Finder, Esplora file, GTK) aperte sopra la finestra del programma, una per volta. Si impostano con
@@ -22,7 +22,8 @@ from ..piattaforma import dialoghi
 TIPI = ("cartella", "zip", "foto")
 FILTRO_FOTO = "Foto (" + ";".join(dialoghi.TIPI_FOTO) + ")"
 FILTRO_ZIP = "ZIP (*.zip;*.ZIP)"
-_TITOLO_GTK = {"cartella": "linux.openFolder", "zip": "linux.openFile", "foto": "linux.openFiles"}
+FILTRO_CATALOGO = "Catalogo (*.json;*.JSON)"
+_TITOLO_GTK = {"cartella": "linux.openFolder", "zip": "linux.openFile", "catalogo": "linux.openFile", "foto": "linux.openFiles"}
 log = logging.getLogger("impaginatore.desktop")
 
 
@@ -41,6 +42,7 @@ class DialoghiFinestra(dialoghi.Dialoghi):
             f.localization[_TITOLO_GTK[tipo]] = str(messaggio)
             if tipo == "cartella": r = f.create_file_dialog(T.FOLDER)
             elif tipo == "zip": r = f.create_file_dialog(T.OPEN, file_types=(FILTRO_ZIP,))
+            elif tipo == "catalogo": r = f.create_file_dialog(T.OPEN, file_types=(FILTRO_CATALOGO,))
             else: r = f.create_file_dialog(T.OPEN, allow_multiple=True, file_types=(FILTRO_FOTO,))
         return [os.path.normpath(p) for p in (r or ()) if p]          # None: annullata (o errore del motore, che pywebview annota)
 
