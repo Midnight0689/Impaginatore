@@ -34,7 +34,7 @@ REG = None                                     # registro dei progetti che stann
 PORTA = PORTA_PREDEFINITA                      # porta di questa schermata: gli editor la usano per il pulsante «Progetti»
 AGGIORNAMENTI = aggiornamenti.NonDisponibili()
 LOCK = threading.Lock()
-EDITORS = {}                                   # percorso progetto -> (Popen, porta)
+EDITORS = {}                                   # percorso progetto -> (Editor, porta)
 SERVER = None                                  # server della schermata (crea_server): il suo gettone resta dopo un riavvio
 FINESTRA = False                               # la schermata è nella finestra del programma (desktop.esegui): dialoghi per gli editor, riavvio con la finestra
 PRONTA = threading.Event()                     # la pagina ha chiesto l'elenco degli album: la schermata Album è pronta (fine della schermata di avvio)
@@ -149,6 +149,47 @@ def pronto(pt):
     return sicurezza.indirizzo_avvio("editor", pt, timeout=1)
 
 
+class Editor:
+    """l'editor di un progetto lanciato da qui, con la parte di Popen che usano la schermata e la finestra del programma (pid,
+    poll, terminate, kill, wait). Su Windows l'editor che si riavvia (processi.riesegui: os.execv) è un processo nuovo e il
+    figlio lanciato da qui finisce: allora si segue quello nuovo, se il file di sessione della stessa porta ha un altro pid
+    per lo stesso progetto e /api/ping, con il gettone di quel file, lo conferma (stesso progetto, stesso pid). Su macOS e
+    Linux os.execv tiene il processo: si segue sempre il figlio"""
+
+    def __init__(self, processo, progetto, porta): self.processo, self.progetto, self.porta = processo, progetto, porta
+
+    @property
+    def pid(self): return self.processo.pid
+
+    def poll(self):
+        r = self.processo.poll()
+        if r is None: return None
+        nuovo = self._riavviato()
+        if nuovo is None: return r
+        self.processo = nuovo; return None
+
+    def _riavviato(self):
+        s = sicurezza.leggi_sessione("editor", self.porta) or {}
+        pid = s.get("pid")
+        if s.get("progetto") != self.progetto or pid == self.processo.pid or not processi.vivo(pid): return None
+        try: ping = sicurezza.chiedi(self.porta, "/api/ping", s["gettone"], timeout=1)
+        except (OSError, ValueError) as e:
+            log.debug("editor riavviato sulla porta %s non risponde: %s", self.porta, type(e).__name__); return None
+        if not isinstance(ping, dict) or ping.get("path") != self.progetto or ping.get("pid") != pid: return None
+        p = processi.Processo(pid)
+        return p if p.poll() is None else None
+
+    def terminate(self):
+        if self.poll() is None: self.processo.terminate()
+
+    def kill(self):
+        if self.poll() is None: self.processo.kill()
+
+    def wait(self, timeout=None):
+        self.poll()
+        return self.processo.wait(timeout)
+
+
 def apri(path):
     path = os.path.abspath(path)
     if path not in [p["path"] for p in progetti()]: raise ValueError(lingua.t("schermata.non_in_elenco"))
@@ -162,7 +203,7 @@ def apri(path):
         with os.fdopen(giornale.riservato(os.path.join(PROGETTI, "editor.log")), "ab") as log:          # 0600: percorsi dei progetti (VER-013)
             proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
-        EDITORS[path] = (proc, pt); return pt
+        EDITORS[path] = (Editor(proc, path, pt), pt); return pt
 
 
 def importa_zip():

@@ -163,6 +163,46 @@ def test_apri_riusa_editor_lanciato_da_qui(home, monkeypatch):
     assert home.apri(p) == 8822
 
 
+def test_editor_riavviato_in_un_processo_nuovo(home_srv, editor, monkeypatch):
+    """su Windows l'editor che si riavvia (os.execv) è un processo nuovo e il figlio lanciato da qui finisce: si segue quello
+    nuovo se il file di sessione della sua porta e /api/ping lo confermano (stesso progetto, stesso pid). L'editor nuovo qui è
+    quello in questo processo; il processo seguito è finto (fermarlo fermerebbe i test)"""
+    import subprocess
+
+    from impaginatore import sicurezza
+    from impaginatore.piattaforma import processi
+    H = home_srv.modulo; seguiti = []
+
+    class Seguito(_Processo):
+        def __init__(self, pid, fine=None): super().__init__(fine); self.pid, self.uccisi = pid, 0; seguiti.append(self)
+        def kill(self): self.uccisi += 1
+    finito = subprocess.Popen([sys.executable, "-c", "pass"]); finito.wait()
+    monkeypatch.setattr(processi, "Processo", Seguito)
+    e = H.Editor(finito, editor.progetto, editor.porta)
+    assert e.poll() is None and e.pid == os.getpid() and [s.pid for s in seguiti] == [os.getpid()], "segue l'editor nuovo"
+    assert e.poll() is None and len(seguiti) == 1 and e.wait() == 0
+    e.kill(); assert seguiti[0].uccisi == 1
+    H.EDITORS[editor.progetto] = (e, editor.porta)
+    assert home_srv.post("/api/esci") == {"ok": True} and seguiti[0].fermato, "«Esci» ferma l'editor nuovo"
+    H.EDITORS.clear()
+    # non si segue: altro progetto, nessuna sessione, stesso pid (riavvio in corso), pid finito, porta chiusa, ping diverso, processo finito
+    assert H.Editor(finito, "/altro", editor.porta).poll() == 0 and H.Editor(finito, editor.progetto, 9).poll() == 0
+    for pid in (finito.pid, 2**22 + 12345, os.getpid()):
+        sicurezza.scrivi_sessione("editor", 9, "g", progetto="/x")
+        with open(os.path.join(sicurezza.cartella_sessioni(), "editor-9.json"), encoding="utf-8") as f: d = json.load(f)
+        d["pid"] = pid
+        with open(os.path.join(sicurezza.cartella_sessioni(), "editor-9.json"), "w", encoding="utf-8") as f: json.dump(d, f)
+        assert H.Editor(finito, "/x", 9).poll() == 0
+    vero = sicurezza.chiedi
+    for ping in ({"path": "/x", "pid": 1}, {"path": "/y", "pid": os.getpid()}, []):
+        monkeypatch.setattr(sicurezza, "chiedi", lambda *a, ping=ping, **k: ping); assert H.Editor(finito, "/x", 9).poll() == 0
+    monkeypatch.setattr(sicurezza, "chiedi", vero)
+    monkeypatch.setattr(processi, "Processo", lambda pid: Seguito(pid, fine=0))
+    e = H.Editor(finito, editor.progetto, editor.porta); assert e.poll() == 0 and e.processo is finito
+    e.terminate(); e.kill(); assert e.wait(1) == 0, "finito: niente da fermare"
+    assert len(seguiti) > 1 and not any(s.fermato or s.uccisi for s in seguiti[1:]), "ogni volta si riprova, e un processo finito non si segue"
+
+
 def test_nuovo_con_cartella_foto_che_non_esiste(home, tmp_path):
     with pytest.raises(ValueError, match="La cartella delle foto non esiste"): home.nuovo({"nome": "X", "w": 30, "h": 30, "foto": str(tmp_path / "manca")})
     assert not os.path.exists(home.PROGETTI) or os.listdir(home.PROGETTI) == []

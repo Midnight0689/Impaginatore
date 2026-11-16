@@ -2488,7 +2488,7 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": lingua.t("server.foto_non_trovata")}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"],
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "pid": os.getpid(), "rev": REV, "prep": PREP["fatte"],
                                                         "assistente": str(LASTC or "").startswith("assistente-"), "esporta": bool(ESPORTA)})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/esito": self.send(esito_esportazione())
