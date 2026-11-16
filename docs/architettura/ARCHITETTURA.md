@@ -20,7 +20,9 @@ src/impaginatore/
 ├── validazione.py      controllo dei dati letti da un progetto (album.json, progetto.json, modelli, cache): ErroreProgetto
 ├── archivio.py         estrazione sicura di uno ZIP di progetto (percorsi, limiti, tipi di file)
 ├── nomi.py             nome del progetto (un dato) e nome di cartella valido su macOS, Windows e Linux
-├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti
+├── ed25519.py          firme Ed25519 (RFC 8032) con la sola libreria standard: chiavi di licenza, elenco delle revoche
+├── licenze/            licenze, fasce di tier.json, prova gratuita, sola lettura, filigrana; tutto in locale (LICENZE.md)
+├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti, licenza
 ├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni
 ├── motore/              motore di impaginazione (viene dalla skill «impaginazione-album-stefano»)
 │   ├── album.py         progetto caricato, geometria, foto (metadati, miniature, volti con OpenCV), moduli P/FULL/DUO..., render

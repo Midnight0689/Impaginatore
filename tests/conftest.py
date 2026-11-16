@@ -35,6 +35,42 @@ def casa(tmp_path, monkeypatch):
 
 
 @pytest.fixture(scope="session")
+def chiavi_prova():
+    """coppia di firma delle licenze generata per questa sessione di test (licenze/chiave.py ha solo un segnaposto)"""
+    import secrets
+    from aiuti import Chiavi
+    return Chiavi(secrets.token_bytes(32))
+
+
+class Licenza:
+    """licenza del test: cartella dei file della licenza (fuori dalla casa finta) e chiavi della sessione"""
+
+    def __init__(self, cartella, chiavi, cartella_vera, pubbliche_vere):
+        self.cartella, self.chiavi, self.cartella_vera, self.pubbliche_vere = cartella, chiavi, cartella_vera, pubbliche_vere
+
+    def usa(self, testo):
+        """salva questa chiave come se l'utente l'avesse attivata (None: nessuna chiave)"""
+        f = self.cartella / "chiave.txt"
+        if testo is None: f.unlink(missing_ok=True)
+        else: f.write_text(testo + "\n", encoding="utf-8")
+
+
+@pytest.fixture(autouse=True)
+def licenza(casa, monkeypatch, tmp_path_factory, chiavi_prova):
+    """ogni test gira con una licenza Studio (tutte le funzioni, nessuna filigrana) firmata con la coppia della sessione.
+    I file della licenza stanno in una cartella a parte: la casa finta resta come la vogliono i test che la guardano.
+    Gli editor lanciati come processi a parte non vedono la chiave della sessione: per loro vale la prova gratuita."""
+    from impaginatore import licenze
+    from impaginatore.licenze import chiave as K
+    d = tmp_path_factory.mktemp("licenza")
+    lic = Licenza(d, chiavi_prova, licenze.cartella, K.CHIAVI_PUBBLICHE)
+    monkeypatch.setattr(K, "CHIAVI_PUBBLICHE", {1: K.Pubblica(chiavi_prova.pubblica.hex())})
+    monkeypatch.setattr(licenze, "cartella", lambda: str(d))
+    lic.usa(chiavi_prova.studio)
+    return lic
+
+
+@pytest.fixture(scope="session")
 def foto_campione(tmp_path_factory):
     """le 10 foto dello scenario, create una volta sola"""
     d = tmp_path_factory.mktemp("foto_campione")
