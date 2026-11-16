@@ -2037,7 +2037,8 @@ function ctxMenu(e, items, kind = "x") {
     else if (ev.key === "Tab") { ev.preventDefault(); close(true); }
   };
   chiudiCtx.f = { nav, off: ev => { if (!m.contains(ev.target) && !ev.target.closest(".csub")) chiudiCtx(); } };
-  document.addEventListener("keydown", nav, true); setTimeout(() => document.addEventListener("pointerdown", chiudiCtx.f.off, true), 0);
+  const f = chiudiCtx.f;                          // il clic che apre non deve chiudere: «fuori» si ascolta dal giro dopo, se questo menu è ancora aperto
+  document.addEventListener("keydown", nav, true); setTimeout(() => { if (chiudiCtx.f === f) document.addEventListener("pointerdown", f.off, true); }, 0);
   const p0 = m.querySelector(".mi:not(:disabled)"); if (p0) p0.focus({ preventScroll: true }); else m.focus();
 }
 function apriSub(d, items, row) {

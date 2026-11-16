@@ -139,6 +139,9 @@ def test_menu_per_compiti_sempre_uguale(editor, tmp_path):
         assert [v.split("…")[0] for v in prima[:5]] == ["Sostituisci", "Altra disposizione", "Sposta nella cornice", "Bianco e nero", "Primo piano"]
         assert "Disponi" in prima and "Ritocco" in prima and "Suggeriti" not in b.js("document.getElementById('cmenu').innerText")
         tasto(b, "Escape"); assert b.js("document.getElementById('cmenu')") is None
+        # aperto e chiuso prima che parta il timer che ascolta i clic fuori dal menu: nessun errore, nessun ascolto rimasto
+        b.js(apri + "; chiudiCtx(); new Promise(r => setTimeout(r, 50))")
+        assert b.js("document.getElementById('cmenu')") is None and not b.problemi(), b.problemi()
         for _ in range(3):                                          # usare un comando non lo sposta in cima
             b.js(apri); b.js("[...document.querySelectorAll('#cmenu > .mi')].find(x => /referit/.test(x.textContent)).click()")
         b.js(apri); assert b.js(voci)[:5] == prima[:5]
