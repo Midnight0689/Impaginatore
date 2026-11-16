@@ -4,13 +4,12 @@ gettone, e le immagini: mai le API né un URL di avvio. Il gettone arriva alla s
 dell'URL di avvio, che lo lascia in sessionStorage (nessun server la riceve)."""
 import http.client
 import json
-import shutil
 
 import pytest
+from cdp import CHROME, HOME
 
 from impaginatore import sicurezza
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 def _get(c, path, **h):
@@ -68,9 +67,10 @@ def test_nel_browser(home_srv, tmp_path):
     from cdp import Browser
     h = home_srv; h.post("/api/nuovo", {"nome": "Album Bianchi", "w": 30, "h": 30})
     with Browser(tmp_path) as b:
-        b.apri(h.srv.indirizzo_avvio(), 1.5)
+        b.apri(h.srv.indirizzo_avvio(), HOME)
         assert b.js("location.pathname") == "/" and b.js("sessionStorage.getItem('impaginatore_gettone')") == h.gettone
         assert "Album Bianchi" in b.js("document.body.innerText") and h.gettone not in b.js("document.documentElement.outerHTML")
-        b.js("sessionStorage.clear(); location.reload()", attendi=False); b.pausa(1.5)
+        b.segna(); b.js("sessionStorage.clear(); location.reload()", attendi=False)
+        b.attendi_pagina("document.body.innerText.includes('non è collegata')")      # senza gettone le API rispondono 401 e la pagina lo dice
         testo = b.js("document.body.innerText")
         assert "non è collegata" in testo and "Album Bianchi" not in testo

@@ -5,18 +5,17 @@ import base64
 import logging
 import os
 import re
-import shutil
 import threading
 import time
 import types
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import __version__, licenze, risorse
 from impaginatore.desktop import avvio
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 @pytest.mark.parametrize("st, atteso", [
@@ -120,7 +119,7 @@ def test_finestra_e_tempi(monkeypatch):
     principale.show = lambda: (nascosta.append(principale.hidden), wv.mostrate.append(time.monotonic()))
     pronta = threading.Event(); pronta.set()
     t = a.segui(principale, pronta)
-    time.sleep(0.05); f.events.shown()
+    time.sleep(0.05); f.events.shown()                                   # la schermata compare un momento dopo, mentre il thread aspetta (com'è davvero); nessun controllo dipende dalla durata
     t.join(5)
     assert len(wv.mostrate) == 1 and len(wv.chiuse) == 1 and wv.mostrate[0] - a.visto >= 0.29, "almeno MINIMO secondi di schermata: niente lampi"
     assert nascosta == [False], "pywebview su GTK, in show(), rinasconde la finestra se `hidden` è ancora vero (Linux: finestra mai vista)"
@@ -146,7 +145,7 @@ def test_la_pagina_rispetta_la_sua_csp(tmp_path):
     f = tmp_path / "avvio.html"
     f.write_text(avvio.pagina(dict(stato="prova", sola_lettura=False, prova=dict(giorni_rimasti=12))), encoding="utf-8")
     with Browser(tmp_path) as b:
-        b.apri(f.as_uri(), 1.2)
+        b.apri(f.as_uri())
         assert b.js("document.fonts.ready.then(() => [...document.fonts].map(x => x.family + ':' + x.status).join())") == "IBM Plex Mono:loaded"
         assert b.js("document.querySelector('.licenza').textContent") == "Prova gratuita · 12 giorni" and b.js("document.scripts.length") == 0
         assert not b.problemi(), b.problemi()

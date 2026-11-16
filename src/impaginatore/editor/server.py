@@ -36,6 +36,7 @@ from ..laboratori import consegna as CONSEGNA
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
 HOME = ""                                            # indirizzo della schermata dei progetti: il pulsante «Progetti» torna lì
+SERVER = None                                        # l'ultimo server creato (crea_server): il riavvio lo segna nel file di sessione
 log = logging.getLogger("impaginatore.editor")
 
 def _raccogli_foto():                                # foto importate in <progetto>/Foto quando il progetto legge un'altra cartella: le aggiungo, così compaiono sempre
@@ -2456,6 +2457,7 @@ def riavvia_processo():
     """riparte da capo con gli stessi argomenti (il motore rilegge foto e progetto). Chi usa l'editor dentro un altro
     processo (test, finestra desktop) può sostituire questa funzione"""
     statistiche.svuota()                                         # T-204: i conteggi in memoria non si perdono con il riavvio
+    if SERVER is not None: SERVER.segna_riavvio()                # la schermata aspetta questo editor sulla stessa porta (Windows: processo nuovo)
     processi.riesegui()
 
 def restart():
@@ -2509,7 +2511,7 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": lingua.t("server.foto_non_trovata")}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"],
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "pid": os.getpid(), "rev": REV, "prep": PREP["fatte"],
                                                         "assistente": str(LASTC or "").startswith("assistente-"), "esporta": bool(ESPORTA)})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/esito": self.send(esito_esportazione())
@@ -2527,7 +2529,9 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
-        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=500)          # T-204: tipo e punto del codice, solo con le statistiche accese
+        except Exception as e:                        # errore del programma: il dettaglio nel registro dell'editor (editor.log, 0600)
+            log.exception("GET %s: errore interno", u.path)
+            statistiche.errore(e); self.send({"errore": str(e)}, code=500)          # T-204: tipo e punto del codice, solo con le statistiche accese
     def do_POST(self):
         u = urlparse(self.path)
         try:
@@ -2697,7 +2701,9 @@ def aggiungi_a_caldo():
 def crea_server(porta=0, gettone=None):
     """server HTTP dell'editor su 127.0.0.1 (porta 0 = una libera: si legge da server_address). Non lo avvia: serve_forever().
     gettone: quello della sessione (None = uno nuovo); il file di sessione per la schermata dei progetti si scrive qui"""
-    return ServerLocale(("127.0.0.1", porta), H, tipo="editor", gettone=gettone, progetto=PROJ)
+    global SERVER
+    SERVER = ServerLocale(("127.0.0.1", porta), H, tipo="editor", gettone=gettone, progetto=PROJ)
+    return SERVER
 
 
 _FERMI = []

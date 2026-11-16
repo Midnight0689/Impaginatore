@@ -35,7 +35,7 @@ REG = None                                     # registro dei progetti che stann
 PORTA = PORTA_PREDEFINITA                      # porta di questa schermata: gli editor la usano per il pulsante «Progetti»
 AGGIORNAMENTI = aggiornamenti.NonDisponibili()
 LOCK = threading.Lock()
-EDITORS = {}                                   # percorso progetto -> (Popen, porta)
+EDITORS = {}                                   # percorso progetto -> (Editor, porta)
 SERVER = None                                  # server della schermata (crea_server): il suo gettone resta dopo un riavvio
 FINESTRA = False                               # la schermata è nella finestra del programma (desktop.esegui): dialoghi per gli editor, riavvio con la finestra
 PRONTA = threading.Event()                     # la pagina ha chiesto l'elenco degli album: la schermata Album è pronta (fine della schermata di avvio)
@@ -150,6 +150,72 @@ def pronto(pt):
     return sicurezza.indirizzo_avvio("editor", pt, timeout=1)
 
 
+ATTESA_RIAVVIO = 120                           # secondi: un editor che doveva ripartire e non è tornato entro questo tempo è chiuso
+
+
+class Editor:
+    """l'editor di un progetto lanciato da qui, con la parte di Popen che usano la schermata e la finestra del programma (pid,
+    poll, terminate, kill, wait). Su Windows l'editor che si riavvia (processi.riesegui: os.execv) è un processo nuovo e il
+    figlio lanciato da qui finisce. Prima di ripartire l'editor lo scrive nel suo file di sessione («riavvio», ancora con il
+    pid del figlio): fino a quando il nuovo risponde conta come aperto, così «Apri» non ne avvia un secondo. Poi si segue
+    quello nuovo, se il file di sessione della stessa porta ha un altro pid per lo stesso progetto e /api/ping, con il
+    gettone di quel file, lo conferma (stesso progetto, stesso pid). Su macOS e Linux os.execv tiene il processo: si segue
+    sempre il figlio. Su Windows, in un ambiente virtuale, il figlio è il python.exe dell'ambiente e l'editor è suo figlio:
+    il riavvio segnato conta anche quando è il genitore dell'editor («genitore» nel file di sessione)"""
+
+    def __init__(self, processo, progetto, porta): self.processo, self.progetto, self.porta, self.fermato = processo, progetto, porta, False
+
+    @property
+    def pid(self): return self.processo.pid
+
+    def poll(self):
+        r = self.processo.poll()
+        if r is None: return None
+        s = sicurezza.leggi_sessione("editor", self.porta) or {}
+        if s.get("progetto") != self.progetto: return r
+        nuovo = self._riavviato(s)
+        if nuovo is not None:
+            self.processo = nuovo
+            if self.fermato: nuovo.terminate()                          # fermato mentre ripartiva: si ferma anche il nuovo
+            return None
+        return None if self._in_partenza(s) else r
+
+    def _in_partenza(self, s):
+        """l'editor sta ripartendo: il figlio l'ha scritto prima di finire («riavvio», con il suo pid o, se l'editor è suo
+        figlio, come «genitore»), oppure il processo
+        nuovo ha già scritto il file di sessione e non risponde ancora («creato»). Vale per ATTESA_RIAVVIO secondi"""
+        pid = s.get("pid")
+        t = s.get("riavvio") if self.processo.pid in (pid, s.get("genitore")) else s.get("creato") if processi.vivo(pid) else None
+        return type(t) in (int, float) and 0 <= time.time() - t < ATTESA_RIAVVIO
+
+    def _riavviato(self, s):
+        pid = s.get("pid")
+        if pid == self.processo.pid or not processi.vivo(pid): return None
+        try: ping = sicurezza.chiedi(self.porta, "/api/ping", s["gettone"], timeout=1)
+        except (OSError, ValueError) as e:
+            log.debug("editor riavviato sulla porta %s non risponde: %s", self.porta, type(e).__name__); return None
+        if not isinstance(ping, dict) or ping.get("path") != self.progetto or ping.get("pid") != pid: return None
+        p = processi.Processo(pid)
+        return p if p.poll() is None else None
+
+    def terminate(self):
+        self.fermato = True
+        if self.poll() is None: self.processo.terminate()
+
+    def kill(self):
+        self.fermato = True
+        if self.poll() is None: self.processo.kill()
+
+    def wait(self, timeout=None):
+        """come Popen.wait; durante un riavvio aspetta anche l'editor nuovo (che poll ferma, se intanto è stato fermato)"""
+        fine = None if timeout is None else time.monotonic() + timeout
+        while self.processo.poll() is not None and self.poll() is None:     # riavvio in corso: il processo nuovo non c'è ancora
+            if fine is not None and time.monotonic() >= fine:
+                raise subprocess.TimeoutExpired(f"editor sulla porta {self.porta}", timeout)       # non tradotto: lo raccoglie chi chiama wait, come quello di Popen
+            time.sleep(0.1)
+        return self.processo.wait(None if fine is None else max(0, fine - time.monotonic()))
+
+
 def apri(path):
     path = os.path.abspath(path)
     if path not in [p["path"] for p in progetti()]: raise ValueError(lingua.t("schermata.non_in_elenco"))
@@ -163,7 +229,7 @@ def apri(path):
         with os.fdopen(giornale.riservato(os.path.join(PROGETTI, "editor.log")), "ab") as log:          # 0600: percorsi dei progetti (VER-013)
             proc = subprocess.Popen(compilato.comando("impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"),  # nosec B603  # questo stesso programma (sys.executable, compilato.comando); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
-        EDITORS[path] = (proc, pt); return pt
+        EDITORS[path] = (Editor(proc, path, pt), pt); return pt
 
 
 def importa_zip():

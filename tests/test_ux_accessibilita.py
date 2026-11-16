@@ -2,11 +2,10 @@
 diversi: ruoli conosciuti, nome accessibile per ogni comando e per ogni finestra, bersagli di almeno 24 × 24 px
 (WCAG 2.5.8), contrasto dei gettoni dei testi sui fondi dell'applicazione nei due temi (4,5:1) e del contorno del
 fuoco (3:1). Non sostituisce uno strumento completo né una prova con un lettore di schermo (PIANO-UX: UX-019 resto, 2.1)."""
-import shutil
 
 import pytest
+from cdp import CHROME, CONTROLLA, EDITOR, HOME, PANNELLI
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 CONTROLLO = r"""(() => {
@@ -60,7 +59,7 @@ def test_il_controllo_trova_i_problemi(home_srv, tmp_path):
     """il controllo stesso: un pulsante senza nome, uno piccolo, un ruolo inventato, una finestra senza nome"""
     from cdp import Browser
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         b.js("""document.body.insertAdjacentHTML('beforeend', '<div id="prova"><button id="b1" style="width:40px;height:40px"></button>'
                + '<button id="b2" style="width:16px;height:16px;padding:0">x</button><span role="bottone" id="r1">r</span>'
                + '<div role="dialog" id="d1" style="width:50px;height:50px"></div>'
@@ -78,11 +77,11 @@ def test_schermata_album_accessibile(home_srv, tmp_path, monkeypatch, lingua):
     monkeypatch.setenv("IMPAGINATORE_LINGUA", lingua)
     home_srv.post("/api/nuovo", {"nome": "Rossi", "w": 60, "h": 22.5})
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert controlla(b) == []
         for apri in ("document.getElementById('altro').click()", "openNew()", "apriAssistente()", "apriLingua()", "document.getElementById('lic').click()"):
-            b.js("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"); b.pausa(0.2)
-            b.js(apri); b.pausa(0.4)
+            b.js("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))")
+            b.js(apri); b.attendi_rete()                                # le finestre che chiedono qualcosa al server (licenza, prodotti) l'hanno avuto
             assert controlla(b) == [], apri
         assert not b.problemi(), b.problemi()
 
@@ -96,11 +95,12 @@ def album(c, n=2):
 
 
 SELEZIONA = "(() => { const it = slotsOf(0).find(i => i.k !== 't'); sel = { s: 0, side: it.side, idx: it.idx }; msel = [it.side + ':' + it.idx]; render(); })()"
-STATI_EDITOR = {
-    "impagina": "", "selezione": SELEZIONA, "controlla": "apriControlla(true)", "foto": "view = 'foto'; render()",
-    "foto scelte": "view = 'foto'; SELP = S.photos.filter(p => p.sp == null).slice(0, 3).map(p => p.n); render()", "esporta": "openExp()",
-    "versioni": "document.getElementById('verb').click()", "progetto": "document.getElementById('prjb').click()",
-    "menu": "document.getElementById('morb').click()", "tasti": "keysOpen()", "bozza": "apriBozza()",
+STATI_EDITOR = {                                                     # nome: (come ci si arriva, lo stato da aspettare oltre alla rete ferma)
+    "impagina": ("", None), "selezione": (SELEZIONA, None), "controlla": ("apriControlla(true)", CONTROLLA), "foto": ("view = 'foto'; render()", None),
+    "foto scelte": ("view = 'foto'; SELP = S.photos.filter(p => p.sp == null).slice(0, 3).map(p => p.n); render()", None), "esporta": ("openExp()", None),
+    "versioni": ("document.getElementById('verb').click()", None), "progetto": ("document.getElementById('prjb').click()", None),
+    "menu": ("document.getElementById('morb').click()", None), "tasti": ("keysOpen()", None),
+    "bozza": ("apriBozza()", None),                                  # meno di 10 foto libere: il foglio che lo dice, subito
 }
 
 
@@ -112,13 +112,15 @@ def test_editor_accessibile(editor, tmp_path, monkeypatch, lingua):
     trovati = {}
     with Browser(tmp_path) as b:
         b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False)
-        for nome, apri in STATI_EDITOR.items():
-            b.apri(editor.srv.indirizzo_avvio(), 1.2)
-            if apri: b.js(apri); b.pausa(0.8)
+        for nome, (apri, pronto) in STATI_EDITOR.items():
+            b.apri(editor.srv.indirizzo_avvio(), EDITOR)
+            if apri: b.js(apri)
+            if pronto: b.attendi(pronto)
+            b.attendi_rete()
             p = controlla(b)
             if p: trovati[nome] = p
         b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False)
-        b.apri(editor.srv.indirizzo_avvio(), 1.2); b.js("document.getElementById('sideb').click()"); b.js(SELEZIONA); b.pausa(0.5)
+        b.apri(editor.srv.indirizzo_avvio(), EDITOR); b.js("document.getElementById('sideb').click()"); b.js(SELEZIONA); b.js(PANNELLI); b.attendi_rete()
         p = controlla(b)
         if p: trovati["1024 con il foglio"] = p
         assert trovati == {}, "\n".join(f"{k}: {x}" for k, v in trovati.items() for x in v)

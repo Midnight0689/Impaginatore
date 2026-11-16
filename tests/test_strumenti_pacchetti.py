@@ -204,13 +204,14 @@ def test_controlli_prima_del_rilascio(tmp_path, licenza):
     buone = {1: K.Pubblica(ed25519.pubblica(bytes(32)).hex())}
     assert rilascio.problemi("2.0.1", _changelog(tmp_path, "2.0.1"), {1: PUB_FINTA}, buone, "studio/impaginatore") == []
     assert rilascio.problemi("2.0.2", _changelog(tmp_path, "2.0.1"), {1: PUB_FINTA}, buone, "studio/impaginatore") == ["CHANGELOG.md non ha la sezione «## [2.0.2]»"]
-    r = subprocess.run([sys.executable, os.path.join(STRUMENTI, "rilascio.py"), "controlla"], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    r = subprocess.run([sys.executable, os.path.join(STRUMENTI, "rilascio.py"), "controlla"], capture_output=True, text=True, encoding="utf-8",
+                       env=dict(os.environ, PYTHONIOENCODING="utf-8"), timeout=120)   # su Windows il figlio scriverebbe nella code page
     assert r.returncode == 1 and "cose da sistemare" in r.stdout and "chiave" not in r.stdout, r.stdout
 
 
 def test_prepara_una_release(tmp_path):
     s = os.path.join(STRUMENTI, "rilascio.py"); negozio = tmp_path / "negozio"
-    env = dict(os.environ, IMPAGINATORE_NEGOZIO_DIR=str(negozio))
+    env = dict(os.environ, IMPAGINATORE_NEGOZIO_DIR=str(negozio), PYTHONIOENCODING="utf-8")   # su Windows i figli scriverebbero nella code page
     def esegui(*a): return subprocess.run([sys.executable, s, *a], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     r = subprocess.run([sys.executable, os.path.join(STRUMENTI, "aggiornamento.py"), "genera-coppia"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     pub = re.search(r'CHIAVI_FIDATE = \{1: "([0-9a-f]{64})"\}', r.stdout).group(1)

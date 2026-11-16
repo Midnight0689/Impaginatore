@@ -4,6 +4,7 @@ Ogni processo figlio, nostro o di altri (finestre di sistema, file manager, Phot
 costruito da ambiente_figli: senza il gettone del server (VER-011). Solo i nostri riavvii lo ritrovano (riesegui, che sostituisce
 il processo, e rilancia_dopo, che lo rimette in modo esplicito)."""
 import os
+import signal
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 import threading
@@ -77,6 +78,83 @@ def rilancio(argv):
     time.sleep(float(argv[0]))
     subprocess.Popen(argv[1:])  # nosec B603  # il comando del programma preparato da rilancia_dopo; argomenti in lista, senza shell
     return 0
+
+
+# ---------------------------------------------------------------- processi dati dal pid
+# Windows: diritti chiesti a OpenProcess, errore «accesso negato», risposta «non ancora finito» di WaitForSingleObject
+_SYNCHRONIZE, _TERMINATE, _INFORMAZIONI = 0x00100000, 0x0001, 0x1000
+_ACCESSO_NEGATO, _IN_FUNZIONE = 5, 0x102
+
+
+def _kernel32():
+    """(kernel32, ultimo errore) di Windows, con i tipi degli argomenti: gli handle sono puntatori, a 64 bit non stanno in un int"""
+    import ctypes
+    k = ctypes.WinDLL("kernel32", use_last_error=True)
+    k.OpenProcess.argtypes, k.OpenProcess.restype = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32], ctypes.c_void_p
+    k.WaitForSingleObject.argtypes, k.WaitForSingleObject.restype = [ctypes.c_void_p, ctypes.c_uint32], ctypes.c_uint32
+    k.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    k.CloseHandle.argtypes = [ctypes.c_void_p]
+    return k, ctypes.get_last_error
+
+
+def vivo(pid):
+    """il processo pid c'è ancora? True anche quando non si può sapere (pid che non è un numero positivo, processo di un altro
+    utente): lo dirà chi prova a parlargli. Su Windows lo si chiede con OpenProcess: lì os.kill chiuderebbe il processo"""
+    if type(pid) is not int or pid <= 0: return True
+    if sistema() == "windows":
+        k, ultimo_errore = _kernel32()
+        h = k.OpenProcess(_SYNCHRONIZE | _INFORMAZIONI, False, pid)
+        if not h: return ultimo_errore() == _ACCESSO_NEGATO                  # altrimenti (87) nessun processo ha quel pid
+        try: return k.WaitForSingleObject(h, 0) == _IN_FUNZIONE
+        finally: k.CloseHandle(h)
+    try: os.kill(pid, 0)
+    except ProcessLookupError: return False
+    except OSError: return True                   # c'è ma è di un altro utente
+    return True
+
+
+class Processo:
+    """un processo in funzione che non è figlio di chi lo segue, con la parte di Popen che usano la schermata dei progetti e la
+    finestra del programma (pid, poll, terminate, kill, wait). Serve su Windows, dove l'editor che si riavvia (riesegui:
+    os.execv) è un processo nuovo. Lì il processo resta aperto (handle) finché lo si segue: il suo pid non passa a un altro
+    programma e terminate chiude proprio lui. Il codice di uscita non si conosce: un processo finito ha returncode 0"""
+
+    def __init__(self, pid):
+        self.pid, self.returncode, self._h = pid, None, None
+        if sistema() == "windows":
+            self._k = _kernel32()[0]
+            self._h = self._k.OpenProcess(_SYNCHRONIZE | _TERMINATE | _INFORMAZIONI, False, pid)
+            if not self._h: self.returncode = 0            # già finito, o di un altro utente: non si segue
+
+    def _finito(self, attesa):
+        """il processo è finito (aspettando al massimo `attesa` secondi)?"""
+        if self._h: return self._k.WaitForSingleObject(self._h, int(attesa * 1000)) != _IN_FUNZIONE
+        time.sleep(attesa)
+        return not vivo(self.pid)
+
+    def poll(self):
+        if self.returncode is None and self._finito(0): self.returncode = 0
+        return self.returncode
+
+    def wait(self, timeout=None):
+        fine = None if timeout is None else time.monotonic() + timeout
+        while self.returncode is None:
+            if self._finito(0.05): self.returncode = 0
+            elif fine is not None and time.monotonic() > fine: raise subprocess.TimeoutExpired(f"pid {self.pid}", timeout)
+        return self.returncode
+
+    def _ferma(self, segnale):
+        if self.poll() is not None: return
+        if self._h: self._k.TerminateProcess(self._h, 1); return
+        try: os.kill(self.pid, segnale)
+        except ProcessLookupError: self.returncode = 0
+
+    def terminate(self): self._ferma(signal.SIGTERM)
+
+    def kill(self): self._ferma(getattr(signal, "SIGKILL", signal.SIGTERM))           # SIGKILL non c'è su Windows (lì si usa l'handle)
+
+    def __del__(self):
+        if self._h: self._k.CloseHandle(self._h); self._h = None
 
 
 def stacca(registro):

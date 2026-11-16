@@ -94,8 +94,8 @@ alternando) chiede la prima colonna.
 1. legge i file di sessione `<dati>/sessioni/<tipo>-<porta>.json` (cartella 0700, file 0600) con
    `sicurezza.sessioni("home" | "editor")`, come descritto in `SICUREZZA.md` («Come un client locale fidato ottiene il
    gettone»). Non c'è un modo nuovo di ottenere il gettone: chi legge quei file è già l'utente;
-2. salta i file dei processi che non ci sono più (`os.kill(pid, 0)` su macOS e Linux: il gettone non va a un altro
-   programma che nel frattempo ha preso la porta; su Windows si prova la richiesta);
+2. salta i file dei processi che non ci sono più (`piattaforma.processi.vivo`: `os.kill(pid, 0)` su macOS e Linux,
+   `OpenProcess` su Windows): il gettone non va a un altro programma che nel frattempo ha preso la porta;
 3. chiede `/api/ping` con il gettone nell'intestazione, **senza proxy** (`ProxyHandler({})`: con `HTTP_PROXY` impostato
    `urllib` manderebbe il gettone al proxy, anche per 127.0.0.1), con un tempo massimo e al massimo 64 MB di risposta;
 4. se la schermata dei progetti non è in funzione, la avvia (`python -m impaginatore --no-browser --porta 8765`, staccata,

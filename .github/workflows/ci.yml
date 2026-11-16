@@ -2,17 +2,16 @@
 # Ogni passo chiama strumenti/controlli.py, che in locale esegue gli stessi controlli:
 #     python strumenti/controlli.py lint | test | copertura | tutto   [--python 3.13]
 #
-# Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.11 (la minima di
-# pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
+# Matrice: Linux con Python 3.11 (la minima di pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64)
+# e Windows Server 2025 solo con Python 3.12. Un push nuovo sullo stesso ramo annulla l'esecuzione superata (concurrency).
 #
-# Consumo stimato per esecuzione, prezzi GitHub di novembre 2026 (Linux 2 core 0,006 $/min, Windows 0,010 $/min,
-# macOS 0,062 $/min; ogni job è arrotondato al minuto intero), con la cache di uv già calda:
-#     lint 1 min + Linux 3+4+3+3 min                     = 14 min Linux   ~ 0,08 $
-#     Windows ~7 min (processi e file più lenti)          =  7 min Windows ~ 0,07 $
-#     macOS ~4 min                                        =  4 min macOS   ~ 0,25 $
-#     totale ~0,40 $ a esecuzione, cioè ~67 minuti Linux equivalenti, per due terzi macOS.
-# Il piano gratuito include 12 $ al mese (~2.000 minuti Linux): circa 30 esecuzioni al mese, più quelle di sicurezza.yml.
-# Le stime vanno confermate con i tempi reali dopo il primo push: finora il workflow non è mai stato eseguito su GitHub.
+# Tempi reali (esecuzioni del 16/11/2026, cache di uv calda); i job sono paralleli, un'esecuzione dura quanto il più lungo
+# (~20 minuti):
+#     lint ~15 s + Linux ~15-17 min per job x 4
+#     Windows senza browser ~12,5-20 min + browser ~5-6,5 min
+#     macOS senza browser ~6,5-7 min + browser ~4-6 min
+# Con il repository pubblico i runner standard non consumano minuti del piano. Da privato ogni job si arrotonda al minuto
+# intero e Windows conta 2 volte, macOS 10: ~66 + ~27 x 2 + ~13 x 10 = ~250 minuti a esecuzione (~8 al mese con 2.000).
 name: CI
 
 on:
@@ -24,6 +23,7 @@ on:
 permissions:
   contents: read
 
+# un push nuovo sullo stesso ramo (o sulla stessa PR) annulla l'esecuzione superata di questo workflow
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -62,7 +62,7 @@ jobs:
         run: uv run --no-project strumenti/controlli.py lint
 
   test:
-    name: Test (${{ matrix.os }}, Python ${{ matrix.python }}${{ matrix.comando == 'copertura' && ', copertura' || '' }})
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }}${{ matrix.comando == 'copertura' && ', copertura' || '' }}${{ matrix.parte && format(', {0}', matrix.parte) || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -73,8 +73,12 @@ jobs:
           - { os: ubuntu-24.04, python: "3.12", comando: copertura }
           - { os: ubuntu-24.04, python: "3.13", comando: test }
           - { os: ubuntu-24.04, python: "3.14", comando: test }
-          - { os: macos-26, python: "3.12", comando: test }
-          - { os: windows-2025, python: "3.12", comando: test }
+          # macOS e Windows in due job paralleli: le prove nel browser (Chrome vero, lente) da una parte, il resto
+          # dall'altra; insieme supererebbero i 30 minuti di un job
+          - { os: macos-26, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
+          - { os: macos-26, python: "3.12", comando: test, parte: browser, marcatori: browser }
+          - { os: windows-2025, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
+          - { os: windows-2025, python: "3.12", comando: test, parte: browser, marcatori: browser }
     steps:
       # git per Windows converte i file di testo in CRLF all'estrazione: i test devono leggere gli stessi byte degli
       # altri sistemi (progetti di riferimento in tests/dati, risorse dell'interfaccia)
@@ -82,10 +86,13 @@ jobs:
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
 
+      # storia intera (pochi MB): test_progetto_si_esporta_per_la_1x legge dalla storia gli script della 1.5.2 (957fdf7)
+      # e prova che girano sul progetto esportato; con il solo ultimo commit quella parte si salterebbe
       - name: Codice
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: uv e Python ${{ matrix.python }}
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
@@ -98,6 +105,8 @@ jobs:
       # «copertura» esegue tutti i test con la misura della copertura e fallisce sotto fail_under (pyproject.toml)
       - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
         timeout-minutes: 25
+        env:
+          PYTEST_ADDOPTS: ${{ matrix.marcatori && format('-m "{0}"', matrix.marcatori) || '' }}
         run: uv run --no-project strumenti/controlli.py ${{ matrix.comando }}
 
       - name: Copertura totale nel riepilogo

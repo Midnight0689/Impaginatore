@@ -96,15 +96,20 @@ def font_file(ps):
 
 
 _CACHE_F = {}
+_PROVA = "AaBbGgHhOoTt 0123456789 àèéìòù"          # glifi caricati subito: FreeType li carica solo quando servono
 
 
 def _font(ps, px):
+    """font di Pillow per il nome PostScript ps a px pixel. Se il file non si apre, o se FreeType non ne carica i glifi a
+    questa misura (su macOS 26, nelle miniature dell'editor: OSError «division by zero», e la miniatura dava errore 500),
+    quello interno di Pillow alla stessa misura: un testo con un altro carattere, non un'immagine che manca"""
     from PIL import ImageFont
     k = (ps, round(px, 1))
     if k not in _CACHE_F:
-        path, idx = font_file(ps)
-        try: _CACHE_F[k] = ImageFont.truetype(path, max(1, round(px)), index=idx)
-        except Exception: _CACHE_F[k] = ImageFont.load_default()
+        path, idx = font_file(ps); n = max(1, round(px))
+        try: f = ImageFont.truetype(path, n, index=idx); f.getlength(_PROVA)
+        except Exception: f = ImageFont.load_default(n)
+        _CACHE_F[k] = f
     return _CACHE_F[k]
 
 

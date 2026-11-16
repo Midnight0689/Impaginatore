@@ -171,7 +171,7 @@ e controlla che nel pacchetto non ci siano `exec`, `eval`, `compile`, `__import_
 | `motore/album_libere.py` | sostituisce funzioni di `album` (`_place`, `zcrop.__code__`, `_photo`, `render`, `_text`, `apply_ev`, `layout.__code__`) la prima volta che viene importato; cache `_VIB` | mai (è voluto: vale per tutto il processo) |
 | `motore/testo.py` | `_FONTS` (elenco dei font, una volta per processo), `DIRS`/`CACHE` sovrascrivibili | riavvio |
 | `editor/server.py` | PROJ, HOME, CFG (= `album.CFG`), SP, GD, UNDO/REDO, CLIP, LOG, SAVED, REV, LASTC, BOOT, BL/VW/VH, NPH, UT_FILE, cache (CACHE, TH, INFO, PV, FT, TONO_*), LAST, SAVE_ERR, LASTDIR, AGG, `_ICC`, ESITO, DISP, BOZZA (ultima bozza proposta), PREP e PREP_FILO (preparazione in sottofondo) | `inizializza(progetto, home, sottofondo)` (ferma la preparazione in corso) |
-| `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli), SERVER, RADICI (cartelle scelte) | `configura(...)`, `crea_server(...)`; `RADICI.scelte` vale per la sessione |
+| `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (editor lanciati da qui, `Editor`), SERVER, RADICI (cartelle scelte) | `configura(...)`, `crea_server(...)`; `RADICI.scelte` vale per la sessione |
 | `piattaforma/dialoghi.py` | implementazione scelta con `imposta()` | `imposta(None)` |
 | `home/server.py` (T-201) | FINESTRA (la schermata è nella finestra), `esci` sostituita dalla chiusura della finestra | `desktop.esegui` alla fine |
 | `desktop/finestra.py` | ATTUALE (la finestra di questo processo, per le prove) | `desktop.esegui` / `ospite` alla fine |
@@ -212,7 +212,9 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
   `lingua.LINGUE` e `LOCALI`; `tests/test_lingua.py` controlla chiavi, parametri e testi rimasti fuori dalla tabella.
   Termini inglesi in `docs/prodotto/ux/GLOSSARIO.md`.
 - **Riavvio dell'editor**: `editor.server.riavvia_processo` (di serie `os.execv` con gli stessi argomenti) si può sostituire
-  quando l'editor gira dentro un altro processo.
+  quando l'editor gira dentro un altro processo. Su Windows `os.execv` avvia un processo nuovo e chiude quello lanciato dalla
+  schermata: `home.server.Editor` allora segue quello nuovo (file di sessione della stessa porta, confermato da `/api/ping`
+  con `path` e `pid`; `piattaforma.processi.Processo`), così «aperto», «Esci» e la chiusura della finestra lo trovano.
 - **Photoshop**: `piattaforma.photoshop.trova / esegui_jsx / esegui_js`; i test li sostituiscono con un Photoshop finto.
   Lo script JavaScript dei PSD ha parti con nome (`genera_psd.PARTI`: `TESTO`, `INIZIO`, `NUOVO_DOC`, `ANGOLO`, `STILE`,
   `TONO`, `AGGIUNGI_TESTO`) che una variante sostituisce passando `parti=` a `genera_psd.main`.

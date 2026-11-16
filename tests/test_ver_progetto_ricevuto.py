@@ -90,12 +90,22 @@ def test_ricollega_ricorda_la_cartella(apri_editor, progetto, tmp_path):
     assert c.codice("/api/fthumb?p=" + quote(str(altrove / nomi[0]))) == 200
 
 
+# cartelle di sistema del computer che esegue i test: su Windows «/etc/passwd» è D:\\etc\\passwd, una cartella qualsiasi
+DI_SISTEMA = ([os.path.join(os.environ["SystemRoot"], "System32", "config", "SAM"), os.path.join(os.environ["ProgramFiles"], "x.jpg"), os.path.join(os.environ["ProgramData"], "x")]
+              if os.name == "nt" else ["/etc/passwd", "/proc/self", "/usr/share/x.jpg"])
+
+
 def test_riservata(casa, tmp_path, monkeypatch):
-    for p in (casa / ".ssh" / "id", casa / ".config", casa / "dati" / "sessioni", "/etc/passwd", "/proc/self", "/usr/share/x.jpg"):
+    for p in (casa / ".ssh" / "id", casa / ".config", casa / "dati" / "sessioni", *DI_SISTEMA):
         assert percorsi.riservata(str(p)), p
     for p in (casa / "Immagini" / "x.jpg", tmp_path / "Progetti", casa, "/tmp/x.jpg", casa / "Lavori" / ".nascosta" / "x.jpg"):
         assert not percorsi.riservata(str(p)), p
     assert not percorsi.riservata("") and percorsi.riservata("\0x")
+    # come realpath di Windows, che lascia passare il carattere nullo: il percorso resta impossibile
+    with monkeypatch.context() as m:
+        m.setattr(percorsi.os.path, "realpath", lambda p: p)
+        with pytest.raises(ValueError, match="nullo"): percorsi.reale(str(casa / "a\0b"))
+        assert percorsi.riservata("\0x") and percorsi.riservata(str(casa / "Immagini" / "\0x.jpg")) and not percorsi.dentro(str(casa / "\0x"), str(casa))
     lavori = tmp_path / "Lavori"; lavori.mkdir(); os.makedirs(casa / ".ssh", exist_ok=True)
     r = percorsi.Radici(lambda: [str(casa / ".ssh"), str(lavori)])
     assert r.tutte() == [percorsi.reale(str(lavori))], "le cartelle riservate non diventano radici dal progetto"

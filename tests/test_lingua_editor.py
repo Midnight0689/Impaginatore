@@ -2,11 +2,10 @@
 visibile, nessun errore in console; e in italiano i numeri restano con la virgola (i controlli sui testi fuori tabella
 sono in test_lingua.py)."""
 import re
-import shutil
 
 import pytest
+from cdp import CHROME, CONTROLLA, EDITOR
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 def album(c, n=3):
@@ -30,7 +29,7 @@ def test_editor_in_inglese(editor, tmp_path, monkeypatch):
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")                       # la lingua si legge a ogni pagina servita
     c = editor; album(c)
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
         assert b.js("document.documentElement.lang") == "en"
         assert b.js("document.getElementById('meta').textContent") == "60 × 22.5 cm · 3 spreads"
         assert b.js("document.getElementById('tabA').textContent.trim()") == "Design" and b.js("document.getElementById('tabF').textContent.trim()") == "Photos"
@@ -46,17 +45,18 @@ def test_editor_in_inglese(editor, tmp_path, monkeypatch):
         voci = b.js("[...document.querySelectorAll('#cmenu .mi span')].map(x => x.textContent)")
         assert "Replace…" in voci and "Black and white" in voci and "Arrange" in voci and "Retouch" in voci, voci
         b.js("chiudiCtx()")
-        b.js("document.querySelector('#ptabs [data-t=tono]').click()"); b.pausa(1.5)
-        assert re.search(r"Evenness \d+ / 100|Tone is even|to (fix|review)", b.js("document.getElementById('tonopanel').innerText")), b.js("document.getElementById('tonopanel').innerText")
+        b.js("document.querySelector('#ptabs [data-t=tono]').click()")
+        b.attendi("document.getElementById('tonopanel').innerText", lambda t: re.search(r"Evenness \d+ / 100|Tone is even|to (fix|review)", t))
         assert "Offset" in b.js("document.getElementById('tonopanel').innerText")
         # «Spacing»: la misura si scrive col punto (in inglese) e si accetta anche la virgola
         b.js("document.getElementById('mgapfix').click()")
         assert b.js("document.querySelector('#gapmenu b').textContent") == "Gaps equal to"
         assert re.fullmatch(r"\d+\.\d\d", b.js("document.getElementById('gmv').value")), b.js("document.getElementById('gmv').value")
-        b.js("(() => { const v = document.getElementById('gmv'); document.querySelector('#gapmenu input[value=custom]').checked = true; v.value = '0,75'; document.getElementById('gmb1').click(); })()"); b.pausa(1)
+        b.js("(() => { const v = document.getElementById('gmv'); document.querySelector('#gapmenu input[value=custom]').checked = true; v.value = '0,75'; document.getElementById('gmb1').click(); })()")
+        b.attendi("GAPMODE === 'custom' && !document.getElementById('gapmenu') && OPIN === 0"); b.attendi_rete()     # spazi sistemati con la misura nuova
         assert (b.js("GAPCM"), b.js("GAPMODE"), b.js("!!document.getElementById('gapmenu')"), b.problemi()) == (0.75, "custom", False, [])
         # Controlla, scorciatoie, esportazione
-        b.js("apriControlla(true)"); b.pausa(1.5)
+        b.js("apriControlla(true)"); b.attendi(CONTROLLA)
         assert b.js("document.getElementById('insp').innerText").count("Check the album") >= 1
         b.js("apriControlla(false)"); b.js("keysOpen()")
         assert "Keyboard shortcuts" in b.js("document.getElementById('keys').innerText")
@@ -79,7 +79,7 @@ def test_editor_in_italiano_numeri_con_la_virgola(editor, tmp_path, monkeypatch)
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
     c = editor; album(c)
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
         assert b.js("document.getElementById('meta').textContent") == "60 × 22,5 cm · 3 spread"
         assert b.js("[fN(22.5), fN(0.3, 2), cmF(1.234), cm2(2), fdv(1.25)]") == ["22,5", "0,30", "1,23", "2,00", "+1,3"]
         assert b.js("document.getElementById('undo').title").startswith("Annulla «") and b.js("document.getElementById('redo').title") == "Niente da ripetere"

@@ -7,12 +7,13 @@ import os
 import socket
 import stat
 import sys
+import threading
 import time
 import urllib.parse
 
 import pytest
 
-from impaginatore import percorsi, servizio, sicurezza
+from impaginatore import formato, percorsi, servizio, sicurezza
 from impaginatore.piattaforma import processi
 
 SERVER = ["home_srv", "editor"]
@@ -165,7 +166,7 @@ def test_esci_e_aggiorna_solo_con_il_gettone(home_srv):
     c = home_srv
     for p in ("/api/esci", "/api/aggiorna", "/api/ripristina", "/api/controlla"):
         assert c.codice(p, {"codice": "abc1234"}, **{"X-Impaginatore-Gettone": None}) == 401
-    time.sleep(0.6); assert c.uscite == []
+    time.sleep(0.6); assert c.uscite == []                              # controllo negativo: con «ok» l'uscita partirebbe 0,4 s dopo la risposta (home/server.py)
 
 
 # ---------------------------------------------------------------- file di sessione e gettone
@@ -173,6 +174,7 @@ def test_file_di_sessione(home_srv, casa):
     c = home_srv; f = os.path.join(sicurezza.cartella_sessioni(), f"home-{c.porta}.json")
     d = sicurezza.leggi_sessione("home", c.porta)
     assert d["gettone"] == c.gettone and d["porta"] == c.porta and d["pid"] == os.getpid() and d["progetti"] == c.modulo.PROGETTI
+    assert d["genitore"] == os.getppid(), "anche il genitore: su Windows, in un ambiente virtuale, è il processo avviato dalla schermata"
     if sys.platform != "win32":
         assert stat.S_IMODE(os.stat(f).st_mode) == 0o600 and stat.S_IMODE(os.stat(os.path.dirname(f)).st_mode) == 0o700
     assert [x["porta"] for x in sicurezza.sessioni("home")] == [c.porta]
@@ -189,6 +191,28 @@ def test_file_di_sessione(home_srv, casa):
     assert sicurezza.sessioni("home") == [] and sicurezza.sessioni("editor") == []
 
 
+def test_riavvio_segnato_nel_file_di_sessione(casa, monkeypatch):
+    """prima di ripartire (os.execv) l'editor scrive «riavvio» nel suo file di sessione, con il resto com'era; solo se il
+    file è ancora il suo. Un server senza tipo non ha file di sessione"""
+    from impaginatore.editor import server as E
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None, tipo="editor", progetto="/album")
+    try:
+        prima = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        srv.segna_riavvio(123.5); d = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        assert d["riavvio"] == 123.5 and {k: d[k] for k in ("gettone", "pid", "progetto", "porta")} == {k: prima[k] for k in ("gettone", "pid", "progetto", "porta")}
+        riavvii = []; monkeypatch.setattr(E.processi, "riesegui", lambda: riavvii.append(1)); monkeypatch.setattr(E, "SERVER", srv)
+        E.riavvia_processo(); d = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        assert riavvii == [1] and abs(d["riavvio"] - time.time()) < 60, "il riavvio dell'editor lo segna"
+        monkeypatch.setattr(E, "SERVER", None); E.riavvia_processo(); assert riavvii == [1, 1], "editor dentro un altro processo: niente file"
+        sicurezza.scrivi_sessione("editor", srv.server_address[1], "di un altro")
+        srv.segna_riavvio(); assert "riavvio" not in sicurezza.leggi_sessione("editor", srv.server_address[1]), "il file non è più suo"
+    finally: srv.server_close()
+    srv.segna_riavvio()
+    senza = servizio.ServerLocale(("127.0.0.1", 0), None)
+    try: senza.segna_riavvio(); assert [(x["gettone"], "riavvio" in x) for x in sicurezza.sessioni("editor")] == [("di un altro", False)]
+    finally: senza.server_close()
+
+
 def test_file_di_sessione_casi_limite(casa, monkeypatch):
     monkeypatch.setattr(sicurezza, "cartella_sessioni", lambda: str(casa / "nessuna"))
     assert sicurezza.sessioni("home") == []
@@ -198,6 +222,28 @@ def test_file_di_sessione_casi_limite(casa, monkeypatch):
     sicurezza.togli_sessione("editor", 5, "g")
     assert sicurezza.indirizzo_avvio("editor", 5, timeout=0.5) is None, "il server non risponde"
     assert sicurezza.indirizzo_avvio("editor", 6) is None, "nessun file di sessione"
+
+
+def test_file_sostituiti_mentre_un_altro_li_legge(casa, tmp_path):
+    """la schermata dei progetti legge il file di sessione e progetto.json mentre l'editor li riscrive (al salvataggio,
+    prima di ripartire, appena ripartito). Su Windows un file aperto non si sostituisce: os.replace dà PermissionError (il
+    motivo di piattaforma.anche_se_aperto) e la scrittura aspetta che chi legge lo chiuda. Altrove si sostituisce subito"""
+    windows = sys.platform.startswith("win")
+    q = str(tmp_path / "progetto.json"); formato.scrivi_json(q, {"n": 1})
+    casi = ((sicurezza.scrivi_sessione("editor", 5001, "primo"), lambda: sicurezza.scrivi_sessione("editor", 5001, "secondo"),
+             lambda: sicurezza.gettone_di("editor", 5001) == "secondo"),
+            (q, lambda: formato.scrivi_json(q, {"n": 2}), lambda: formato.leggi_json(q) == {"n": 2}))
+    for percorso, scrivi, scritto in casi:
+        lettore = open(percorso, "rb"); chiudi = threading.Timer(0.5, lettore.close); chiudi.start()
+        try:
+            if windows:
+                altro = tmp_path / "altro.json"; altro.write_text("{}", encoding="utf-8")
+                with pytest.raises(PermissionError): os.replace(altro, percorso)
+            scrivi()
+            assert scritto(), percorso
+            assert lettore.closed or not windows, "su Windows la sostituzione ha aspettato che chi legge chiudesse il file"
+        finally:
+            chiudi.join(); lettore.close()
 
 
 def _porta_spenta():

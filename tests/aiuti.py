@@ -16,6 +16,15 @@ FOTO_SCENARIO = [("H01", 900, 600, "2026:05:23 10:00:01"), ("H02", 900, 600, "20
 
 
 DATA_FILE = time.mktime((2026, 6, 1, 12, 0, 0, 0, 0, -1))     # data dei file sintetici (ora locale): è la data delle foto senza EXIF
+P152 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dati", "progetto_152")
+
+
+def progetto_152(cartella):
+    """progetto.json dello scenario 1.5.2 (tests/dati/progetto_152) per l'album nella cartella data, con i percorsi
+    «{PROGETTO}/Foto» e «{PROGETTO}/PSD» come li scrive il programma sul sistema che esegue i test (os.path.join: su
+    Windows con «\\»)"""
+    with open(os.path.join(P152, "progetto.json"), encoding="utf-8") as f: cfg = json.load(f)
+    return {k: os.path.join(str(cartella), *v.split("/")[1:]) if isinstance(v, str) and v.startswith("{PROGETTO}/") else v for k, v in cfg.items()}
 
 
 def crea_foto(cartella, elenco=FOTO_SCENARIO, orientamento=None, estensione=".jpg"):
@@ -82,16 +91,43 @@ def come_script(monkeypatch, nome, *argv):
     return runpy.run_module(modulo, run_name="__main__")
 
 
-def attendi(cond, secondi=60, passo=0.1):
-    t = time.time() + secondi
+def attendi(cond, secondi=60, passo=0.1, spiega=None):
+    """aspetta che cond() sia vera (un'eccezione conta come no). Se il tempo scade, il messaggio dice l'ultimo errore di
+    cond e, con spiega, lo stato che spiega(): per esempio stato_processo, quando si aspetta un processo del programma"""
+    t = time.time() + secondi; ultimo = None
     while time.time() < t:
         try:
             v = cond()
             if v: return v
-        except Exception:
-            pass
+        except Exception as e:
+            ultimo = e
         time.sleep(passo)
-    raise AssertionError("tempo scaduto")
+    raise AssertionError(f"tempo scaduto (ultimo errore: {ultimo!r})" + (f"\n{spiega()}" if spiega else ""))
+
+
+def coda(percorso, righe=40):
+    """ultime righe di un file di registro"""
+    try:
+        with open(percorso, encoding="utf-8", errors="replace") as f: return "".join(f.readlines()[-righe:])
+    except OSError as e: return f"({type(e).__name__}: {e})"
+
+
+def stato_processo(tipo, porta, *registri):
+    """perché un server del programma in un processo a parte (schermata o editor) non risponde come si aspettava: il suo file
+    di sessione (senza il gettone; pid e genitore vivi o no), i file rimasti nella cartella delle sessioni (un .tmp è una
+    sostituzione non riuscita), la coda dei registri dati e del registro del programma"""
+    from impaginatore import sicurezza
+    from impaginatore.piattaforma import processi
+    s = sicurezza.leggi_sessione(tipo, porta)
+    if s:
+        s = {k: "..." if k == "gettone" else v for k, v in s.items()}
+        s["vivi"] = {k: processi.vivo(s[k]) for k in ("pid", "genitore") if type(s.get(k)) is int}
+    try: file = sorted(os.listdir(sicurezza.cartella_sessioni()))
+    except OSError as e: file = repr(e)
+    righe = [f"ora {time.time():.3f}; file di sessione {tipo}-{porta}: {s}", f"cartella delle sessioni: {file}"]
+    for r in (*registri, os.path.join(os.environ.get("IMPAGINATORE_DATI", ""), "registro", "impaginatore.log")):
+        righe += [f"--- {r}, ultime righe:", coda(r)]
+    return "\n".join(righe)
 
 
 def attendi_log(c, secondi=300):

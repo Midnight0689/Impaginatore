@@ -13,11 +13,12 @@ import os
 import secrets
 import socket
 import sys
+import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__, lingua, risorse, sicurezza
+from . import __version__, lingua, risorse, sicurezza, validazione
 
 log = logging.getLogger("impaginatore.server")
 
@@ -38,8 +39,16 @@ class ServerLocale(ThreadingHTTPServer):
 
     def __init__(self, indirizzo, gestore, tipo=None, gettone=None, **info):
         super().__init__(indirizzo, gestore)
-        self.sessione = sicurezza.Sessione(gettone); self.tipo = tipo
+        self.sessione = sicurezza.Sessione(gettone); self.tipo = tipo; self.info = info
         if tipo: sicurezza.scrivi_sessione(tipo, self.server_address[1], self.sessione.gettone, **info)
+
+    def segna_riavvio(self, quando=None):
+        """il processo sta per ripartire da capo (processi.riesegui) e tornerà su questa porta: lo dice il file di sessione
+        («riavvio»), solo se è ancora il suo. Su Windows os.execv avvia un processo nuovo: la schermata dei progetti intanto
+        continua a contare l'editor come aperto e non ne avvia un secondo"""
+        d = sicurezza.leggi_sessione(self.tipo, self.server_address[1]) if self.tipo else None
+        if d and sicurezza.uguali(d["gettone"], self.sessione.gettone):
+            sicurezza.scrivi_sessione(self.tipo, self.server_address[1], self.sessione.gettone, riavvio=time.time() if quando is None else quando, **self.info)
 
     def indirizzo_avvio(self):
         """URL monouso che collega il browser a questo server (cookie) e apre la pagina"""
@@ -215,9 +224,9 @@ def _decimale(s):
 def leggi_json(dati):
     """JSON che arriva da una richiesta (corpo o parametro): niente NaN, Infinity né numeri che diventerebbero infiniti
     (1e400). Sono valori che nessun progetto può salvare: si rifiutano qui, prima di arrivare allo stato (VER-001).
-    Errori: sempre ValueError"""
-    try: return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
-    except RecursionError: raise ValueError(lingua.t("sistema.json_annidato")) from None
+    Niente annidamenti oltre validazione.MAX_ANNIDAMENTO, con lo stesso limite su ogni sistema. Errori: sempre ValueError"""
+    validazione.controlla_annidamento(dati)
+    return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
 
 
 def numero(q, nome, predefinito, minimo, massimo, intero=False):

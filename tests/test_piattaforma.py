@@ -1,5 +1,10 @@
 """Strato piattaforma: ogni sistema simulato cambiando sys.platform; i comandi esterni sono intercettati (non parte
-nessuna finestra, nessun Finder, nessun Photoshop)."""
+nessuna finestra, nessun Finder, nessun Photoshop).
+
+sys.platform si simula, os.path no: resta quello del computer che esegue i test (su Windows os.path.abspath("/a/b") è
+«D:\\a\\b»). Dove il programma passa un percorso calcolato con os.path, l'atteso si calcola con lo stesso os.path: su macOS e
+Linux è identico al percorso scritto nel test. I nomi che Windows non ammette su disco («"», a capo) si provano lì con
+l'elenco del disco simulato, e restano veri file sugli altri sistemi."""
 import json
 import os
 import subprocess
@@ -89,9 +94,12 @@ def test_cartelle_utente_e_volumi(sistema, casa, tmp_path, monkeypatch):
     assert cartelle.scrivania() == str(casa / "Desktop") and cartelle.documenti() == str(casa / "Documents")
     sistema("linux")
     cfg = casa / ".config"; cfg.mkdir(); (casa / "Scrivania").mkdir()
-    (cfg / "user-dirs.dirs").write_text('XDG_DESKTOP_DIR="$HOME/Scrivania"\nXDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_PICTURES_DIR="$HOME"\n', encoding="utf-8")
-    assert cartelle.scrivania() == str(casa / "Scrivania")
+    (cfg / "user-dirs.dirs").write_text('XDG_DESKTOP_DIR="$HOME//Scrivania/"\nXDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_PICTURES_DIR="$HOME"\n', encoding="utf-8")
+    assert cartelle.scrivania() == str(casa / "Scrivania"), "percorso normalizzato (barre doppie e finali)"
     assert dict(cartelle.cartelle_utente())["Immagini"] == str(casa / "Pictures"), "una voce uguale alla casa vale come assente"
+    for voce in ('"$HOME/"', '""'):
+        (cfg / "user-dirs.dirs").write_text(f"XDG_PICTURES_DIR={voce}\n", encoding="utf-8")
+        assert dict(cartelle.cartelle_utente())["Immagini"] == str(casa / "Pictures"), f"{voce}: come assente"
     media = tmp_path / "media"; (media / "DISCO").mkdir(parents=True); (media / ".nascosto").mkdir()
     assert cartelle._sottocartelle(str(media)) == [("DISCO", str(media / "DISCO"))] and cartelle._sottocartelle(str(tmp_path / "no")) == []
     assert isinstance(cartelle.volumi(), list)
@@ -192,20 +200,23 @@ def test_photoshop_mac(sistema, tmp_path, monkeypatch, reg):
     assert photoshop.esegui_jsx("/tmp/a b.jsx", 60) == "ok"
     cmd = reg.cmd[-1]
     assert cmd[0] == "osascript" and cmd[1:3] == ["-e", "on run argv"] and "with timeout of 60 seconds" in cmd
-    assert 'tell application "Adobe Photoshop 2026" to do javascript (item 1 of argv)' in cmd and cmd[-1] == '$.evalFile(new File("/tmp/a b.jsx"))'
+    assert 'tell application "Adobe Photoshop 2026" to do javascript (item 1 of argv)' in cmd and cmd[-1] == f"$.evalFile(new File({json.dumps(os.path.abspath('/tmp/a b.jsx'))}))"
     assert photoshop.esegui_js('alert("x")') == "ok" and reg.cmd[-1][-1] == 'alert("x")' and "with timeout of 120 seconds" in reg.cmd[-1]
 
 
 def test_photoshop_mac_niente_iniezione(sistema, tmp_path, monkeypatch, reg):
     """SEC-004: percorsi e codice non diventano mai testo dello script AppleScript; il percorso nel JavaScript è una stringa JSON"""
     sistema("mac"); monkeypatch.setattr(photoshop, "CARTELLA_APPLICAZIONI", str(tmp_path))
-    (tmp_path / 'Adobe Photoshop 2026 "x"' / 'Adobe Photoshop 2026 "x".app').mkdir(parents=True)
+    nome = 'Adobe Photoshop 2026 "x"'
+    if os.name == "nt":                     # Windows non ammette «"» nei nomi: l'elenco di /Applications arriva come su macOS
+        monkeypatch.setattr(photoshop.glob, "glob", lambda m: [os.path.join(str(tmp_path), nome, nome + ".app")] if "20*" in m else [])
+    else: (tmp_path / nome / f"{nome}.app").mkdir(parents=True)
     cattivo = '/tmp/a\'b" & (do shell script "touch /tmp/PWN") & "\'); app.system("touch /tmp/PWN2"); (\'.jsx'
     photoshop.esegui_jsx(cattivo, 60); cmd = reg.cmd[-1]
     assert not any("PWN" in a for a in cmd[:-1]), "il percorso è solo nell'ultimo argomento"
     assert 'tell application "Adobe Photoshop 2026 \\"x\\"" to do javascript (item 1 of argv)' in cmd, "nome dell'applicazione quotato"
     js = cmd[-1]; assert js.startswith("$.evalFile(new File(") and js.endswith("))")
-    assert json.loads(js[len("$.evalFile(new File("):-2]) == cattivo, "nel JavaScript il percorso è una sola stringa"
+    assert json.loads(js[len("$.evalFile(new File("):-2]) == os.path.abspath(cattivo), "nel JavaScript il percorso è una sola stringa"
     assert photoshop.quota_applescript('a"b\\c') == '"a\\"b\\\\c"'
 
 
@@ -223,12 +234,24 @@ def test_photoshop_windows(sistema, tmp_path, monkeypatch, reg):
     for v in ("Adobe Photoshop 2025", "Adobe Photoshop 2026", "Adobe Photoshop 2027 (Beta)"):
         d = tmp_path / "Adobe" / v; d.mkdir(parents=True); (d / "Photoshop.exe").write_bytes(b"")
     assert photoshop.trova()["nome"] == "Adobe Photoshop 2026"
-    reg.out = "fatto"
+    vero = reg.run
+    monkeypatch.setattr(subprocess, "run", lambda cmd, *a, **k: (lambda r: types.SimpleNamespace(returncode=0, stdout=r.stdout.decode().encode("utf-16-le"), stderr=b""))(vero(cmd, *a, **k)))
+    reg.out = "fatto: Sposi àè €"
     jsx = tmp_path / "s.jsx"; jsx.write_text("1", encoding="utf-8")
-    assert photoshop.esegui_jsx(str(jsx)) == "fatto"
-    assert reg.cmd[-1][0] == "cscript" and reg.cmd[-1][-1] == str(jsx)
-    assert photoshop.esegui_js("app.documents.length") == "fatto"
+    assert photoshop.esegui_jsx(str(jsx)) == "fatto: Sposi àè €", "//U: in UTF-16, accenti compresi"
+    assert reg.cmd[-1][:3] == ["cscript", "//nologo", "//U"] and reg.cmd[-1][-1] == str(jsx)
+    assert photoshop.esegui_js("app.documents.length") == "fatto: Sposi àè €"
+    assert photoshop.testo_cscript("Errore di input".encode()) == "Errore di input" and photoshop.testo_cscript(b"") == ""
     monkeypatch.delenv("ProgramFiles"); assert photoshop._programmi() == [r"C:\Program Files"]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="cscript c'è solo su Windows")
+def test_cscript_vero_con_accenti():
+    """Windows: cscript //U restituisce nomi e percorsi con lettere accentate, simboli e emoji come sono (in una pipe senza
+    //U li scriverebbe nella code page della console). Lo script ripete il suo argomento su StdOut e su StdErr"""
+    testo = "Sposi àèìòù ñ ü € 😀 C:\\Album\\x fine"
+    vbs = 'WScript.StdOut.Write WScript.Arguments(0)\r\nWScript.StdErr.Write "|" & WScript.Arguments(0)\r\n'
+    assert photoshop.cscript(vbs, testo, timeout=60) == testo + "|" + testo
 
 
 def test_photoshop_linux(sistema):
@@ -320,16 +343,16 @@ NOMI_CATTIVI = ['a"b', "a'b", "a\\b", "$HOME $(touch /tmp/PWN) `id`", "Sposi à�
 def test_dati_strani_mai_nel_testo_degli_script(sistema, reg, tmp_path, monkeypatch, nome):
     """SEC-004: virgolette, apici, barre rovesciate, $, accenti e a capo arrivano interi come argomento o variabile d'ambiente,
     mai dentro il testo di AppleScript, PowerShell o JavaScript"""
-    def fuori(cmd): return not any(nome in a for a in cmd[:-1])                           # il dato è solo nell'ultimo argomento
-    p = "/progetti/" + nome
-    sistema("mac"); azioni.cestina(p); cmd = reg.cmd[-1]; assert cmd[-1] == p and fuori(cmd)
+    def fuori(cmd, *dati): return not any(d in a for a in cmd[:-1] for d in (nome, *dati))          # il dato è solo nell'ultimo argomento
+    p = "/progetti/" + nome; ap = os.path.abspath(p)                                      # ap == p su macOS e Linux
+    sistema("mac"); azioni.cestina(p); cmd = reg.cmd[-1]; assert cmd[-1] == ap and fuori(cmd, ap)
     for tipo in ("cartella", "zip", "foto"):
         dialoghi.Mac()._scegli(tipo, nome); cmd = reg.cmd[-1]; assert cmd[-1] == nome and fuori(cmd)
     monkeypatch.setattr(photoshop, "CARTELLA_APPLICAZIONI", str(tmp_path)); (tmp_path / "Adobe Photoshop 2026" / "Adobe Photoshop 2026.app").mkdir(parents=True)
     photoshop.esegui_jsx(p + ".jsx", 60); cmd = reg.cmd[-1]
-    assert fuori(cmd) and json.loads(cmd[-1][len("$.evalFile(new File("):-2]) == p + ".jsx", "nel JavaScript il percorso è un letterale JSON"
-    sistema("windows"); azioni.cestina("C:/x/" + nome); cmd = reg.cmd[-1]
-    assert not any(nome in a for a in cmd) and reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"].endswith(nome)
+    assert fuori(cmd, ap) and json.loads(cmd[-1][len("$.evalFile(new File("):-2]) == os.path.abspath(p + ".jsx"), "nel JavaScript il percorso è un letterale JSON"
+    sistema("windows"); azioni.cestina("C:/x/" + nome); cmd = reg.cmd[-1]; wp = os.path.normpath(os.path.abspath("C:/x/" + nome))
+    assert not any(d in a for a in cmd for d in (nome, wp)) and reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"] == wp
 
 
 def test_dialoghi_mac_messaggio_come_argomento(reg):
@@ -343,7 +366,7 @@ def test_dialoghi_mac_messaggio_come_argomento(reg):
 
 # ---------------------------------------------------------------- azioni
 def test_mostra_per_sistema(sistema, reg, monkeypatch, tmp_path):
-    sistema("mac"); azioni.mostra("/a/b.jpg"); assert reg.cmd[-1] == ["open", "-R", "/a/b.jpg"]
+    sistema("mac"); azioni.mostra("/a/b.jpg"); assert reg.cmd[-1] == ["open", "-R", os.path.abspath("/a/b.jpg")]
     sistema("windows"); azioni.mostra("C:/a/b.jpg"); assert reg.cmd[-1][:2] == ["explorer", "/select,"]
     sistema("linux"); monkeypatch.setattr(azioni.shutil, "which", lambda n: "/usr/bin/" + n)
     azioni.mostra(str(tmp_path / "a b.jpg")); assert reg.cmd[-1][0] == "gdbus" and "a%20b.jpg" in " ".join(reg.cmd[-1])
@@ -356,13 +379,13 @@ def test_mostra_per_sistema(sistema, reg, monkeypatch, tmp_path):
 def test_cestina_per_sistema(sistema, reg, monkeypatch):
     cattivo = '/a/b" & (do shell script "touch /tmp/PWN") & "'
     sistema("mac"); azioni.cestina(cattivo); cmd = reg.cmd[-1]
-    assert cmd[0] == "osascript" and cmd[-1] == cattivo and "on run argv" in cmd and not any("PWN" in a for a in cmd[:-1]), "SEC-004: il percorso è un argomento"
+    assert cmd[0] == "osascript" and cmd[-1] == os.path.abspath(cattivo) and "on run argv" in cmd and not any("PWN" in a for a in cmd[:-1]), "SEC-004: il percorso è un argomento"
     cattivo = "C:/a/b'; Remove-Item -Recurse C:/ ; '"
     sistema("windows"); azioni.cestina(cattivo); cmd = reg.cmd[-1]
     assert cmd[0] == "powershell" and "SendToRecycleBin" in cmd[-1] and "$env:IMPAGINATORE_PERCORSO" in cmd[-1] and not any("Remove-Item" in a for a in cmd)
     assert reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"] == os.path.normpath(os.path.abspath(cattivo)), "il percorso passa dall'ambiente"
     sistema("linux"); monkeypatch.setattr(azioni.shutil, "which", lambda n: "/usr/bin/gio")
-    azioni.cestina("/a/b"); assert reg.cmd[-1] == ["gio", "trash", "--", "/a/b"]
+    azioni.cestina("/a/b"); assert reg.cmd[-1] == ["gio", "trash", "--", os.path.abspath("/a/b")]
     reg.rc = 1; usati = []
     monkeypatch.setattr(azioni, "cestina_freedesktop", lambda p: usati.append(p))
     azioni.cestina("/a/c"); assert usati == ["/a/c"]
@@ -386,6 +409,30 @@ def test_cestino_freedesktop_altro_disco(tmp_path, monkeypatch):
     assert d.exists() and os.listdir(tmp_path / "T" / "info") == []
 
 
+def test_file_aperto_da_un_altro_processo(sistema, monkeypatch):
+    """su Windows os.replace e os.remove di un file che un altro processo legge danno PermissionError finché quello non
+    lo chiude: si riprova. Sugli altri sistemi, e per gli altri errori, l'errore arriva subito"""
+    def azione(esiti):
+        chiamate = []
+        def f(*a):
+            chiamate.append(a); e = esiti.pop(0) if esiti else None
+            if e: raise e
+            return "fatto"
+        return f, chiamate
+    sistema("windows"); f, chiamate = azione([PermissionError(13, "aperto"), PermissionError(13, "aperto")])
+    assert piattaforma.anche_se_aperto(f, "a", "b") == "fatto" and chiamate == [("a", "b")] * 3
+    f, chiamate = azione([FileNotFoundError(2, "no")])
+    with pytest.raises(FileNotFoundError): piattaforma.anche_se_aperto(f)
+    assert len(chiamate) == 1, "un errore che non è di un file aperto non si riprova"
+    monkeypatch.setattr(piattaforma, "ATTESA_FILE_APERTO", 0.05); f, chiamate = azione([PermissionError(13, "aperto")] * 1000)
+    with pytest.raises(PermissionError): piattaforma.anche_se_aperto(f)
+    assert len(chiamate) > 1, "riprovato fino al tempo massimo, poi l'errore"
+    for s in ("linux", "mac"):
+        sistema(s); f, chiamate = azione([PermissionError(13, "permesso")])
+        with pytest.raises(PermissionError): piattaforma.anche_se_aperto(f)
+        assert len(chiamate) == 1, s
+
+
 # ---------------------------------------------------------------- processi
 def test_processi(sistema, monkeypatch, reg):
     e = processi.ambiente_figli({"A": "1"}); assert e == {"A": "1", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
@@ -399,6 +446,96 @@ def test_processi(sistema, monkeypatch, reg):
     assert chiamate[0][1][-1] == "/a b" and chiamate[1][1][-1] == '"C:\\a b"', "su Windows execv non mette le virgolette"
     sistema("linux"); processi.rilancia_dopo(["python", "-m", "impaginatore"], 0.1)
     assert reg.cmd[-1][1] == "-c" and reg.cmd[-1][-3:] == ["python", "-m", "impaginatore"]
+
+
+ORFANO = ("import subprocess, sys; p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'], stdin=subprocess.DEVNULL, "
+          "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); print(p.pid)")
+
+
+def _orfano():
+    """pid di un processo che dorme e non è figlio di chi esegue i test, come l'editor riavviato su Windows (os.execv lì
+    avvia un processo nuovo): lo lancia un processo intermedio che finisce subito"""
+    r = subprocess.run([sys.executable, "-c", ORFANO], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    return int(r.stdout)
+
+
+def test_processi_dati_dal_pid():
+    """vivo e Processo su un processo che non è figlio di chi li usa, con le funzioni vere del sistema (su Windows OpenProcess)"""
+    from aiuti import attendi
+    assert processi.vivo(os.getpid()) and not processi.vivo(2**22 + 12345), "pid oltre quelli possibili: nessun processo"
+    assert all(processi.vivo(x) for x in (None, True, 0, -1, "12")), "pid che non si può chiedere: lo dirà la richiesta"
+    if os.name != "nt" and os.getuid() != 0: assert processi.vivo(1), "processo di un altro utente: c'è"
+    morto = processi.Processo(2**22 + 12345); assert morto.poll() == 0 and morto.wait() == 0
+    morto.terminate(); morto.kill()
+    a, b = _orfano(), _orfano()
+    pa, pb = processi.Processo(a), processi.Processo(b)
+    try:
+        assert processi.vivo(a) and pa.poll() is None and pa.pid == a
+        with pytest.raises(subprocess.TimeoutExpired): pa.wait(0.2)
+        pa.terminate(); assert pa.wait(20) == 0 and pa.poll() == 0
+        assert attendi(lambda: not processi.vivo(a), 20), "finito anche per chi lo chiede di nuovo"
+        pb.kill(); assert pb.wait(20) == 0
+    finally:
+        for p in (pa, pb):
+            if p.poll() is None: p.kill()
+
+
+def test_processo_finito_mentre_lo_si_ferma(sistema, monkeypatch):
+    """macOS e Linux (simulati): il processo finisce tra poll e il segnale; nessun errore, e risulta finito"""
+    sistema("linux")
+    monkeypatch.setattr(processi, "vivo", lambda pid: True)
+    monkeypatch.setattr(processi.os, "kill", lambda pid, segnale: (_ for _ in ()).throw(ProcessLookupError(pid)))
+    p = processi.Processo(12345); assert p.poll() is None
+    p.terminate(); assert p.returncode == 0
+
+
+class Kernel32:
+    """kernel32 finto: processi {pid: in funzione?}, errore di OpenProcess per i pid che non ci sono"""
+
+    def __init__(self, processi, errore=87):
+        self.processi, self.errore, self.aperti, self.chiusi, self.fermati, self.attese = processi, errore, [], [], [], []
+        self.OpenProcess, self.WaitForSingleObject, self.TerminateProcess, self.CloseHandle = self.apri, self.aspetta, self.ferma, self.chiudi
+
+    def apri(self, diritti, eredita, pid):
+        if pid not in self.processi: return None
+        self.aperti.append((diritti, eredita, pid)); return 1000 + pid
+
+    def aspetta(self, h, ms):
+        self.attese.append(ms); return 0x102 if self.processi[h - 1000] else 0
+
+    def ferma(self, h, codice): self.fermati.append((h, codice)); self.processi[h - 1000] = False
+
+    def chiudi(self, h): self.chiusi.append(h)
+
+
+def test_processi_dati_dal_pid_su_windows(sistema, monkeypatch):
+    """Windows (simulato): os.kill lì chiuderebbe il processo, si usano OpenProcess e WaitForSingleObject; il processo seguito
+    resta aperto (handle) fino alla fine, e terminate/kill lo chiudono con TerminateProcess"""
+    import ctypes
+    k = Kernel32({7: True, 8: False, 9: True}); errore = [87]; vero = processi._kernel32
+    monkeypatch.setattr(processi, "_kernel32", lambda: (k, lambda: errore[0]))
+    monkeypatch.setattr(processi.os, "kill", lambda *a: pytest.fail("os.kill su Windows"))
+    sistema("windows")
+    assert processi.vivo(7) and not processi.vivo(8) and not processi.vivo(5), "87: nessun processo con quel pid"
+    errore[0] = 5; assert processi.vivo(5), "accesso negato: c'è, di un altro utente"
+    assert k.aperti[0] == (0x101000, False, 7) and k.chiusi == [1007, 1008] and k.attese == [0, 0]
+    assert processi.Processo(5).poll() == 0, "non si apre: non si segue"
+    p = processi.Processo(9); assert k.aperti[-1] == (0x101001, False, 9) and p.poll() is None
+    with pytest.raises(subprocess.TimeoutExpired): p.wait(0.01)
+    assert k.attese[-1] == 50
+    p.terminate(); assert k.fermati == [(1009, 1)] and p.wait() == 0 and p.poll() == 0
+    p.kill(); p.terminate(); assert k.fermati == [(1009, 1)], "già finito: niente da fermare"
+    k.processi[9] = True; q = processi.Processo(9); q.kill(); assert k.fermati[-1] == (1009, 1)
+    p.__del__(); p.__del__(); assert k.chiusi.count(1009) == 1, "l'handle si chiude una volta"
+    dll = types.SimpleNamespace(**{n: types.SimpleNamespace() for n in ("OpenProcess", "WaitForSingleObject", "TerminateProcess", "CloseHandle")})
+    caricate = []
+    monkeypatch.setattr(ctypes, "WinDLL", lambda nome, use_last_error: caricate.append((nome, use_last_error)) or dll, raising=False)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: 5, raising=False)
+    kk, ultimo = vero()
+    assert kk is dll and ultimo() == 5 and caricate == [("kernel32", True)]
+    assert dll.OpenProcess.restype is ctypes.c_void_p and dll.WaitForSingleObject.argtypes == [ctypes.c_void_p, ctypes.c_uint32]
+    assert dll.TerminateProcess.argtypes[0] is ctypes.c_void_p and dll.CloseHandle.argtypes == [ctypes.c_void_p], "handle a 64 bit"
 
 
 STACCA = """import os, sys

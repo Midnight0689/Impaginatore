@@ -47,7 +47,7 @@ sé per spread e pagina: le pressioni di D di fila si annullano insieme.
 | `GET /img/bozza/<n>?k=` | `bozza_jpg(n, k)` | — | anteprima JPEG dello spread n dell'ultima proposta | `impaginazione_automatica_album` | UX-018 |
 | `POST /api/ricollega` | `ricollega(cartella, prova, scelte)` | `{cartella, prova?, scelte?: {foto: file}}` | `{trovate, mancanti, totale, diverse, proposte}`; con `prova` non cambia niente | — | UX-004 |
 | `POST /api/import` con `a_caldo: true` | `do_import` + `aggiungi_a_caldo()` | `{paths, a_caldo: true}` | `{importate, saltate, riavvio: false, aggiunte}`: niente riavvio, annulla e ripeti restano | come l'import | UX-012 |
-| `GET /api/ping` | — | — | `{boot, agg, path, rev, prep}`: `rev` cambia a ogni modifica (anche fatta dall'assistente), `prep` a ogni miniatura preparata | — | A-30, UX-012 |
+| `GET /api/ping` | — | — | `{boot, agg, path, pid, rev, prep}`: `rev` cambia a ogni modifica (anche fatta dall'assistente), `prep` a ogni miniatura preparata; `pid` fa riconoscere alla schermata l'editor riavviato su Windows | — | A-30, UX-012 |
 
 Livelli di `controlla`: `blocca` (foto mancante o danneggiata, sotto 150 ppi, fuori dalla pagina), `guarda` (150–200 ppi,
 volto tagliato o vicino alla piega, ritaglio oltre ×1,25, spazi diversi, pagina vuota, foto fuori tono, foto ripetuta),

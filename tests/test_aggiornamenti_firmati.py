@@ -356,7 +356,8 @@ def test_ogni_rifiuto_passa_i_parametri_del_testo():
 # ---------------------------------------------------------------- strumento di chi pubblica
 def test_strumento_della_release(tmp_path):
     """strumenti/aggiornamento.py: chiave dei rilasci, firma di una wheel, verifica, release finta"""
-    s = os.path.join(RADICE, "strumenti", "aggiornamento.py"); env = dict(os.environ, IMPAGINATORE_NEGOZIO_DIR=str(tmp_path / "negozio"))
+    # uscita in UTF-8 anche su Windows, dove in una pipe Python scriverebbe nella code page del sistema (cp1252)
+    s = os.path.join(RADICE, "strumenti", "aggiornamento.py"); env = dict(os.environ, IMPAGINATORE_NEGOZIO_DIR=str(tmp_path / "negozio"), PYTHONIOENCODING="utf-8")
     def esegui(*a): return subprocess.run([sys.executable, s, *a], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     r = esegui("genera-coppia"); assert r.returncode == 0, r.stderr
     pub = re.search(r'CHIAVI_FIDATE = \{1: "([0-9a-f]{64})"\}', r.stdout).group(1)
@@ -371,7 +372,7 @@ def test_strumento_della_release(tmp_path):
     r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode == 0 and "valide" in r.stdout, r.stderr
     r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", PUB); assert r.returncode != 0 and "firma valida" in r.stderr
     r = esegui("firma", pk, "--id", "2"); assert r.returncode != 0 and "genera-coppia" in r.stderr
-    r = subprocess.run([sys.executable, s, "genera-coppia", "--dir", RADICE], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    r = subprocess.run([sys.executable, s, "genera-coppia", "--dir", RADICE], capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, PYTHONIOENCODING="utf-8"), timeout=120)
     assert r.returncode != 0 and "dentro il repository" in r.stderr
     # T-302: i pacchetti del programma compilato nello stesso manifesto, ognuno con misura e impronta
     (tmp_path / "dist" / "Impaginatore-2.0.1-linux.deb").write_bytes(b"deb"); (tmp_path / "dist" / "Impaginatore-2.0.1-windows.exe").write_bytes(b"exe!")

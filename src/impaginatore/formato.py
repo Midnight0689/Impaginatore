@@ -20,6 +20,7 @@ import tempfile
 import time
 
 from . import formato_1x, lingua
+from .piattaforma import anche_se_aperto
 from .validazione import FORMATO, PAGINE, ErroreProgetto
 from . import validazione as V
 
@@ -34,10 +35,11 @@ _CONTEGGI = {}                               # percorso -> (mtime, dimensione, n
 
 # ---------------------------------------------------------------- file
 def leggi_json(path, massimo=MAX_JSON):
-    """contenuto di un file JSON (UTF-8) non più grande di `massimo` byte"""
+    """contenuto di un file JSON (UTF-8) non più grande di `massimo` byte e non più annidato di V.MAX_ANNIDAMENTO livelli"""
     with open(path, "rb") as f: dati = f.read(massimo + 1)
     if len(dati) > massimo: raise ErroreProgetto(lingua.t("progetto.file_troppo_grande", nome=os.path.basename(path), mb=len(dati) // 2**20))
-    return json.loads(dati.decode("utf-8-sig"))
+    testo = dati.decode("utf-8-sig"); V.controlla_annidamento(testo)
+    return json.loads(testo)
 
 
 def _coppie(coppie):
@@ -58,7 +60,8 @@ def leggi_json_rigoroso(path, massimo=MAX_ALBUM):
     try:
         with open(path, "rb") as f: dati = f.read(massimo + 1)
         if len(dati) > massimo: raise ErroreProgetto(lingua.t("progetto.file_troppo_grande_max", nome=nome, mb=massimo // 2**20))
-        return json.loads(dati.decode("utf-8"), object_pairs_hook=_coppie, parse_constant=_costante)
+        testo = dati.decode("utf-8"); V.controlla_annidamento(testo)
+        return json.loads(testo, object_pairs_hook=_coppie, parse_constant=_costante)
     except UnicodeDecodeError as e: raise ErroreProgetto(lingua.t("progetto.file_non_utf8", nome=nome, byte=str(e.start))) from None
     except json.JSONDecodeError as e: raise ErroreProgetto(lingua.t("progetto.file_non_json", nome=nome, riga=str(e.lineno), colonna=str(e.colno), motivo=e.msg)) from None
     except (ValueError, RecursionError) as e: raise ErroreProgetto(lingua.t("progetto.file_non_valido", nome=nome, motivo=str(e))) from None
@@ -90,7 +93,7 @@ def _sostituisci(path, scrivi):
     try:
         with os.fdopen(fd, "wb") as f: scrivi(f); f.flush(); os.fsync(f.fileno())
         os.chmod(tmp, modo)
-        os.replace(tmp, path)
+        anche_se_aperto(os.replace, tmp, path)          # su Windows la schermata dei progetti può star leggendo il file
     except BaseException:
         try: os.remove(tmp)
         except OSError: pass
@@ -331,7 +334,7 @@ def leggi_progetto(cartella):
     """progetto.json controllato (validazione.progetto)"""
     p = os.path.join(cartella, PROGETTO)
     try: cfg = leggi_json(p)
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as e: raise ErroreProgetto(lingua.t("progetto.progetto_non_json", file=PROGETTO, dettaglio=str(e))) from None
+    except (UnicodeDecodeError, json.JSONDecodeError, V.JsonAnnidato) as e: raise ErroreProgetto(lingua.t("progetto.progetto_non_json", file=PROGETTO, dettaglio=str(e))) from None
     return V.progetto(cfg)
 
 
