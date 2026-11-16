@@ -832,7 +832,12 @@ def spread_op(o):
     return _intero_o_none(at[0]) if isinstance(at, (list, tuple)) and at else None
 
 
-def _passo(p): return dict(nome=p["nome"], s=p["s"]) if p else None
+def _passo(p):
+    """il passo d'annulla come lo vede la pagina: nome, spread e, se l'ha fatto l'assistente AI (MCP), assistente=True"""
+    if not p: return None
+    d = dict(nome=p["nome"], s=p["s"])
+    if p.get("assistente"): d["assistente"] = True
+    return d
 
 
 def _gruppo(g):
@@ -881,7 +886,9 @@ def do_op(o):
         if snap() != before:
             ultimo = UNDO[-1] if UNDO else None
             if gruppo and ultimo and ultimo["gruppo"] == gruppo and ultimo["rev"] == REV: ultimo["rev"] = REV + 1       # stesso gruppo subito dopo: resta un solo passo, con lo stato di prima del primo
-            else: UNDO.append(dict(snap=before, nome=NOMI_OP.get(o["op"], "Modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1)); del UNDO[:-200]
+            else:
+                UNDO.append(dict(snap=before, nome=NOMI_OP.get(o["op"], "Modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1,
+                                 assistente=str(cid or "").startswith("assistente-"))); del UNDO[:-200]       # chi l'ha fatto: la pagina lo dice (T-203, T-205)
             REDO.clear(); REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False, **passi())
         if ESITO: st["esito"] = dict(ESITO)
         return st
@@ -2266,7 +2273,8 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"]})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"],
+                                                        "assistente": str(LASTC or "").startswith("assistente-")})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")

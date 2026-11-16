@@ -254,3 +254,55 @@ def test_esportazione_in_corso_si_vede(editor, tmp_path):
         assert b.js("ESPORTO") is False and b.js("document.querySelector('#expb .lbl').textContent") == "Esporta…"
         assert b.js("document.getElementById('eavv').hidden") is True
         assert not b.problemi(), b.problemi()
+
+
+def test_passi_dell_assistente_detti_dal_server(editor):
+    """le modifiche dell'assistente AI (cid «assistente-…», mcp/strumenti.py) sono passi d'annulla come gli altri, con
+    assistente=True; /api/ping dice se l'ultima modifica è sua"""
+    c = editor; album(c, 2); r = stato(c)["rev"]
+    assert c.get("/api/ping")["assistente"] is False
+    st = c.post("/api/op", {"op": "delete", "s": 1, "cid": "assistente-0a1b2c3d", "rev": r})
+    assert st["annulla"]["nome"] == "Elimina spread" and st["annulla"]["assistente"] is True
+    p = c.get("/api/ping"); assert p["assistente"] is True and p["rev"] == st["rev"] == r + 1
+    u = c.post("/api/op", {"op": "undo", "cid": "pagina", "rev": st["rev"]})
+    assert u["annullato"]["assistente"] is True and u["ripeti"]["assistente"] is True and "assistente" not in u["annulla"]
+    assert c.get("/api/ping")["assistente"] is False, "l'annullamento l'ha fatto la pagina"
+
+
+def aspetta(b, espressione, secondi=9):
+    """la pagina controlla /api/ping ogni 4 secondi: aspetta che l'espressione sia vera"""
+    for _ in range(int(secondi / 0.25)):
+        if b.js(espressione): return True
+        b.pausa(0.25)
+    return False
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_modifica_dell_assistente_si_vede_e_si_annulla(editor, tmp_path):
+    """l'assistente cambia l'album mentre la pagina è aperta: la pagina rilegge da sola, lo dice («Modificato
+    dall'assistente: …» con «Annulla») e Annulla dice di chi era il passo; mentre si scrive in un campo aspetta; una
+    modifica da un'altra scheda si dice a parte"""
+    from cdp import Browser
+    c = editor; album(c, 3)
+    with Browser(tmp_path) as b:
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": b.js("S.rev")})
+        assert aspetta(b, "S.spreads.length === 2"), "la pagina si aggiorna da sola"
+        assert b.js("document.getElementById('toast').firstChild.textContent") == "Modificato dall'assistente: Elimina spread"
+        assert b.js("document.getElementById('undo').title").startswith("Annulla «Elimina spread (dell'assistente)»")
+        b.js("document.querySelector('#toast button').click()"); b.pausa(0.6)
+        assert len(stato(c)["spreads"]) == 3 and b.js("S.spreads.length") == 3
+        assert b.js("document.getElementById('toast').textContent") == "Annullato: Elimina spread (dell'assistente)"
+        # mentre si scrive in un campo la pagina non ridisegna: lo fa appena il fuoco esce
+        b.js("(() => { const i = document.createElement('input'); i.id = 'campoprova'; document.body.appendChild(i); i.focus(); })()")
+        c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        b.pausa(5); assert b.js("S.spreads.length") == 3
+        b.js("document.getElementById('campoprova').blur()")
+        assert aspetta(b, "S.spreads.length === 2")
+        # un'altra scheda (non l'assistente): avviso diverso, senza «Annulla»
+        c.post("/api/op", {"op": "delete", "s": 1, "cid": "altra-scheda", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 1")
+        assert b.js("document.getElementById('toast').textContent") == "Album aggiornato: è stato modificato in un'altra finestra"
+        assert b.js("document.querySelector('#toast button')") is None
+        assert not b.problemi(), b.problemi()

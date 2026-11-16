@@ -587,15 +587,32 @@ async function api(path, body) {
   return j;
 }
 const CID = Math.random().toString(36).slice(2);
+let OPIN = 0;                                                  // operazioni della pagina in corso: intanto il controllo dell'assistente aspetta
 async function op(o) {
+  OPIN++;
   try { S = await api("/api/op", Object.assign({ cid: CID, rev: S ? S.rev : undefined }, o)); render(); return S; }
   catch (e) { if (/un'altra scheda/.test(e.message)) { S = await api("/api/state"); render(); } return null; }
+  finally { OPIN--; }
+}
+const nomePasso = p => p.assistente ? t("editor.msg.dell_assistente", { nome: p.nome }) : p.nome;      // «Sistema spazi (dell'assistente)»
+const MANI = { giu: false, trascino: false };                 // tasto del mouse premuto o trascinamento in corso: niente ridisegni da fuori a metà gesto
+document.addEventListener("pointerdown", () => { MANI.giu = true; }, true);
+["pointerup", "pointercancel"].forEach(n => document.addEventListener(n, () => { MANI.giu = false; }, true));
+document.addEventListener("dragstart", () => { MANI.trascino = true; }, true);
+["dragend", "drop"].forEach(n => document.addEventListener(n, () => { MANI.trascino = false; }, true));
+async function cambiatoFuori(p) {                              // l'album è cambiato senza questa pagina (assistente AI via MCP o un'altra scheda): rilegge e lo dice
+  if (!S || p.rev === S.rev || OPIN || MANI.giu || MANI.trascino || $("busy").style.display.includes("flex")) return;
+  const a = document.activeElement; if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;    // mentre si scrive non si ridisegna: la prossima volta
+  const d = await api("/api/state"); if (!S || d.rev === S.rev || OPIN) return;
+  S = d; render();
+  if (p.assistente) toast(d.annulla && d.annulla.assistente ? t("editor.msg.assistente_n", { nome: d.annulla.nome }) : t("editor.msg.assistente"), false, d.canundo ? annullaAz() : null);
+  else toast(t("editor.msg.altra_scheda"));
 }
 async function annulla(redo) {                                // «Annulla …»: dice cosa ha annullato e torna allo spread dove era (UX-003)
   const d = await op({ op: redo ? "redo" : "undo" }); if (!d) return;
   const p = d[redo ? "ripetuto" : "annullato"]; if (!p) return;
   if (p.s != null && p.s !== cur && p.s < S.spreads.length) { cur = p.s; sel = null; msel = []; render(); }
-  toast(t(redo ? "editor.msg.ripetuto" : "editor.msg.annullato", { nome: p.nome }));
+  toast(t(redo ? "editor.msg.ripetuto" : "editor.msg.annullato", { nome: nomePasso(p) }));
 }
 
 function slotsOf(s) { return S.spreads[s].items; }
@@ -624,8 +641,8 @@ function render() {
   $("title").textContent = S.nome; document.title = S.nome + " · Impaginatore";
   $("meta").textContent = t("editor.top.meta", { w: cmF(S.W / S.ppi * 2.54), h: cmF(S.H / S.ppi * 2.54), n: S.spreads.length });
   $("undo").disabled = !S.canundo; $("redo").disabled = !S.canredo;
-  $("undo").title = S.annulla ? conTasto(t("editor.top.annulla_n", { nome: S.annulla.nome }), "⌘ Z") : t("editor.top.niente_annulla");
-  $("redo").title = S.ripeti ? conTasto(t("editor.top.ripeti_n", { nome: S.ripeti.nome }), MAC() ? "⇧ ⌘ Z" : "⌘ Y") : t("editor.top.niente_ripeti");
+  $("undo").title = S.annulla ? conTasto(t("editor.top.annulla_n", { nome: nomePasso(S.annulla) }), "⌘ Z") : t("editor.top.niente_annulla");
+  $("redo").title = S.ripeti ? conTasto(t("editor.top.ripeti_n", { nome: nomePasso(S.ripeti) }), MAC() ? "⇧ ⌘ Z" : "⌘ Y") : t("editor.top.niente_ripeti");
   $("undo").setAttribute("aria-label", $("undo").title); $("redo").setAttribute("aria-label", $("redo").title);
   statoSalva();
   clearTimeout(render.t); if (S.dirty) render.t = setTimeout(async () => { try { const d = await api("/api/state"); S.saveerr = d.saveerr; if (!d.dirty) S.dirty = false; statoSalva(); if (d.dirty) render.t = setTimeout(() => render(), 100); } catch (e) {} }, 3000);
@@ -1862,6 +1879,7 @@ setInterval(async () => { try { const p = await (await rq("/api/ping")).json();
   if (S && S.boot && p.boot !== S.boot && !$("busy").style.display.includes("flex")) { location.reload(); return; }
   if (S && S.prep && S.prep.attivo && p.prep !== S.prep.fatte) { const d = await api("/api/state"); S.prep = d.prep; renderPrep(); if (!d.prep.attivo && d.rev === S.rev) { S = d; render(); } }       // foto in preparazione: la barra in alto avanza; alla fine le miniature nuove
   if (S && aggSeen !== null && p.agg !== aggSeen) { aggSeen = p.agg; S = await api("/api/state"); render(); if ($("prjd").style.display === "flex") prjInfo(); avvisoAgg(S.agg); }
+  await cambiatoFuori(p);                                     // l'assistente AI (MCP) o un'altra scheda ha cambiato l'album: la pagina si aggiorna da sola (T-203)
 } catch (e) {} }, 4000);
 
 // ---- una foto trascinata sulla pagina (anche vuota) diventa una cornice libera nel punto dove la lasci
