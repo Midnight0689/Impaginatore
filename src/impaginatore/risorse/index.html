@@ -2227,8 +2227,8 @@ async function doImport(paths) {
   try {
     const res = await api("/api/import", { paths, a_caldo: true });          // a caldo: le foto entrano senza riavvio, la cronologia d'annulla resta (UX-012)
     if (!res.riavvio) {
-      if (!res.importate) { toast(res.saltate ? t("editor.imp.nessuna_nuova", { n: res.saltate }) : t("editor.imp.nessuna"), true); return; }
-      S = await api("/api/state"); render(); toast(tn("editor.imp.fatto", res.aggiunte || res.importate) + (res.saltate ? " · " + t("editor.imp.saltate", { n: res.saltate }) : "")); return;
+      if (!res.importate) { toast(res.saltate ? tn("editor.imp.nessuna_nuova", res.saltate) : t("editor.imp.nessuna"), true); return; }
+      S = await api("/api/state"); render(); toast(tn("editor.imp.fatto", res.aggiunte || res.importate) + (res.saltate ? " · " + tn("editor.imp.saltate", res.saltate) : "")); return;
     }
     $("busymsg").innerHTML = `${escH(tn("editor.imp.importo", res.importate))}<br><span style="color:var(--dim);font-size:12px">${tH("editor.imp.importo_nota")}</span>`; $("busy").style.display = "flex";
     const boot = S.boot; await new Promise(r => setTimeout(r, 1500));
