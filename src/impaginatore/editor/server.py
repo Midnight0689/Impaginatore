@@ -11,12 +11,12 @@ del motore. Importare il modulo non legge niente: inizializza(progetto) carica i
 porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
 main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
+import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, formato_1x, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
+from .. import __version__, compilato, formato, formato_1x, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import bozza as BZ                     # bozza dell'album (UX-018)
@@ -2151,8 +2151,8 @@ def run_export(o):
                 if os.path.getsize(f) < 1000: raise ValueError(lingua.t("server.pdf_vuoto"))
                 LOG.append(lingua.tn("server.log_pagine", len(pages), mb=lingua.num(os.path.getsize(f) / 1e6, 1, True))); _esito(fatti=len(pages)); _log_risultato(f)
             else:
-                cmd = [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
-                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
+                cmd = compilato.comando("impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ, *(["--forza"] if o.get("force") else []))
+                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",  # nosec B603  # questo stesso programma (sys.executable, compilato.comando); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                      env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ, IMPAGINATORE_PROTOCOLLO="1")))
                 t0 = time.time() - 2; out = []
                 skip = {}                                                         # spread lasciati com'erano dal processo dei PSD: {numero: codice del motivo}

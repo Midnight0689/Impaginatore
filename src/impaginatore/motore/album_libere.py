@@ -14,6 +14,7 @@ L'editor ne copia una versione nella cartella di ogni progetto che ha cornici li
 1.x): per questo il modulo funziona sia dentro il pacchetto (impaginatore.motore.album_libere) sia da solo, accanto a
 spec.py, con i vecchi script che hanno album.py nel percorso.
 """
+import functools
 import threading
 
 try: from . import album as _a                   # dentro il pacchetto impaginatore
@@ -26,10 +27,10 @@ def FREE(n, x, y, w, h, bw=False, z=1.0, zo=None):
     return d
 
 
-def _layout(spread):                           # le cornici libere si disegnano sopra le altre (anche se a cavallo della piega)
-    # attenzione: il codice gira nel modulo album, dove _place è quello già sostituito
+def _layout(spread, A=None):                    # le cornici libere si disegnano sopra le altre (anche se a cavallo della piega)
+    # A: il modulo album (_sostituisci), dove _place è quello già sostituito
     out = []
-    for side, (mode, items) in zip("LR", spread): out += [_place(side, mode, i) for i in items]    # noqa: F821
+    for side, (mode, items) in zip("LR", spread): out += [A._place(side, mode, i) for i in items]
     for n, it in enumerate(out): it["_o"] = n
     return sorted(out, key=lambda it: (bool(it.get("libera")), it["zo"] if "zo" in it else 1000 + it["_o"]))
 
@@ -82,12 +83,12 @@ def sty_job(it):
     return dict(bd=px, col=col, sh=int(it.get("sh") or 0), oc=int(it.get("oc", 100)), ppi=_a.PPI)
 
 
-def _zcrop(it):                                # attenzione: il codice gira nel modulo album (crop e M sono suoi)
-    l, t, r, b = crop(it["i"], it["W"], it["H"], it.get("z", 1.0))              # noqa: F821
+def _zcrop(it, A=None):                        # A: il modulo album (_sostituisci): crop e M sono suoi
+    l, t, r, b = A.crop(it["i"], it["W"], it["H"], it.get("z", 1.0))
     a = it.get("a") or 0
     if not a: return l, t, r, b
     import math
-    th = math.radians(a); c, s = abs(math.cos(th)), abs(math.sin(th)); ar = M[it["i"]]["ar"]                   # noqa: F821
+    th = math.radians(a); c, s = abs(math.cos(th)), abs(math.sin(th)); ar = A.M[it["i"]]["ar"]
     wp, hp = (r - l) * ar, (b - t); bw, bh = wp * c + hp * s, wp * s + hp * c      # unità: altezza della foto = 1
     f = min(ar / bw, 1 / bh, 1.0); wp, hp, bw, bh = wp * f, hp * f, bw * f, bh * f
     cx = min(max((l + r) / 2 * ar, bw / 2), ar - bw / 2); cy = min(max((t + b) / 2, bh / 2), 1 - bh / 2)
@@ -312,6 +313,18 @@ def _apply_tono(im, i):
     a = np.asarray(im.convert("RGB")); return Image.fromarray(tono_lut(t)[a])
 
 
+def _sostituisci(nome, nuova):
+    """album.<nome> fa quello che fa nuova(…, A=album). Da Python si cambia il codice della funzione che c'è già (con album
+    come valore predefinito di A): vale anche per chi l'ha importata prima, come gli script delle versioni 1.x con «from
+    album import *». Compilato con Nuitka il codice di una funzione non si cambia (RuntimeError): si mette al suo posto
+    una funzione nuova, che vedono album stesso e chi la chiama come album.<nome> (l'editor e genera_psd)"""
+    vecchia = getattr(_a, nome)
+    try:
+        vecchia.__code__ = nuova.__code__; vecchia.__defaults__ = (_a,)
+    except RuntimeError:
+        setattr(_a, nome, functools.partial(nuova, A=_a))
+
+
 def _install():
     if getattr(_a._place, "_libere", False):
         return
@@ -333,7 +346,7 @@ def _install():
     _place._libere = True
     _a._place = _place
 
-    _a.zcrop.__code__ = _zcrop.__code__        # ritaglio che tiene conto dell'angolo (anche per gli script che l'hanno già importato)
+    _sostituisci("zcrop", _zcrop)               # ritaglio che tiene conto dell'angolo
     _a._photo = _photo_bordo(_photo_rot(_a._photo))
     _a.render = _render_ombre
     _a._text = _text_scaled(_a._text)
@@ -346,7 +359,7 @@ def _install():
         out = _ev0(im, ev, gains)
         return _apply_rit(_apply_tono(out, _CUR[0]), _CUR[0]) if _CUR[0] is not None else out
     _a.apply_ev = apply_ev
-    _a.layout.__code__ = _layout.__code__     # stessa funzione: vale anche per gli script che hanno già importato "layout"
+    _sostituisci("layout", _layout)
 
 
 _install()

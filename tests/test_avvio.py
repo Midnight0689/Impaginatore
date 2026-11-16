@@ -114,12 +114,15 @@ def test_finestra_e_tempi(monkeypatch):
     assert f.titolo == "Impaginatore" and f.kw["html"].startswith("<!DOCTYPE html>")
     assert {k: v for k, v in f.kw.items() if k != "html"} == dict(width=480, height=300, resizable=False, frameless=True, easy_drag=False, on_top=True, focus=False,
                                                                  background_color="#181715", text_select=False, zoomable=False)
-    principale = types.SimpleNamespace(show=lambda: wv.mostrate.append(time.monotonic()))
+    nascosta = []
+    principale = types.SimpleNamespace(hidden=True)                     # creata nascosta (finestra.esegui), come fa pywebview
+    principale.show = lambda: (nascosta.append(principale.hidden), wv.mostrate.append(time.monotonic()))
     pronta = threading.Event(); pronta.set()
     t = a.segui(principale, pronta)
     time.sleep(0.05); f.events.shown()                                   # la schermata compare un momento dopo, mentre il thread aspetta (com'è davvero); nessun controllo dipende dalla durata
     t.join(5)
     assert len(wv.mostrate) == 1 and len(wv.chiuse) == 1 and wv.mostrate[0] - a.visto >= 0.29, "almeno MINIMO secondi di schermata: niente lampi"
+    assert nascosta == [False], "pywebview su GTK, in show(), rinasconde la finestra se `hidden` è ancora vero (Linux: finestra mai vista)"
     assert wv.mostrate[0] <= wv.chiuse[0], "prima si mostra la finestra, poi si chiude la schermata"
 
 

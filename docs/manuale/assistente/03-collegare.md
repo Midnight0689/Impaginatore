@@ -4,8 +4,9 @@
 
 Ti serve:
 
-1. Impaginatore con il componente per l'assistente. Non c'è ancora un installatore (vedi
-   [Installare](../00-installazione.md)). Da una copia del codice il componente si installa con:
+1. Impaginatore con il componente per l'assistente. Il programma installato con il suo pacchetto lo ha già: il comando è
+   il programma seguito da `mcp`, con il percorso che trovi in [Installare](../00-installazione.md), «Collegare
+   l'assistente AI». Da una copia del codice il componente si installa con:
 
    ```
    uv sync --extra mcp

@@ -17,7 +17,7 @@ import argparse, json, logging, os, shutil, subprocess, sys, threading, time  # 
 import webbrowser  # noqa: F401  (resta come attributo del modulo: lo intercettano i test; il browser si apre con processi.apri_browser)
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, aggiornamenti, archivio, formato, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
+from .. import __version__, aggiornamenti, archivio, compilato, formato, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
 from ..aggiornamenti import lanciatore
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
@@ -227,7 +227,7 @@ def apri(path):
         if pt: return pt  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_apri_riusa_editor_lanciato_da_qui
         pt = porta_libera(porta_stabile(path))
         with os.fdopen(giornale.riservato(os.path.join(PROGETTI, "editor.log")), "ab") as log:          # 0600: percorsi dei progetti (VER-013)
-            proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
+            proc = subprocess.Popen(compilato.comando("impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"),  # nosec B603  # questo stesso programma (sys.executable, compilato.comando); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
         EDITORS[path] = (Editor(proc, path, pt), pt); return pt
 
@@ -266,7 +266,7 @@ def riavvia_programma():
     def riavvia():
         time.sleep(.6)
         desktop_finestra.chiudi_editor(EDITORS)
-        processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI] + ([] if FINESTRA else ["--no-browser"]), 1.5,
+        processi.rilancia_dopo(compilato.comando("impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, *([] if FINESTRA else ["--no-browser"])), 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
     threading.Thread(target=riavvia, daemon=True).start()

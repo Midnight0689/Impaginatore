@@ -52,6 +52,18 @@ def rispondi_al_dialogo(cartella, titoli):
     GLib.timeout_add(200, cerca)
 
 
+def finestre_mostrate():
+    """[(titolo, larghezza)] delle finestre GTK mappate sullo schermo, lette nel thread di GTK"""
+    from gi.repository import GLib, Gtk
+    fatto, out = threading.Event(), []
+
+    def leggi():
+        out.extend((t.get_title(), t.get_allocated_width()) for t in Gtk.Window.list_toplevels() if t.get_mapped() and t.get_title())
+        fatto.set(); return False
+    GLib.idle_add(leggi); fatto.wait(10)
+    return out
+
+
 def gettone_nei_figli():
     """i processi del motore della finestra (figli di questo) hanno IMPAGINATORE_GETTONE nell'ambiente?"""
     out = []
@@ -99,6 +111,9 @@ def main(cartella):
             home = f"http://127.0.0.1:{hp}/"
             esito["home"] = attendi(lambda: w.get_current_url() == home and w.run_js(carte) == 1 and home)
             esito["gettone_home"] = w.run_js("(sessionStorage.getItem('impaginatore_gettone') || '').length")
+            # dopo la schermata di avvio (480 × 300) la finestra del programma si vede davvero (mappata), e la schermata non c'è più
+            try: esito["mostrate"] = attendi(lambda: (lambda v: v if [t for t, _ in v] == ["Impaginatore"] and v[0][1] > 480 else None)(finestre_mostrate()), 30)
+            except AssertionError: esito["mostrate"] = finestre_mostrate()
             esito["titolo"] = w.title
             esito["gettone_ambiente"] = "IMPAGINATORE_GETTONE" in os.environ
             esito["gettone_figli"] = gettone_nei_figli()

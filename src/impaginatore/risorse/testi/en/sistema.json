@@ -1,8 +1,8 @@
 {
   "sistema.agg_ambiente_non_pronto": "Version restored, but the Python environment isn't ready ({dettaglio}). The program stays as it is: reinstall it to fix this.",
-  "sistema.agg_app_compilata": "The installed program will update with its installer: not yet available in this version",
   "sistema.agg_automatico_vero_falso": "automatico: true or false",
   "sistema.agg_canale_non_configurato": "Updates aren't active yet: the channel for new versions isn't set up in this version",
+  "sistema.agg_compilato_a_mano": "The installed program updates with its installer: download the new version from its page and install it as you did the first time",
   "sistema.agg_durante_esportazione": "An album is exporting: wait for it to finish, then update",
   "sistema.agg_file_mancanti_1": "The new version's package is incomplete ({n} file missing): it wasn't installed",
   "sistema.agg_file_mancanti_n": "The new version's package is incomplete ({n} files missing): it wasn't installed",
@@ -19,6 +19,7 @@
   "sistema.agg_non_si_avvia": "The new version doesn't start on this computer ({dettaglio}): the current one stays",
   "sistema.agg_pacchetto_diverso": "The downloaded package isn't the signed one (different fingerprint): it wasn't installed",
   "sistema.agg_pacchetto_non_valido": "The new version's package can't be read: it wasn't installed",
+  "sistema.agg_pagina_non_aperta": "The browser didn't open: download the new version from {indirizzo}",
   "sistema.agg_precedente": "This version is older than 2.0 (different structure and installer): it can't be restored from here",
   "sistema.agg_python_vecchio": "The new version needs Python {versione} or later: reinstall Impaginatore to get it",
   "sistema.agg_release_incompleta": "The published version is incomplete (some files are missing): try again later",

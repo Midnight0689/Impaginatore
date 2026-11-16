@@ -162,6 +162,7 @@ Altri strumenti:
 ```
 src/impaginatore/
   cli.py, __main__.py   il comando «impaginatore» (schermata Album, «editor», «mcp»)
+  compilato.py          il programma compilato (Nuitka): come lancia se stesso al posto di «python -m»
   servizio.py           server HTTP locale (127.0.0.1) con i controlli di ogni richiesta
   sicurezza.py          gettone di sessione e indirizzi di avvio monouso
   percorsi.py           radici consentite per i percorsi che arrivano dalla pagina
@@ -192,6 +193,7 @@ Documenti da leggere secondo il lavoro:
 | sicurezza | [`SICUREZZA.md`](../architettura/SICUREZZA.md) |
 | licenze e fasce | [`LICENZE.md`](../architettura/LICENZE.md) |
 | assistente AI | [`MCP.md`](../architettura/MCP.md) |
+| programma compilato, pacchetti di installazione, rilascio | [`DISTRIBUZIONE.md`](../architettura/DISTRIBUZIONE.md) |
 
 ## 9. Aggiungere un'operazione dell'editor
 

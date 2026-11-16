@@ -720,6 +720,7 @@ def test_finestra_vera(tmp_path):
     assert "errore" not in e, e
     home = e["home"]
     assert e["titolo"] == "Impaginatore" and e["gettone_home"] == e["gettone_editor"] == 43, "le pagine sono collegate (gettone nella sessionStorage)"
+    assert len(e["mostrate"]) == 1 and e["mostrate"][0][0] == "Impaginatore" and e["mostrate"][0][1] > 480, f"dopo la schermata di avvio si vede la finestra del programma: {e['mostrate']}"
     assert e["gettone_ambiente"] is False and e["gettone_figli"] and not any(e["gettone_figli"]), "i processi di WebKit non hanno il gettone"
     assert e["scelta_home"] == str(tmp_path) and e["titolo_scelta_home"] == ["Scegli la cartella di prova"]
     assert e["scelta_editor"] == [str(tmp_path)] and e["titolo_scelta_editor"] == ["Scegli la cartella"], "l'editor la chiede alla schermata"
