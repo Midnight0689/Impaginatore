@@ -11,11 +11,14 @@
 #                                    file è sul ramo principale (Actions > Pacchetti > Run workflow)
 #     push su pacchetti/<chiave>     un solo pacchetto, senza test né wheel: pacchetti/linux, pacchetti/windows,
 #                                    pacchetti/mac-arm64, pacchetti/mac-x86_64; pacchetti/tre = Linux, Mac chip Apple e
-#                                    Windows; pacchetti/tutti = anche il Mac Intel; ogni altro pacchetti/** = solo Linux
+#                                    Windows; pacchetti/tutti e pacchetti/prova = tutti e quattro; ogni altro
+#                                    pacchetti/** = solo Linux
 # Un push nuovo sullo stesso ramo di prova annulla il giro precedente (sui tag mai). NON pubblica niente: i pacchetti
 # restano come artefatti dell'esecuzione (30 giorni sui tag, 7 altrimenti). La release si prepara e si firma sul computer
 # di chi pubblica con strumenti/rilascio.py: la chiave privata dei rilasci non entra mai qui. Nessun segreto, permessi in
-# sola lettura.
+# sola lettura. Il repository è pubblico, e con lui registri e artefatti: nell'artefatto vanno solo il pacchetto (con
+# impronta ed elenco dei componenti) e il riepilogo della verifica (rapporto e fotografie della finestra); la diagnosi
+# di un controllo che non va resta nel registro del job.
 #
 # Sui tag e con l'avvio manuale prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), che
 # devono passare; sui rami pacchetti/** i test non girano (li fa ci.yml sui rami prodotto/**) e si compila subito. Poi un
@@ -24,16 +27,15 @@
 # lo stato della licenza, schermata, editor, esportazioni JPG e PDF, progetto 1.x, PSD fino a Photoshop, server MCP,
 # chiusura e la finestra vera, con la schermata Album caricata dentro (Linux dentro xvfb, con le fotografie giudicate;
 # macOS e Windows nella sessione grafica del runner, con la fotografia dello schermo come documento). Esiti, tempi e
-# misure nel riepilogo dell'esecuzione; fotografie, rapporto e, se qualcosa non va, diagnosi-*.txt nell'artefatto.
+# misure nel riepilogo dell'esecuzione; rapporto e fotografie nell'artefatto.
 #
 # Cache: uv (ruote, e su Mac Intel la cryptography costruita dal sorgente) e Nuitka (NUITKA_CACHE_DIR: ccache su Linux e
 # macOS, clcache di Nuitka su Windows). La cache di Nuitka si salva subito dopo la compilazione, anche se dopo qualcosa
 # non va: la compilazione successiva rifà solo i file C cambiati.
 #
-# Consumo: stima per un giro di un pacchetto in DISTRIBUZIONE.md («Pipeline»), da rifare con i tempi veri. In breve:
-# un giro senza cache dura 70-95 minuti sui 2 core dei runner Linux e Windows dei repository privati (minuti fatturati
-# circa 80 Linux, 170 Windows), 35-45 sul Mac arm64 e 55-70 sul Mac Intel (350-450 e 550-700 fatturati); con la cache di
-# Nuitka circa un terzo. Ogni job ha un tempo massimo per sistema, così un blocco non consuma ore di Mac.
+# Consumo: il repository è pubblico, i runner standard non si pagano. Tempi misurati e costo se tornasse privato in
+# DISTRIBUZIONE.md («Pipeline», «Consumo»). Ogni job ha un tempo massimo per sistema, perché un blocco non tenga
+# occupato un runner per ore.
 name: Pacchetti
 
 on:
@@ -113,14 +115,14 @@ jobs:
     needs: test
     # test passati, oppure (solo sui rami pacchetti/**) non eseguiti
     if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
-    # runner e tempo massimo (minuti) per pacchetto: i Mac costano 10 volte Linux, il limite è stretto
+    # runner e tempo massimo (minuti) per pacchetto
     runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-26","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
-    timeout-minutes: ${{ fromJSON('{"linux":130,"mac-arm64":80,"mac-x86_64":100,"windows":150}')[matrix.chiave] }}
+    timeout-minutes: ${{ fromJSON('{"linux":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
     strategy:
       fail-fast: false
       matrix:
         # quali pacchetti (testa del file): tag -> tutti; avvio manuale -> la scelta; pacchetti/<chiave> -> quello; altro -> linux
-        chiave: ${{ fromJSON('{"tag":["linux","mac-arm64","mac-x86_64","windows"],"tutti":["linux","mac-arm64","mac-x86_64","windows"],"tre":["linux","mac-arm64","windows"],"linux":["linux"],"windows":["windows"],"mac-arm64":["mac-arm64"],"mac-x86_64":["mac-x86_64"],"pacchetti/tutti":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/tre":["linux","mac-arm64","windows"],"pacchetti/linux":["linux"],"pacchetti/windows":["windows"],"pacchetti/mac-arm64":["mac-arm64"],"pacchetti/mac-x86_64":["mac-x86_64"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || (github.event_name == 'workflow_dispatch' && inputs.pacchetti || github.ref_name)] || fromJSON('["linux"]') }}
+        chiave: ${{ fromJSON('{"tag":["linux","mac-arm64","mac-x86_64","windows"],"tutti":["linux","mac-arm64","mac-x86_64","windows"],"tre":["linux","mac-arm64","windows"],"linux":["linux"],"windows":["windows"],"mac-arm64":["mac-arm64"],"mac-x86_64":["mac-x86_64"],"pacchetti/tutti":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/prova":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/tre":["linux","mac-arm64","windows"],"pacchetti/linux":["linux"],"pacchetti/windows":["windows"],"pacchetti/mac-arm64":["mac-arm64"],"pacchetti/mac-x86_64":["mac-x86_64"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || (github.event_name == 'workflow_dispatch' && inputs.pacchetti || github.ref_name)] || fromJSON('["linux"]') }}
     steps:
       - name: Fine riga come nel repository
         if: runner.os == 'Windows'
@@ -197,7 +199,7 @@ jobs:
 
       - name: Compila e impacchetta
         id: compila
-        timeout-minutes: ${{ fromJSON('{"linux":110,"mac-arm64":60,"mac-x86_64":80,"windows":125}')[matrix.chiave] }}
+        timeout-minutes: ${{ fromJSON('{"linux":100,"mac-arm64":100,"mac-x86_64":130,"windows":150}')[matrix.chiave] }}
         run: |
           inizio=$(date +%s)
           ${{ steps.py.outputs.python }} strumenti/compila.py
@@ -275,9 +277,11 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pacchetto-${{ matrix.chiave }}
+          # solo pacchetto (con .sha256 e .componenti.json) e riepilogo della verifica: il repository è pubblico
           path: |
-            dist/pacchetti/
-            build/compila/${{ matrix.chiave }}/compilazione.xml
+            dist/pacchetti/Impaginatore-*
+            dist/pacchetti/verifica-${{ matrix.chiave }}.json
+            dist/pacchetti/*.png
           if-no-files-found: error
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
