@@ -412,6 +412,96 @@ def test_processi(sistema, monkeypatch, reg):
     assert reg.cmd[-1][1] == "-c" and reg.cmd[-1][-3:] == ["python", "-m", "impaginatore"]
 
 
+ORFANO = ("import subprocess, sys; p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'], stdin=subprocess.DEVNULL, "
+          "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); print(p.pid)")
+
+
+def _orfano():
+    """pid di un processo che dorme e non è figlio di chi esegue i test, come l'editor riavviato su Windows (os.execv lì
+    avvia un processo nuovo): lo lancia un processo intermedio che finisce subito"""
+    r = subprocess.run([sys.executable, "-c", ORFANO], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    return int(r.stdout)
+
+
+def test_processi_dati_dal_pid():
+    """vivo e Processo su un processo che non è figlio di chi li usa, con le funzioni vere del sistema (su Windows OpenProcess)"""
+    from aiuti import attendi
+    assert processi.vivo(os.getpid()) and not processi.vivo(2**22 + 12345), "pid oltre quelli possibili: nessun processo"
+    assert all(processi.vivo(x) for x in (None, True, 0, -1, "12")), "pid che non si può chiedere: lo dirà la richiesta"
+    if os.name != "nt" and os.getuid() != 0: assert processi.vivo(1), "processo di un altro utente: c'è"
+    morto = processi.Processo(2**22 + 12345); assert morto.poll() == 0 and morto.wait() == 0
+    morto.terminate(); morto.kill()
+    a, b = _orfano(), _orfano()
+    pa, pb = processi.Processo(a), processi.Processo(b)
+    try:
+        assert processi.vivo(a) and pa.poll() is None and pa.pid == a
+        with pytest.raises(subprocess.TimeoutExpired): pa.wait(0.2)
+        pa.terminate(); assert pa.wait(20) == 0 and pa.poll() == 0
+        assert attendi(lambda: not processi.vivo(a), 20), "finito anche per chi lo chiede di nuovo"
+        pb.kill(); assert pb.wait(20) == 0
+    finally:
+        for p in (pa, pb):
+            if p.poll() is None: p.kill()
+
+
+def test_processo_finito_mentre_lo_si_ferma(sistema, monkeypatch):
+    """macOS e Linux (simulati): il processo finisce tra poll e il segnale; nessun errore, e risulta finito"""
+    sistema("linux")
+    monkeypatch.setattr(processi, "vivo", lambda pid: True)
+    monkeypatch.setattr(processi.os, "kill", lambda pid, segnale: (_ for _ in ()).throw(ProcessLookupError(pid)))
+    p = processi.Processo(12345); assert p.poll() is None
+    p.terminate(); assert p.returncode == 0
+
+
+class Kernel32:
+    """kernel32 finto: processi {pid: in funzione?}, errore di OpenProcess per i pid che non ci sono"""
+
+    def __init__(self, processi, errore=87):
+        self.processi, self.errore, self.aperti, self.chiusi, self.fermati, self.attese = processi, errore, [], [], [], []
+        self.OpenProcess, self.WaitForSingleObject, self.TerminateProcess, self.CloseHandle = self.apri, self.aspetta, self.ferma, self.chiudi
+
+    def apri(self, diritti, eredita, pid):
+        if pid not in self.processi: return None
+        self.aperti.append((diritti, eredita, pid)); return 1000 + pid
+
+    def aspetta(self, h, ms):
+        self.attese.append(ms); return 0x102 if self.processi[h - 1000] else 0
+
+    def ferma(self, h, codice): self.fermati.append((h, codice)); self.processi[h - 1000] = False
+
+    def chiudi(self, h): self.chiusi.append(h)
+
+
+def test_processi_dati_dal_pid_su_windows(sistema, monkeypatch):
+    """Windows (simulato): os.kill lì chiuderebbe il processo, si usano OpenProcess e WaitForSingleObject; il processo seguito
+    resta aperto (handle) fino alla fine, e terminate/kill lo chiudono con TerminateProcess"""
+    import ctypes
+    k = Kernel32({7: True, 8: False, 9: True}); errore = [87]; vero = processi._kernel32
+    monkeypatch.setattr(processi, "_kernel32", lambda: (k, lambda: errore[0]))
+    monkeypatch.setattr(processi.os, "kill", lambda *a: pytest.fail("os.kill su Windows"))
+    sistema("windows")
+    assert processi.vivo(7) and not processi.vivo(8) and not processi.vivo(5), "87: nessun processo con quel pid"
+    errore[0] = 5; assert processi.vivo(5), "accesso negato: c'è, di un altro utente"
+    assert k.aperti[0] == (0x101000, False, 7) and k.chiusi == [1007, 1008] and k.attese == [0, 0]
+    assert processi.Processo(5).poll() == 0, "non si apre: non si segue"
+    p = processi.Processo(9); assert k.aperti[-1] == (0x101001, False, 9) and p.poll() is None
+    with pytest.raises(subprocess.TimeoutExpired): p.wait(0.01)
+    assert k.attese[-1] == 50
+    p.terminate(); assert k.fermati == [(1009, 1)] and p.wait() == 0 and p.poll() == 0
+    p.kill(); p.terminate(); assert k.fermati == [(1009, 1)], "già finito: niente da fermare"
+    k.processi[9] = True; q = processi.Processo(9); q.kill(); assert k.fermati[-1] == (1009, 1)
+    p.__del__(); p.__del__(); assert k.chiusi.count(1009) == 1, "l'handle si chiude una volta"
+    dll = types.SimpleNamespace(**{n: types.SimpleNamespace() for n in ("OpenProcess", "WaitForSingleObject", "TerminateProcess", "CloseHandle")})
+    caricate = []
+    monkeypatch.setattr(ctypes, "WinDLL", lambda nome, use_last_error: caricate.append((nome, use_last_error)) or dll, raising=False)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: 5, raising=False)
+    kk, ultimo = vero()
+    assert kk is dll and ultimo() == 5 and caricate == [("kernel32", True)]
+    assert dll.OpenProcess.restype is ctypes.c_void_p and dll.WaitForSingleObject.argtypes == [ctypes.c_void_p, ctypes.c_uint32]
+    assert dll.TerminateProcess.argtypes[0] is ctypes.c_void_p and dll.CloseHandle.argtypes == [ctypes.c_void_p], "handle a 64 bit"
+
+
 STACCA = """import os, sys
 from impaginatore.piattaforma import processi
 sessione = os.getsid(0)

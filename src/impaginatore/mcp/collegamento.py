@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 
 from .. import lingua, sicurezza
-from ..piattaforma import processi, sistema
+from ..piattaforma import processi
 
 log = logging.getLogger("impaginatore.mcp")
 
@@ -60,16 +60,6 @@ def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
     except ValueError: raise NonRaggiungibile("risposta non JSON") from None          # non tradotto: motivo tecnico, non arriva all'utente
 
 
-def _vivo(pid):
-    """il processo pid c'è ancora? Su macOS e Linux lo si chiede al sistema (un file di sessione rimasto da un server chiuso male
-    non riceve il gettone); su Windows os.kill chiuderebbe il processo: si prova la richiesta"""
-    if sistema() == "windows" or not isinstance(pid, int): return True
-    try: os.kill(pid, 0)
-    except ProcessLookupError: return False
-    except OSError: return True                   # c'è ma è di un altro utente: lo dirà la richiesta
-    return True
-
-
 class Server:
     """un server del programma che risponde: porta, gettone (dal file di sessione) e risposta di /api/ping"""
 
@@ -84,7 +74,7 @@ def attivi(tipo):
     """[Server] di quel tipo («home», «editor») che rispondono, per porta"""
     out = []
     for s in sicurezza.sessioni(tipo):
-        if not _vivo(s.get("pid")): continue
+        if not processi.vivo(s.get("pid")): continue                    # file di sessione rimasto da un server chiuso male: niente gettone
         try: p = chiedi(s["porta"], s["gettone"], "/api/ping", timeout=2)
         except (NonRaggiungibile, Errore): continue
         if isinstance(p, dict): out.append(Server(s["porta"], s["gettone"], p))

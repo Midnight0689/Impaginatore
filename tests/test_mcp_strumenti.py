@@ -477,11 +477,6 @@ def test_client_locale(editor, monkeypatch):
     chiesti = []; vero = C.chiedi
     monkeypatch.setattr(C, "chiedi", lambda porta, *x, **k: (chiesti.append(porta), vero(porta, *x, **k))[1])
     assert list(C.editori().values())[0].porta == editor.porta and 9 not in chiesti, "al processo che non c'è più non si manda il gettone"
-    monkeypatch.setattr(C.sys, "platform", "win32")
-    assert C._vivo(2**22 + 12345) is True, "su Windows si prova la richiesta (os.kill chiuderebbe il processo)"
-    monkeypatch.setattr(C.sys, "platform", "linux")
-    assert C._vivo(None) is True and C._vivo(os.getpid()) is True
-    if os.name != "nt" and os.getuid() != 0: assert C._vivo(1) is True, "processo di un altro utente: lo dirà la richiesta"
     d["pid"] = os.getpid()
     with open(os.path.join(sicurezza.cartella_sessioni(), "editor-9.json"), "w", encoding="utf-8") as f: json.dump(d, f)
     assert list(C.editori().values())[0].porta == editor.porta and 9 in chiesti, "porta chiusa: si salta"
