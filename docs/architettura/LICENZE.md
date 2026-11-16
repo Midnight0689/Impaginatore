@@ -146,4 +146,4 @@ accettata con le decisioni sopra; la tabella dice quanto costa ogni aggiramento.
 - **Chiavi Polar** (`IMP-` + UUID): non accettate; servirebbero solo se si passasse a Polar con le sue attivazioni,
   che le decisioni sopra escludono.
 - **Testi**: dalla tabella dei testi (`risorse/testi/<lingua>/licenze.json`, T-206), in italiano e in inglese; i nomi
-  delle fasce in inglese sono Essential, Pro e Studio.
+  delle fasce in inglese sono Essential, Pro, Studio e Lab (gli id di `tier.json` e il formato delle chiavi non cambiano).
