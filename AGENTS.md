@@ -14,6 +14,7 @@ Impaginatore è un programma desktop per impaginare album fotografici. Il ramo `
 - Lingua: italiano per codice (nomi esistenti), documenti, messaggi di commit e interfaccia. I testi visibili all'utente passano dal sistema di traduzione quando c'è.
 - Le foto dell'utente non escono mai dal computer. Nessuna funzione può caricarle in rete.
 - Nessun push e nessuna modifica a `main` senza richiesta esplicita del titolare.
+- I documenti riservati (`docs/legale/`, `docs/audit/`, `docs/mercato/` salvo `tier.json`, `marketing/negozio/` salvo `chiavi/`, `marketing/lancio/`) stanno solo sul computer del titolare: sono in `.gitignore` e non si aggiungono al repository.
 - Commit piccoli, messaggio `tipo(area): descrizione`. Tipi: `feat`, `fix`, `sicurezza`, `refactor`, `test`, `doc`, `ci`, `brand`, `mercato`. Si aggiungono solo i propri file, con percorsi espliciti.
 - Ogni modifica al comportamento ha un test. La copertura richiesta è 100 %; una riga esclusa va motivata accanto al `pragma`.
 - Prima di dichiarare finito un lavoro: `ruff check` e `pytest` devono passare, e l'esito va riportato così com'è.

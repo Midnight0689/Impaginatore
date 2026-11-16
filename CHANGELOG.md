@@ -178,6 +178,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `RIM-002` **motore** — Tolto `motore/compat.py`: i nomi 1.x come moduli di primo livello servivano solo a eseguire `spec.py`. _File:_ `src/impaginatore/motore/compat.py`. _Rif:_ `SEC-001`.
 - `RIM-003` **editor** — Tolti `_file_programma`, non più usata, e sette controlli di spread e foto in `apply` che `valida` fa già prima di ogni operazione. _File:_ `src/impaginatore/editor/server.py`. _Rif:_ `T-104`.
 - `RIM-004` **piattaforma** — Tolto il ripiego di `pil_ripiego` per Pillow precedenti alla 10.1. _File:_ `src/impaginatore/piattaforma/font.py`. _Rif:_ `T-104`.
+- `RIM-005` **documenti** — Bozze legali, audit, ricerche di mercato, documenti del negozio e piano di lancio escono dal repository e dalla sua storia: restano sul computer del titolare (`.gitignore`). Restano il listino `tier.json` e lo strumento delle chiavi. _File:_ `.gitignore`, `AGENTS.md`.
 
 ### Documenti e contenuti
 

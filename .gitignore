@@ -21,3 +21,13 @@ build/
 
 # chiavi private di licenze e rilasci: mai nel repository
 /chiavi-private/
+
+# documenti riservati (bozze legali, audit, ricerche di mercato, negozio, piano di lancio): restano sul computer del
+# titolare, fuori dal repository. Fanno eccezione il listino letto dai test e lo strumento delle chiavi.
+/docs/legale/
+/docs/audit/
+/docs/mercato/*
+!/docs/mercato/tier.json
+/marketing/negozio/*
+!/marketing/negozio/chiavi/
+/marketing/lancio/
