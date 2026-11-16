@@ -36,7 +36,7 @@ nei negli nelle con su sul sullo sulla sui sulle per tra fra che non è e ed o m
 questi queste ti tu tuo tua tuoi tue già più può puoi sono hai ha ho the a an to of and or on for with is are not this that your
 you be it its from into by at as was were has have""".split())
 ELENCO_LIBERO = {"Impaginatore", "Enter", "Escape", "Tab", "Delete", "Backspace", "Shift", "Alt", "Meta", "Control", "Home", "End",
-                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial", "Created", "Stefano", "Imperato",
+                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial", "Stefano", "Imperato",
                  "Italiano", "English", "Album", "Spread", "Pro", "Studio", "Essenziale", "Essential", "Laboratorio"}
 
 
@@ -271,7 +271,7 @@ class _Markup(html.parser.HTMLParser):
     def handle_endtag(self, tag):
         if tag == self.dentro: self.dentro = None
     def handle_data(self, data):
-        if not self.dentro and re.search(r"[A-Za-zÀ-ÿ]{2,}", data) and [w for w in re.findall(r"[A-Za-zÀ-ÿ]{2,}", data) if w not in ELENCO_LIBERO | {"JPG", "PDF", "PSD", "sRGB", "IMP", "by"}]:
+        if not self.dentro and re.search(r"[A-Za-zÀ-ÿ]{2,}", data) and [w for w in re.findall(r"[A-Za-zÀ-ÿ]{2,}", data) if w not in ELENCO_LIBERO | {"JPG", "PDF", "PSD", "sRGB", "IMP"}]:
             self.trovati.append((self.getpos()[0], "testo", data.strip()[:80]))
 
 

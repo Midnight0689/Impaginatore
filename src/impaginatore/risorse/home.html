@@ -202,6 +202,7 @@
   <div class="corpo" data-t="home.assist_testo"></div>
   <label class="interr" id="aimgr"><input type="checkbox" id="aimg" role="switch" aria-describedby="anota"><span data-t="home.assist_immagini"></span></label>
   <div class="info" id="anota" data-t="home.assist_nota"></div>
+  <div class="info" id="aopz" data-t="home.assist_opzione"></div>
   <div class="info" id="amotivo" hidden></div>
   <div class="err" id="aerr" role="alert"></div>
   <div class="btns"><button id="aclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
@@ -443,7 +444,7 @@ async function chiudiProgramma() {
 // ---- assistente AI (MCP): di serie riceve solo testo; le immagini ridotte solo se l'utente accende l'interruttore
 async function apriAssistente() {
   $("aerr").textContent = ""; const d = await api("/api/assistente"), ok = d.consentito !== false;       // licenza senza l'assistente: niente interruttore, il perché
-  $("aimgr").hidden = $("anota").hidden = !ok; $("amotivo").hidden = ok; $("amotivo").textContent = ok ? "" : d.motivo || "";
+  $("aimgr").hidden = $("anota").hidden = $("aopz").hidden = !ok; $("amotivo").hidden = ok; $("amotivo").textContent = ok ? "" : d.motivo || "";
   $("aimg").checked = d.immagini === true; apri("vassist", ok ? $("aimg") : $("aclose"));
 }
 $("aimg").onchange = async () => {
@@ -545,6 +546,6 @@ loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load().catch(errore);
 </script>
-<div id="credit">Created by <b>Stefano Imperato</b></div>
+<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
 </body>
 </html>
