@@ -32,8 +32,8 @@
     "manuale": ""
   },
   "requisiti": {
-    "it": "macOS (Apple Silicon e Intel), Windows 10 e 11, Linux a 64 bit. Requisiti minimi di memoria e disco: da definire con le prove sui tre sistemi.",
-    "en": "macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems."
+    "it": "È fatto per macOS, Windows e Linux. I test automatici girano sui tre sistemi; le prove su computer Mac e Windows veri, e con loro i requisiti minimi di memoria e di disco, sono in arrivo. Su Linux i PSD a livelli non si possono fare.",
+    "en": "It is made for macOS, Windows and Linux. The automated tests run on all three; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs."
   },
   "data_lancio": "2027-02-23",
   "data_fine_lancio": "2027-04-23",
@@ -42,7 +42,7 @@
   "sede": "{{sede}}",
   "interruttori": {
     "in_vendita": false,
-    "mcp_disponibile": false,
+    "mcp_disponibile": true,
     "riprova_sociale": false
   }
 }

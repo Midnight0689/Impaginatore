@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install Impaginatore · Mac, Windows and Linux</title>
-<meta name="description" content="How to install Impaginatore with a one-line command or the classic installer, what the command does piece by piece, and how to check that the file is genuine.">
+<title>Installing Impaginatore · coming soon</title>
+<meta name="description" content="Impaginatore installers for macOS, Windows and Linux are coming: what exists today and how to hear when they are out.">
 <link rel="canonical" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
 <link rel="alternate" hreflang="it" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="en" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
@@ -12,13 +12,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Impaginatore">
 <meta property="og:locale" content="en_GB">
-<meta property="og:title" content="Install Impaginatore">
-<meta property="og:description" content="A one-line command, or the classic installer. What the command does and how to check the file.">
+<meta property="og:title" content="Installing Impaginatore">
+<meta property="og:description" content="Installers for macOS, Windows and Linux are coming.">
 <meta property="og:url" data-url="en/installa.html" content="https://impaginatore.example/en/installa.html">
 <meta property="og:image" data-url="img/og/og-en.jpg" content="https://impaginatore.example/img/og/og-en.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Impaginatore logo next to the editor with a wedding album open.">
+<meta property="og:image:alt" content="The Impaginatore logo next to the editor with a sample album open.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../favicon.ico" sizes="32x32">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -60,7 +60,6 @@
       <ul>
         <li><a href="index.html#features">Features</a></li>
         <li><a href="index.html#prices">Prices</a></li>
-        <li><a href="installa.html" aria-current="page">Install</a></li>
         <li><a href="index.html#faq">FAQ</a></li>
       </ul>
     </nav>
@@ -69,7 +68,6 @@
       <ul>
         <li><a href="index.html#features">Features</a></li>
         <li><a href="index.html#prices">Prices</a></li>
-        <li><a href="installa.html" aria-current="page">Install</a></li>
         <li><a href="index.html#faq">FAQ</a></li>
       </ul>
     </details>
@@ -78,93 +76,19 @@
 </header>
 
 <main id="contenuto" class="semplice">
+  <!-- Reduced page until the installers exist (T-301, T-302): no commands, no checksums, no guessed macOS or Windows
+       warnings. Rewrite it with the real files on launch day (see README.md). -->
   <div class="pagina">
     <div class="testo">
-      <span class="etichetta">Install · macOS, Windows and Linux</span>
-      <h1>Install Impaginatore in one minute.</h1>
-      <div class="avviso attenzione" data-se-non="in_vendita"><svg class="icona" aria-hidden="true"><use href="#i-info"/></svg><p><b>Not available yet.</b> Impaginatore goes on sale on <span data-cfg="data_lancio">23 February 2027</span>. This page already shows how it will be installed: the commands and files will work from that day.</p></div>
-      <p class="attacco">The simplest way is a one-line command: it downloads Impaginatore from our site, checks its integrity and installs it for your user only, without asking for an administrator password. If you prefer, there is a <a href="#classic">classic installer</a>.</p>
+      <span class="etichetta">Installation</span>
+      <h1>The installers are coming.</h1>
+      <p class="attacco">Impaginatore can’t be downloaded yet. Installers for macOS, Windows and Linux are being prepared: when they are ready, this page will explain how to download them and open them the first time.</p>
 
-      <h2 id="mac-linux">Mac and Linux</h2>
-      <p>Open <b>Terminal</b> (on a Mac: Spotlight, then type «Terminal»), paste this line and press Enter:</p>
-      <div class="comando">
-        <pre><code id="cmd-mac" data-cfg="comando_mac">curl -fsSL https://impaginatore.example/installa.sh | sh</code></pre>
-        <button class="pulsante piccolo copia" type="button" data-copia="cmd-mac" aria-describedby="annuncio-mac" hidden>Copy</button>
-      </div>
-      <p class="annuncio" id="annuncio-mac" aria-live="polite"></p>
+      <h2 id="today">What exists today</h2>
+      <p>The app is in development. The automated tests run on macOS, Windows and Linux; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs, because there is no Photoshop.</p>
 
-      <h2 id="windows">Windows</h2>
-      <p>Open <b>PowerShell</b> from the Start menu, paste this line and press Enter:</p>
-      <div class="comando">
-        <pre><code id="cmd-win" data-cfg="comando_windows">irm https://impaginatore.example/installa.ps1 | iex</code></pre>
-        <button class="pulsante piccolo copia" type="button" data-copia="cmd-win" aria-describedby="annuncio-win" hidden>Copy</button>
-      </div>
-      <p class="annuncio" id="annuncio-win" aria-live="polite"></p>
-      <p class="secondario">At the end the command prints a short confirmation and tells you where to find Impaginatore: in Launchpad on a Mac, in the Start menu on Windows, among your applications on Linux.</p>
-
-      <h2 id="what-it-does">What the command does, piece by piece</h2>
-      <p>Pasting a command takes trust, so here is what each part means.</p>
-      <h3>Mac and Linux</h3>
-      <dl class="spiegazione">
-        <dt><code>curl</code></dt><dd>The program that downloads files from the internet. It is already installed on Macs and on almost every Linux.</dd>
-        <dt><code>-f</code></dt><dd>If the site answers with an error, it stops instead of running an error page.</dd>
-        <dt><code>-s</code></dt><dd>No progress bar.</dd>
-        <dt><code>-S</code></dt><dd>But if something goes wrong, it shows the error.</dd>
-        <dt><code>-L</code></dt><dd>If the address has moved, it follows the new one.</dd>
-        <dt><code data-cfg="url_script_mac">https://impaginatore.example/installa.sh</code></dt><dd>The install script, downloaded from our site over an encrypted connection. It’s a text file: you can open it and read it.</dd>
-        <dt><code>| sh</code></dt><dd>Hands the script to the shell, which runs it with your user’s permissions, not as administrator.</dd>
-      </dl>
-      <h3>Windows</h3>
-      <dl class="spiegazione">
-        <dt><code>irm</code></dt><dd>Short for <code>Invoke-RestMethod</code>: downloads the content of the address that follows.</dd>
-        <dt><code data-cfg="url_script_windows">https://impaginatore.example/installa.ps1</code></dt><dd>The Windows install script, from our site, over an encrypted connection. You can open and read this one too.</dd>
-        <dt><code>| iex</code></dt><dd>Short for <code>Invoke-Expression</code>: runs the downloaded script in PowerShell, with your user’s permissions.</dd>
-      </dl>
-      <h3>What the script does</h3>
-      <ol>
-        <li>Downloads, over an encrypted connection, the right version for your system and processor.</li>
-        <li>Checks the file’s SHA-256 fingerprint and the signature of our release list. If either doesn’t match, it stops and installs nothing.</li>
-        <li>Installs Impaginatore in your user folder: it doesn’t touch the system and doesn’t ask for an administrator password.</li>
-        <li>Creates the icon and registers <code>impaginatore://</code> links, used to open your licence key straight from the email.</li>
-        <li>Tells you where to find the app.</li>
-      </ol>
-      <p>The script collects no data, installs nothing else and contacts nothing but our site. Your photos are not involved: the script never sees them.</p>
-      <h3>Rather read it first?</h3>
-      <p>Save it to a file, open it, and run it only after reading it:</p>
-      <div class="comando">
-        <pre><code>curl -fsSL <span data-cfg="url_script_mac">https://impaginatore.example/installa.sh</span> -o installa.sh
-less installa.sh
-sh installa.sh</code></pre>
-      </div>
-
-      <h2 id="classic">Classic installer</h2>
-      <p>If you’d rather not use the Terminal, download the file for your system and open it like any other app.</p>
-      <div class="fila" data-se="in_vendita" hidden>
-        <a class="pulsante" data-link="download.mac" href="../en/installa.html#classic"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Mac (.dmg)</a>
-        <a class="pulsante" data-link="download.windows" href="../en/installa.html#classic"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Windows (.exe)</a>
-        <a class="pulsante" data-link="download.linux" href="../en/installa.html#classic"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Linux (AppImage and .deb)</a>
-      </div>
-      <p>Our installers are not signed with Apple or Microsoft certificates, so the first time your system shows a warning:</p>
-      <ul>
-        <li><b>Mac:</b> open the .dmg file and drag Impaginatore to Applications. The first time you open it, if macOS blocks it, go to System Settings, Privacy &amp; Security, and press «Open Anyway».</li>
-        <li><b>Windows:</b> on the blue Windows SmartScreen window press «More info» and then «Run anyway».</li>
-        <li><b>Linux:</b> make the AppImage executable from the file’s properties and open it, or install the .deb package with your package manager.</li>
-      </ul>
-
-      <h2 id="verify">Checking that the file is genuine</h2>
-      <p>Every download has a <b>SHA-256 fingerprint</b>: a string of 64 characters that changes completely if even one bit of the file changes. Fingerprints are published next to the files, on the <a data-link="impronte" href="../en/installa.html#verify">fingerprints page</a>. The install command checks them by itself; with the classic installer you can do it yourself:</p>
-      <ul>
-        <li><b>Mac</b>, in Terminal: <code>shasum -a 256 ~/Downloads/Impaginatore.dmg</code></li>
-        <li><b>Windows</b>, in PowerShell: <code>Get-FileHash $HOME\Downloads\Impaginatore-Setup.exe -Algorithm SHA256</code></li>
-        <li><b>Linux</b>, in a terminal: <code>sha256sum ~/Downloads/Impaginatore.AppImage</code></li>
-      </ul>
-      <p>The result must be identical to the published fingerprint. If it isn’t, don’t open the file and write to us at <a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a>.</p>
-
-      <h2 id="requirements">Requirements</h2>
-      <p data-cfg="requisiti">macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems.</p>
-
-      <h2 id="problems">If something goes wrong</h2>
-      <p>Write to <a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a> with the message you see. If the problem is in the app or the installation, we help for free. If you’d like someone to install it with you, there is <a href="index.html#prices">support by the hour</a>.</p>
+      <h2 id="notify">Want to know when it’s out?</h2>
+      <p>Join the <a href="index.html#waitlist">waiting list</a>: we’ll write on launch day. For any question, write to <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
     </div>
   </div>
 </main>
