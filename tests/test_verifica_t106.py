@@ -178,7 +178,6 @@ def test_foto_troncata_non_blocca_il_progetto(home, apri_editor):
 
 
 # ------------------------------------------------------------------ VER-012
-@xfail("VER-012", "Content-Length non ASCII: eccezione non gestita, connessione chiusa senza risposta")
 def test_content_length_strano_ha_una_risposta(editor):
     s = socket.create_connection(("127.0.0.1", editor.porta), timeout=10)
     s.sendall(f"POST /api/op HTTP/1.1\r\nHost: 127.0.0.1:{editor.porta}\r\nX-Impaginatore-Gettone: {editor.gettone}\r\n"
@@ -194,7 +193,6 @@ def test_content_length_strano_ha_una_risposta(editor):
     assert r.startswith(b"HTTP/1.") and r.split(b" ", 2)[1] in (b"400", b"411")
 
 
-@xfail("VER-012", "corpo JSON che non è un oggetto su /api/avvio: connessione chiusa senza risposta")
 def test_avvio_con_corpo_non_oggetto_risponde_400(home_srv):
     assert home_srv.codice("/api/avvio", [1, 2]) == 400
 

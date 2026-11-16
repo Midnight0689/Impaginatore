@@ -6,6 +6,7 @@ arrivare a do_GET/do_POST, ogni risposta ha le intestazioni di sicurezza. Il pro
 """
 import json
 import logging
+import math
 import secrets
 import socket
 import sys
@@ -109,20 +110,26 @@ class Gestore(BaseHTTPRequestHandler):
         if self.command == "POST":
             if (h.get("Content-Type") or "").split(";")[0].strip().lower() != "application/json": raise Rifiuto(415, "il corpo deve essere JSON")
             n = h.get("Content-Length")
-            if h.get("Transfer-Encoding") or n is None or not n.isdigit(): raise Rifiuto(411, "manca la lunghezza del corpo")
-            if int(n) > sicurezza.MAX_CORPO: raise Rifiuto(413, "richiesta troppo grande")
+            if h.get("Transfer-Encoding") or n is None or not (n.isascii() and n.isdigit()): raise Rifiuto(411, "manca la lunghezza del corpo")      # «²» è isdigit() ma non un numero (VER-012)
+            if len(n) > 18 or int(n) > sicurezza.MAX_CORPO: raise Rifiuto(413, "richiesta troppo grande")
 
     def parse_request(self):
         if not super().parse_request(): return False
-        try: self.controlla()
+        try: self.controlla(); u = urlparse(self.path)
         except Rifiuto as r:
-            log.info("richiesta rifiutata (%s %s): %s %s", r.codice, r, self.command, urlparse(self.path).path)
+            log.info("richiesta rifiutata (%s %s): %s", r.codice, r, self.command)
+            log.debug("richiesta rifiutata: percorso %s", urlparse(self.path).path)        # il percorso può contenere il nome di una foto: solo a DEBUG (VER-013)
             self.rifiuta(r.codice, str(r)); return False
-        u = urlparse(self.path)
+        except ValueError as e:                    # richiesta malformata (percorso, intestazioni): risposta ordinata, mai una connessione chiusa (VER-012)
+            log.info("richiesta non valida (%s): %s", type(e).__name__, self.command)
+            self.rifiuta(400, "richiesta non valida"); return False
         if self.command == "GET" and u.path == "/avvio": self._avvio(parse_qs(u.query)); return False
         if self.command == "GET" and u.path == "/favicon.ico":                                     # il browser la chiede da solo: niente icona, niente errore
             self.send_response(204); self.send_header("Cache-Control", "max-age=86400"); self.end_headers(); return False
-        if self.command == "POST" and u.path == "/api/avvio": self.corpo(); self.json({"indirizzo": self.server.indirizzo_avvio()}); return False
+        if self.command == "POST" and u.path == "/api/avvio":
+            try: self.corpo()
+            except ValueError as e: self.json({"errore": str(e)}, 400); return False
+            self.json({"indirizzo": self.server.indirizzo_avvio()}); return False
         return True
 
     def rifiuta(self, codice, motivo):
@@ -159,7 +166,38 @@ class Gestore(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)
 
     def corpo(self):
-        """corpo JSON della richiesta POST (un oggetto; {} se vuoto). La misura l'ha già controllata controlla()"""
-        d = json.loads(self.rfile.read(int(self.headers["Content-Length"])) or b"{}")
+        """corpo JSON della richiesta POST (un oggetto; {} se vuoto), letto con leggi_json. La misura l'ha già controllata controlla()"""
+        d = leggi_json(self.rfile.read(int(self.headers["Content-Length"])) or b"{}")
         if not isinstance(d, dict): raise ValueError("il corpo deve essere un oggetto JSON")
         return d
+
+
+class RichiestaNonValida(ValueError):
+    """parametro di una richiesta GET fuori misura o non numerico: i server rispondono 400"""
+
+
+def _costante(v): raise ValueError(f"valore non ammesso nel JSON: {v}")
+
+
+def _decimale(s):
+    v = float(s)
+    if not math.isfinite(v): raise ValueError(f"numero troppo grande nel JSON: {s[:20]}")
+    return v
+
+
+def leggi_json(dati):
+    """JSON che arriva da una richiesta (corpo o parametro): niente NaN, Infinity né numeri che diventerebbero infiniti
+    (1e400). Sono valori che nessun progetto può salvare: si rifiutano qui, prima di arrivare allo stato (VER-001).
+    Errori: sempre ValueError"""
+    try: return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
+    except RecursionError: raise ValueError("JSON troppo annidato") from None
+
+
+def numero(q, nome, predefinito, minimo, massimo, intero=False):
+    """parametro numerico di una richiesta GET (q = parse_qs): finito e riportato tra minimo e massimo (VER-014);
+    un valore che non è un numero (o NaN, infinito) è una RichiestaNonValida"""
+    t = (q.get(nome) or [str(predefinito)])[0]
+    try: v = int(t) if intero else float(t)
+    except ValueError: raise RichiestaNonValida(f"{nome}: non è un numero") from None
+    if not math.isfinite(v): raise RichiestaNonValida(f"{nome}: non è un numero finito")
+    return min(max(v, minimo), massimo)
