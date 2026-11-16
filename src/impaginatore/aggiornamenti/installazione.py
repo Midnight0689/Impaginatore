@@ -80,7 +80,7 @@ def estrai(pacchetto, manifesto, dest):
     attesi = manifesto["file"]; visti = set(); totale = 0
     try: z = zipfile.ZipFile(pacchetto)
     except (OSError, zipfile.BadZipFile): raise Rifiutato("sistema.agg_pacchetto_non_valido") from None
-    with z:
+    try:                                     # non «with z:»: coverage con Python 3.12 non vede l'uscita dei raise dentro un «with»
         voci = z.infolist()
         if len(voci) > MAX_VOCI: raise Rifiutato("sistema.agg_pacchetto_non_valido")
         os.makedirs(dest)
@@ -92,19 +92,25 @@ def estrai(pacchetto, manifesto, dest):
             if stat.S_ISLNK(zi.external_attr >> 16) or zi.flag_bits & 1 or zi.file_size > MAX_FILE: raise Rifiutato("sistema.agg_file_non_ammesso", nome=n[:120])
             uscita = os.path.join(dest, *n.split("/"))
             os.makedirs(os.path.dirname(uscita), exist_ok=True)
-            h = hashlib.sha256()
-            with z.open(zi) as src, open(uscita, "xb") as out:          # zipfile non legge oltre la misura dichiarata (file_size, già controllata)
-                while True:
-                    b = src.read(1 << 16)
-                    if not b: break
-                    totale += len(b)
-                    if totale > MAX_ESTRATTO: raise Rifiutato("sistema.agg_troppo_grande")
-                    h.update(b); out.write(b)
-                out.flush(); os.fsync(out.fileno())
+            with z.open(zi) as src, open(uscita, "xb") as out: h, totale = _copia(src, out, totale)    # zipfile non legge oltre la misura dichiarata (file_size, già controllata)
             if h.hexdigest() != attesi[n]: raise Rifiutato("sistema.agg_pacchetto_diverso")
             visti.add(n)
+    finally: z.close()
     mancano = len(set(attesi) - visti)
     if mancano: raise Rifiutato("sistema.agg_file_mancanti_1" if mancano == 1 else "sistema.agg_file_mancanti_n", n=mancano)
+
+
+def _copia(src, out, totale):
+    """copia src in out (fino al disco: fsync) contando i byte estratti finora; (sha256, totale). Rifiutato oltre MAX_ESTRATTO"""
+    h = hashlib.sha256()
+    while True:
+        b = src.read(1 << 16)
+        if not b: break
+        totale += len(b)
+        if totale > MAX_ESTRATTO: raise Rifiutato("sistema.agg_troppo_grande")
+        h.update(b); out.write(b)
+    out.flush(); os.fsync(out.fileno())
+    return h, totale
 
 
 def controlla_revoche(dest):
