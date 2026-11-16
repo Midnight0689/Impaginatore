@@ -656,7 +656,7 @@ $("sint").onchange = async () => {
 $("sregb").onclick = async () => {
   try {
     const r = await api("/api/statistiche/registro"); $("sregt").value = r.righe.join("\n");
-    $("sregi").textContent = (r.totale > r.righe.length ? t("statistiche.registro_ultime", { n: r.righe.length, totale: r.totale }) + "\n" : "") + t("statistiche.dove_registro", { cartella: STAT.cartella });
+    $("sregi").textContent = (r.totale > r.righe.length ? tn("statistiche.registro_ultime", r.righe.length, { totale: r.totale }) + "\n" : "") + t("statistiche.dove_registro", { cartella: STAT.cartella });
     apri("vsreg", $("sregc"));
   } catch (e) { erroreStat(e); }
 };
