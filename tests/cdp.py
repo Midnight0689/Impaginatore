@@ -86,7 +86,12 @@ class Browser:
 
     def __enter__(self):
         prof = os.path.join(self.cartella, "chrome-cdp"); os.makedirs(prof, exist_ok=True)
+        # niente estensioni né app predefinite: Chrome le installa nel profilo nuovo qualche secondo dopo l'avvio e, quando
+        # arrivano, le richieste della pagina già partite e non ancora consegnate alla rete finiscono in net::ERR_ABORTED
+        # («Failed to fetch» nella pagina). Su una macchina carica capitava a metà di un test (la seconda «Altra
+        # disposizione» persa: «Disposizione 2 di 50» invece di 3). Sono le opzioni che usano anche Puppeteer e Playwright
         self.p = subprocess.Popen([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", f"--user-data-dir={prof}",
+                                   "--disable-extensions", "--disable-default-apps", "--disable-component-update",
                                    "--remote-debugging-port=0", "--window-size=1600,1000", "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         f = os.path.join(prof, "DevToolsActivePort"); t = time.time() + 30
         while not (os.path.exists(f) and open(f, encoding="utf-8").read().strip()):

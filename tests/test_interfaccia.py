@@ -12,6 +12,7 @@ pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve 
 
 def dom(url, tmp_path):
     r = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", f"--user-data-dir={tmp_path / 'chrome'}",
+                        "--disable-extensions", "--disable-default-apps", "--disable-component-update",       # come in cdp.Browser (lì il perché)
                         "--virtual-time-budget=8000", "--dump-dom", url], capture_output=True, text=True, encoding="utf-8", timeout=120)
     return r.stdout
 
