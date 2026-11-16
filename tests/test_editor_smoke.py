@@ -132,7 +132,7 @@ def test_psd_senza_photoshop(editor, tmp_path, monkeypatch):
 
 def test_pagina_e_risorse(editor):
     c = editor
-    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and f'content="{c.gettone}"' in html
+    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and c.gettone not in html, "il gettone arriva dalla sessionStorage (VER-006)"
     assert c.get("/api/ping")["path"] == c.progetto
     assert c.get("/api/state")["home"] == "http://127.0.0.1:9"
     assert isinstance(c.get("/api/log"), list) and isinstance(c.get("/api/versioni"), list)

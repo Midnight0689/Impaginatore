@@ -19,7 +19,7 @@ class Finti(dialoghi.Dialoghi):
 
 def test_pagina_ed_elenco(home_srv):
     c = home_srv
-    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and "__NONCE__" not in html and f'content="{c.gettone}"' in html
+    html = c.raw("/").decode("utf-8"); assert '<script nonce="' in html and "__NONCE__" not in html and c.gettone not in html, "il gettone arriva dalla sessionStorage (VER-006)"
     assert c.get("/api/ping") == {"ok": True}
     r = c.get("/api/progetti"); assert r["progetti"] == [] and r["cartella"] == c.modulo.PROGETTI
     a = c.get("/api/aggiornamento"); assert a["attuale"]["rel"] and not a["da_aggiornare"]

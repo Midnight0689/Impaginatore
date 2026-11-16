@@ -18,7 +18,8 @@ from .. import formato
 
 
 if __name__ == "__main__":
-    Image.MAX_IMAGE_PIXELS = None
+    from .album import limite_pixel
+    Image.MAX_IMAGE_PIXELS = limite_pixel()          # come per le foto del progetto (VER-014): oltre, Pillow rifiuta il file
 
     ap = argparse.ArgumentParser(); ap.add_argument("--web", required=True); ap.add_argument("--originali", nargs="+", required=True)
     ap.add_argument("--dest", required=True); ap.add_argument("--lato-minimo", type=int, default=4000, help="lato lungo minimo in px per considerarla alta risoluzione")
@@ -31,7 +32,8 @@ if __name__ == "__main__":
         for f in os.listdir(d):
             if f.lower().endswith(EXT) and not f.startswith("."): where.setdefault(f, []).append(d)
     def thumb(p):
-        im = Image.open(p); im.draft("L", (200, 200)); return im.convert("L").resize((64, 64))
+        with Image.open(p) as im: im.draft("L", (200, 200)); t = im.convert("L").resize((64, 64))          # file chiuso subito (VER-015)
+        return t
     problems, ok, origine = [], [], {}
     for f in web:
         pw = os.path.join(a.web, f); cands = where.get(f, [])
@@ -42,11 +44,13 @@ if __name__ == "__main__":
             problems.append(f"{f}: nome presente in {len(cands)} cartelle -> uso {os.path.basename(diffs[0][1])} (differenza {diffs[0][0]:.1f})")
             src_dir = diffs[0][1]
         else: src_dir = cands[0]
-        po = os.path.join(src_dir, f); im = Image.open(po); long_side = max(im.size)
+        po = os.path.join(src_dir, f)
+        with Image.open(po) as im: dim = im.size
+        long_side = max(dim)
         if filecmp.cmp(pw, po, shallow=False):
             problems.append(f"{f}: l'originale è IDENTICO alla versione web -> forse non riesportato in alta"); continue
         if long_side < a.lato_minimo:
-            problems.append(f"{f}: originale piccolo ({im.size[0]}x{im.size[1]}) -> controlla l'esportazione"); continue
+            problems.append(f"{f}: originale piccolo ({dim[0]}x{dim[1]}) -> controlla l'esportazione"); continue
         d = ImageStat.Stat(ImageChops.difference(thumb(pw), thumb(po))).mean[0]
         if d > 8: problems.append(f"{f}: l'originale è visivamente diverso dalla scelta (differenza {d:.1f}): post-produzione cambiata?")
         ok.append((f, po)); origine[f] = os.path.abspath(src_dir)

@@ -2,7 +2,6 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="gettone" content="__GETTONE__">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Editor Album</title>
 <style>
@@ -542,7 +541,8 @@
 <script nonce="__NONCE__">
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
-const GETTONE = document.querySelector('meta[name="gettone"]').content;       // gettone di questa sessione: senza, il server non risponde (docs/architettura/SICUREZZA.md)
+const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
+if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 -apple-system,Segoe UI,sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p>Questa scheda non è collegata al programma.</p><p>Apri Impaginatore dal suo collegamento (o un progetto dalla schermata dei progetti): l\'indirizzo che si apre da lì vale una volta sola e collega questa scheda.</p></div>'; throw new Error("scheda non collegata"); }
 const escH = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato (nomi dei file, EXIF, testi dei progetti) passa da qui prima di innerHTML
 const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // nomi delle foto negli indirizzi e negli url(...) dei CSS
 const rq = (path, o = {}) => fetch(path, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
@@ -551,6 +551,7 @@ $("logx").onclick = () => { $("log").style.display = "none"; };
 
 function toast(msg, err) { const t = $("toast"); t.textContent = msg; t.className = err ? "err" : ""; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", err ? 4500 : 1800); }
 
+function vaiProgetti(e) { e.preventDefault(); api("/api/vai_progetti").then(r => { location.href = r.indirizzo; }).catch(err => toast(err.message, true)); }      // indirizzo di avvio monouso della schermata, chiesto con il gettone (VER-006)
 async function api(path, body) {
   const r = await rq(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
@@ -579,7 +580,7 @@ function render() {
   $("undo").disabled = !S.canundo; $("redo").disabled = !S.canredo;
   $("status").textContent = S.saveerr ? "⚠ SALVATAGGIO NON RIUSCITO" : S.dirty ? "salvo…" : "tutto salvato"; $("status").className = S.saveerr ? "err" : S.dirty ? "dirty" : ""; $("status").title = S.saveerr || "";
   clearTimeout(render.t); if (S.dirty) render.t = setTimeout(async () => { try { const d = await api("/api/state"); S.saveerr = d.saveerr; if (!d.dirty) S.dirty = false; $("status").textContent = S.saveerr ? "⚠ SALVATAGGIO NON RIUSCITO" : S.dirty ? "salvo…" : "tutto salvato"; $("status").className = S.saveerr ? "err" : S.dirty ? "dirty" : ""; $("status").title = S.saveerr || ""; if (d.dirty) render.t = setTimeout(() => render(), 100); } catch (e) {} }, 3000);
-  if (S.home) { $("home").style.display = ""; $("home").href = "/vai/progetti"; $("pxreveal").textContent = $("ereveal").textContent = lblFinder(); if (!window._upd) { window._upd = 1; const chk = () => rq("/api/aggiornamento").then(r => r.json()).then(r => { $("home").title = r.attuale ? `Torna ai progetti · versione ${r.attuale.n}` : "Torna ai progetti"; $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").href = "/vai/progetti"; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
+  if (S.home) { $("home").style.display = ""; $("home").onclick = $("updn").onclick = vaiProgetti; $("pxreveal").textContent = $("ereveal").textContent = lblFinder(); if (!window._upd) { window._upd = 1; const chk = () => rq("/api/aggiornamento").then(r => r.json()).then(r => { $("home").title = r.attuale ? `Torna ai progetti · versione ${r.attuale.n}` : "Torna ai progetti"; $("updn").style.display = r.da_aggiornare ? "" : "none"; $("updn").title = "Novità:\n" + (r.novita || []).join("\n") + "\n\nClicca per tornare ai progetti e aggiornare"; }).catch(() => {}); chk(); setInterval(chk, 600000); } }
   document.body.classList.toggle("foto", view === "foto"); $("tabF").classList.toggle("on", view === "foto"); $("tabA").classList.toggle("on", view === "album");
   renderLib();
   const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; ["sbarL", "sbarR", "spnav", "vistabox", "rwrap", "hint"].forEach(i => $(i).style.display = empty ? "none" : "");

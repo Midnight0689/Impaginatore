@@ -11,7 +11,8 @@ Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
 Importare il modulo non fa niente: configura() le prepara, crea_server() apre la porta, main() fa tutto.
 """
-import argparse, json, logging, os, shutil, subprocess, sys, threading, time, webbrowser  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
+import argparse, json, logging, os, shutil, subprocess, sys, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
+import webbrowser  # noqa: F401  (resta come attributo del modulo: lo intercettano i test; il browser si apre con processi.apri_browser)
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, percorsi, piattaforma, sicurezza
@@ -41,8 +42,12 @@ def configura(progetti=None, porta=PORTA_PREDEFINITA, aggiorna=None):
 
 
 def registro():
+    """progetti aggiunti all'elenco che esistono ancora. Senza registro (prima volta) nessuno; un registro illeggibile si
+    annota e si riparte da vuoto (VER-015)"""
     try: return [p for p in formato.leggi_json(REG) if os.path.exists(os.path.join(p, "progetto.json"))]
-    except Exception: return []
+    except FileNotFoundError: return []
+    except (OSError, ValueError, TypeError) as e:
+        log.warning("elenco dei progetti aggiunti illeggibile (%s): riparto da vuoto", type(e).__name__); return []
 
 
 def salva_registro(lst): formato.scrivi_json(REG, sorted(set(lst)), indent=1)
@@ -86,12 +91,16 @@ def nuovo(d):
     else: base = PROGETTI
     p = os.path.join(base, cartella); k = 2
     while os.path.exists(p): p = os.path.join(base, f"{cartella} {k}"); k += 1
-    os.makedirs(p if fotodir else os.path.join(p, "Foto"))
-    mm = lambda key, dflt: float(str(d.get(key, dflt)).replace(",", ".") or dflt)
+    def mm(key, dflt):
+        try: return float(str(d.get(key, dflt)).replace(",", ".") or dflt)
+        except ValueError: raise ValueError(f"Misure non valide: «{d.get(key)}» non è un numero") from None
     cfg = dict(nome=nome, foto=fotodir or os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
                abbondanza_mm=mm("abb", 0), spazio_mm=mm("spazio", 2.5), margine_mm=mm("margine", 10), uscita_psd=os.path.join(p, "PSD"),
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
-    formato.scrivi_json(os.path.join(p, "progetto.json"), cfg, indent=2, ensure_ascii=False)
+    try: testo = formato.testo_progetto(cfg)                # misure controllate come all'apertura, PRIMA di creare la cartella (VER-010)
+    except formato.ErroreProgetto as e: raise ValueError(f"Misure non valide: {str(e).removeprefix('progetto.json, ')}") from None
+    os.makedirs(p if fotodir else os.path.join(p, "Foto"))
+    formato.scrivi_atomico(os.path.join(p, "progetto.json"), testo)
     if fotodir: salva_registro(registro() + [p])
     formato.scrivi_atomico(os.path.join(p, formato.ALBUM), formato.album_vuoto())
     return p
@@ -135,7 +144,7 @@ def apri(path):
         pt = gia_attivo(path)
         if pt: return pt  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_apri_riusa_editor_lanciato_da_qui
         pt = porta_libera(porta_stabile(path))
-        with open(os.path.join(PROGETTI, "editor.log"), "ab") as log:
+        with os.fdopen(giornale.riservato(os.path.join(PROGETTI, "editor.log")), "ab") as log:          # 0600: percorsi dei progetti (VER-013)
             proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
         EDITORS[path] = (proc, pt); return pt
@@ -174,7 +183,7 @@ def riavvia_programma():
         time.sleep(.6)
         for pr, _ in EDITORS.values():
             try: pr.terminate()
-            except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+            except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
         processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
@@ -241,10 +250,10 @@ class H(Gestore):
                 azioni.cestina(p); self.send({"ok": True})
             elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel percorso")); self.send({"ok": True})
             elif u.path == "/api/esci":
-                self.send({"ok": True})
-                for pr, _ in EDITORS.values():
+                for pr, _ in EDITORS.values():                                   # prima di rispondere: chi riceve «ok» sa che gli editor sono già stati fermati
                     try: pr.terminate()
-                    except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+                    except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+                self.send({"ok": True})
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
@@ -270,7 +279,7 @@ def gia_aperto(porta):
 
 
 def apri_browser(indirizzo, ritardo=0.3):
-    threading.Timer(ritardo, webbrowser.open, args=(indirizzo,)).start()
+    threading.Timer(ritardo, processi.apri_browser, args=(indirizzo,)).start()          # senza il gettone nell'ambiente (VER-011)
 
 
 def main(argv=None):
@@ -285,7 +294,7 @@ def main(argv=None):
         indirizzo = f"http://127.0.0.1:{args.porta}/"
         if gia_aperto(args.porta):                         # già in funzione: basta aprire la pagina (con un indirizzo di avvio nuovo)
             print(f"Impaginatore è già aperto: {indirizzo}", flush=True)
-            if not args.no_browser: webbrowser.open(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
+            if not args.no_browser: processi.apri_browser(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
             return 0
         print(f"La porta {args.porta} è occupata da un altro programma: scegline un'altra con --porta", file=sys.stderr)
         return 1

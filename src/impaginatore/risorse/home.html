@@ -2,7 +2,6 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="gettone" content="__GETTONE__">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Impaginatore</title>
 <style>
@@ -116,7 +115,8 @@
 
 <script nonce="__NONCE__">
 const $ = id => document.getElementById(id);
-const GETTONE = document.querySelector('meta[name="gettone"]').content;       // gettone di questa sessione: senza, il server non risponde (docs/architettura/SICUREZZA.md)
+const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
+if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 -apple-system,Segoe UI,sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p>Questa scheda non è collegata al programma.</p><p>Apri Impaginatore dal suo collegamento (o un progetto dalla schermata dei progetti): l\'indirizzo che si apre da lì vale una volta sola e collega questa scheda.</p></div>'; throw new Error("scheda non collegata"); }
 const rq = (p, o = {}) => fetch(p, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
 const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // anche dentro url('...') dei CSS
 let SIS = "";                                                                    // sistema operativo (dal server): «Mostra nel Finder» o in Esplora risorse

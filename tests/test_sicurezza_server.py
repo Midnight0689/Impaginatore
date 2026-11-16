@@ -114,22 +114,26 @@ def test_intestazioni_di_sicurezza_e_csp(srv):
 
 
 def test_avvio_monouso_e_cookie(srv, monkeypatch):
-    """l'URL di avvio collega il browser una volta sola: cookie HttpOnly/SameSite=Strict, valido solo per pagina e immagini"""
+    """l'URL di avvio collega il browser una volta sola: cookie HttpOnly/SameSite=Strict (derivato, non il gettone: VER-006),
+    valido solo per pagina e immagini; il gettone arriva alla scheda una volta sola, nella pagina di avvio"""
     c = srv; s = c.srv
     url = s.indirizzo_avvio(); path = url.split(str(c.porta), 1)[1]
-    st, h, _ = _richiesta(c, "GET", path)
-    assert st == 303 and h["Location"] == "/"
-    biscotto = h["Set-Cookie"]; nome = sicurezza.nome_cookie(c.porta)
-    assert biscotto.startswith(f"{nome}={c.gettone};") and "HttpOnly" in biscotto and "SameSite=Strict" in biscotto and "Path=/" in biscotto
+    st, h, avvio = _richiesta(c, "GET", path)
+    assert st == 200 and h["Content-Type"].startswith("text/html") and h["Cache-Control"] == "no-store"
+    assert f'sessionStorage.setItem("impaginatore_gettone", "{c.gettone}")' in avvio.decode() and 'location.replace("/")' in avvio.decode()
+    biscotto = h["Set-Cookie"]; nome = sicurezza.nome_cookie(c.porta); valore = sicurezza.valore_cookie(c.gettone, c.porta)
+    assert biscotto.startswith(f"{nome}={valore};") and "HttpOnly" in biscotto and "SameSite=Strict" in biscotto and "Path=/" in biscotto
+    assert valore != c.gettone and c.gettone not in biscotto
     assert _richiesta(c, "GET", path)[0] == 401, "il codice vale una volta sola"
     assert _richiesta(c, "GET", "/avvio?c=inventato")[0] == 401 and _richiesta(c, "GET", "/avvio")[0] == 401
-    cookie = f"{nome}={c.gettone}"
-    st, h, corpo = _richiesta(c, "GET", "/", Cookie=cookie); assert st == 200 and c.gettone.encode() in corpo
+    cookie = f"{nome}={valore}"
+    st, h, corpo = _richiesta(c, "GET", "/", Cookie=cookie); assert st == 200 and c.gettone.encode() not in corpo and b"__GETTONE__" not in corpo
+    assert _richiesta(c, "GET", "/", Cookie=f"{nome}={c.gettone}")[0] == 401, "il gettone non vale come cookie"
     for p in ("/api/ping", "/api/state" if hasattr(c, "E") else "/api/progetti"):
         assert _richiesta(c, "GET", p, Cookie=cookie)[0] == 401, "le API vogliono l'intestazione, il cookie non basta"
     assert _richiesta(c, "POST", "/api/ping", b"{}", Cookie=cookie, Content_Type="application/json")[0] == 401
     assert _richiesta(c, "GET", "/", Cookie=f"{nome}=sbagliato")[0] == 401
-    assert _richiesta(c, "GET", "/", Cookie=f"impaginatore_{c.porta + 1}={c.gettone}")[0] == 401, "il cookie di un'altra porta non vale"
+    assert _richiesta(c, "GET", "/", Cookie=f"impaginatore_{c.porta + 1}={valore}")[0] == 401, "il cookie di un'altra porta non vale"
     assert _richiesta(c, "GET", "/", Cookie='a="b')[0] == 401 and _richiesta(c, "GET", "/", Cookie="a=b; expires=1; $x=1")[0] == 401, "cookie illeggibili"
     # navigazione senza cookie: una pagina che spiega come aprire il programma (non un JSON)
     st, h, corpo = _richiesta(c, "GET", "/", Sec_Fetch_Mode="navigate", Accept="text/html")
@@ -147,12 +151,12 @@ def test_avvio_monouso_e_cookie(srv, monkeypatch):
 def test_immagini_con_il_solo_cookie(editor, home_srv):
     """le immagini (img, sfondi CSS) non possono mandare intestazioni: bastano il cookie (le API no)"""
     c = editor; nome = sicurezza.nome_cookie(c.porta); n = c.get("/api/state")["photos"][0]["n"]
-    ck = f"{nome}={c.gettone}"
+    ck = f"{nome}={sicurezza.valore_cookie(c.gettone, c.porta)}"
     assert _richiesta(c, "GET", f"/img/thumb/{n}?w=100", Cookie=ck)[0] == 200
     assert _richiesta(c, "GET", f"/img/thumb/{n}?w=100")[0] == 401
     h = home_srv; x = h.get("/api/progetti")["progetti"][0]
     q = f"/api/cover?path={urllib.parse.quote(x['path'])}&n={x['cover']}"
-    assert _richiesta(h, "GET", q, Cookie=f"{sicurezza.nome_cookie(h.porta)}={h.gettone}")[0] == 200
+    assert _richiesta(h, "GET", q, Cookie=f"{sicurezza.nome_cookie(h.porta)}={sicurezza.valore_cookie(h.gettone, h.porta)}")[0] == 200
     assert _richiesta(h, "GET", q)[0] == 401
 
 

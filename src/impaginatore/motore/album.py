@@ -13,11 +13,12 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import io, logging, os, sys, time
+import io, logging, os, struct, sys, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .. import formato as _formato
+from .. import percorsi as _percorsi
 from .. import validazione as _V
 from ..piattaforma import font as _pfont
 
@@ -26,6 +27,9 @@ PROJ = CFG = SRC = CACHE = THUMBS = None             # riempiti da carica_proget
 CW = CH = PPI = B = G = MG = FOLD = TW = TH = None
 M, F, IDX, ORIGINE, FACE_FIX, WB, _ESP, TXTCFG = [], {}, {}, {}, {}, {}, {}, {}
 SCARTATE = []                                        # foto non aperte all'ultimo caricamento: [{n, motivo}] (le mostra l'editor)
+DANNEGGIATE = {}                                     # foto del progetto che non si decodificano: nome file -> data di modifica del file rovinato (VER-002)
+DANNEGGIATA = "file danneggiato o incompleto: ricopia la foto (il programma la rilegge da solo) o toglila dalla cartella"
+GRIGIO_SEGNAPOSTO = (128, 128, 128)                  # miniatura al posto di una foto che non si legge
 log = logging.getLogger("impaginatore.motore")
 TITLE, INK = ("", "", ""), (58, 54, 51)
 SERIF_FILE = SANS_FILE = None
@@ -45,9 +49,10 @@ def carica_progetto(cartella):
     """legge progetto.json, aggiorna l'elenco delle foto (metadati, miniature, volti) e prepara geometria, correzioni e testi.
     Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo)."""
     global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
-    Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear()
+    Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear(); DANNEGGIATE.clear()
     PROJ = os.path.abspath(cartella)
     CFG = _V.progetto(_leggi_json(os.path.join(PROJ, "progetto.json")))
+    _togli_riservate(CFG)
     SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
     CACHE = os.path.join(PROJ, "_cache"); THUMBS = os.path.join(CACHE, "thumbs")
     os.makedirs(THUMBS, exist_ok=True)
@@ -56,10 +61,14 @@ def carica_progetto(cartella):
     # ---- foto: metadati, miniature, volti
     mp, fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
     M = _cache_valida(mp, _V.meta, [])                  # cache rovinata o non valida: si ricostruisce dalle foto
+    _src_fidate(M)
     _date_mancanti(M)
     new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
     new += _nuove(CFG.get("foto_extra", []), M + new)
+    rotte = set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
+    SCARTATE.extend(dict(n=m["n"], motivo=DANNEGGIATA) for m in new if m["n"] in rotte)
+    new = [m for m in new if m["n"] not in rotte]
     if new:
         first = not M
         M += sorted(new, key=lambda x: x["dt"]) if first else new
@@ -82,6 +91,43 @@ def carica_progetto(cartella):
     INK = tuple(TXTCFG.get("colore", [58, 54, 51]))
     SERIF_FILE, SANS_FILE = _pfont.serif_predefinito(), _pfont.sans_predefinito()      # Didot e Avenir Next sul Mac
     return sys.modules[__name__]
+
+
+def _togli_riservate(cfg):
+    """percorsi di progetto.json in cartelle riservate (percorsi.riservata: nascoste della casa, dati dei programmi, sistema):
+    non si usano mai (VER-004). Al loro posto quelli del progetto: Foto, nessuna foto aggiunta da lì, PSD"""
+    if _percorsi.riservata(cfg.get("foto")): cfg["foto"] = os.path.join(PROJ, "Foto"); log.warning("cartella delle foto in una cartella riservata: uso Foto del progetto")
+    if "foto_extra" in cfg: cfg["foto_extra"] = [p for p in cfg["foto_extra"] if not _percorsi.riservata(p)]
+    if _percorsi.riservata(cfg.get("uscita_psd")): cfg["uscita_psd"] = os.path.join(PROJ, "PSD")
+
+
+def luoghi_foto():
+    """cartelle da cui il progetto legge le foto: la sua cartella, quella delle foto e quella che la contiene (le altre
+    cartelle del cliente), quelle delle foto aggiunte (foto_extra). Vengono solo da progetto.json, mai dall'elenco delle
+    foto in _cache/meta.json: un progetto ricevuto non allarga così le cartelle che si leggono (VER-004). Le troppo ampie
+    (la casa, la radice del disco) restano fuori"""
+    foto = str(CFG.get("foto") or "").rstrip("/\\")
+    out = [PROJ, foto, os.path.dirname(foto) if foto else ""] + [os.path.dirname(str(p)) for p in CFG.get("foto_extra", [])]
+    return [p for p in dict.fromkeys(out) if p and not _percorsi.troppo_ampia(p)]
+
+
+def fidata(s, luoghi):
+    """il file s si legge come foto del progetto? Deve avere l'estensione di una foto, stare dentro uno dei luoghi
+    (luoghi_foto) e non in una cartella riservata, nemmeno passando da un collegamento (VER-004)"""
+    n = os.path.normcase(os.path.normpath(s or "."))
+    return (os.path.isabs(n) and n.lower().endswith(ESTENSIONI + (".heic", ".heif"))
+            and any(n == r or n.startswith(r.rstrip(os.sep) + os.sep) for r in (os.path.normcase(os.path.abspath(p)) for p in luoghi))
+            and (_percorsi.dentro(s, PROJ) or not _percorsi.riservata(s)))
+
+
+def _src_fidate(meta):
+    """una foto dell'elenco che non è fidata (fidata) ha src "": risulta mancante e si ricollega con «Ricollega foto», che
+    ricorda la cartella scelta. Così nessuna miniatura né esportazione legge file fuori dal progetto (VER-004)"""
+    luoghi = luoghi_foto()
+    for m in meta:
+        if not m.get("src") or fidata(m["src"], luoghi): continue
+        log.warning("una foto dell'elenco sta fuori dalle cartelle del progetto: la considero mancante"); log.debug("src non usato: %s", m["src"])
+        m["src"] = ""
 
 
 def _leggi_json(p):
@@ -200,8 +246,9 @@ def _nuove(files, meta):
         if n in noti: continue
         if r in radici: SCARTATE.append(dict(n=n, motivo=f"c'è già una foto che si chiama «{r}»")); continue
         try: out.append(_meta_one(f))
-        except (OSError, ValueError) as e:
-            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto")); log.warning("foto scartata %s: %s", n, e); continue
+        except ERRORI_FOTO as e:
+            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto"))
+            log.warning("una foto non si apre (%s)", type(e).__name__); log.debug("foto scartata %s: %s", n, e); continue          # nomi solo a DEBUG (VER-013)
         noti.add(n); radici.add(r)
     return out
 
@@ -214,20 +261,40 @@ def _meta_one(f):
     m = dict(n=os.path.basename(f), dt=f"{dt}.{sub.get(37521, '00')}" if dt else _data_file(f), w=w, h=h, ar=round(w / h, 3), src=os.path.abspath(f))
     if not dt: m["senza_data"] = True                                  # data presa dal file: l'editor lo dice
     return m
-def _build_thumbs(meta):
+# errori che Pillow solleva per un file rovinato, troncato o che non è quello che dice di essere
+ERRORI_FOTO = (OSError, SyntaxError, ValueError, EOFError, struct.error, IndexError, TypeError, KeyError, ZeroDivisionError, Image.DecompressionBombError)
+
+
+def _build_thumbs(meta, segnaposto=True):
+    """miniature che mancano (1200 px, JPEG). Restituisce i nomi delle foto che non si leggono (VER-002): mai un'eccezione
+    che blocca l'apertura del progetto. Con segnaposto=True (foto già del progetto) al loro posto va un riquadro grigio
+    con data 0, così la foto resta dov'è e, appena il file torna buono (o si ricollega), l'editor la vede cambiata e la rifà;
+    quelle che esistono ma non si decodificano vanno in DANNEGGIATE e SCARTATE"""
+    rotte = []
     for m in meta:
         p = os.path.join(THUMBS, m["n"])
-        if not os.path.exists(p):
+        if os.path.exists(p): continue
+        try:
             with apri_foto(m["src"]) as im0:
                 im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
             im.thumbnail((1200, 1200)); im.save(p, "JPEG", quality=85)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
+        except ERRORI_FOTO as e:
+            rotte.append(m["n"]); log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
+            if not segnaposto: continue
+            w, h = m.get("w") or 3, m.get("h") or 2; f = 300 / max(w, h)
+            Image.new("RGB", (max(1, round(w * f)), max(1, round(h * f))), GRIGIO_SEGNAPOSTO).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
+            if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
+                DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+    return rotte
 def _build_faces(meta):
     import cv2
     d = cv2.data.haarcascades
     fr = cv2.CascadeClassifier(d + "haarcascade_frontalface_default.xml"); pr = cv2.CascadeClassifier(d + "haarcascade_profileface.xml")
     out = {}
     for m in meta:
-        g = cv2.cvtColor(cv2.imread(os.path.join(THUMBS, m["n"])), cv2.COLOR_BGR2GRAY); H, W = g.shape; mn = int(min(W, H) * 0.04)
+        im = cv2.imread(os.path.join(THUMBS, m["n"]))
+        if im is None: out[m["n"]] = []; continue                         # miniatura che non si legge: nessun volto (VER-002)
+        g = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY); H, W = g.shape; mn = int(min(W, H) * 0.04)
         bx = list(fr.detectMultiScale(g, 1.1, 6, minSize=(mn, mn))) + list(pr.detectMultiScale(g, 1.1, 6, minSize=(mn, mn))) + \
              [(W - x - w, y, w, h) for x, y, w, h in pr.detectMultiScale(cv2.flip(g, 1), 1.1, 6, minSize=(mn, mn))]
         out[m["n"]] = [[float(x / W), float(y / H), float((x + w) / W), float((y + h) / H)] for x, y, w, h in bx]
@@ -336,8 +403,14 @@ def _text(it, K):
     return im
 
 # ---------------- rendering anteprime ----------------
+def leggi_rgb(p):
+    """immagine p in RGB, con il file già chiuso (VER-015)"""
+    with Image.open(p) as im0: im = im0.convert("RGB")
+    return im
+
+
 def _photo(it, K, corrected=False):
-    im = Image.open(os.path.join(THUMBS, M[it["i"]]["n"])).convert("RGB")
+    im = leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"]))
     if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
     l, t, r, b = zcrop(it)
     out = im.resize((max(1, round(it["W"] * K)), max(1, round(it["H"] * K))), Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))

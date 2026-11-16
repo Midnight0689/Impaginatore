@@ -100,7 +100,7 @@ def _photo_rot(_orig):
         a = it.get("a") or 0
         _CUR[0] = it["i"]
         if not a: return _orig(it, K, corrected)
-        im = Image.open(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"])).convert("RGB")
+        im = _a.leggi_rgb(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"]))
         if corrected: im = _a.apply_ev(im, _a.ev_for(it["i"]), _a.WB.get(_a.name(it["i"])))
         l, t, r, b = _a.zcrop(it); Wo, Ho = max(1, round(it["W"] * K)), max(1, round(it["H"] * K)); iw, ih = im.size
         sc = (r - l) * iw / Wo; cx, cy = (l + r) / 2 * iw, (t + b) / 2 * ih; th = math.radians(a); c, s = math.cos(th), math.sin(th)

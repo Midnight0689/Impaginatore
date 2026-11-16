@@ -24,7 +24,7 @@ from ..motore import album_libere as FL              # insegna al motore le corn
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..piattaforma import font as pfont
 from ..piattaforma import photoshop as pps
-from ..servizio import Gestore, ServerLocale
+from ..servizio import Gestore, RichiestaNonValida, ServerLocale, numero
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
@@ -36,8 +36,9 @@ def _raccogli_foto():                                # foto importate in <proget
         pj = os.path.join(PROJ, "progetto.json"); c = formato.leggi_json(pj); d = os.path.join(PROJ, "Foto")
         if not os.path.isdir(d) or os.path.abspath(d) == os.path.abspath(c.get("foto", "")): return
         have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith(A.estensioni()) and not f.startswith(".") and os.path.join(d, f) not in have]
-        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
-    except Exception as e: print("raccogli foto:", e, flush=True)
+        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_progetto(PROJ, c)
+    except (OSError, ValueError, TypeError, AttributeError) as e:             # progetto.json o cartella Foto illeggibili: l'editor si apre lo stesso (VER-015)
+        log.warning("foto di Foto non raccolte (%s)", type(e).__name__); log.debug("raccogli foto: %s", e)
 def _ripara_percorsi():
     """progetto spostato o copiato (altro Mac, disco esterno): ritrova da solo le cartelle e le foto che stanno dentro la cartella del progetto (…/Foto);
     quelle altrove si ricollegano dal pulsante «Progetto» dell'editor"""
@@ -56,7 +57,7 @@ def _ripara_percorsi():
         if ex != c.get("foto_extra", []): c["foto_extra"] = ex; ch = True
         u = c.get("uscita_psd")
         if not u or not os.path.isdir(os.path.dirname(u.rstrip("/\\"))): c["uscita_psd"] = os.path.join(PROJ, "PSD"); ch = True
-        if ch: formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
+        if ch: formato.scrivi_progetto(PROJ, c)
         mp = os.path.join(PROJ, "_cache", "meta.json")
         if os.path.exists(mp):
             m = formato.leggi_json(mp); dirs = [d for d in (c.get("foto"), base) if d and os.path.isdir(d)]; mc = False
@@ -65,7 +66,8 @@ def _ripara_percorsi():
                     for d in dirs:
                         if os.path.exists(os.path.join(d, x["n"])): x["src"] = os.path.join(d, x["n"]); mc = True; break
             if mc: formato.scrivi_json(mp, m)
-    except Exception as ex: print("ripara percorsi:", ex, flush=True)
+    except (OSError, ValueError, TypeError, AttributeError, KeyError) as ex:   # impostazioni o cache illeggibili: le controlla poi il motore (VER-015)
+        log.warning("percorsi del progetto non riparati (%s)", type(ex).__name__); log.debug("ripara percorsi: %s", ex)
 LOCK = threading.RLock()
 CFG = None                                           # impostazioni del progetto (progetto.json): è A.CFG, la prepara inizializza
 
@@ -200,7 +202,7 @@ LOG = []
 def _ver_programma():       # numero di rilascio: serve a vedere quale versione sta girando
     return __version__
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"], "tL": CFG.get("tono_L"), "tZ": CFG.get("tono_Z")})
 SAVED = None                                         # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -209,6 +211,9 @@ def restore(s):
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
     CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["stelle"][:] = d.get("sr", []); CFG["tono_escl"][:] = d.get("te", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    for k, c in (("tono_L", "tL"), ("tono_Z", "tZ")):
+        if d.get(c) is None: CFG.pop(k, None)
+        else: CFG[k] = d[c]
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -504,8 +509,7 @@ def apply(o):
         names = list(o["names"]); ph = []
         for n in names:
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
-        if not 1 <= len(ph) <= 10: raise ValueError("per uno spread servono da 1 a 10 foto")
-        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto c'è sempre almeno un modello
+        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto (valida) c'è sempre almeno un modello
         gone = set(ph)
         for sp in SP:
             for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]       # le foto spostate escono dal vecchio spread (restano le altre e i testi)
@@ -542,7 +546,7 @@ def apply(o):
         if w < 1 or h < 1 or c < 0 or r < 0 or c + w > A.NC or r + h > A.NR: raise ValueError("la cornice esce dalla pagina")
         for j, other in enumerate(pg[1]):
             if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("si sovrappone a un'altra cornice")
-        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0))
+        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "free":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]
         x, y, w, h = (float(o[k]) for k in ("x", "y", "w", "h"))
@@ -572,7 +576,7 @@ def apply(o):
         w = max(n(gr["xe"], L["x"] - BL + L["W"]), c) - c + 1; h = max(n(gr["ye"], L["y"] - BL + L["H"]), r) - r + 1
         for j, other in enumerate(pg[1]):
             if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("agganciata alla griglia si sovrapporrebbe a un'altra cornice")
-        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0))
+        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "addframe":
         s, side = o["s"], o["side"]; pg = SP[s][0 if side == "L" else 1]; rect = biggest_free(pg)
         if not rect: raise ValueError("la pagina è piena: riduci una cornice prima")
@@ -655,12 +659,13 @@ def apply(o):
         s_ = o["s"]
         SP.insert(s_ + 1, copy.deepcopy(SP[s_])); GD.insert(s_ + 1, copy.deepcopy(GD[s_]))
     elif t == "copia":                                    # appunti dell'editor (non cambiano il progetto): elementi scelti con la loro posizione
-        R = _rects(o["s"]); CLIP.clear()
+        R = _rects(o["s"]); nuovi = []
         for a in o["ats"]:
             key = (a[0], int(a[1])); L = R.get(key); it = SP[o["s"]][0 if key[0] == "L" else 1][1][key[1]]
             if L is None or (it["k"] == "t" and not is_txt(it)): continue
-            CLIP.append(dict(item=copy.deepcopy(it), x=L["x"], y=L["y"], W=L["W"], H=L["H"]))
-        if not CLIP: raise ValueError("niente da copiare: scegli foto o testi")
+            nuovi.append(dict(item=copy.deepcopy(it), x=L["x"], y=L["y"], W=L["W"], H=L["H"]))
+        if not nuovi: raise ValueError("niente da copiare: scegli foto o testi")           # gli appunti restano com'erano
+        CLIP[:] = nuovi
     elif t == "incolla":                                  # nello stesso spread con un piccolo scarto, in un altro spread nella stessa posizione
         s_ = o["s"]
         if not CLIP: raise ValueError("gli appunti sono vuoti: copia prima qualcosa")
@@ -759,6 +764,8 @@ def valida(o):
             for n in o[k]: _foto(n)
     if t == "tono_fix":
         for c in o.get("items") or []: _foto(c.get("photo") if isinstance(c, dict) else c)
+    if t == "newspreadsel" and not (isinstance(o.get("names"), list) and 1 <= len(set(o["names"])) <= 10):      # così next() in apply trova sempre un modello
+        raise ValueError("per uno spread servono da 1 a 10 foto")
     if t in ("newspread", "template"):
         for side in "LR":
             if side not in o: continue
@@ -782,7 +789,23 @@ def verifica():
 
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
 
+def controlla_stato():
+    """lo stato dopo un'operazione si può salvare, riaprire e mostrare? Impaginazione e impostazioni passano dagli stessi
+    controlli della lettura (VER-001: niente progetti salvati che poi non si aprono), e lo stato per la pagina si deve
+    poter calcolare e scrivere in JSON senza NaN né infiniti (VER-003). Restituisce lo stato per la pagina; altrimenti
+    ValueError con il motivo"""
+    try:
+        formato.testo_album_controllato(SP, A.name)
+        formato.testo_progetto(_da_salvare(CFG))
+    except V.ErroreProgetto as e: raise ValueError(f"Operazione non valida: {e}") from None
+    st = state()
+    try: json.dumps(st, allow_nan=False)
+    except ValueError: raise ValueError("Operazione non valida: dà misure impossibili da mostrare") from None
+    return st
+
 def do_op(o):
+    """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
+    stato resta com'era. Restituisce lo stato per la pagina"""
     global REV, LASTC
     with LOCK:
         cid, rev = o.pop("cid", None), o.pop("rev", None)
@@ -791,15 +814,16 @@ def do_op(o):
         before = snap()
         if o["op"] == "undo":
             if UNDO: REDO.append(snap()); restore(UNDO.pop()); REV += 1; LASTC = cid
-            return
+            return state()
         if o["op"] == "redo":
             if REDO: UNDO.append(snap()); restore(REDO.pop()); REV += 1; LASTC = cid
-            return
+            return state()
         valida(o)
-        try: apply(o); verifica()
-        except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001)
+        try: apply(o); verifica(); st = controlla_stato()
+        except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001, VER-001, VER-003)
         LAST["op"] = time.time()
-        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid
+        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False)
+        return st
 
 # ------------------------------------------------------------------ vista
 BL = VW = VH = None                                  # abbondanza e misura della vista in px (inizializza)
@@ -1170,7 +1194,7 @@ def bruc_img(s, side, idx):
 def live_photo(q):
     """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
     import io as _io
-    s = int(q["s"]); side, idx, K = q["side"], int(q["idx"]), min(max(float(q.get("k", "0.3")), 0.05), 0.8); over = json.loads(q.get("o", "{}"))
+    s = int(q["s"]); side, idx, K = q["side"], int(q["idx"]), numero({"k": [q.get("k", "0.3")]}, "k", 0.3, 0.05, 0.8); over = json.loads(q.get("o", "{}"))
     with LOCK:
         lay = sorted(A.layout(spread_tuple(s)), key=lambda L: L.get("_o", 0)); k = 0; L = it = None
         for sd, pg in zip("LR", SP[s]):
@@ -1216,14 +1240,36 @@ def corr_thumb(n, w, over):
                 else: D[n] = v
     b = io.BytesIO(); im.convert("RGB").save(b, "JPEG", quality=82); return b.getvalue()
 
-CACHE = {}
+CACHE = {}                                           # immagini degli spread: (impronta, scala, cornice nascosta) -> JPEG
+CACHE_VOCI, CACHE_BYTE = 400, 256 * 2**20            # al massimo 400 immagini e 256 MB (VER-014)
+TH_VOCI, TH_BYTE = 3000, 192 * 2**20                 # miniature: al massimo 3000 e 192 MB
+_CACHE_LOCK = threading.Lock()
+
+
+def in_cache(c, chiave, valore, voci, byte):
+    """mette valore (bytes) in c e toglie i meno usati di recente finché c ha al massimo voci elementi e byte byte (VER-014);
+    chi legge una voce la rimette in fondo (usata). Thread-safe: le miniature arrivano da più richieste insieme"""
+    with _CACHE_LOCK:
+        c.pop(chiave, None); c[chiave] = valore; tot = sum(len(v) for v in c.values())
+        while len(c) > 1 and (len(c) > voci or tot > byte): tot -= len(c.pop(next(iter(c))))
+    return valore
+
+
+def da_cache(c, chiave):
+    """valore in cache (e lo segna come usato) o None"""
+    with _CACHE_LOCK:
+        v = c.pop(chiave, None)
+        if v is not None: c[chiave] = v
+    return v
+
+
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
 AGG = dict(n=0, t=0, nomi=[], ar=[])               # ultimo aggiornamento automatico delle foto modificate
 def spread_jpg(s, K, hide=None):
     """immagine dello spread; hide = (side, idx) di una cornice libera da NON disegnare (serve mentre la si trascina)"""
     with LOCK:
-        key = (spread_hash(s), K, hide)
-        if key in CACHE: return CACHE[key]  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
+        key = (spread_hash(s), K, hide); v = da_cache(CACHE, key)
+        if v is not None: return v  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
         tup = spread_tuple(s)
         if hide:
             pi = 0 if hide[0] == "L" else 1; its = SP[s][pi][1]
@@ -1232,20 +1278,20 @@ def spread_jpg(s, K, hide=None):
         im = A.render(tup, K, True)
         b = round(A.B * K)
         if b: im = im.crop((b, b, im.width - b, im.height - b))
-        buf = io.BytesIO(); im.save(buf, "JPEG", quality=86); CACHE[key] = buf.getvalue()
-        if len(CACHE) > 400: CACHE.pop(next(iter(CACHE)))
-        return CACHE[key]
+        buf = io.BytesIO(); im.save(buf, "JPEG", quality=86)
+        return in_cache(CACHE, key, buf.getvalue(), CACHE_VOCI, CACHE_BYTE)
 
 def _mt(p):
     try: return os.stat(p).st_mtime
     except OSError: return None
 
 def foto_cambiate():
-    """indici delle foto il cui originale è più recente della miniatura nella cache (modificato dopo: Lightroom, Photoshop…)"""
+    """indici delle foto il cui originale è più recente della miniatura nella cache (modificato dopo: Lightroom, Photoshop…).
+    Una foto danneggiata (VER-002) si riprova solo quando il suo file cambia"""
     out = []
     for i, m in enumerate(A.M):
         s, t = _mt(m.get("src", "")), _mt(os.path.join(A.THUMBS, m["n"]))
-        if s is not None and t is not None and s > t + 1: out.append(i)
+        if s is not None and t is not None and s > t + 1 and A.DANNEGGIATE.get(m["n"]) != s: out.append(i)
     return out
 
 def aggiorna_foto(idx):
@@ -1260,11 +1306,13 @@ def aggiorna_foto(idx):
                 m.update(dt=new["dt"], w=new["w"], h=new["h"], ar=new["ar"])
                 tp = os.path.join(A.THUMBS, m["n"])
                 if os.path.exists(tp): os.remove(tp)
-                A._build_thumbs([m])
+                if A._build_thumbs([m]): raise ValueError(A.DANNEGGIATA)
+                A.DANNEGGIATE.pop(m["n"], None); A.SCARTATE[:] = [x for x in A.SCARTATE if x["n"] != m["n"]]          # tornata buona (VER-002)
                 try: A.F.update(A._build_faces([m])); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
                 except Exception as ex: LOG.append(f"volti di {m['n']} non rifatti: {ex}")
                 n = A.name(i); PV[n] = PV.get(n, 0) + 1; INFO.pop(n, None)
-                for k in [k for k in TH if k[0] == n]: TH.pop(k)
+                with _CACHE_LOCK:
+                    for k in [k for k in TH if k[0] == n]: TH.pop(k)
                 ok.append(m["n"])
                 if abs(new["ar"] - old_ar) > 0.003: ars.append(m["n"])
             except Exception as ex: ko.append(m["n"]); LOG.append(f"{m['n']}: non aggiornata ({ex})")
@@ -1285,12 +1333,12 @@ def foto_watch_loop(fermo=None):
 
 TH = {}
 def thumb_jpg(n, w):
-    key = (n, w)
-    if key not in TH:
+    key = (n, w); v = da_cache(TH, key)
+    if v is None:
         with Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"])) as im0:
             im = im0.convert("RGB")
-        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); TH[key] = buf.getvalue()
-    return TH[key]
+        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = in_cache(TH, key, buf.getvalue(), TH_VOCI, TH_BYTE)
+    return v
 
 INFO = {}
 def photo_info(n):
@@ -1328,6 +1376,19 @@ def _pota_backup(bk, tieni=200):
                 try: os.remove(os.path.join(bk, f"{t}_{f}"))
                 except OSError: pass
     except Exception as e: LOG.append(f"pulizia copie non riuscita: {e}")
+def _da_salvare(base):
+    """progetto.json da scrivere: `base` (quello sul disco) con le impostazioni che cambia l'editor"""
+    out = dict(base)
+    out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+    out.pop("tono_rif", None)
+    for k_ in ("tono_L", "tono_Z"):
+        if k_ in CFG: out[k_] = CFG[k_]
+        else: out.pop(k_, None)
+    if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
+    if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
+    else: out.pop("guide", None)
+    return out
+
 def save(backup=True):
     global SAVED
     with LOCK:
@@ -1337,17 +1398,10 @@ def save(backup=True):
             for f in (formato.ALBUM, "progetto.json"):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): formato.copia_atomica(p, os.path.join(bk, f"{ts}_{f}"))
-        formato.salva(PROJ, SP, A.name)                     # album.json, controllato prima di scriverlo (solo dati, mai codice)
-        out = {k: v for k, v in formato.leggi_json(os.path.join(PROJ, "progetto.json")).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
-        out.pop("tono_rif", None)
-        for k_ in ("tono_L", "tono_Z"):
-            if k_ in CFG: out[k_] = CFG[k_]
-            else: out.pop(k_, None)
-        if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
-        if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
-        else: out.pop("guide", None)
-        _scrivi(os.path.join(PROJ, "progetto.json"), json.dumps(out, indent=2, ensure_ascii=False))
+        ta = formato.testo_album_controllato(SP, A.name)    # album.json e progetto.json controllati entrambi PRIMA di scrivere (VER-001)
+        tp = formato.testo_progetto(_da_salvare(formato.leggi_json(os.path.join(PROJ, "progetto.json"))))
+        _scrivi(os.path.join(PROJ, formato.ALBUM), ta)      # solo dati, mai codice
+        _scrivi(os.path.join(PROJ, "progetto.json"), tp)
         SAVED = snap(); SAVE_ERR[0] = ""
         if backup: _pota_backup(bk)
         return ts
@@ -1405,7 +1459,8 @@ def _spiega(e):
     if isinstance(e, OSError) and e.errno == errno.ENOSPC: return "il disco è pieno: libera spazio o scegli un altro disco"
     if isinstance(e, FileNotFoundError): return f"file non trovato: {e.filename or e}"
     if isinstance(e, MemoryError): return "memoria insufficiente: prova a esportare meno spread alla volta"
-    return f"{type(e).__name__}: {e}"
+    if isinstance(e, (ValueError, RuntimeError)) and str(e): return str(e)            # messaggi scritti per l'utente (preflight, Photoshop)
+    return f"errore imprevisto ({type(e).__name__}: {e})"
 
 def _scrivi_img(im, f, **kw):
     """salva l'immagine in un file temporaneo e poi la sposta: se l'export si interrompe non resta un file a metà né si perde quello vecchio"""
@@ -1421,6 +1476,8 @@ def preflight(o, nums, dest, fmt):
     usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
     if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
+    rotte = [m["n"] for ix, m in enumerate(A.M) if ix in usati and m["n"] in A.DANNEGGIATE]
+    if rotte: raise ValueError(f"{len(rotte)} foto di questi spread sono danneggiate o incomplete ({', '.join(rotte[:4])}{'…' if len(rotte) > 4 else ''}): ricopiale nella cartella delle foto")
     try:
         t = os.path.join(dest, ".prova_scrittura")
         with open(t, "w", encoding="utf-8") as f: f.write("x")
@@ -1439,19 +1496,21 @@ def run_export(o):
     dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", fmt.upper())
     dest = os.path.expanduser(o.get("dest") or dflt)
     if fmt not in ("jpg", "pdf", "psd"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    qualita = round(numero({"q": [str(o.get("q", 92 if fmt == "jpg" else 80))]}, "q", 92, 1, 100))                  # VER-014: qualità JPEG da 1 a 100
+    larghezza = round(numero({"width": [str(o.get("width", 2000))]}, "width", 2000, 500, 6000))                     # PDF: da 500 a 6000 px (la pagina offre 2000, 3500, 5000)
     try: os.makedirs(dest, exist_ok=True)
     except OSError as e: raise ValueError(f"Non riesco a creare la cartella «{dest}»: {e.strerror or e}")
     preflight(o, nums, dest, fmt)
     nome = CFG.get("nome", "Album")
     with LOCK:
-        if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: apply(dict(op="evg", value=o["ev"]))
+        if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: do_op(dict(op="evg", value=o["ev"]))          # controllata come ogni operazione (VER-001)
         if fmt == "psd": CFG["uscita_psd"] = dest
         save(backup=False)
     def go():
         try:
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
             if fmt == "jpg":
-                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = int(o.get("q", 92)); icc = srgb_icc()
+                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = qualita; icc = srgb_icc()
                 fatti = []
                 for k in nums:
                     try:
@@ -1467,7 +1526,7 @@ def run_export(o):
                 if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
             elif fmt == "pdf":
                 from PIL import ImageDraw
-                Wp = int(o.get("width", 2000)); K = Wp / VW; pages = []
+                Wp = larghezza; K = Wp / VW; pages = []
                 font = pfont.pil_ripiego(max(14, Wp // 80))          # Helvetica sul Mac
                 for k in nums:
                     with LOCK: tup = spread_tuple(k - 1)
@@ -1479,7 +1538,7 @@ def run_export(o):
                     pages.append(pg); LOG.append(f"  spread {k}")
                 f = os.path.join(dest, f"{nome} - bozza.pdf"); jp = []
                 for pg in pages:
-                    bio = io.BytesIO(); pg.save(bio, "JPEG", quality=int(o.get("q", 80)), optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
+                    bio = io.BytesIO(); pg.save(bio, "JPEG", quality=qualita, optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
                 write_pdf(f + ".tmp", jp, 150); os.replace(f + ".tmp", f)
                 if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
@@ -1517,11 +1576,11 @@ def pick(kind):
     return out
 
 def _radici_progetto():
-    """cartelle del progetto aperto che la pagina può nominare: il progetto, la cartella delle foto e quella che la contiene (le altre
-    cartelle del cliente), le cartelle delle foto aggiunte e di quelle in elenco, l'uscita dei PSD (le troppo ampie le scarta Radici)"""
+    """cartelle del progetto aperto che la pagina può nominare: i luoghi delle foto (il progetto, la cartella delle foto e quella che
+    la contiene, le cartelle delle foto aggiunte: motore.album.luoghi_foto) e l'uscita dei PSD. Mai le cartelle delle foto in
+    elenco (_cache/meta.json), che un progetto ricevuto potrebbe far puntare ovunque (VER-004). Troppo ampie e riservate le scarta Radici"""
     if PROJ is None or CFG is None: return []
-    foto = str(CFG.get("foto") or "").rstrip("/\\")
-    return [PROJ, foto, os.path.dirname(foto) if foto else "", str(CFG.get("uscita_psd") or "")] + sorted({os.path.dirname(str(p)) for p in CFG.get("foto_extra", [])} | {os.path.dirname(m.get("src", "")) for m in A.M})
+    return A.luoghi_foto() + [str(CFG.get("uscita_psd") or "")]
 
 RADICI = percorsi.Radici(_radici_progetto)
 
@@ -1603,8 +1662,22 @@ def ricollega(cartella):
                     try: os.remove(p); os.symlink(nuovi[f], p)
                     except OSError: pass
         CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
+        CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
         formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
+
+def _scrivi_testo(p, testo):
+    with open(p, "w", encoding="utf-8") as f: f.write(testo)
+
+def _leggi_testo(p):
+    with open(p, encoding="utf-8", errors="replace") as f: testo = f.read()
+    return testo
+
+def _src_foto(n):
+    """file di una foto del progetto che si trova (fidato dall'apertura: motore.album._src_fidate), altrimenti ValueError"""
+    s = A.M[A.IDX[n] - 1]["src"]
+    if not s or not os.path.exists(s): raise ValueError("la foto non si trova: ricollegala da Progetto → Ricollega foto")
+    return s
 
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
@@ -1613,7 +1686,7 @@ def esporta_progetto(o):
     if not os.path.isdir(dest): raise ValueError("scegli una cartella di destinazione")
     nome = nomi.nome_cartella(CFG.get("nome", "Album"), "Album"); out = os.path.join(dest, f"{nome} - progetto"); k = 2
     while os.path.exists(out): out = os.path.join(dest, f"{nome} - progetto {k}"); k += 1
-    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto()
+    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto(); luoghi = A.luoghi_foto()
     con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip")); v1x = bool(o.get("v1x"))
     def go():
         try:
@@ -1627,17 +1700,17 @@ def esporta_progetto(o):
             if con_foto:
                 os.makedirs(os.path.join(out, "Foto")); tot = len(metas)
                 for n, m in enumerate(metas, 1):
-                    if os.path.exists(m.get("src", "")): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]                    # relativo: all'apertura diventa quello della cartella dove sta il progetto
+                    if os.path.exists(m.get("src", "")) and A.fidata(m["src"], luoghi): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]          # solo foto del progetto (VER-004); relativo: all'apertura diventa quello della cartella dove sta il progetto
                     else: LOG.append(f"  ATTENZIONE: {m['n']} non trovata, non è nel pacchetto")
                     if n % 10 == 0 or n == tot: LOG.append(f"  foto {n} / {tot}")
             formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
             cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""             # vuoti = quelli del progetto stesso (Foto, PSD), li riempie l'editor all'apertura
-            formato.scrivi_json(os.path.join(out, "progetto.json"), cfg, indent=2, ensure_ascii=False)
+            formato.scrivi_progetto(out, cfg)
             if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  modelli salvati copiati")
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
-            open(os.path.join(out, "font_usati.txt"), "w", encoding="utf-8").write("Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
-            open(os.path.join(out, "LEGGIMI.txt"), "w", encoding="utf-8").write(f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
+            _scrivi_testo(os.path.join(out, "font_usati.txt"), "Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
+            _scrivi_testo(os.path.join(out, "LEGGIMI.txt"), f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
                 + (" (o Importa ZIP se hai il file .zip)" if zipf else "") + ".\n" + ("Le foto sono nella cartella Foto: i percorsi si sistemano da soli." if con_foto else "Le foto NON sono incluse: all'apertura premi «Progetto» → «Ricollega foto» e scegli la cartella con gli originali.")
                 + "\nI PSD già generati non sono inclusi: si rigenerano con Esporta → PSD.\nInstalla i font elencati in font_usati.txt.\n")
             res = out
@@ -1660,7 +1733,7 @@ def versioni():
     for f in sorted(os.listdir(bk), reverse=True):
         mf = re.fullmatch(r"(\d{8}-\d{6})_(album\.json|spec\.py)", f)
         if not mf or (out and out[-1]["ts"] == mf.group(1)): continue
-        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
+        ts = mf.group(1); txt = _leggi_testo(os.path.join(bk, f)); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
         if h == prev: continue
         if f.endswith(".json"):
             try: nsp = len(formato.leggi_album(os.path.join(bk, f))["spread"])
@@ -1668,7 +1741,7 @@ def versioni():
         else: m = re.search(r"(\d+) spread", txt.split("\n", 1)[0]); nsp = int(m.group(1)) if m else len(re.findall(r"^\s*# \d+\s*$", txt, re.M))
         prev = h
         try: lab = time.strftime("%d/%m %H:%M:%S", time.strptime(ts, "%Y%m%d-%H%M%S"))
-        except Exception: lab = ts
+        except ValueError: lab = ts                                       # data impossibile nel nome: si mostra com'è
         out.append(dict(ts=ts, spread=nsp, label=lab))
         if len(out) >= 80: break
     return out
@@ -1689,7 +1762,7 @@ def ripristina(ts):
             cur = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
             for k in ("foto", "foto_extra", "uscita_psd"):                       # i percorsi restano quelli di adesso
                 if k in cur: old[k] = cur[k]
-            formato.scrivi_json(os.path.join(PROJ, "progetto.json"), old, indent=2, ensure_ascii=False)
+            formato.scrivi_progetto(PROJ, old)
     def go(): time.sleep(.6); riavvia_processo()
     threading.Thread(target=go, daemon=True).start()
 
@@ -1719,7 +1792,7 @@ def stato_aggiornamenti():
 # ------------------------------------------------------------------ http
 class H(Gestore):
     COOKIE = ("/", "/api/fthumb")                     # pagina e immagini (img, CSS): anche con il solo cookie
-    COOKIE_PREFISSI = ("/img/", "/vai/")
+    COOKIE_PREFISSI = ("/img/",)                      # non /api/vai_progetti: dà un URL di avvio della schermata (VER-006)
     def send(self, body, ctype="application/json", code=200, etag=None):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()
@@ -1730,14 +1803,14 @@ class H(Gestore):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
             if u.path == "/": self.pagina("index.html")
-            elif u.path == "/vai/progetti":                                     # pulsante «Progetti»: indirizzo di avvio monouso della schermata
+            elif u.path == "/api/vai_progetti":                                 # pulsante «Progetti»: indirizzo di avvio monouso della schermata (con il gettone)
                 pt = _porta_home(); a = sicurezza.indirizzo_avvio("home", pt) if pt else None
-                self.send_response(303); self.send_header("Location", a or HOME or "/"); self.send_header("Content-Length", "0"); self.end_headers()
+                self.send({"indirizzo": a or HOME or "/"})
             elif u.path == "/api/aggiornamento": self.send(stato_aggiornamenti())
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
-            elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], min(int(q.get("w", ["500"])[0]), 1200), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
+            elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], round(numero(q, "w", 500, 16, 1200)), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
             elif u.path == "/img/bruc": self.send(bruc_img(int(q["s"][0]), q["side"][0], int(q["idx"][0])), "image/png")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
@@ -1749,22 +1822,23 @@ class H(Gestore):
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
-            elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
+            elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
-            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
+            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.2, 0.02, 1.0), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
-                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
+                n = unquote(u.path.rsplit("/", 1)[1]); w = round(numero(q, "w", 260, 16, 1200)); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
                 if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
                 elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
+        except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
         except Exception as e: self.send({"errore": str(e)}, code=500)
     def do_POST(self):
         u = urlparse(self.path)
         try:
             body = self.corpo()
-            if u.path == "/api/op": do_op(body); self.send(state())
+            if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
@@ -1787,7 +1861,7 @@ class H(Gestore):
             elif u.path == "/api/export":
                 if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "quella cartella")
                 LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
+            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)

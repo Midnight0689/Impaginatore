@@ -42,7 +42,6 @@ def _spread(c):
     dict(op="guides", s=0, v=[1e7], h=[]),
     dict(op="tono_L", value=float("nan")),
 ], ids=["tolta-null", "evg-1e7", "titolo-5500-caratteri", "face-1e7", "guide-1e7", "tono_L-NaN"])
-@xfail("VER-001", "operazione accettata e salvata, poi progetto.json non si riapre (BUG-001 residuo)")
 def test_operazione_accettata_lascia_il_progetto_riapribile(editor, op):
     """un'operazione o si rifiuta (400) o lascia un progetto che la schermata Progetti riapre"""
     nomi = _spread(editor)
@@ -61,7 +60,6 @@ def test_operazione_accettata_lascia_il_progetto_riapribile(editor, op):
     dict(op="ratio", s=0, r=1e7, ats=[["L", 0]]),
     dict(op="nudge", s=0, ats=[["L", 0]], dx=float("nan"), dy=0),
 ], ids=["free-NaN", "ratio-1e7", "nudge-NaN"])
-@xfail("VER-003", "valori impossibili accettati: /api/state risponde 500 finché non si annulla")
 def test_operazione_con_numeri_impossibili_non_rompe_lo_stato(editor, op):
     _spread(editor)
     try: editor.post("/api/op", op)
@@ -71,7 +69,6 @@ def test_operazione_con_numeri_impossibili_non_rompe_lo_stato(editor, op):
 
 # ------------------------------------------------------------------ VER-010
 @pytest.mark.parametrize("campo,valore", [("spazio", "-5"), ("margine", "nan"), ("abb", "1e9")])
-@xfail("VER-010", "/api/nuovo crea un progetto con misure che poi la lettura rifiuta")
 def test_nuovo_non_crea_progetti_che_non_si_aprono(home, campo, valore):
     try: p = home.nuovo({"nome": "Misure", "w": "30", "h": "30", campo: valore})
     except ValueError: return
@@ -98,7 +95,6 @@ except MemoryError: print("MemoryError")
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="RLIMIT_AS fa da tetto solo su Linux")
 @pytest.mark.parametrize("caso", list(SPEC_GRANDI))
-@xfail("VER-005", "spec.py nei limiti di formato_1x chiede decine di GB (MemoryError sotto un tetto di 1,5 GB)")
 def test_spec_py_nei_limiti_non_esaurisce_la_memoria(tmp_path, caso):
     prova, testo = SPEC_GRANDI[caso]
     p = tmp_path / "spec.py"; p.write_text(testo, encoding="utf-8")
@@ -117,14 +113,12 @@ def _progetto_con_foto_esterna(apri_editor, progetto, tmp_path):
     return apri_editor(progetto), fuori
 
 
-@xfail("VER-004", "src di _cache/meta.json fuori dal progetto diventano radici (SEC-005 aggirato)")
 def test_progetto_ricevuto_non_allarga_le_radici(apri_editor, progetto, tmp_path):
     c, fuori = _progetto_con_foto_esterna(apri_editor, progetto, tmp_path)
     assert c.codice("/api/ls?p=" + quote(str(fuori))) == 403
     assert c.codice("/api/fthumb?p=" + quote(str(fuori / "segreta.jpg"))) == 403
 
 
-@xfail("VER-004", "«Esporta progetto» copia nel pacchetto un file fuori dal progetto indicato da meta.json")
 def test_esporta_progetto_non_porta_via_file_esterni(apri_editor, progetto, tmp_path):
     c, fuori = _progetto_con_foto_esterna(apri_editor, progetto, tmp_path)
     segreta = (fuori / "segreta.jpg").read_bytes()
@@ -136,7 +130,6 @@ def test_esporta_progetto_non_porta_via_file_esterni(apri_editor, progetto, tmp_
 
 
 # ------------------------------------------------------------------ VER-006
-@xfail("VER-006", "il cookie della pagina vale come gettone delle API e il browser lo manda a ogni porta di 127.0.0.1")
 def test_cookie_della_pagina_non_e_il_gettone(home_srv):
     url = home_srv.srv.indirizzo_avvio()
     c = http.client.HTTPConnection("127.0.0.1", home_srv.porta, timeout=30)
@@ -147,7 +140,6 @@ def test_cookie_della_pagina_non_e_il_gettone(home_srv):
 
 
 # ------------------------------------------------------------------ VER-011
-@xfail("VER-011", "i programmi esterni (gdbus, xdg-open, zenity, osascript...) ereditano IMPAGINATORE_GETTONE")
 def test_programmi_esterni_senza_gettone(monkeypatch, tmp_path):
     from impaginatore.piattaforma import azioni
     visti = []
@@ -165,7 +157,6 @@ def test_programmi_esterni_senza_gettone(monkeypatch, tmp_path):
 
 
 # ------------------------------------------------------------------ VER-002
-@xfail("VER-002", "una foto troncata nella cartella fa morire l'editor all'apertura del progetto")
 def test_foto_troncata_non_blocca_il_progetto(home, apri_editor):
     p = home.nuovo({"nome": "Scheda piena", "w": "30", "h": "30"})
     crea_foto(os.path.join(p, "Foto"), [("H01", 600, 400, "2026:01:01 10:00:00"), ("H02", 600, 400, "2026:01:01 10:00:01")])
@@ -178,7 +169,6 @@ def test_foto_troncata_non_blocca_il_progetto(home, apri_editor):
 
 
 # ------------------------------------------------------------------ VER-012
-@xfail("VER-012", "Content-Length non ASCII: eccezione non gestita, connessione chiusa senza risposta")
 def test_content_length_strano_ha_una_risposta(editor):
     s = socket.create_connection(("127.0.0.1", editor.porta), timeout=10)
     s.sendall(f"POST /api/op HTTP/1.1\r\nHost: 127.0.0.1:{editor.porta}\r\nX-Impaginatore-Gettone: {editor.gettone}\r\n"
@@ -194,14 +184,12 @@ def test_content_length_strano_ha_una_risposta(editor):
     assert r.startswith(b"HTTP/1.") and r.split(b" ", 2)[1] in (b"400", b"411")
 
 
-@xfail("VER-012", "corpo JSON che non è un oggetto su /api/avvio: connessione chiusa senza risposta")
 def test_avvio_con_corpo_non_oggetto_risponde_400(home_srv):
     assert home_srv.codice("/api/avvio", [1, 2]) == 400
 
 
 # ------------------------------------------------------------------ VER-013
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="permessi POSIX")
-@xfail("VER-013", "il registro nasce con i permessi dell'umask (0664/0644): leggibile da altri utenti")
 def test_registro_leggibile_solo_da_chi_usa_il_programma():
     import logging
 
