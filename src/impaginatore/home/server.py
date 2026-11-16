@@ -131,9 +131,9 @@ def apri(path):
     formato.leggi_progetto(path); formato.controlla(path)          # un progetto non valido si spiega qui, prima di avviare l'editor
     with LOCK:
         e = EDITORS.get(path)
-        if e and e[0].poll() is None: return e[1]
+        if e and e[0].poll() is None: return e[1]  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_apri_riusa_editor_lanciato_da_qui
         pt = gia_attivo(path)
-        if pt: return pt
+        if pt: return pt  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_apri_riusa_editor_lanciato_da_qui
         pt = porta_libera(porta_stabile(path))
         with open(os.path.join(PROGETTI, "editor.log"), "ab") as log:
             proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi

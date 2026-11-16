@@ -71,7 +71,7 @@ def _xdg_utente(chiave, dflt):
                 riga = riga.strip()
                 if riga.startswith(chiave + "="):
                     v = riga.split("=", 1)[1].strip().strip('"').replace("$HOME", home())
-                    if v and v != home(): return v
+                    if v and v != home(): return v  # pragma: no branch  # coverage 7.17 non vede un return dentro «with» (lo segna alla riga del with); provato da test_documenti_linux_dalle_cartelle_utente
     except OSError:
         pass
     return os.path.join(home(), dflt)
