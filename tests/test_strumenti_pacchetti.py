@@ -114,15 +114,16 @@ def _rapporto(p, moduli):
     return p
 
 
-def test_rapporto_di_nuitka_non_ben_formato(tmp_path, capsys):
-    """su Windows il rapporto di Nuitka è uscito non ben formato: si legge lo stesso, e la riga sbagliata va nel registro"""
-    r = tmp_path / "r.xml"
-    r.write_bytes(b"<?xml version='1.0' encoding='utf-8'?>\n<nuitka-compilation-report>\n<module name=\"numpy.core\" kind=\"x\"/>\n"
-                  b"<command_line>--copyright=\xa9 2026 \x1b[0m</command_line>\n<module name=\"PIL.Image\" kind=\"x\"/>\n</nuitka-compilation-report>\n")
-    assert [m.get("name") for m in compila.leggi_rapporto(r).iter("module")] == ["numpy.core", "PIL.Image"]
-    assert "riga 4: b'<command_line>--copyright=\\xa9 2026" in capsys.readouterr().out
-    assert set(compila.distribuzioni_incluse(r)) == {"numpy", "pillow"} and "riga 4" in capsys.readouterr().out
-    assert compila.leggi_rapporto(_rapporto(tmp_path / "b.xml", ["a.b"])).find("module").get("name") == "a.b" and capsys.readouterr().out == ""
+def test_rapporto_di_nuitka_con_lettere_non_ascii(tmp_path):
+    """Nuitka scrive il rapporto in UTF-8 dichiarandolo encoding='utf8' (ElementTree.tostring(encoding="utf8")), che
+    expat legge come una codifica a un byte: su Windows la © di --copyright lo rendeva illeggibile"""
+    radice = ET.Element("nuitka-compilation-report"); ET.SubElement(radice, "option", value="--copyright=© 2026 Studio")
+    for m in ("numpy.core", "PIL.Image"): ET.SubElement(radice, "module", name=m, kind="CompiledPythonModule")
+    r = tmp_path / "r.xml"; r.write_bytes(ET.tostring(radice, encoding="utf8"))
+    assert r.read_bytes().startswith(b"<?xml version='1.0' encoding='utf8'?>")
+    with pytest.raises(ET.ParseError): ET.parse(r)
+    assert compila.leggi_rapporto(r).find("option").get("value") == "--copyright=© 2026 Studio"
+    assert set(compila.distribuzioni_incluse(r)) == {"numpy", "pillow"}
 
 
 def test_licenze_dei_componenti(tmp_path):
