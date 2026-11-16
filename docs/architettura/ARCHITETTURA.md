@@ -40,7 +40,12 @@ src/impaginatore/
 │   ├── photoshop.py     dove sta Photoshop e come eseguire un .jsx (osascript sul Mac, COM via cscript su Windows; su Linux no)
 │   └── processi.py      ambiente dei figli (UTF-8), riavvio con gli stessi argomenti, rilancio ritardato, distacco dal terminale
 ├── aggiornamenti/       interfaccia Aggiornamenti; git.py (checkout git), NonDisponibili (installato o spento), firmati.py (contratto dei pacchetti firmati)
-└── risorse/             home.html, index.html (interfaccia), vib_lut.npz (vibranza misurata in Photoshop)
+├── desktop/             finestra del programma con pywebview (T-201; extra «desktop»): pywebview si carica solo in motore()
+│   ├── finestra.py      motore() (finestra o browser), esegui() (finestra della schermata, chiusura ordinata), ospite()
+│   ├── navigazione.py   la finestra apre solo le pagine del programma; i siti vanno nel browser di sistema
+│   ├── geometria.py     misura e posizione ricordate in <dati>/finestra.json
+│   └── dialoghi.py      finestre di scelta di pywebview (schermata) e Ponte (editor → schermata, POST /api/dialogo)
+└── risorse/             home.html, index.html (interfaccia), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
 tests/                   pytest; dati/progetto_152 = progetto salvato dalla 1.5.2 (riferimento di parità)
 legacy/macos/            Impaginatore.app (applet compilata), .command, setup.sh; «Editor Album/home.py» è un ponte per l'applet
 skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets)
@@ -49,8 +54,8 @@ skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets
 ## Processi e porte
 
 ```
-impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
- └─ home (processo 1) 127.0.0.1:8765  ── apre il browser su un URL di avvio monouso (http://127.0.0.1:8765/avvio?c=…)
+impaginatore [--porta 8765] [--browser | --no-browser] [--progetti DIR] [--daemon]
+ └─ home (processo 1) 127.0.0.1:8765  ── apre la finestra del programma (o il browser) su un URL di avvio monouso (http://127.0.0.1:8765/avvio?c=…)
       POST /api/apri {path}
        ├─ editor già in ascolto per quel progetto? (porta stabile, poi 8801–8899: file di sessione + /api/ping con "path") -> si riusa
        └─ altrimenti: python -m impaginatore.editor --progetto P --porta N --home http://127.0.0.1:8765
@@ -65,15 +70,54 @@ impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
 - Porta libera: si prova ad aprirla davvero (bind); su macOS e Linux si controlla anche che nessuno risponda. Niente
   `lsof`, niente `connect_ex` su 99 porte (su Windows costava secondi per porta).
 - Un'istanza sola: se la porta della home risponde a `/api/ping` (con il gettone del suo file di sessione), il comando apre
-  solo la pagina, con un URL di avvio nuovo.
-- `--porta 0`: porta libera qualsiasi (test, finestra desktop futura); l'indirizzo vero è nella prima riga stampata.
+  solo la pagina, con un URL di avvio nuovo: in un'altra finestra del programma (`desktop.ospite`, che chiudendosi non
+  ferma niente) o, senza finestra, nel browser.
+- `--porta 0`: porta libera qualsiasi (test); l'indirizzo vero è nella prima riga stampata.
 - Ogni richiesta vuole il gettone del suo server (intestazione o, per pagina e immagini, cookie derivato dato dall'URL di
   avvio, che lascia il gettone nella `sessionStorage` della scheda): `docs/architettura/SICUREZZA.md`. La pagina dell'editor
   chiede aggiornamenti (`/api/aggiornamento`) e ritorno ai progetti (`/api/vai_progetti`) al suo server, che li chiede alla
   home con il gettone della home (niente più CORS `*`).
 - Uscita: `/api/esci` termina gli editor lanciati da quella home e chiude il processo (`home.server.esci`).
 - Dopo un aggiornamento: la home chiude gli editor, rilancia `python -m impaginatore --porta <stessa> --no-browser` dopo 1,5 s
-  (processo staccato) ed esce; la pagina si ricarica da sola.
+  (processo staccato) ed esce; la pagina si ricarica da sola. Con la finestra il rilancio è senza `--no-browser`: la
+  finestra vecchia si chiude con il suo processo e il programma rilanciato ne apre una nuova (stesso gettone).
+
+## Finestra desktop (T-201)
+
+```
+impaginatore                         (senza --browser, --no-browser, --daemon)
+ └─ desktop.motore()                 pywebview + motore del sistema, oppure None → browser come prima (motivo nel registro e su stderr)
+ └─ home (processo 1, thread)        crea_server(porta, desktop.gettone()): il gettone non resta nell'ambiente
+ └─ desktop.esegui()                 thread principale: finestra pywebview sull'URL di avvio monouso (dentro il processo)
+      ├─ schermata ⇄ editor          stessa finestra, come nella scheda del browser: /api/pronto e /api/vai_progetti danno
+      │                              un URL di avvio monouso del server di arrivo; ogni origine ha la sua sessionStorage
+      ├─ navigazione.py              filtro del motore (WebKitGTK «decide-policy», WebView2 NavigationStarting) + controllo
+      │                              dopo ogni caricamento (l'unico su macOS): solo http://127.0.0.1:<schermata o editor>
+      ├─ dialoghi.py                 GTK e macOS: finestre di scelta di pywebview; l'editor le chiede alla schermata
+      │                              (IMPAGINATORE_DIALOGHI=finestra:<porta> → POST /api/dialogo). Windows: tkinter come prima
+      └─ chiusura della finestra     misura salvata, ogni editor salva (POST /api/save) e si chiude (5 s, poi kill), la
+                                     schermata si ferma, main() restituisce 0. «Esci» nella pagina chiude la finestra
+```
+
+- Motori ammessi: WebKitGTK (`gtkwebkit2`, Linux: PyGObject e WebKit2GTK 4.1 o 4.0 del sistema, non installabili da
+  PyPI), WebView2 (`edgechromium`, Windows), WKWebView (`wkwebview`, macOS). Mai Internet Explorer (`mshtml`, il ripiego di
+  pywebview su Windows senza WebView2) né Qt: con questi si apre il browser.
+- Impostazioni: `ALLOW_FILE_URLS`, `ALLOW_DOWNLOADS`, `IGNORE_SSL_ERRORS` spenti, nessuna porta di debug remoto, strumenti
+  di sviluppo solo con `IMPAGINATORE_FINESTRA_SVILUPPO=1` fuori da un programma impacchettato, nessuna `js_api` né
+  funzione esposta. `private_mode=False` con `storage_path=<dati>/finestra`: l'editor usa `localStorage` (righelli,
+  preferenze) senza try/catch e WebKitGTK in modo privato lo toglie. `text_select` e `draggable` accesi (l'editor
+  trascina foto e testi), `zoomable` spento.
+- Misura e posizione: `<dati>/finestra.json`, minimo 1024 × 700; una posizione fuori da tutti gli schermi si scarta.
+- Trascinare una cartella sulla finestra (UX-015): **non fatto**. pywebview passa i percorsi dei file trascinati solo
+  agli eventi DOM registrati da Python (`window.dom...on("drop")`), che usano `evaluate_js` → `eval`, bloccato dalla CSP
+  delle nostre pagine (provato con WebKitGTK: EvalError). Inoltre il campo `pywebviewFullPath` lo può scrivere la pagina
+  quando pywebview non ha un percorso suo, su GTK il percorso arriva da `get_text()` del trascinamento (da provare con
+  `text/uri-list`), e su WebView2 le cartelle non sono provate. Servirebbe: `'unsafe-eval'` nella CSP solo nella finestra
+  (da evitare) oppure un gestore nativo per ogni motore (GTK `drag-data-received`, WebView2 `WebMessageReceived` con
+  `postMessageWithAdditionalObjects`, Cocoa `performDragOperation`) che passi alla schermata solo cartelle esistenti, poi
+  `RADICI.aggiungi` e il flusso «Nuovo progetto» con quella cartella, provato su tre sistemi veri.
+- Prova vera: `tests/test_desktop.py::test_finestra_vera` (marcatore `finestra`) lancia `tests/prova_finestra.py` sotto
+  `xvfb-run` con WebKitGTK; saltata senza Linux, xvfb-run, pywebview o PyGObject. Il resto usa un pywebview finto.
 - macOS, versione 1.x: `Impaginatore.app` esegue `cd "<cartella dell'app>/Editor Album" && ~/.album-tools/venv/bin/python home.py --porta 8765 --daemon`;
   `legacy/macos/Editor Album/home.py` passa gli argomenti a `impaginatore.cli.main`. `--daemon` (doppio fork) c'è solo su POSIX.
 
@@ -97,6 +141,8 @@ e controlla che nel pacchetto non ci siano `exec`, `eval`, `compile`, `__import_
 | `editor/server.py` | PROJ, HOME, CFG (= `album.CFG`), SP, GD, UNDO/REDO, CLIP, LOG, SAVED, REV, LASTC, BOOT, BL/VW/VH, NPH, UT_FILE, cache (CACHE, TH, INFO, PV, FT, TONO_*), LAST, SAVE_ERR, LASTDIR, AGG, `_ICC` | `inizializza(progetto, home)` |
 | `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli), SERVER, RADICI (cartelle scelte) | `configura(...)`, `crea_server(...)`; `RADICI.scelte` vale per la sessione |
 | `piattaforma/dialoghi.py` | implementazione scelta con `imposta()` | `imposta(None)` |
+| `home/server.py` (T-201) | FINESTRA (la schermata è nella finestra), `esci` sostituita dalla chiusura della finestra | `desktop.esegui` alla fine |
+| `desktop/finestra.py` | ATTUALE (la finestra di questo processo, per le prove) | `desktop.esegui` / `ospite` alla fine |
 | `piattaforma/font.py` | `_cerca_linux` in `lru_cache` | riavvio |
 | PIL | `Image.MAX_IMAGE_PIXELS` = `album.limite_pixel()` (160 MP, `IMPAGINATORE_MAX_MPIXEL`), impostato da `carica_progetto` e `apri_foto` | — |
 
@@ -107,9 +153,11 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **Formato di salvataggio**: `formato.py` e `validazione.py`. Un formato 3 aumenta `validazione.FORMATO`, aggiunge in
   `formato.carica` la conversione dal 2 e un test con un progetto salvato nel formato 2 (vedi `FORMATO-PROGETTO.md`).
 - **Finestre di scelta**: `piattaforma.dialoghi.imposta(oggetto con _scegli(tipo, messaggio))` per tutto il processo;
-  `IMPAGINATORE_DIALOGHI=mac|tk|zenity|kdialog|nessuno` per sceglierle per nome (vale anche per i processi figli).
-- **Finestra desktop** (T-201): `home.server.configura(...)` + `crea_server(0)` in un thread + finestra pywebview sull'indirizzo;
-  dialoghi di pywebview con `dialoghi.imposta`; l'editor si può tenere in processo separato come ora.
+  `IMPAGINATORE_DIALOGHI=mac|tk|zenity|kdialog|nessuno|finestra:<porta>` per sceglierle per nome (vale anche per i
+  processi figli).
+- **Finestra desktop** (T-201, fatto): `desktop.esegui(motore, server, fermo)`. Un altro motore si aggiunge in
+  `finestra.GUI`/`MOTORI` e, se ha un filtro di navigazione, in `navigazione.FILTRI`; le finestre di scelta di pywebview si
+  accendono per motore in `finestra.DIALOGHI_PROPRI` (Windows: da accendere dopo una prova vera).
 - **Aggiornamenti** (T-207): implementare `aggiornamenti.Aggiornamenti` (stato, controlla, versioni, aggiorna, ripristina,
   ciclo) e passarlo a `home.server.configura(aggiorna=...)` o farlo scegliere da `aggiornamenti.predefiniti()`.
 - **Licenze** (T-202): il punto d'ingresso unico è `cli.main` (e `home.server.main` / `editor.server.main`); le funzioni a
@@ -130,7 +178,9 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 |---|---|
 | `IMPAGINATORE_PROGETTI` | cartella dei progetti (prima di `<checkout>/Progetti` e `Documenti/Impaginatore/Progetti`) |
 | `IMPAGINATORE_DATI`, `IMPAGINATORE_CACHE` | cartelle dei dati dell'utente (modelli salvati) e della cache (font) |
-| `IMPAGINATORE_DIALOGHI` | finestre di scelta per nome (`nessuno` nei test) |
+| `IMPAGINATORE_DIALOGHI` | finestre di scelta per nome (`nessuno` nei test; `finestra:<porta>` la mette la finestra per gli editor) |
+| `IMPAGINATORE_FINESTRA=no` | niente finestra del programma: si apre il browser (anche `0`, `browser`; i test la spengono) |
+| `IMPAGINATORE_FINESTRA_SVILUPPO=1` | strumenti di sviluppo della vista web nella finestra (mai in un programma impacchettato) |
 | `IMPAGINATORE_AGGIORNAMENTI=no` | aggiornamenti spenti |
 | `IMPAGINATORE_SENZA_RIAVVIO` | dopo un aggiornamento non riavvia (prove) |
 | `IMPAGINATORE_GETTONE` | gettone di sessione del server di questo processo (lo scrive il server; resta dopo un riavvio, non passa ai figli) |
@@ -152,11 +202,21 @@ script del motore senza `main()` si eseguono nello stesso processo con `aiuti.co
 importato è un errore. `tests/test_script_motore.py` li prova con un Photoshop finto (registra gli script `.jsx` e
 risponde come lui) e con PSD finti che hanno la forma di quelli di psd-tools (gruppi, maschere vettoriali, regolazioni
 agganciate).
-Marcatori: `photoshop` (saltati se Photoshop manca), `browser` (Chrome/Chromium senza schermo), `lento`.
-Ogni test ha una casa finta (`HOME`, `APPDATA`, `XDG_*`), `IMPAGINATORE_DIALOGHI=nessuno` e aggiornamenti spenti.
+Marcatori: `photoshop` (saltati se Photoshop manca), `browser` (Chrome/Chromium senza schermo), `finestra` (finestra
+vera con WebKitGTK sotto Xvfb), `lento`.
+Ogni test ha una casa finta (`HOME`, `APPDATA`, `XDG_*`), `IMPAGINATORE_DIALOGHI=nessuno`, `IMPAGINATORE_FINESTRA=no` e
+aggiornamenti spenti.
 
 ## Cosa non è verificato
 
 Tutto è stato provato su Linux (Python 3.12). Su macOS e Windows i rami del codice sono provati simulando il sistema
 (`sys.platform`) e intercettando i comandi; l'esecuzione vera (osascript, COM di Photoshop, PowerShell, tkinter su Windows,
 `Impaginatore.app` con il ponte) va provata su una macchina reale.
+
+Finestra desktop: provata davvero solo con WebKitGTK 2.52 (WebKit2 4.1) sotto Xvfb, Python 3.12, pywebview 6.2.1
+(schermata, editor nella stessa finestra, finestre di scelta GTK della schermata e dell'editor, navigazioni fuori dal
+programma fermate, gettone assente dall'ambiente dei processi di WebKit, chiusura ordinata). Non provati: WKWebView su
+macOS (solo il controllo dopo il caricamento: la pagina esterna può partire prima di essere lasciata), WebView2 su
+Windows (filtro NavigationStarting scritto sui nomi di pywebview 6.2, mai eseguito), le finestre di scelta di pywebview
+su macOS, `alert`/`confirm`/`prompt` nella finestra, un `target=_blank` cliccato dall'utente (WebKit blocca i
+`window.open` senza gesto dell'utente), Wayland vero, schermi multipli veri, finestra massimizzata su un desktop vero.
