@@ -66,7 +66,7 @@
     #side { grid-column: 2 / 4; justify-self: end; width: var(--rc); z-index: 38; box-shadow: var(--imp-ombra-sollevato); }
     body:not(.nolist) { --lc: 76px; }
     #thumbs .sth img, #spnav > span, #addsp > span { display: none; } #spnav { justify-content: center; padding-left: 8px; } #addsp { justify-content: center; padding: 0; }
-    #sideb { display: inline-flex; }
+    #sideb { display: inline-flex; } body:not(.noside) #zpill { display: none; }      /* il foglio aperto: la pillola dello zoom non copre la barra della selezione */
   }
 
   /* ---------- barra in alto */
