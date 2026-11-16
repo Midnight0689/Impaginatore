@@ -135,8 +135,9 @@ accettata con le decisioni sopra; la tabella dice quanto costa ogni aggiramento.
 
 - **Interfaccia dell'editor** (T-205): l'editor non mostra lo stato della licenza e non nasconde i comandi che la fascia
   non comprende; oggi l'utente li vede e riceve il messaggio d'errore quando li usa. `index.html` non è stato toccato.
-- **Funzioni di `tier.json` senza cancello**: `modelli_autore` (Essenziale 30: non è deciso quali 30 tra i moduli e i
-  modelli a spread); `correzione_spaziature_album` (la correzione di tutto l'album è un giro della pagina sulle
+- **Funzioni di `tier.json` senza cancello**: `modelli_autore` (Essenziale 30: non è deciso quali 30 tra i 23 moduli di
+  pagina e i 23 modelli a spread d'autore di `editor/server.py`; `nota_modelli_autore` in `tier.json` lo dice e
+  `test_tier_promette_solo_quello_che_c_e` tiene i numeri allineati al codice); `correzione_spaziature_album` (la correzione di tutto l'album è un giro della pagina sulle
   operazioni dei singoli spread: il server non la distingue); `impaginazione_automatica_album` e `server_mcp` (oggi
   esistono solo con Claude e la skill; il server MCP di T-203 deve chiedere `licenze.consentita("server_mcp")` e
   `consentita("impaginazione_automatica_album")`); `computer` (non si conta). `preset_laboratori` ha il suo cancello

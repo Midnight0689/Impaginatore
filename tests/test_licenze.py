@@ -54,6 +54,21 @@ def test_tier_del_pacchetto_uguale_a_quello_del_listino():
     assert pacchetto == listino, "copia docs/mercato/tier.json in src/impaginatore/licenze/tier.json"
 
 
+def test_tier_promette_solo_quello_che_c_e(monkeypatch):
+    """il supporto non promette guide video (non esistono); modelli_autore dell'Essenziale resta com'è, con la nota che dice
+    che nessun cancello lo applica e quanti modelli ci sono davvero (numeri controllati sul codice dell'editor)"""
+    t = licenze.tier()
+    assert [x["supporto"]["incluso"] for x in t["tiers"]] == ["documentazione, correzione dei difetti"] * 3
+    assert "guide video" not in json.dumps(t, ensure_ascii=False)
+    assert licenze.funzioni_di("essenziale")["modelli_autore"] == 30
+    from impaginatore.editor import server as E
+    nota = t["nota_modelli_autore"]; moduli = [k for k in dict.keys(E.BUILD) if not k.startswith("X")]
+    assert f"{len(E.SPM_KEYS)} modelli d'autore a spread intero (SPM_KEYS, {len(E.COUPLED)} con le versioni specchiate)" in nota
+    assert f"{len(moduli)} moduli di pagina" in nota and f"{len(E.LAYS)} combinazioni" in nota and "BLANK" in moduli
+    src = open(os.path.join(os.path.dirname(licenze.__file__), "__init__.py"), encoding="utf-8").read() + open(E.__file__, encoding="utf-8").read()
+    assert "modelli_autore" not in src, "se un cancello comincia a leggere modelli_autore, la nota di tier.json va riscritta"
+
+
 def test_funzioni_delle_fasce():
     assert not licenze.funzioni_di("essenziale")["export_psd_livelli"] and licenze.funzioni_di("pro")["export_psd_livelli"]
     assert licenze.funzioni_di("essenziale")["modelli_personali"] == 5
