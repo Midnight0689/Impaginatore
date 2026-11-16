@@ -118,6 +118,15 @@ class _WebSocket:
         except OSError: pass
 
 
+def _porta_scritta(f):
+    """la porta del protocollo dal file DevToolsActivePort di Chrome, None se non c'è ancora. Chrome lo scrive in un file
+    temporaneo e poi lo sostituisce: su Windows aprirlo proprio in quel momento dà PermissionError, come se non ci fosse"""
+    try:
+        with open(f, encoding="utf-8") as h: riga = h.readline().strip()
+    except OSError: return None
+    return int(riga) if riga.isdigit() else None
+
+
 class Browser:
     """un Chrome senza schermo con il suo profilo nella cartella data; eventi della pagina raccolti in self.eventi,
     richieste in corso in self.in_corso (requestId → url)"""
@@ -133,16 +142,15 @@ class Browser:
         # (conftest.casa: USERPROFILE, APPDATA, LOCALAPPDATA) non ha quelle cartelle finché qualcuno non le crea
         for k in ("LOCALAPPDATA", "APPDATA"):
             if os.environ.get(k): os.makedirs(os.environ[k], exist_ok=True)
-        self.registro =os.path.join(self.cartella, "chrome-cdp.log")
+        self.registro = os.path.join(self.cartella, "chrome-cdp.log")
         with open(self.registro, "wb") as uscita:                    # quello che Chrome dice: finisce nel messaggio se non parte
             self.p = subprocess.Popen([CHROME, *OPZIONI, f"--user-data-dir={prof}", "--remote-debugging-port=0", "--window-size=1600,1000",
                                        "--enable-logging=stderr", "about:blank"], stdout=uscita, stderr=subprocess.STDOUT)
         self.profilo = prof
         f = os.path.join(prof, "DevToolsActivePort"); t = time.monotonic() + ATTESA
-        while not (os.path.exists(f) and open(f, encoding="utf-8").read().strip()):
+        while (porta := _porta_scritta(f)) is None:
             if time.monotonic() > t: raise OSError("Chrome non parte: " + self._detto())
             time.sleep(0.1)                                   # Chrome scrive il file quando è pronto: non c'è un evento da aspettare
-        porta = int(open(f, encoding="utf-8").read().split()[0])
         t = time.monotonic() + ATTESA
         while True:
             try:
