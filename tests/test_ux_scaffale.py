@@ -105,7 +105,7 @@ def test_chiudi_programma_chiede_in_pagina(home_srv, tmp_path):
     with Browser(tmp_path) as b:
         b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
         b.js("document.getElementById('altro').click()"); b.pausa(0.3)
-        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Chiudi programma"]
+        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Lingua…", "Chiudi programma"]
         b.js(VOCE % "'Chiudi programma'" + ".click()"); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "flex"; b.js(ESC); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "none" and home_srv.uscite == []
