@@ -203,7 +203,7 @@ PLURALE_FISSO = {      # numero davanti a un nome al plurale fuori da una coppia
     "progetto.nome_lungo": "il limite in caratteri è una costante di decine",
     "progetto.testo_lungo": "il limite in caratteri è una costante di migliaia",
     "progetto.zip_troppi_file": "il limite dei file è una costante di migliaia",
-    "progetto.valori": "gli elenchi a lunghezza fissa hanno 2 o 4 valori",
+    "progetto.valori": "gli elenchi a lunghezza fissa hanno 2, 3 o 4 valori (validazione.lista)",
     "progetto.griglia": "la griglia delle pagine ha più di una colonna e più di una riga",
     "progetto.file_troppo_grande": "MB con decimali: «0,5 MB», «1 MB» sono giusti",
     "progetto.file_troppo_grande_max": "MB: unità di misura, non cambia",
