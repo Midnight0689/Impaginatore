@@ -269,6 +269,17 @@ def test_modifica_dell_assistente_si_vede_e_si_annulla(editor, tmp_path):
         b.js("document.querySelector('#toast button').click()"); b.pausa(0.6)
         assert len(stato(c)["spreads"]) == 3 and b.js("S.spreads.length") == 3
         assert b.js("document.getElementById('toast').textContent") == "Annullato: Elimina spread (dell'assistente)"
+        # l'assistente annulla e ripete: l'avviso dice il nome del passo, con il pulsante giusto
+        c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 2")
+        c.post("/api/op", {"op": "undo", "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 3")
+        assert b.js("document.getElementById('toast').firstChild.textContent") == "L'assistente ha annullato: Elimina spread"
+        assert b.js("document.querySelector('#toast button').textContent") == "Ripeti"
+        c.post("/api/op", {"op": "redo", "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 2")
+        assert b.js("document.getElementById('toast').firstChild.textContent") == "L'assistente ha ripetuto: Elimina spread"
+        b.js("document.querySelector('#toast button').click()"); b.pausa(0.6); assert len(stato(c)["spreads"]) == 3
         # mentre si scrive in un campo la pagina non ridisegna: lo fa appena il fuoco esce
         b.js("(() => { const i = document.createElement('input'); i.id = 'campoprova'; document.body.appendChild(i); i.focus(); })()")
         c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})

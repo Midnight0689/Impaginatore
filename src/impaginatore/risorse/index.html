@@ -569,7 +569,7 @@ function toast(msg, err, azione) {                            // messaggio in ba
   if (azione) { const b = document.createElement("button"); b.textContent = azione.t; b.onclick = () => { el.style.display = "none"; azione.f(); }; el.appendChild(b); }
   clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = "none", err ? 5000 : azione ? 6000 : 2200);
 }
-const annullaAz = () => ({ t: t("editor.annulla"), f: () => annulla() });
+const annullaAz = () => ({ t: t("editor.annulla"), f: () => annulla() }), ripetiAz = () => ({ t: t("editor.ripeti"), f: () => annulla(true) });
 function foglio(titolo, testo, bottoni, campo) {             // foglio in pagina al posto di confirm/prompt: risolve con il valore del pulsante (null = Esc o clic fuori); con campo: { v, testo }
   return new Promise(res => {
     const o = document.createElement("div"); o.className = "veil sheet"; o.style.display = "flex"; const prima = document.activeElement;
@@ -610,6 +610,7 @@ async function op(o) {
   catch (e) { if (e.codice === "altra_scheda") { S = await api("/api/state"); render(); } return null; }
   finally { OPIN--; }
 }
+const stessoPasso = (a, b) => !!a && !!b && a.nome === b.nome && a.s === b.s && !!a.assistente === !!b.assistente;
 const nomePasso = p => p.assistente ? t("editor.msg.dell_assistente", { nome: p.nome }) : p.nome;      // «Sistema spazi (dell'assistente)»
 const MANI = { giu: false, trascino: false };                 // tasto del mouse premuto o trascinamento in corso: niente ridisegni da fuori a metà gesto
 document.addEventListener("pointerdown", () => { MANI.giu = true; }, true);
@@ -620,9 +621,12 @@ async function cambiatoFuori(p) {                              // l'album è cam
   if (!S || p.rev === S.rev || OPIN || MANI.giu || MANI.trascino || $("busy").style.display.includes("flex")) return;
   const a = document.activeElement; if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;    // mentre si scrive non si ridisegna: la prossima volta
   const d = await api("/api/state"); if (!S || d.rev === S.rev || OPIN) return;
-  S = d; render();
-  if (p.assistente) toast(d.annulla && d.annulla.assistente ? t("editor.msg.assistente_n", { nome: d.annulla.nome }) : t("editor.msg.assistente"), false, d.canundo ? annullaAz() : null);
-  else toast(t("editor.msg.altra_scheda"));
+  const prima = S; S = d; render();
+  if (!p.assistente) { toast(t("editor.msg.altra_scheda")); return; }
+  // anche un annulla o un ripeti dell'assistente si dice con il nome del passo: si riconosce dai passi in cima alle due pile
+  if (stessoPasso(d.ripeti, prima.annulla)) toast(t("editor.msg.assistente_annullato", { nome: d.ripeti.nome }), false, ripetiAz());
+  else if (stessoPasso(d.annulla, prima.ripeti)) toast(t("editor.msg.assistente_ripetuto", { nome: d.annulla.nome }), false, annullaAz());
+  else toast(d.annulla && d.annulla.assistente ? t("editor.msg.assistente_n", { nome: d.annulla.nome }) : t("editor.msg.assistente"), false, d.canundo ? annullaAz() : null);
 }
 let CAMBIATE = [], CAMBIATE_T = null;                         // cornici contornate per 400 ms dopo un annulla (UX-003)
 function contornaCambiate(prima, s) {                          // prima: le cornici dello spread s prima del passo, come testo per cornice
