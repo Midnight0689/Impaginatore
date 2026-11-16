@@ -62,7 +62,7 @@ jobs:
         run: uv run --no-project strumenti/controlli.py lint
 
   test:
-    name: Test (${{ matrix.os }}, Python ${{ matrix.python }}${{ matrix.comando == 'copertura' && ', copertura' || '' }})
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }}${{ matrix.comando == 'copertura' && ', copertura' || '' }}${{ matrix.parte && format(', {0}', matrix.parte) || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -73,8 +73,12 @@ jobs:
           - { os: ubuntu-24.04, python: "3.12", comando: copertura }
           - { os: ubuntu-24.04, python: "3.13", comando: test }
           - { os: ubuntu-24.04, python: "3.14", comando: test }
-          - { os: macos-26, python: "3.12", comando: test }
-          - { os: windows-2025, python: "3.12", comando: test }
+          # macOS e Windows in due job paralleli: le prove nel browser (Chrome vero, lente) da una parte, il resto
+          # dall'altra; insieme supererebbero i 30 minuti di un job
+          - { os: macos-26, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
+          - { os: macos-26, python: "3.12", comando: test, parte: browser, marcatori: browser }
+          - { os: windows-2025, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
+          - { os: windows-2025, python: "3.12", comando: test, parte: browser, marcatori: browser }
     steps:
       # git per Windows converte i file di testo in CRLF all'estrazione: i test devono leggere gli stessi byte degli
       # altri sistemi (progetti di riferimento in tests/dati, risorse dell'interfaccia)
@@ -101,6 +105,8 @@ jobs:
       # «copertura» esegue tutti i test con la misura della copertura e fallisce sotto fail_under (pyproject.toml)
       - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
         timeout-minutes: 25
+        env:
+          PYTEST_ADDOPTS: ${{ matrix.marcatori && format('-m "{0}"', matrix.marcatori) || '' }}
         run: uv run --no-project strumenti/controlli.py ${{ matrix.comando }}
 
       - name: Copertura totale nel riepilogo
