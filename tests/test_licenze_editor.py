@@ -115,7 +115,9 @@ def test_finestra_della_licenza_nel_browser(home_srv, licenza, tmp_path):
         assert b.js("getComputedStyle(document.getElementById('vlic')).display") == "flex" and testo("lstato").startswith("Prova gratuita: mancano 30 giorni")
         b.js(f"document.getElementById('lkey').value = {json.dumps(pro.lower())}; document.getElementById('lgo').click()"); b.pausa(0.8)
         assert testo("lic") == "Licenza Pro" and "«Studio Verdi»" in testo("lstato") and b.js("document.getElementById('lkey').value") == ""
-        b.js("window.confirm = () => true; document.getElementById('lrim').click()"); b.pausa(0.8)
+        b.js("document.getElementById('lrim').click()"); b.pausa(0.4)
+        assert b.js("getComputedStyle(document.getElementById('vchiedi')).display") == "flex", "la conferma è un foglio in pagina, non un confirm()"
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(0.8)
         assert testo("lic").startswith("Prova gratuita") and b.js("document.getElementById('lrim').style.display") == "none"
         licenza.usa("IMP1-AAAAA"); b.js("loadLic()"); b.pausa(0.5)
         assert testo("lic") == "Chiave non valida · prova 30 giorni" and b.js("document.getElementById('lrim').style.display") == ""
