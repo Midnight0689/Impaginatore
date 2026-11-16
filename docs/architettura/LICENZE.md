@@ -163,7 +163,7 @@ accettata con le decisioni sopra; la tabella dice quanto costa ogni aggiramento.
   `consentita("impaginazione_automatica_album")`); `computer` (non si conta). `preset_laboratori` ha il suo cancello
   (T-208), ma oggi tutte le fasce lo comprendono.
 - **Chiave copiata negli appunti** e **link `impaginatore://`** (FLUSSO-ACQUISTO, § 3): il programma accetta il link
-  incollato, ma non legge gli appunti da solo e il link non apre il programma finché l'installatore non lo registra (T-302).
+  incollato, ma non legge gli appunti da solo e il link non apre il programma: i pacchetti di T-302 non lo registrano (DISTRIBUZIONE.md).
 - **Chiavi Polar** (`IMP-` + UUID): non accettate; servirebbero solo se si passasse a Polar con le sue attivazioni,
   che le decisioni sopra escludono.
 - **Testi**: dalla tabella dei testi (`risorse/testi/<lingua>/licenze.json`, T-206), in italiano e in inglese; i nomi
