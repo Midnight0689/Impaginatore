@@ -6,9 +6,9 @@ un'implementazione per sistema:
     Windows, Linux   tkinter (in un processo a parte: le richieste arrivano dai thread del server HTTP)
     Linux senza tk   zenity o kdialog
     nessuna          annulla sempre (server senza schermo, test)
-Punto di aggancio: imposta(implementazione) sostituisce le finestre per tutto il processo (es. quelle di pywebview nella
-finestra desktop). La variabile IMPAGINATORE_DIALOGHI sceglie l'implementazione per nome (mac, tk, zenity, kdialog,
-nessuno): vale anche per i processi dell'editor.
+Punto di aggancio: imposta(implementazione) sostituisce le finestre per tutto il processo (quelle di pywebview nella
+finestra del programma: desktop.dialoghi). La variabile IMPAGINATORE_DIALOGHI sceglie l'implementazione per nome (mac, tk,
+zenity, kdialog, nessuno, finestra:<porta>): vale anche per i processi dell'editor.
 Ogni funzione restituisce "" (o []) se l'utente annulla.
 """
 import importlib.util
@@ -126,9 +126,14 @@ def _tk_disponibile():
     return sistema() != "linux" or bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 
-def predefiniti():
-    """l'implementazione giusta per questo sistema (o quella chiesta con IMPAGINATORE_DIALOGHI)"""
+def predefiniti(finestra=True):
+    """l'implementazione giusta per questo sistema (o quella chiesta con IMPAGINATORE_DIALOGHI). «finestra:<porta>»: quelle
+    della finestra del programma, chieste alla schermata su quella porta (desktop.dialoghi.Ponte, negli editor);
+    finestra=False la salta (il ripiego di Ponte quando la schermata non risponde)"""
     n = os.environ.get("IMPAGINATORE_DIALOGHI", "").strip().lower()
+    if finestra and n.startswith("finestra:") and n[9:].isdigit():
+        from ..desktop.dialoghi import Ponte
+        return Ponte(int(n[9:]))
     if n in PER_NOME: return PER_NOME[n]()
     s = sistema()
     if s == "mac": return Mac()
