@@ -19,6 +19,7 @@ from PIL import Image, ImageOps
 from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
+from ..motore import bozza as BZ                     # bozza dell'album (UX-018)
 from ..motore import spazi as SPAZI                  # spazi fra le foto (controllo e «Sistema»)
 from ..motore import testo as TX
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
@@ -535,8 +536,9 @@ def apply(o):
             apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
     elif t == "disposizione": altra_disposizione(o["s"], o.get("passo", 1), o.get("side"))
     elif t == "sostituisci": sostituisci(o["at"], o["photo"], o.get("adatta", True) is not False)
+    elif t == "bozza": applica_bozza(o)
     elif t == "spazi": ESITO.update(corretti=correggi_spazi(o["s"], o.get("modo", "std"), o.get("cm")), diversi=stato_spazi(o["s"], o.get("modo", "std"), o.get("cm"))["diversi"])
-    elif t == "sistema": sistema(_elenco_spread(o.get("spread")), o.get("spazi", True) is not False, o.get("tono", True) is not False, o.get("modo", "std"), o.get("cm"))
+    elif t == "sistema": sistema(_elenco_spread(o.get("spread")), o.get("spazi", True) is not False, o.get("tono"), o.get("modo", "std"), o.get("cm"))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
@@ -783,6 +785,7 @@ def valida(o):
         if "s" not in o: raise ValueError("manca lo spread")
         if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError("passo non valido: 1 (avanti) o -1 (indietro)")
     if t == "spazi" and "s" not in o: raise ValueError("manca lo spread")
+    if t == "bozza": _valida_bozza(o)
     if t in ("spazi", "sistema"): _riferimento_spazi(o.get("modo", "std"), o.get("cm")); _elenco_spread(o.get("spread"))
     if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError("servono la cornice (at) e la foto (photo)")
     if t == "rit" and o.get("copia") is not None:
@@ -1052,12 +1055,29 @@ def _volti_visibili(e):
     return out
 
 
-def controlla(spreads=None, tono=True, modo="std", cm=None):
+def _cancello(funzione):
+    """NonConsentita (403) se la licenza di questo computer non comprende la funzione (chiave di tier.json)"""
+    st = licenze.stato()
+    if not licenze.consentita(funzione, st): raise licenze.NonConsentita(licenze.motivo(funzione, st))
+
+
+def _con_tono(tono):
+    """il tono entra nel controllo e in «Sistema»? None: se la licenza comprende il pannello del tono; True: la licenza lo
+    deve comprendere (altrimenti 403, come /api/tono); False: no"""
+    if tono is None: return licenze.consentita("uniformita_tono")
+    if not isinstance(tono, bool): raise ValueError("tono: true, false o niente")
+    if tono: _cancello("uniformita_tono")
+    return tono
+
+
+def controlla(spreads=None, tono=None, modo="std", cm=None):
     """controllo dell'album prima della consegna (UX-014): elenco strutturato dei problemi, dal più grave.
     livello «blocca» (foto mancante o danneggiata, sotto 150 ppi, fuori dalla pagina), «guarda» (fra 150 e 200 ppi, volto
     vicino alla piega o tagliato, ritaglio oltre ×1,25, spazi diversi, pagina vuota, foto fuori tono, foto ripetuta),
     «info» (foto non usate, foto ★ non usate). Ogni problema: {livello, tipo, s, side, idx, foto, testo, sistema}; sistema
-    = True se «Sistema» lo corregge da solo (spazi, tono). spreads: solo quelli (indici); tono=False salta il tono"""
+    = True se «Sistema» lo corregge da solo (spazi, tono). spreads: solo quelli (indici); tono: vedi _con_tono.
+    Il controllo è di tutte le fasce (PROPOSTE.md, UX-014: prevenire un errore di stampa non è un extra)"""
+    tono = _con_tono(tono)
     with LOCK:
         P = []; usi = {}; mancanti = set(foto_mancanti()); tutti = range(len(SP)) if spreads is None else spreads
         piega = A.FOLD - BL; cm1 = PIEGA_CM / 2.54 * A.PPI; conta_sistema = dict(spazi=0, tono=0)
@@ -1106,11 +1126,13 @@ def controlla(spreads=None, tono=True, modo="std", cm=None):
                     pronto=conta["blocca"] == 0)
 
 
-def sistema(spreads=None, spazi=True, tono=True, modo="std", cm=None):
+def sistema(spreads=None, spazi=True, tono=None, modo="std", cm=None):
     """«Sistema»: le correzioni sicure in un colpo solo (con do_op: un solo passo d'annulla). Spazi come «Correggi spazi»,
     tono delle foto fuori tono con la correzione completa del pannello Tono. Non cambia disposizioni né foto scelte e non
-    tocca i volti (UX-014). Mette in ESITO quanti spread e quante foto ha corretto"""
-    n_sp = n_tono = 0; correzioni = []
+    tocca i volti (UX-014). Mette in ESITO quanti spread e quante foto ha corretto. Licenza: gli spazi di più spread insieme
+    sono «correzione_spaziature_album» (in Essenziale si sistema uno spread alla volta), il tono «uniformita_tono»"""
+    if spazi and (spreads is None or len(spreads) > 1): _cancello("correzione_spaziature_album")
+    tono = _con_tono(tono); n_sp = n_tono = 0; correzioni = []
     for s in (range(len(SP)) if spreads is None else spreads):
         if spazi and correggi_spazi(s, modo, cm): n_sp += 1
         if tono:
@@ -1119,6 +1141,77 @@ def sistema(spreads=None, spazi=True, tono=True, modo="std", cm=None):
                 if t["stato"] == "no" and c and not any(x["photo"] == t["name"] for x in correzioni): correzioni.append(dict(photo=t["name"], ev=c["ev"], rit=c["rit"]))
     if correzioni: apply(dict(op="tono_fix", items=correzioni)); n_tono = len(correzioni)
     ESITO.update(spazi=n_sp, tono=n_tono)
+
+
+# ------------------------------------------------------------------ bozza dell'album (UX-018)
+BOZZA = {}                                          # ultima proposta, per le anteprime del foglio «Bozza dell'album»
+
+
+def _opzioni_bozza(o):
+    """(ritmo, foto per spread, stelle da sole, seme) dalla richiesta, controllati; spread = quanti spread si vogliono"""
+    ritmo = o.get("ritmo", "alterna"); stelle = o.get("stelle", True); seme = o.get("seme", 0)
+    if ritmo not in BZ.RITMI: raise ValueError("ritmo non valido: alterna, piene o bianche")
+    if not isinstance(stelle, bool): raise ValueError("stelle: true o false")
+    if type(seme) is not int or not 0 <= seme < 2 ** 31: raise ValueError("seme non valido: un intero da 0")
+    per = o.get("per_spread")
+    if per is not None and (isinstance(per, bool) or not isinstance(per, (int, float)) or not 1 <= per <= BZ.MAX_GRUPPO): raise ValueError(f"foto per spread: da 1 a {BZ.MAX_GRUPPO}")
+    if o.get("spread") is not None:
+        n = o["spread"]
+        if type(n) is not int or not 1 <= n <= 1000: raise ValueError("numero di spread non valido")
+        per = min(max(len(_foto_bozza()) / n, 1), BZ.MAX_GRUPPO)
+    return ritmo, per or BZ.PER_SPREAD, stelle, seme
+
+
+def _foto_bozza(almeno=0):
+    """foto da impaginare: non ancora nell'album e non tolte, in ordine di scatto (ValueError se sono meno di almeno)"""
+    usate = used_set(); tolte = set(CFG.get("tolte", [])); stelle = set(CFG["stelle"])
+    foto = [dict(i=i, dt=A.M[i]["dt"], ar=A.M[i]["ar"], stella=A.name(i) in stelle) for i in range(len(A.M)) if i not in usate and A.name(i) not in tolte]
+    if len(foto) < almeno: raise ValueError(f"Per la bozza servono almeno {almeno} foto ancora da usare: ce ne sono {len(foto)}")
+    return sorted(foto, key=lambda f: (f["dt"] or "", A.name(f["i"])))
+
+
+def bozza(o):
+    """proposta di bozza per le foto da usare (non tocca l'album): {spreads: [{L, R, foto, nomi, capitolo, inizio, ora,
+    taglia}], capitoli, foto, per_spread}. Le anteprime: /img/bozza/<n>. Licenza: impaginazione_automatica_album"""
+    _cancello("impaginazione_automatica_album")
+    with LOCK:
+        ritmo, per, stelle, seme = _opzioni_bozza(o); foto = _foto_bozza(BZ.MIN_FOTO)
+        p = BZ.proposta(foto, tpl_options, ritmo, per, stelle, seme)
+        for s in p["spreads"]: s["nomi"] = [A.name(i) for i in s["foto"]]
+        BOZZA.clear(); BOZZA.update(spreads=p["spreads"])
+        return p
+
+
+def applica_bozza(o):
+    """operazione «bozza»: gli spread della proposta (o["spreads"], come li ha mostrati il foglio; altrimenti una proposta
+    nuova con le stesse opzioni) dopo quelli che ci sono (o nel punto pos); gli spread esistenti non si toccano"""
+    _cancello("impaginazione_automatica_album")
+    spreads = o.get("spreads") or bozza(o)["spreads"]; pos = o["pos"]
+    for k, s in enumerate(spreads): apply(dict(op="newspread", pos=pos + k, L=s["L"], R=s["R"]))
+    ESITO.update(spread=len(spreads), foto=sum(len(s["L"]["photos"]) + len(s["R"]["photos"]) for s in spreads), da=pos)
+
+
+def _valida_bozza(o):
+    o.setdefault("pos", len(SP)); _intero(o["pos"], len(SP) + 1, "posizione")
+    if o.get("spreads") is None: _opzioni_bozza(o); return
+    if not isinstance(o["spreads"], list) or not 1 <= len(o["spreads"]) <= 1000: raise ValueError("spread della bozza non validi")
+    for s in o["spreads"]:
+        for side in "LR":
+            d = s.get(side) if isinstance(s, dict) else None
+            if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or d.get("module") not in NPH or not isinstance(d.get("photos"), list) or len(d["photos"]) != NPH[d["module"]]:
+                raise ValueError("spread della bozza non valido: modo, modulo e foto di ogni pagina")
+            for i in d["photos"]: _intero(i, len(A.M), "foto")
+
+
+def bozza_jpg(n, K):
+    """anteprima dello spread n dell'ultima proposta (senza abbondanza), come le immagini degli spread"""
+    _cancello("impaginazione_automatica_album")
+    sp = BOZZA.get("spreads") or []
+    if not 0 <= n < len(sp): raise RichiestaNonValida("spread della bozza inesistente")
+    with LOCK: tup = tuple((sp[n][side]["mode"], [dict(x) for x in BUILD[sp[n][side]["module"]]([i + 1 for i in sp[n][side]["photos"]], bool(sp[n][side]["mirror"]))]) for side in "LR")
+    im = A.render(tup, K, True); b = round(A.B * K)
+    if b: im = im.crop((b, b, im.width - b, im.height - b))
+    buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); return buf.getvalue()
 
 
 def _elenco_spread(x):
@@ -2153,6 +2246,7 @@ class H(Gestore):
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
+            elif u.path.startswith("/img/bozza/"): self.send(bozza_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.12, 0.02, 0.5)), "image/jpeg")
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.2, 0.02, 1.0), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
                 n = unquote(u.path.rsplit("/", 1)[1]); w = round(numero(q, "w", 260, 16, 1200)); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
@@ -2170,9 +2264,10 @@ class H(Gestore):
             body = self.corpo()
             if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
+            elif u.path == "/api/bozza": self.send(bozza(body))
             elif u.path == "/api/controlla":
                 _riferimento_spazi(body.get("modo", "std"), body.get("cm"))
-                self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono", True) is not False, body.get("modo", "std"), body.get("cm")))
+                self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono"), body.get("modo", "std"), body.get("cm")))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
                 n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
