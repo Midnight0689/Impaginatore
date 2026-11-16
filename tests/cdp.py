@@ -127,7 +127,13 @@ class Browser:
 
     def __enter__(self):
         prof = os.path.join(self.cartella, "chrome-cdp"); os.makedirs(prof, exist_ok=True)
-        self.registro = os.path.join(self.cartella, "chrome-cdp.log")
+        # Windows: Chrome chiede al sistema la cartella dei dati locali dell'utente (SHGetFolderPath, %USERPROFILE%\AppData\Local)
+        # per sapere qual è il suo profilo predefinito; se non c'è, tratta ogni profilo come quello predefinito e non apre la
+        # porta del protocollo («DevTools remote debugging requires a non-default data directory»). La casa finta dei test
+        # (conftest.casa: USERPROFILE, APPDATA, LOCALAPPDATA) non ha quelle cartelle finché qualcuno non le crea
+        for k in ("LOCALAPPDATA", "APPDATA"):
+            if os.environ.get(k): os.makedirs(os.environ[k], exist_ok=True)
+        self.registro =os.path.join(self.cartella, "chrome-cdp.log")
         with open(self.registro, "wb") as uscita:                    # quello che Chrome dice: finisce nel messaggio se non parte
             self.p = subprocess.Popen([CHROME, *OPZIONI, f"--user-data-dir={prof}", "--remote-debugging-port=0", "--window-size=1600,1000",
                                        "--enable-logging=stderr", "about:blank"], stdout=uscita, stderr=subprocess.STDOUT)
