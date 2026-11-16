@@ -1200,7 +1200,7 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                         e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
                         add("guarda", "tono", lingua.t("server.ctl_tono_chiara" if t["d"] > 0 else "server.ctl_tono_scura", nome=t["name"]), e, sistema=True); conta_sistema["tono"] += 1
         if spreads is None and pr:
-            for testo in _problemi_prodotto(pr): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
+            for testo in _problemi_prodotto(_prodotto_mostrato()): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
         if spreads is None:
             stelle = set(CFG["stelle"]); tolte = set(CFG.get("tolte", []))
             for n in unused():
@@ -1298,8 +1298,13 @@ def _spread_liberi():
     return pr["spread_max"] - len(SP)
 
 
+def _prodotto_mostrato():
+    """il prodotto dell'album con il nome da mostrare, nella lingua in uso se viene dal catalogo del programma"""
+    return LAB.tradotto_progetto(CFG["prodotto"])["prodotto"]
+
+
 def _troppi_spread(n, liberi):
-    pr = _prodotto()
+    pr = _prodotto_mostrato()
     if liberi: return lingua.t("server.prodotto_spread_max_ancora", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP), liberi=liberi, n=n)
     return lingua.t("server.prodotto_spread_max_zero", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP))
 
@@ -1319,16 +1324,20 @@ def imposta_prodotto(v):
     per toglierlo. Il formato dell'album non cambia: un prodotto di un altro formato si rifiuta con il motivo"""
     if v is None: CFG["prodotto"] = None; return
     cat, prod = LAB.scelta(v)                                     # licenza compresa: i cataloghi dei laboratori sono «preset_laboratori»
-    m = LAB.incompatibile(CFG, prod)
+    pr = LAB.per_progetto(cat, prod); vis = LAB.tradotto_progetto(pr)
+    m = LAB.incompatibile(CFG, vis["prodotto"])
     if m: raise ValueError(m)
-    CFG["prodotto"] = LAB.per_progetto(cat, prod); ESITO.update(prodotto=prod["nome"], laboratorio=cat["laboratorio"])
+    CFG["prodotto"] = pr; ESITO.update(prodotto=vis["prodotto"]["nome"], laboratorio=vis["laboratorio"])
 
 
 def prodotto_pagina():
     """il prodotto dell'album come lo mostra la pagina (None se non c'è): copia del progetto, stato rispetto ai cataloghi
-    installati (verificato, generico) e il motivo per cui non va, se l'album non ha il suo formato"""
+    installati (verificato, generico) e il motivo per cui non va, se l'album non ha il suo formato. Nomi nella lingua in uso
+    (laboratori.tradotto_progetto)"""
     pr = CFG.get("prodotto")
-    return dict(pr, **LAB.stato(pr), avviso=LAB.incompatibile(CFG, pr["prodotto"])) if pr else None
+    if not pr: return None
+    vis = LAB.tradotto_progetto(pr)
+    return dict(vis, **LAB.stato(pr), avviso=LAB.incompatibile(CFG, vis["prodotto"]))
 
 
 def prodotti_pagina():
@@ -2003,14 +2012,16 @@ def _consegna_prima(o, dest):
     """controlli della consegna al laboratorio (T-208) prima di cominciare: il prodotto c'è, l'album ha il suo formato, la
     licenza comprende il catalogo. Restituisce (prodotto del progetto, stato del prodotto, serve una cartella nuova): la
     cartella scelta si usa se è nuova o vuota, altrimenti (o con quella di serie) se ne crea una nuova dentro, dopo i
-    controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote)"""
+    controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote). Il prodotto ha i
+    nomi da mostrare (cartella e riepilogo nella lingua in uso); lo stato si calcola sulla copia del progetto"""
     with LOCK: pr = copy.deepcopy(CFG.get("prodotto"))
     if not pr: raise ValueError(lingua.t("server.consegna_senza_prodotto"))
-    m = LAB.incompatibile(CFG, pr["prodotto"])
+    vis = LAB.tradotto_progetto(pr)
+    m = LAB.incompatibile(CFG, vis["prodotto"])
     if m: raise ValueError(m)
     info = LAB.stato(pr)
     if not info["generico"]: _cancello("preset_laboratori")
-    return pr, info, not (o.get("dest") and (not os.path.exists(dest) or (os.path.isdir(dest) and not os.listdir(dest))))
+    return vis, info, not (o.get("dest") and (not os.path.exists(dest) or (os.path.isdir(dest) and not os.listdir(dest))))
 
 
 def _consegna(pr, info, nums, dest, con_filigrana, nome):

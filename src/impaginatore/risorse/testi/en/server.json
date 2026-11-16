@@ -90,7 +90,7 @@
   "server.leggimi_apri_zip": "To open it: in Impaginatore, on the Albums screen, choose the ⋯ menu › “Open existing album…” and pick this folder (or “Import ZIP…” if you have the .zip file).",
   "server.leggimi_font": "Install the fonts listed in font_usati.txt.",
   "server.leggimi_foto_assenti": "The photos are NOT included: when you open the project, press “Project and photos…” › “Relink…” and choose the folder with the originals.",
-  "server.leggimi_foto_incluse": "The photos are in the Foto folder: the paths fix themselves.",
+  "server.leggimi_foto_incluse": "The photos are in the folder named “Foto”: the paths fix themselves.",
   "server.leggimi_inizio": "Album “{nome}” exported from Impaginatore.",
   "server.leggimi_psd": "Any PSDs already created aren't included: create them again with Export → PSD.",
   "server.log_errore": "Error: {motivo}",

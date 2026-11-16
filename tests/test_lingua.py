@@ -238,6 +238,7 @@ def test_inglese_tradotto_davvero():
     uguali = [k for k in en if en[k] == it[k] and prosa(it[k]) and len(re.findall(r"[A-Za-zÀ-ÿ]{2,}", it[k])) > 1]
     assert uguali == []
     assert [k for k, v in en.items() if "«" in v or "»" in v] == []
+    assert [k for k, v in en.items() if re.search(r"(?<!“)\bFoto\b", v)] == [], "la cartella «Foto» ha questo nome anche in inglese: si scrive “Foto”, come un nome"
     italiane = re.compile(r"\b(il|della|delle|degli|nella|questo|questa|sono|perché|più|già|foto|spread\w* \d+–\d+ e)\b")
     assert [k for k, v in en.items() if italiane.search(SEGNAPOSTO.sub(" ", v)) and not re.fullmatch(r"[^a-z]*", v)] == []
 

@@ -86,6 +86,41 @@ def test_ricerca_e_importazione_in_inglese(tmp_path, chiavi_prova):
     assert any(p["errore"] == "there is already a catalogue with the id “due”" for p in L.cataloghi()[1])
 
 
+def _generico():
+    with open(os.path.join(L.INTERNI, "generico.json"), encoding="utf-8") as f: return json.load(f)
+
+
+def test_catalogo_generico_in_inglese():
+    """il Generico, che viene con il programma, si mostra nella lingua in uso; il file resta il dato (in italiano), e il
+    progetto ne tiene la copia com'è: stato() la riconosce, e un progetto aperto in un'altra lingua resta «Generico»"""
+    g = next(c for c in L.elenco()["cataloghi"] if c["id"] == "generico")
+    assert (g["nome"], g["laboratorio"]) == ("Generic", "No lab: common sizes")
+    assert g["fonte"].startswith("Common album sizes chosen by Impaginatore") and g["note"].startswith("Careful sizes and rules to start with")
+    assert [p["nome"] for p in g["prodotti"]] == ["Square 30 × 30", "Square 25 × 25", "Square 20 × 20", "Landscape 35 × 25", "Landscape 30 × 22.5", "Landscape 25 × 20", "Portrait 20 × 30"]
+    cat, prod = L.scelta("generico/orizzontale-30x22"); pr = L.per_progetto(cat, prod)
+    assert (pr["nome_catalogo"], pr["laboratorio"], pr["prodotto"]["nome"]) == ("Generico", "Nessun laboratorio: formati comuni", "Orizzontale 30 × 22,5"), "nel progetto il dato com'è"
+    assert L.stato(pr)["generico"] is True
+    v = L.tradotto_progetto(pr)
+    assert (v["nome_catalogo"], v["laboratorio"], v["prodotto"]["nome"]) == ("Generic", "No lab: common sizes", "Landscape 30 × 22.5") and pr["prodotto"]["nome"] == "Orizzontale 30 × 22,5"
+    assert L.incompatibile(dict(formato_cm=[50, 20], abbondanza_mm=3), v["prodotto"]).startswith("The album has pages of 25 × 20 cm, the product “Landscape 30 × 22.5” of 30 × 22.5 cm")
+    t = CO.riepilogo("W", v, L.stato(pr), [], 3, {}, False)
+    assert "Lab: No lab: common sizes" in t and "Catalogue: Generic (generico, " in t and "Product: Landscape 30 × 22.5 (orizzontale-30x22)" in t
+    cambiato = dict(pr, prodotto=dict(pr["prodotto"], ppi=200))
+    assert L.tradotto_progetto(cambiato) == cambiato, "un «generico» diverso da quello del programma (un progetto ricevuto) si mostra com'è"
+    altro = dict(pr, catalogo="lab-prova")
+    assert L.tradotto_progetto(altro) == altro
+    assert L.tradotto(dict(_generico(), interno=False))["nome"] == "Generico", "solo i cataloghi del programma"
+
+
+def test_catalogo_generico_in_italiano_come_il_file(monkeypatch):
+    """i testi in tabella del Generico in italiano sono quelli del file: per chi usa l'italiano non cambia niente"""
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
+    doc = _generico(); g = next(c for c in L.elenco()["cataloghi"] if c["id"] == "generico")
+    assert {k: g[k] for k in ("nome", "laboratorio", "fonte", "note")} == {k: doc[k] for k in ("nome", "laboratorio", "fonte", "note")}
+    assert [p["nome"] for p in g["prodotti"]] == [p["nome"] for p in doc["prodotti"]]
+    assert [p["id"].replace("-", "_") for p in doc["prodotti"]] == [k.rsplit(".", 1)[1] for k in lingua.tabella("it") if k.startswith("laboratori.cat_generico.") and k.count(".") == 2 and "_" in k.rsplit(".", 1)[1]]
+
+
 def test_compatibilita_e_riepilogo_in_inglese():
     p = CA.prodotto(prodotto())
     assert L.incompatibile(dict(formato_cm=[50, 20], abbondanza_mm=3), p).startswith("The album has pages of 25 × 20 cm, the product “Album 30” of 30 × 22.5 cm: the size of an existing album can't be changed.")

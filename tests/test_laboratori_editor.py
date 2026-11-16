@@ -3,6 +3,7 @@ sistema, prodotto di un album aperto (operazione dell'editor, con annulla), cont
 consegna al laboratorio (file, nomi, misure, profilo, riepilogo, cartella nuova), assistente AI (MCP)."""
 import json
 import os
+import shutil
 import types
 
 import pytest
@@ -295,6 +296,27 @@ def test_consegna_licenza_e_spread_saltati(editor, monkeypatch):
     E.CFG["prodotto"] = g; E.CFG["abbondanza_mm"] = 3
     assert c.prova("/api/export", {"fmt": "consegna", "range": "1", "dest": d("e")})[0] is True, "il Generico è di tutti"
     attendi_log(c)
+
+
+def test_generico_nella_lingua_dell_editor(home_srv, apri_editor, foto_campione, monkeypatch):
+    """il Generico nell'editor in inglese: nomi tradotti nello stato, nell'elenco dei prodotti, negli avvisi, nella cartella
+    e nel riepilogo della consegna; progetto.json tiene il dato del catalogo com'è"""
+    p = home_srv.post("/api/nuovo", {"nome": "Prova", "prodotto": "generico/orizzontale-30x22"})["path"]
+    for f in sorted(os.listdir(foto_campione)): shutil.copy2(os.path.join(foto_campione, f), os.path.join(p, "Foto", f))
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); c = apri_editor(p); album(c, 1)
+    ok, r = c.prova("/api/op", {"op": "prodotto", "prodotto": "generico/quadrato-30"})
+    assert not ok and r["errore"].startswith("The album has pages of 30 × 22.5 cm, the product “Square 30 × 30” of 30 × 30 cm"), r
+    g = next(x for x in c.get("/api/prodotti")["cataloghi"] if x["id"] == "generico")
+    assert g["nome"] == "Generic" and g["prodotti"][0]["nome"] == "Square 30 × 30" and "“Square 30 × 30”" in g["prodotti"][0]["incompatibile"]
+    c.post("/api/op", {"op": "prodotto", "prodotto": None}); c.post("/api/op", {"op": "prodotto", "prodotto": "generico/orizzontale-30x22"}); c.post("/api/save")
+    st = c.get("/api/state")["prodotto"]
+    assert (st["nome_catalogo"], st["laboratorio"], st["prodotto"]["nome"], st["generico"]) == ("Generic", "No lab: common sizes", "Landscape 30 × 22.5", True)
+    assert progetto_json(c)["prodotto"] == L.per_progetto(*L.trova("generico", "orizzontale-30x22")) and progetto_json(c)["prodotto"]["prodotto"]["nome"] == "Orizzontale 30 × 22,5"
+    c.post("/api/export", {"fmt": "consegna"}); L_ = attendi_log(c)
+    dest = next((x[len("RISULTATO:"):] for x in L_ if x.startswith("RISULTATO:")), None)
+    assert dest and os.path.basename(dest).startswith("Landscape 30 × 22.5 20"), L_
+    t = open(os.path.join(dest, "Riepilogo consegna.txt"), encoding="utf-8").read()
+    assert "Catalogue: Generic (generico, " in t and "Product: Landscape 30 × 22.5 (orizzontale-30x22)" in t and "Lab: No lab: common sizes" in t
 
 
 # ---------------------------------------------------------------- assistente AI (MCP)

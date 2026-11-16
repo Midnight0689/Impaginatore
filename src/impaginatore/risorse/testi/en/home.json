@@ -54,7 +54,7 @@
   "home.dim_label": "Size of the open album (two pages), in cm",
   "home.disponibile": "Available:",
   "home.editor_non_parte": "The album didn't open. Try again; if it happens again, look at the editor.log file in the albums folder.",
-  "home.foto_label": "Photo folder (optional: without one, the album uses its own Foto folder)",
+  "home.foto_label": "Photo folder (optional: without one, the album keeps its photos in a folder named “Foto” inside it)",
   "home.foto_ph": "No folder chosen",
   "home.giorni_1": "1 day",
   "home.giorni_n": "{n} days",

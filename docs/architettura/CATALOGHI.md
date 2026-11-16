@@ -23,7 +23,10 @@ Guida per chi scrive un catalogo: [`docs/laboratori/SCRIVERE-UN-CATALOGO.md`](..
 ## Dove stanno i cataloghi
 
 - **Del programma**: `src/impaginatore/laboratori/cataloghi/*.json`. Oggi solo `generico.json` («Generico»,
-  `generico: true`). Solo questi possono dirsi generici; il Generico è di tutte le fasce.
+  `generico: true`). Solo questi possono dirsi generici; il Generico è di tutte le fasce. Il file è scritto in
+  italiano ed è il dato (progetto.json ne copia il prodotto com'è); pagine e assistente lo mostrano nella lingua in uso
+  con i testi `laboratori.cat_generico.*` della tabella (`laboratori.tradotto`, e `tradotto_progetto` per il prodotto
+  di un album, solo se è identico a quello del catalogo installato). Un prodotto nuovo nel Generico vuole il suo testo.
 - **Dell'utente**: `<dati dell'utente>/cataloghi/` (`piattaforma.cartelle.dati_utente()`: su macOS
   `~/Library/Application Support/Impaginatore/cataloghi`, su Windows `%APPDATA%\Impaginatore\cataloghi`, su Linux
   `~/.local/share/impaginatore/cataloghi`). Ci finiscono con «Importa il catalogo di un laboratorio…» nella finestra
