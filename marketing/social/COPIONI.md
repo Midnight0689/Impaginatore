@@ -25,17 +25,17 @@ Uscite: U06 (Instagram), U31 (Facebook). Pilastro: Le foto restano tue.
 | 4 | 17–24 s | Cartella del Finder con i JPG che compaiono uno dopo l’altro | Nessuna foto è uscita dal computer. | Nessuna funzione carica le foto in rete. Puoi rifare la prova tu, il giorno che lo installi. | `riprese/V1-04-cartella.mov` |
 | 5 | 24–30 s | Fondo Carta, logotipo al centro, payoff sotto | Impaginatore. Resta tuo. | Impaginatore. Le foto restano tue. | `modelli/copertina-reel.html` come ultimo fotogramma |
 
-## V2 · Una riga per installarlo (25 s)
+## V2 · Il primo album in tre passi (25 s)
 
-Uscite: U25 (Shorts e Instagram), rimando dalla guida lunga U18. Pilastro: Assistenza e prova.
+Uscite: U25 (Shorts e Instagram), rimando dalla guida lunga U18. Pilastro: Assistenza e prova. La versione «Una riga per installarlo» si gira solo quando esistono gli installatori (T-301, T-302).
 
 | # | Durata | Inquadratura | Testo sullo schermo | Voce | Ripresa |
 |---|---|---|---|---|---|
-| 1 | 0–3 s | Pagina «Installa» del sito, pulsante «Copia» | Una riga. | Per installare Impaginatore su Mac basta una riga. | `riprese/V2-01-pagina.mov` |
-| 2 | 3–10 s | Terminale: si incolla il comando, Invio | Incollo e premo Invio. | La copio dal sito, la incollo nel Terminale. | `riprese/V2-02-terminale.mov` |
-| 3 | 10–17 s | Righe del comando che scorrono; evidenziata «firma verificata» | Prima controlla la firma. | Prima di installare, il comando controlla che il file sia quello che abbiamo pubblicato. | `riprese/V2-03-firma.mov` |
-| 4 | 17–22 s | L’icona compare nel Dock, clic, si apre la finestra | Fatto. | Fatto. Su Windows è uguale, in PowerShell. | `riprese/V2-04-apertura.mov` |
-| 5 | 22–25 s | Fondo Inchiostro, logotipo negativo | Guida completa sul canale. | La guida completa è sul canale. | — |
+| 1 | 0–3 s | Schermata «Album» di Impaginatore | Tre passi. | Per cominciare un album bastano tre passi. | `riprese/V2-01-album.mov` |
+| 2 | 3–10 s | Clic su «Nuovo album…», si sceglie la cartella delle foto | Scelgo le foto. | Premo Nuovo album e scelgo la cartella delle foto. | `riprese/V2-02-nuovo.mov` |
+| 3 | 10–17 s | Si sceglie il formato fra quelli pronti | Scelgo il formato. | Scelgo il formato, o scrivo le misure del mio laboratorio. | `riprese/V2-03-formato.mov` |
+| 4 | 17–22 s | Si apre l’editor con le foto | Fatto. | Fatto: l’album è aperto. | `riprese/V2-04-apertura.mov` |
+| 5 | 22–25 s | Fondo Inchiostro, logotipo negativo | Prova gratis, 30 giorni. | La prova dura 30 giorni e non chiede la carta. | — |
 
 ## V3 · Dalla cartella alla bozza (40 s)
 
@@ -44,8 +44,8 @@ Uscita: U21. Pilastro: Mestiere. Funzione delle licenze Pro e Studio (e della pr
 | # | Durata | Inquadratura | Testo sullo schermo | Voce | Ripresa |
 |---|---|---|---|---|---|
 | 1 | 0–4 s | Cartella con le foto scelte dell’album dimostrativo | Le foto scelte. | Ho le foto scelte di un matrimonio, in una cartella. | `riprese/V3-01-cartella.mov` |
-| 2 | 4–12 s | Nuovo progetto: formato 30 × 30 cm, preset del laboratorio | 30 × 30 cm, misure del laboratorio. | Nuovo album, trenta per trenta, con le misure del mio laboratorio. | `riprese/V3-02-nuovo.mov` |
-| 3 | 12–22 s | Comando «Impagina l’album»; gli spread si riempiono | La bozza dell’album intero. | Con Pro, Impaginatore prepara la bozza dell’album intero. | `riprese/V3-03-bozza.mov` |
+| 2 | 4–12 s | Nuovo album: formato 30 × 30 cm, misure del laboratorio | 30 × 30 cm, misure del laboratorio. | Nuovo album, trenta per trenta, con le misure del mio laboratorio. | `riprese/V3-02-nuovo.mov` |
+| 3 | 12–22 s | Comando «Prepara la bozza»; gli spread si riempiono | La bozza dell’album intero. | Con Pro, Impaginatore prepara la bozza dell’album intero. | `riprese/V3-03-bozza.mov` |
 | 4 | 22–32 s | Scorrimento veloce degli spread; una quota verde «5,0 mm» fra due foto | Spazi uguali ovunque. | Spazi e tono uniformi, su tutte le pagine. | `riprese/V3-04-spread.mov` |
 | 5 | 32–38 s | Mano che trascina una foto in un altro riquadro | Poi decidi tu. | Da qui comincia il lavoro vero: ogni spread lo decido io. | `riprese/V3-05-mano.mov` |
 | 6 | 38–40 s | Fondo Carta, logotipo, payoff | La bozza è automatica. La firma è tua. | — | — |
