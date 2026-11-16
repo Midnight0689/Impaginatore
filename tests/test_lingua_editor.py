@@ -63,8 +63,13 @@ def test_editor_in_inglese(editor, tmp_path, monkeypatch):
         assert re.search(r"Shift|⇧", b.js("document.getElementById('keys').innerText")) and "Enter" in b.js("document.getElementById('keys').innerText")
         b.js("document.querySelector('#keys .kx').click()")
         b.js("openExp()"); assert b.js("document.getElementById('ecount').textContent") == "3 spreads will be exported"
-        senza_chiavi_grezze(b)
         assert not b.problemi(), b.problemi()
+        # conflitto con un'altra scheda: la pagina lo riconosce dal codice, non dal testo (che segue la lingua)
+        c.post("/api/op", dict(op="evg", value=1.0, cid="altra", rev=b.js("S.rev")))
+        assert b.js("op({ op: 'evg', value: 2.0 }).then(r => r === null)") is True
+        assert "changed in another window" in b.js("document.getElementById('toast').textContent")
+        assert b.js("S.rev") == c.get("/api/state")["rev"], "la pagina ha riletto lo stato"
+        senza_chiavi_grezze(b)
 
 
 @pytest.mark.browser

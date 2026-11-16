@@ -584,8 +584,8 @@ async function api(path, body) {
   const j = await r.json();
   if (j.errore) {
     if (j.licenza) foglio(t("editor.lic.non_compresa_tit"), j.errore, [{ t: t("comune.chiudi"), v: false }, { t: t("editor.lic.vedi"), v: true, main: true }]).then(v => { if (v) vaiProgetti(); });       // 403 della licenza: spiegato, non un errore secco
-    else toast(/un'altra scheda/.test(j.errore) ? t("editor.msg.altra_finestra") : j.errore, true);
-    const e = new Error(j.errore); e.licenza = !!j.licenza; throw e;
+    else toast(j.codice === "altra_scheda" ? t("editor.msg.altra_finestra") : j.errore, true);
+    const e = new Error(j.errore); e.licenza = !!j.licenza; e.codice = j.codice || ""; throw e;
   }
   return j;
 }
@@ -594,7 +594,7 @@ let OPIN = 0;                                                  // operazioni del
 async function op(o) {
   OPIN++;
   try { S = await api("/api/op", Object.assign({ cid: CID, rev: S ? S.rev : undefined }, o)); render(); return S; }
-  catch (e) { if (/un'altra scheda/.test(e.message)) { S = await api("/api/state"); render(); } return null; }
+  catch (e) { if (e.codice === "altra_scheda") { S = await api("/api/state"); render(); } return null; }
   finally { OPIN--; }
 }
 const nomePasso = p => p.assistente ? t("editor.msg.dell_assistente", { nome: p.nome }) : p.nome;      // «Sistema spazi (dell'assistente)»
