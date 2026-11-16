@@ -21,6 +21,7 @@ RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STRUMENTI = os.path.join(RADICE, "strumenti")
 sys.path.insert(0, STRUMENTI)
 import compila  # noqa: E402
+import controlli as controlli_ci  # noqa: E402
 import rilascio  # noqa: E402
 import verifica_pacchetto as verifica  # noqa: E402
 
@@ -157,6 +158,23 @@ def test_licenza_dichiarata():
     assert compila.licenza_dichiarata(D(License="BSD-3-Clause")) == "BSD-3-Clause"
     assert compila.licenza_dichiarata(D(License="testo\nlungo", Classifier=["License :: OSI Approved :: MIT License", "Programming Language :: Python"])) == "MIT License"
     assert compila.licenza_dichiarata(D()) == "vedi i file della licenza"
+
+
+def test_licenze_controllate_a_mano_alla_versione_del_lock(monkeypatch):
+    """controlli.py licenze: pip-licenses salta una dipendenza senza licenza nei metadati (clr-loader, solo Windows) solo
+    alla versione riletta a mano, che deve essere quella di uv.lock; con una versione nuova la licenza va riletta"""
+    import tomllib
+    with open(os.path.join(RADICE, "uv.lock"), "rb") as f: lock = tomllib.load(f)["package"]
+    for chiave, licenza in controlli_ci.LICENZE_CONTROLLATE_A_MANO.items():
+        nome, versione = chiave.split(":")
+        assert {p["version"] for p in lock if p["name"] == nome} == {versione}, f"{nome} in uv.lock non è più la {versione}: rileggere la sua licenza e aggiornare LICENZE_CONTROLLATE_A_MANO"
+        assert licenza in controlli_ci.LICENZE_AMMESSE
+    comandi = []
+    monkeypatch.setattr(controlli_ci, "uv", lambda: "uv")
+    monkeypatch.setattr(controlli_ci, "esegui", lambda cmd, env=None: comandi.append([str(c) for c in cmd]) or True)
+    assert controlli_ci.licenze()
+    pip = [c for c in comandi if "pip-licenses" in c]
+    assert len(pip) == len(controlli_ci.PYTHON_LICENZE) and all(c[c.index("--ignore-packages") + 1:] == list(controlli_ci.LICENZE_CONTROLLATE_A_MANO) for c in pip)
 
 
 def test_controllo_del_programma(tmp_path):
