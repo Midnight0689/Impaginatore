@@ -50,7 +50,9 @@ UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra
 - Il pacchetto `impaginatore` tradotto in C e compilato: **nessun file `.py` né `.pyc` del programma** nel pacchetto
   (`compila.controlla_programma` lo controlla, e la prova lo ricontrolla sul programma installato). Le dipendenze
   (numpy, OpenCV, Pillow, psd-tools, pywebview, SDK MCP…) sono compilate anche loro o copiate come librerie native.
-- I dati del pacchetto (`risorse/`: pagine HTML, JavaScript, testi, icone, `avvio.html`) restano file leggibili.
+- I dati del pacchetto (`risorse/`: pagine HTML, JavaScript, testi, icone, `avvio.html`) restano file leggibili. La
+  prova controlla che ci siano tutti quelli del sorgente (`verifica_pacchetto.dati_mancanti`: testi delle statistiche e
+  della licenza beta compresi).
 - `risorse/motore_1x/*.txt`: i sorgenti di `album_libere.py` e `testo.py` che «Esporta per la 1.x» copia nel progetto
   accanto allo `spec.py` scritto dall'album, perché la 1.x li esegue (`formato_1x.sorgente_motore`). Sono leggibili: è
   codice che finisce in chiaro in ogni progetto esportato per la 1.x, quindi compilarlo non lo proteggerebbe.
