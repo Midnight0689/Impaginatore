@@ -113,14 +113,12 @@ def _progetto_con_foto_esterna(apri_editor, progetto, tmp_path):
     return apri_editor(progetto), fuori
 
 
-@xfail("VER-004", "src di _cache/meta.json fuori dal progetto diventano radici (SEC-005 aggirato)")
 def test_progetto_ricevuto_non_allarga_le_radici(apri_editor, progetto, tmp_path):
     c, fuori = _progetto_con_foto_esterna(apri_editor, progetto, tmp_path)
     assert c.codice("/api/ls?p=" + quote(str(fuori))) == 403
     assert c.codice("/api/fthumb?p=" + quote(str(fuori / "segreta.jpg"))) == 403
 
 
-@xfail("VER-004", "«Esporta progetto» copia nel pacchetto un file fuori dal progetto indicato da meta.json")
 def test_esporta_progetto_non_porta_via_file_esterni(apri_editor, progetto, tmp_path):
     c, fuori = _progetto_con_foto_esterna(apri_editor, progetto, tmp_path)
     segreta = (fuori / "segreta.jpg").read_bytes()

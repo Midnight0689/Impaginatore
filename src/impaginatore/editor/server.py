@@ -1550,11 +1550,11 @@ def pick(kind):
     return out
 
 def _radici_progetto():
-    """cartelle del progetto aperto che la pagina può nominare: il progetto, la cartella delle foto e quella che la contiene (le altre
-    cartelle del cliente), le cartelle delle foto aggiunte e di quelle in elenco, l'uscita dei PSD (le troppo ampie le scarta Radici)"""
+    """cartelle del progetto aperto che la pagina può nominare: i luoghi delle foto (il progetto, la cartella delle foto e quella che
+    la contiene, le cartelle delle foto aggiunte: motore.album.luoghi_foto) e l'uscita dei PSD. Mai le cartelle delle foto in
+    elenco (_cache/meta.json), che un progetto ricevuto potrebbe far puntare ovunque (VER-004). Troppo ampie e riservate le scarta Radici"""
     if PROJ is None or CFG is None: return []
-    foto = str(CFG.get("foto") or "").rstrip("/\\")
-    return [PROJ, foto, os.path.dirname(foto) if foto else "", str(CFG.get("uscita_psd") or "")] + sorted({os.path.dirname(str(p)) for p in CFG.get("foto_extra", [])} | {os.path.dirname(m.get("src", "")) for m in A.M})
+    return A.luoghi_foto() + [str(CFG.get("uscita_psd") or "")]
 
 RADICI = percorsi.Radici(_radici_progetto)
 
@@ -1636,8 +1636,15 @@ def ricollega(cartella):
                     try: os.remove(p); os.symlink(nuovi[f], p)
                     except OSError: pass
         CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
+        CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
         formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
+
+def _src_foto(n):
+    """file di una foto del progetto che si trova (fidato dall'apertura: motore.album._src_fidate), altrimenti ValueError"""
+    s = A.M[A.IDX[n] - 1]["src"]
+    if not s or not os.path.exists(s): raise ValueError("la foto non si trova: ricollegala da Progetto → Ricollega foto")
+    return s
 
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
@@ -1646,7 +1653,7 @@ def esporta_progetto(o):
     if not os.path.isdir(dest): raise ValueError("scegli una cartella di destinazione")
     nome = nomi.nome_cartella(CFG.get("nome", "Album"), "Album"); out = os.path.join(dest, f"{nome} - progetto"); k = 2
     while os.path.exists(out): out = os.path.join(dest, f"{nome} - progetto {k}"); k += 1
-    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto()
+    with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto(); luoghi = A.luoghi_foto()
     con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip")); v1x = bool(o.get("v1x"))
     def go():
         try:
@@ -1660,7 +1667,7 @@ def esporta_progetto(o):
             if con_foto:
                 os.makedirs(os.path.join(out, "Foto")); tot = len(metas)
                 for n, m in enumerate(metas, 1):
-                    if os.path.exists(m.get("src", "")): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]                    # relativo: all'apertura diventa quello della cartella dove sta il progetto
+                    if os.path.exists(m.get("src", "")) and A.fidata(m["src"], luoghi): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]          # solo foto del progetto (VER-004); relativo: all'apertura diventa quello della cartella dove sta il progetto
                     else: LOG.append(f"  ATTENZIONE: {m['n']} non trovata, non è nel pacchetto")
                     if n % 10 == 0 or n == tot: LOG.append(f"  foto {n} / {tot}")
             formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
@@ -1820,7 +1827,7 @@ class H(Gestore):
             elif u.path == "/api/export":
                 if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "quella cartella")
                 LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else A.M[A.IDX[body["foto"]] - 1]["src"]); self.send({"ok": True})
+            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)

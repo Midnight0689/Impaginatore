@@ -18,6 +18,7 @@ from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .. import formato as _formato
+from .. import percorsi as _percorsi
 from .. import validazione as _V
 from ..piattaforma import font as _pfont
 
@@ -51,6 +52,7 @@ def carica_progetto(cartella):
     Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear(); DANNEGGIATE.clear()
     PROJ = os.path.abspath(cartella)
     CFG = _V.progetto(_leggi_json(os.path.join(PROJ, "progetto.json")))
+    _togli_riservate(CFG)
     SRC = CFG["foto"]                                   # cartella con le foto scelte in alta risoluzione
     CACHE = os.path.join(PROJ, "_cache"); THUMBS = os.path.join(CACHE, "thumbs")
     os.makedirs(THUMBS, exist_ok=True)
@@ -59,6 +61,7 @@ def carica_progetto(cartella):
     # ---- foto: metadati, miniature, volti
     mp, fp = os.path.join(CACHE, "meta.json"), os.path.join(CACHE, "faces.json")
     M = _cache_valida(mp, _V.meta, [])                  # cache rovinata o non valida: si ricostruisce dalle foto
+    _src_fidate(M)
     _date_mancanti(M)
     new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
@@ -88,6 +91,43 @@ def carica_progetto(cartella):
     INK = tuple(TXTCFG.get("colore", [58, 54, 51]))
     SERIF_FILE, SANS_FILE = _pfont.serif_predefinito(), _pfont.sans_predefinito()      # Didot e Avenir Next sul Mac
     return sys.modules[__name__]
+
+
+def _togli_riservate(cfg):
+    """percorsi di progetto.json in cartelle riservate (percorsi.riservata: nascoste della casa, dati dei programmi, sistema):
+    non si usano mai (VER-004). Al loro posto quelli del progetto: Foto, nessuna foto aggiunta da lì, PSD"""
+    if _percorsi.riservata(cfg.get("foto")): cfg["foto"] = os.path.join(PROJ, "Foto"); log.warning("cartella delle foto in una cartella riservata: uso Foto del progetto")
+    if "foto_extra" in cfg: cfg["foto_extra"] = [p for p in cfg["foto_extra"] if not _percorsi.riservata(p)]
+    if _percorsi.riservata(cfg.get("uscita_psd")): cfg["uscita_psd"] = os.path.join(PROJ, "PSD")
+
+
+def luoghi_foto():
+    """cartelle da cui il progetto legge le foto: la sua cartella, quella delle foto e quella che la contiene (le altre
+    cartelle del cliente), quelle delle foto aggiunte (foto_extra). Vengono solo da progetto.json, mai dall'elenco delle
+    foto in _cache/meta.json: un progetto ricevuto non allarga così le cartelle che si leggono (VER-004). Le troppo ampie
+    (la casa, la radice del disco) restano fuori"""
+    foto = str(CFG.get("foto") or "").rstrip("/\\")
+    out = [PROJ, foto, os.path.dirname(foto) if foto else ""] + [os.path.dirname(str(p)) for p in CFG.get("foto_extra", [])]
+    return [p for p in dict.fromkeys(out) if p and not _percorsi.troppo_ampia(p)]
+
+
+def fidata(s, luoghi):
+    """il file s si legge come foto del progetto? Deve avere l'estensione di una foto, stare dentro uno dei luoghi
+    (luoghi_foto) e non in una cartella riservata, nemmeno passando da un collegamento (VER-004)"""
+    n = os.path.normcase(os.path.normpath(s or "."))
+    return (os.path.isabs(n) and n.lower().endswith(ESTENSIONI + (".heic", ".heif"))
+            and any(n == r or n.startswith(r.rstrip(os.sep) + os.sep) for r in (os.path.normcase(os.path.abspath(p)) for p in luoghi))
+            and (_percorsi.dentro(s, PROJ) or not _percorsi.riservata(s)))
+
+
+def _src_fidate(meta):
+    """una foto dell'elenco che non è fidata (fidata) ha src "": risulta mancante e si ricollega con «Ricollega foto», che
+    ricorda la cartella scelta. Così nessuna miniatura né esportazione legge file fuori dal progetto (VER-004)"""
+    luoghi = luoghi_foto()
+    for m in meta:
+        if not m.get("src") or fidata(m["src"], luoghi): continue
+        log.warning("una foto dell'elenco sta fuori dalle cartelle del progetto: la considero mancante"); log.debug("src non usato: %s", m["src"])
+        m["src"] = ""
 
 
 def _leggi_json(p):
