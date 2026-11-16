@@ -169,10 +169,26 @@ def compila(costruzione, sis):
 
 
 # ---------------------------------------------------------------- componenti e licenze
+NON_XML = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")   # caratteri che XML 1.0 non ammette
+
+
+def leggi_rapporto(rapporto):
+    """radice del rapporto XML di Nuitka. Su Windows il rapporto può non essere XML ben formato (pipeline, 16/11/2026: «not
+    well-formed (invalid token)» alla riga 30965): allora la riga va nel registro e il rapporto si legge come UTF-8, con i
+    byte sbagliati sostituiti e senza i caratteri che XML non ammette (servono solo i nomi dei moduli)"""
+    dati = Path(rapporto).read_bytes()
+    try: return ET.fromstring(dati)  # nosec B314  # il rapporto di Nuitka di questa costruzione
+    except ET.ParseError as e:
+        righe = dati.splitlines(); n = e.position[0]
+        print(f"Il rapporto di Nuitka non è XML ben formato ({e}); riga {n}: {righe[n - 1][:300] if 0 < n <= len(righe) else b''!r}", flush=True)
+        testo = re.sub(r"^﻿?<\?xml[^>]*\?>", "", NON_XML.sub("", dati.decode("utf-8", "replace")))
+        return ET.fromstring(testo)  # nosec B314  # come sopra
+
+
 def distribuzioni_incluse(rapporto):
     """{nome normalizzato: Distribution} delle distribuzioni Python di cui Nuitka ha messo nel programma almeno un modulo
     (dal rapporto della compilazione); il programma stesso escluso"""
-    radici = {(el.get("name") or "").split(".")[0] for el in ET.parse(rapporto).getroot().iter("module")}  # nosec B314  # il rapporto di Nuitka di questa costruzione
+    radici = {(el.get("name") or "").split(".")[0] for el in leggi_rapporto(rapporto).iter("module")}
     da_modulo = md.packages_distributions()
     out = {}
     for r in sorted(radici):

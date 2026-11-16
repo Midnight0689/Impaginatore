@@ -114,6 +114,17 @@ def _rapporto(p, moduli):
     return p
 
 
+def test_rapporto_di_nuitka_non_ben_formato(tmp_path, capsys):
+    """su Windows il rapporto di Nuitka è uscito non ben formato: si legge lo stesso, e la riga sbagliata va nel registro"""
+    r = tmp_path / "r.xml"
+    r.write_bytes(b"<?xml version='1.0' encoding='utf-8'?>\n<nuitka-compilation-report>\n<module name=\"numpy.core\" kind=\"x\"/>\n"
+                  b"<command_line>--copyright=\xa9 2026 \x1b[0m</command_line>\n<module name=\"PIL.Image\" kind=\"x\"/>\n</nuitka-compilation-report>\n")
+    assert [m.get("name") for m in compila.leggi_rapporto(r).iter("module")] == ["numpy.core", "PIL.Image"]
+    assert "riga 4: b'<command_line>--copyright=\\xa9 2026" in capsys.readouterr().out
+    assert set(compila.distribuzioni_incluse(r)) == {"numpy", "pillow"} and "riga 4" in capsys.readouterr().out
+    assert compila.leggi_rapporto(_rapporto(tmp_path / "b.xml", ["a.b"])).find("module").get("name") == "a.b" and capsys.readouterr().out == ""
+
+
 def test_licenze_dei_componenti(tmp_path):
     prog = tmp_path / "Impaginatore"; (prog / "numpy.libs").mkdir(parents=True); (prog / "numpy.libs" / "libopenblas.so.0").write_bytes(b"x"); (prog / "impaginatore").write_bytes(b"x")
     r = _rapporto(tmp_path / "r.xml", ["impaginatore.cli", "numpy.core", "PIL.Image", "json", "nonesiste"])
