@@ -385,6 +385,12 @@ def test_la_pagina_nella_finestra_si_riconosce_dalle_statistiche():
     assert len(tutti) == 3 and tutti[0]["finestra_programma"] is True, "il registro mostra solo le ultime righe"
 
 
+def test_su_windows_la_prova_non_lavora_in_appdata():
+    """la cartella temporanea di Windows sta in AppData, riservata per il programma: gli album della prova non possono stare lì"""
+    assert verifica.cartella_di_lavoro("win32") == os.path.expanduser("~")
+    assert verifica.cartella_di_lavoro("linux") is None and verifica.cartella_di_lavoro("darwin") is None
+
+
 def test_comando_della_fotografia_dello_schermo(tmp_path):
     assert verifica.comando_foto(tmp_path / "f.png", "darwin") == ["screencapture", "-x", "-t", "png", str(tmp_path / "f.png")]
     w = verifica.comando_foto("C:\\Prove\\l'album\\f.png", "win32")

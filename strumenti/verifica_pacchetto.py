@@ -570,6 +570,13 @@ def riepilogo(r):
     return "\n".join(out) + "\n\n"
 
 
+def cartella_di_lavoro(piattaforma=sys.platform):
+    """dove la prova crea dati e album. Su Windows la cartella temporanea sta in AppData, che il programma considera
+    riservata (percorsi.riservata) e non usa per gli album: esportare dentro l'album lì viene rifiutato. Lì la prova lavora
+    nella cartella dell'utente; altrove nella cartella temporanea del sistema (None)"""
+    return str(Path.home()) if piattaforma == "win32" else None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="verifica_pacchetto", description=__doc__.split("\n")[0])
     ap.add_argument("programma"); ap.add_argument("--finestra", action="store_true"); ap.add_argument("--rapporto")
@@ -580,7 +587,7 @@ def main(argv=None):
     attesa = a.versione or re.search(r'__version__ = "([^"]+)"', (RADICE / "src" / "impaginatore" / "__init__.py").read_text(encoding="utf-8")).group(1)
     RAPPORTO.update(programma=str(Path(a.programma).resolve()), versione=attesa, sistema=sys.platform, sistema_descrizione=platform.platform(), macchina=platform.machine())
     cartella = a.immagini or (str(Path(a.rapporto).resolve().parent) if a.rapporto else None)
-    with tempfile.TemporaryDirectory(prefix="verifica-", ignore_cleanup_errors=True) as d:
+    with tempfile.TemporaryDirectory(prefix="verifica-", dir=cartella_di_lavoro(), ignore_cleanup_errors=True) as d:
         pr = Prova(a.programma, d)
         try: esito = esegui_controlli(pr, a, attesa, cartella)
         finally: pr.chiudi_tutto()
