@@ -12,6 +12,7 @@ import math
 import os
 import secrets
 import socket
+import socketserver
 import sys
 import time
 from http import cookies
@@ -41,6 +42,12 @@ class ServerLocale(ThreadingHTTPServer):
         super().__init__(indirizzo, gestore)
         self.sessione = sicurezza.Sessione(gettone); self.tipo = tipo; self.info = info
         if tipo: sicurezza.scrivi_sessione(tipo, self.server_address[1], self.sessione.gettone, **info)
+
+    def server_bind(self):
+        """come HTTPServer.server_bind, ma senza chiedere al sistema il nome di 127.0.0.1 (socket.getfqdn): nessuno lo usa,
+        e su macOS quella domanda passa dal servizio di rete del sistema. Il programma non risolve nomi"""
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
     def segna_riavvio(self, quando=None):
         """il processo sta per ripartire da capo (processi.riesegui) e tornerà su questa porta: lo dice il file di sessione

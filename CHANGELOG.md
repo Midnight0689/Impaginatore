@@ -94,6 +94,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-024` **ci** — Storia git intera nei test; su macOS e Windows prove nel browser in un job a parte; un push nuovo annulla l'esecuzione superata; macOS 15 al posto di macOS 26 finché GitHub non ne assegna le macchine; tempi misurati nel commento. _File:_ `.github/workflows/ci.yml`.
 - `MOD-025` **installer** — La prova del pacchetto controlla la finestra vera su tutti i sistemi, va avanti dopo un errore con la diagnosi, scrive il riepilogo per la pipeline e su Windows lavora fuori da AppData. _File:_ `strumenti/verifica_pacchetto.py`. _Rif:_ `T-302`.
 - `MOD-026` **ci** — `pacchetti.yml`: un pacchetto per ramo `pacchetti/<chiave>` (`pacchetti/prova` e `pacchetti/tutti` li fanno tutti e quattro), giri superati annullati, cache di Nuitka, tempi massimi per sistema, artefatti con solo pacchetto e verifica; test di macOS su macchine Intel finché quelle arm64 non sono disponibili. _File:_ `.github/workflows/pacchetti.yml`, `.github/workflows/ci.yml`, `tests/test_interfaccia.py`. _Rif:_ `T-302`.
+- `MOD-027` **piattaforma** — All'avvio dei suoi server il programma non chiede più al sistema il nome di 127.0.0.1: non risolve nessun nome. _File:_ `src/impaginatore/servizio.py`, `tests/test_sicurezza_server.py`.
 
 ### Corretto
 

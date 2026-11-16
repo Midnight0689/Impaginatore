@@ -365,3 +365,18 @@ def test_cestino_mac_con_osascript_finto(home_srv, tmp_path, monkeypatch, nome):
     with open(reg, encoding="utf-8") as f: a = json.load(f)
     assert a[-1] == p, "il percorso è l'ultimo argomento, intero"
     script = "\n".join(a[:-1]); assert "on run argv" in script and "item 1 of argv" in script and nome not in script
+
+
+def test_il_server_non_risolve_nomi(monkeypatch):
+    """avviando un server il programma non chiede al sistema nessun nome (su macOS la risoluzione passa dal servizio di rete
+    e un programma che lavora solo sul computer non deve farne): server_name è l'indirizzo, la porta quella vera"""
+    import socket
+    from impaginatore import servizio
+
+    def vietato(*a, **k): raise AssertionError("risoluzione di nomi")
+    for nome in ("getfqdn", "gethostbyaddr", "gethostbyname", "gethostname", "getaddrinfo"): monkeypatch.setattr(socket, nome, vietato)
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None)
+    try:
+        assert srv.server_name == "127.0.0.1" and srv.server_port == srv.server_address[1] > 0
+    finally:
+        srv.server_close()
