@@ -4,7 +4,9 @@ Da Python (checkout, pip) i processi del programma partono con «python -m <modu
 interprete da lanciare: sys.executable è il programma stesso, che riceve un sottocomando al posto del modulo
 (SOTTOCOMANDI). Tre sottocomandi interni, con il trattino basso, servono solo ai processi che il programma lancia da sé:
 _psd (i PSD con Photoshop), _dialogo (finestre di scelta di tkinter su Windows), _rilancia (riavvio dopo un
-aggiornamento). Esistono anche da Python, così i test li provano come li usa il programma compilato.
+aggiornamento). Esistono anche da Python, così i test li provano come li usa il programma compilato. Un quarto, _avvio,
+scrive la pagina della schermata di avvio come la mostra la finestra (versione e stato della licenza): serve alla prova
+del programma installato (strumenti/verifica_pacchetto.py), che non può guardare dentro la finestra.
 
 All'avvio del programma compilato prepara() mette sys.frozen (lo guardano desktop.finestra, che spegne gli strumenti di
 sviluppo, e pywebview), dà sempre uno stdout e uno stderr (Windows senza console) e su Linux trova PyGObject del
@@ -21,7 +23,7 @@ SOTTOCOMANDI = {
     "impaginatore.mcp": ["mcp"],
     "impaginatore.motore.genera_psd_angolo": ["_psd"],
 }
-INTERNI = ("_psd", "_dialogo", "_rilancia")
+INTERNI = ("_psd", "_dialogo", "_rilancia", "_avvio")
 
 # dove le distribuzioni Linux mettono PyGObject («gi») per il Python del sistema; {v} = 3.12, la versione di questo Python
 CARTELLE_GI = ("/usr/lib/python3/dist-packages", "/usr/lib/python{v}/site-packages", "/usr/lib64/python{v}/site-packages", "/usr/local/lib/python{v}/dist-packages")
@@ -51,6 +53,10 @@ def interno(nome, argv):
     if nome == "_rilancia":
         from .piattaforma import processi
         return processi.rilancio(argv)
+    if nome == "_avvio":
+        from .desktop import avvio
+        sys.stdout.buffer.write(avvio.pagina().encode("utf-8")); sys.stdout.flush()
+        return 0
     raise ValueError(f"sottocomando interno sconosciuto: {nome}")          # non tradotto: errore di programmazione, non arriva all'utente
 
 

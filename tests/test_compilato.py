@@ -10,7 +10,7 @@ import types
 
 import pytest
 
-from impaginatore import cli, compilato, formato_1x, risorse
+from impaginatore import __version__, cli, compilato, formato_1x, risorse
 from impaginatore.piattaforma import dialoghi, processi
 
 
@@ -40,15 +40,28 @@ def test_comando_da_python_e_da_compilato(monkeypatch):
     with pytest.raises(KeyError): compilato.comando("impaginatore.altro")
 
 
-def test_sottocomandi_interni(monkeypatch):
+def test_sottocomandi_interni(monkeypatch, capsys):
+    from impaginatore.desktop import avvio
     from impaginatore.motore import genera_psd_angolo
     visti = []
     monkeypatch.setattr(genera_psd_angolo, "main", lambda argv: visti.append(("psd", argv)) or 0)
     monkeypatch.setattr(dialoghi, "scegli_con_tk", lambda argv: visti.append(("tk", argv)) or 0)
     monkeypatch.setattr(processi, "rilancio", lambda argv: visti.append(("rilancio", argv)) or 0)
+    monkeypatch.setattr(avvio, "pagina", lambda: visti.append("avvio") or "<p>Prova gratuita · 30 giorni</p>")
     for n in compilato.INTERNI: assert compilato.interno(n, ["x"]) == 0
-    assert visti == [("psd", ["x"]), ("tk", ["x"]), ("rilancio", ["x"])]
+    assert visti == [("psd", ["x"]), ("tk", ["x"]), ("rilancio", ["x"]), "avvio"]
+    assert capsys.readouterr().out == "<p>Prova gratuita · 30 giorni</p>", "la pagina in UTF-8 anche con una console che non lo è"
     with pytest.raises(ValueError, match="sconosciuto"): compilato.interno("_altro", [])
+
+
+def test_pagina_della_schermata_di_avvio(tmp_path):
+    """«impaginatore _avvio» scrive la pagina della schermata di avvio con versione e licenza, come la vede la finestra
+    (la prova del programma compilato la legge così): con dati nuovi parte la prova gratuita"""
+    env = dict(os.environ, IMPAGINATORE_DATI=str(tmp_path / "dati"), IMPAGINATORE_LINGUA="it")
+    r = subprocess.run([sys.executable, "-m", "impaginatore", "_avvio"], capture_output=True, timeout=120, env=env, cwd=processi.cartella_pacchetto())
+    p = r.stdout.decode("utf-8")
+    assert r.returncode == 0 and p.startswith("<!DOCTYPE html>") and f"Versione {__version__}" in p, r.stderr
+    assert '<span class="licenza prova">Prova gratuita · 30 giorni</span>' in p and not any(k in p for k in ("__LINGUA__", "__FONT__", "__VERSIONE__", "__TIPO__", "__LICENZA__"))
 
 
 def test_cli_prepara_e_sottocomandi(monkeypatch):
