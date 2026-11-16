@@ -33,6 +33,7 @@ from impaginatore.piattaforma import photoshop as pps
 
 VUOTA = dict(mode="W", module="BLANK", mirror=False, photos=[])
 Disco = namedtuple("Disco", "total used free")
+POSIX = pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="cartelle senza permessi (chmod) e collegamenti simbolici come su macOS e Linux, con un utente normale")
 
 
 def _casa(mp, h):
@@ -174,7 +175,7 @@ def test_progetto_spostato_foto_nella_cartella_foto(apri):
     assert cfg["foto"] == fd and cfg["esposizione"]["per_cartella"] == {fd: 0.3, "/altro/disco": -0.2}
     assert cfg["foto_extra"] == [os.path.join(fd, "V10.jpg"), "/Volumes/Vecchio/Altre/Z99.jpg"]
     meta = {m["n"]: m["src"] for m in formato.leggi_json(os.path.join(c.progetto, "_cache", "meta.json"))}
-    assert meta["Q09.jpg"] == "/Volumes/Vecchio/Selezione/Q09.jpg" and meta["H01.jpg"] == os.path.join(fd, "H01.jpg")
+    assert meta["Q09.jpg"] == os.path.join("/Volumes/Vecchio/Selezione", "Q09.jpg") and meta["H01.jpg"] == os.path.join(fd, "H01.jpg")
     assert c.get("/api/state")["mancanti"] == ["Q09.jpg"]
 
 
@@ -185,6 +186,7 @@ def test_progetto_spostato_senza_foto(apri):
     assert len(c.get("/api/state")["mancanti"]) == 10
 
 
+@POSIX
 def test_riparazioni_con_cache_rovinata_e_cartella_illeggibile(apri, tmp_path, capsys):
     """le riparazioni all'apertura non fermano l'editor: una cache delle misure rovinata (si rifà) e una cartella Foto che
     non si legge (il progetto prende le foto da un'altra cartella) si annotano e basta"""
@@ -486,15 +488,12 @@ def test_pdf_con_il_profilo_del_sistema(monkeypatch, tmp_path):
 
 
 def test_controlli_prima_di_esportare(apri, monkeypatch):
-    """prima di partire: album vuoto, intervallo vuoto, spread tolto nel frattempo, cartella senza permesso di scrittura, disco pieno"""
+    """prima di partire: album vuoto, intervallo vuoto, spread tolto nel frattempo, disco pieno"""
     c = apri(); errore = lambda **o: c.prova("/api/export", o)[1]["errore"]
     assert errore(fmt="jpg") == "Non c'è nessuno spread da esportare"
     _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
     assert errore(fmt="jpg", range=" , ;") == "Nessuno spread nell'intervallo scelto"
     with pytest.raises(ValueError, match="^Lo spread 3 non esiste: gli spread sono 2$"): E.preflight({}, [1, 3], c.progetto, "jpg")
-    ro = os.path.join(c.progetto, "sola lettura"); os.mkdir(ro); os.chmod(ro, 0o555)
-    try: assert errore(fmt="pdf", dest=ro) == f"Non posso scrivere in «{ro}»: Permission denied. Scegli un'altra cartella"
-    finally: os.chmod(ro, 0o755)
     monkeypatch.setattr(shutil, "disk_usage", lambda p: Disco(10**9, 10**9, 2 * 10**7))
     assert errore(fmt="jpg") == "Spazio insufficiente: servono circa 0.1 GB e ne restano 0.0 GB. Libera spazio o scegli un altro disco"
     assert c.get("/api/log") == [], "niente è partito"
@@ -579,6 +578,7 @@ def test_psd_con_il_processo_dei_psd(apri, monkeypatch, esito):
 
 
 # ---------------------------------------------------------------- selettore, ricollegamento, esportazione del progetto
+@POSIX
 def test_selettore_salta_i_collegamenti_rotti(apri, tmp_path):
     c = apri(); fd = os.path.join(c.progetto, "Foto"); os.symlink(str(tmp_path / "sparita.jpg"), os.path.join(fd, "rotta.jpg"))
     r = c.get("/api/ls?p=" + urllib.parse.quote(fd)); nomi = [f["n"] for f in r["files"]]
@@ -598,6 +598,7 @@ def _selezione_di_collegamenti(p, originali):
     for f in sorted(os.listdir(originali)): os.symlink(os.path.join(originali, f), os.path.join(fd, f))
 
 
+@POSIX
 @pytest.mark.parametrize("sola_lettura", [False, True])
 def test_ricollega_rifa_i_collegamenti(apri, tmp_path, sola_lettura):
     """originali spostati: ricollegando la loro nuova cartella i collegamenti rotti della selezione si rifanno (se la cartella
@@ -630,8 +631,8 @@ def test_ricollega_senza_la_cartella_della_selezione(apri, tmp_path):
     assert c.post("/api/ricollega", {}) == {"trovate": 10, "mancanti": [], "totale": 10} and c.get("/api/state")["mancanti"] == []
 
 
-def test_esporta_progetto_con_foto_mancanti_e_errori(apri, tmp_path):
-    """nel pacchetto vanno le foto che ci sono (le altre si annotano); una destinazione che non c'è o non si può scrivere è un errore"""
+def test_esporta_progetto_con_foto_mancanti(apri, tmp_path):
+    """nel pacchetto vanno le foto che ci sono (le altre si annotano); una destinazione che non c'è è un errore"""
     c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
     ok, r = c.prova("/api/prj_esporta", {"dest": os.path.join(c.progetto, "non-esiste")}); assert not ok and r["errore"] == "scegli una cartella di destinazione"
     os.rename(os.path.join(c.progetto, "Foto", "H02.jpg"), os.path.join(c.progetto, "H02.bak"))
@@ -639,8 +640,17 @@ def test_esporta_progetto_con_foto_mancanti_e_errori(apri, tmp_path):
     out = c.post("/api/prj_esporta", {"foto": True})["cartella"]; L = attendi_log(c)
     assert "  ATTENZIONE: H02.jpg non trovata, non è nel pacchetto" in L and L[-2] == "RISULTATO:" + out, L
     assert sorted(os.listdir(os.path.join(out, "Foto"))) == sorted(f"{n}.jpg" for n in _ix(c) if n != "H02")
+
+
+@POSIX
+def test_cartella_di_sola_lettura(apri):
+    """esportazioni e progetto esportato in una cartella dove non si può scrivere: l'esportazione non parte e lo dice, il
+    progetto esportato si ferma con l'errore e non lascia niente"""
+    c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
     ro = os.path.join(c.progetto, "sola lettura"); os.mkdir(ro); os.chmod(ro, 0o555)
     try:
+        ok, r = c.prova("/api/export", {"fmt": "pdf", "dest": ro})
+        assert not ok and r["errore"] == f"Non posso scrivere in «{ro}»: Permission denied. Scegli un'altra cartella"
         c.post("/api/prj_esporta", {"dest": ro}); L = attendi_log(c)
     finally: os.chmod(ro, 0o755)
     assert re.fullmatch(r"ERRORE: \[Errno 13\] Permission denied: .*", L[-2]) and L[-1] == "[finito]" and os.listdir(ro) == []
@@ -669,14 +679,14 @@ def test_editor_come_programma(base, tmp_path):
     """python -m impaginatore.editor.server: apre il progetto, scrive l'indirizzo e risponde con il gettone del processo"""
     p = _copia(base, str(tmp_path / "Prova")); g = secrets.token_urlsafe(32)
     pr = subprocess.Popen([sys.executable, "-m", "impaginatore.editor.server", "--progetto", p, "--porta", "0", "--home", "http://127.0.0.1:9"],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", env=dict(os.environ, IMPAGINATORE_GETTONE=g))
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", env=dict(processi.ambiente_figli(), IMPAGINATORE_GETTONE=g))
     try:
         righe = []
         def riga():
             r = pr.stdout.readline(); righe.append(r)
-            return re.search(r"^Editor album: http://127\.0\.0\.1:(\d+)  \| progetto: (.*)$", r)
+            return re.search(r"^Editor album: http://127\.0\.0\.1:(\d+)  \| progetto: (.*)$", r) or (not r and pr.poll() is not None and "uscito")
         m = attendi(riga, 120, 0)
-        assert m.group(2) == p, righe
+        assert m != "uscito" and m.group(2) == p, righe
         e = Client(int(m.group(1)), g); assert e.get("/api/ping")["path"] == p and len(e.get("/api/state")["photos"]) == 10
     finally:
         pr.terminate(); pr.wait(30)
