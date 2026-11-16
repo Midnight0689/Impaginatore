@@ -302,10 +302,16 @@ def pacchetto_deb(prog, uscita, versione):
 
 
 def pacchetto_dmg(prog, uscita, versione, k):
+    """firma ad hoc, copia con ditto e DMG. I file di dati che Nuitka mette in Contents/MacOS (cv2/data/*.xml, le risorse
+    del programma) codesign li firma come codice, con la firma negli attributi estesi del file: shutil.copytree su macOS non
+    li copia e la firma del bundle si rompe («code object is not signed at all», pipeline del 16/11/2026). ditto li copia;
+    la firma si ricontrolla sulla copia che va nel DMG"""
     subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(prog)], check=True)  # nosec B603, B607  # firma ad hoc del bundle appena costruito (dopo le licenze)
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(prog)], check=True)  # nosec B603, B607
     vol = prog.parent / "dmg"; shutil.rmtree(vol, ignore_errors=True); vol.mkdir()
-    shutil.copytree(prog, vol / prog.name, symlinks=True); (vol / "Applicazioni").symlink_to("/Applications")
+    subprocess.run(["ditto", str(prog), str(vol / prog.name)], check=True)  # nosec B603, B607  # ditto di macOS: copia anche gli attributi estesi
+    subprocess.run(["codesign", "--verify", "--deep", "--strict", str(vol / prog.name)], check=True)  # nosec B603, B607
+    (vol / "Applicazioni").symlink_to("/Applications")
     out = uscita / nome_pacchetto(versione, k)
     if out.exists(): out.unlink()
     ripeti(["hdiutil", "create", "-volname", NOME, "-srcfolder", str(vol), "-fs", "HFS+", "-format", "UDZO", "-ov", str(out)])

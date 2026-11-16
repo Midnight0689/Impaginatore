@@ -166,6 +166,19 @@ def test_controllo_del_programma(tmp_path):
     with pytest.raises(SystemExit, match="file sorgente"): compila.controlla_programma(prog)
 
 
+def test_dmg_copia_la_firma_con_ditto(monkeypatch, tmp_path):
+    """macOS: la firma ad hoc dei file di dati in Contents/MacOS sta negli attributi estesi, che shutil.copytree non copia:
+    il bundle va nel DMG con ditto e la firma si controlla sulla copia, prima di hdiutil"""
+    prog = tmp_path / "b" / "Impaginatore.app"; (prog / "Contents" / "MacOS").mkdir(parents=True); comandi = []
+    monkeypatch.setattr(compila.subprocess, "run", lambda c, check: comandi.append(c))
+    monkeypatch.setattr(compila, "ripeti", lambda c: comandi.append(c))
+    out = compila.pacchetto_dmg(prog, tmp_path / "u", "2.0.1", "mac-arm64")
+    copia = str(prog.parent / "dmg" / "Impaginatore.app")
+    assert [c[:2] for c in comandi] == [["codesign", "--force"], ["codesign", "--verify"], ["ditto", str(prog)], ["codesign", "--verify"], ["hdiutil", "create"]]
+    assert comandi[2][2] == copia and comandi[3][-1] == copia and comandi[4][-1] == str(out) and out.name == "Impaginatore-2.0.1-mac-arm64.dmg"
+    assert os.readlink(prog.parent / "dmg" / "Applicazioni") == "/Applications"
+
+
 def test_ripete_i_comandi_che_a_volte_non_vanno(monkeypatch):
     """«hdiutil create» sui Mac di GitHub a volte risponde «Resource busy»: si riprova, e alla fine l'errore passa"""
     esiti = [1, 1, 0]; chiamate = []
