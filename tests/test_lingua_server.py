@@ -316,7 +316,9 @@ def test_aggiornamenti_in_inglese(inglese, monkeypatch):
     assert f.stato()["attuale"]["titolo"] == "installed version"
     with pytest.raises(ValueError, match="isn't set up"): f.aggiorna()
     c = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub("a/b"), installazione.InstallazioneCompilata())
-    assert c.stato()["motivo"] == "The installed program will update with its installer: not yet available in this version"
+    assert c.stato()["motivo"] is None and c.stato()["manuale"] is True, "T-302: il programma compilato si aggiorna a mano dalla pagina della release"
+    from impaginatore.aggiornamenti import Rifiutato
+    with pytest.raises(Rifiutato, match="^The installed program updates with its installer: download the new version from its page"): c.ripristina("2.0.0")
 
 
 def test_lingua_cambiata_a_meta_si_vede_subito(monkeypatch):

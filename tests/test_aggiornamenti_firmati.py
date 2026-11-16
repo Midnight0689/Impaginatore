@@ -213,6 +213,15 @@ def test_programma_compilato_apre_la_pagina(tmp_path, monkeypatch):
     assert p.stato()["da_aggiornare"], "l'avviso resta finché non si installa la versione nuova"
 
 
+def test_installazione_che_non_si_aggiorna():
+    """un'installazione non disponibile dice perché, e non aggiorna né torna indietro (prima di chiedere alla rete)"""
+    i = types.SimpleNamespace(disponibile=False, motivo="sistema.agg_spenti", manuale=False, pacchetto=None, precedente=lambda: None)
+    p = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub("x/y"), i)
+    assert p.motivo() == lingua.t("sistema.agg_spenti") and p.stato()["motivo"] == p.motivo()
+    with pytest.raises(ValueError, match="IMPAGINATORE_AGGIORNAMENTI"): p.aggiorna()
+    with pytest.raises(Rifiutato, match="IMPAGINATORE_AGGIORNAMENTI"): p.ripristina("1.0.0")
+
+
 def test_predefiniti_del_programma_compilato(tmp_path, monkeypatch):
     """compilato: sempre InstallazioneCompilata e solo le chiavi vere, anche con una release finta (la chiave di prova mai)"""
     monkeypatch.delenv("IMPAGINATORE_AGGIORNAMENTI", raising=False); monkeypatch.delenv(lanciatore.VAR_FINTI, raising=False)

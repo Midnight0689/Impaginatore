@@ -231,9 +231,9 @@ class PacchettiFirmati(Aggiornamenti):
         try:
             if not self.nuovo: self.controlla()
             if not self.nuovo: raise Rifiutato("sistema.agg_nessuna_nuova")
-            if self.installazione.manuale: return self.installazione.a_mano(self.nuovo, self.sorgente)        # programma compilato: la pagina dei download, nessun riavvio
-            self._installa(self.nuovo)
+            pagina = self.installazione.a_mano(self.nuovo, self.sorgente) if self.installazione.manuale else self._installa(self.nuovo)   # compilato: la pagina dei download
         finally: self._lock.release()
+        if self.installazione.manuale: return pagina                    # nessun riavvio: la versione nuova si installa a mano
         self.riavvia()
         return True
 
