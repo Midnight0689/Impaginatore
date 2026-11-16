@@ -46,7 +46,7 @@ def prosa(s, pagina=True):
     con l'iniziale maiuscola («Testo») e i titoli («Testo (titolo)»); nel Python servono articoli, preposizioni o accenti
     (lì le parole con la maiuscola sono nomi di cartelle di sistema, intestazioni HTTP, programmi)"""
     s = SEGNAPOSTO.sub(" ", s)
-    if re.fullmatch(r"[a-z0-9_]+(\.[a-z0-9_]+)+|[A-Za-z0-9]+([_-][A-Za-z0-9]+)+", s.strip()): return False         # chiavi, moduli, costanti, codici («it-IT»)
+    if re.fullmatch(r"[a-z0-9_]+(\.[a-z0-9_]+)+|[A-Za-z0-9]+([_-][A-Za-z0-9]+)+|[0-9a-fA-F]{16,}", s.strip()): return False         # chiavi, moduli, costanti, codici («it-IT»), esadecimale (chiavi pubbliche)
     if re.search(r"[{}=\[\]*]|(^|;)\s*[a-z-]+\s*:\s*[^;]+;|^\s*[#.\[/@]|^(data|https?|file|blob|javascript|about|mailto):|--[a-z]|=>|\b(var|calc|rgba?|url)\(", s): return False      # CSS, selettori, percorsi, codice
     if s.count("(") >= 3 or re.match(r"\s*(on run|tell application|POSIX path|with timeout|end run|Dim |import )", s): return False                          # script (AppleScript, VBS, Python)
     parole = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’][A-Za-zÀ-ÖØ-öø-ÿ]+)*", s)
@@ -357,7 +357,7 @@ def test_il_controllo_riconosce_i_testi():
               "Riprova; se succede ancora, chiudi", "errore: la foto non c'è"):
         assert prosa(s), s
     for s in ("slot txt sel", "position:fixed;z-index:40", "#slots > div", "editor.sel.altro", "Enter", "veil sheet", "text/plain",
-              "500 16px var(--serif)", "M5 6V4h14v2", "", "12", "Impaginatore", "a b"):
+              "500 16px var(--serif)", "M5 6V4h14v2", "", "12", "Impaginatore", "a b", "280d61c82c7b8573d72e6c098a7fe9b32448c8685594bfe6eb1d00a9d6ca4fcb"):
         assert not prosa(s), s
     assert stringhe_js('const a = "uno", b = `<b title="Ciao a tutti">${x ? "Sì" : "no"}</b> e il resto`; // commento\n/re"x/.test(y);')[:1] == [(1, "uno")]
     assert [t for _, t in stringhe_js('x = `a ${f(`b ${"c"}`)} d`; y = /\\/"/; z = \'e\';')] == ["c", "b  {x} ", "a  {x}  d", "e"]
