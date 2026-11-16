@@ -5,6 +5,7 @@ import base64
 import logging
 import os
 import re
+import shutil
 import threading
 import time
 import types
@@ -15,6 +16,7 @@ from impaginatore import __version__, licenze, risorse
 from impaginatore.desktop import avvio
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 @pytest.mark.parametrize("st, atteso", [
@@ -115,3 +117,18 @@ def test_si_apre_anche_se_la_pagina_non_arriva(monkeypatch, caplog):
     with caplog.at_level(logging.DEBUG, logger="impaginatore.desktop"):
         inizio = time.monotonic(); a.segui(types.SimpleNamespace(show=rotta), threading.Event()).join(5)
     assert 0.15 <= time.monotonic() - inizio < 3 and len(wv.chiuse) == 1 and "RuntimeError" in caplog.text, "dopo MASSIMO secondi si apre comunque; un errore non ferma niente"
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_la_pagina_rispetta_la_sua_csp(tmp_path):
+    """la pagina della schermata, aperta in un Chrome vero sotto la sua CSP (default-src 'none'): nessun blocco, il
+    carattere incorporato si carica, i testi si vedono (il Browser fa fallire il test a ogni blocco della CSP)"""
+    from cdp import Browser
+    f = tmp_path / "avvio.html"
+    f.write_text(avvio.pagina(dict(stato="prova", sola_lettura=False, prova=dict(giorni_rimasti=12))), encoding="utf-8")
+    with Browser(tmp_path) as b:
+        b.apri(f.as_uri(), 1.2)
+        assert b.js("document.fonts.ready.then(() => [...document.fonts].map(x => x.family + ':' + x.status).join())") == "IBM Plex Mono:loaded"
+        assert b.js("document.querySelector('.licenza').textContent") == "Prova gratuita · 12 giorni" and b.js("document.scripts.length") == 0
+        assert not b.problemi(), b.problemi()
