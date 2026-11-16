@@ -780,7 +780,7 @@ def test_esito_errore_del_pdf_e_progetto_esportato(apri, monkeypatch, tmp_path):
     assert L[0] == f"Exporting the project to {out}" and "  creating the ZIP…" in L and L[-3].startswith("Done: ") and L[-2] == f"RISULTATO:{out}.zip"
     assert c.get("/api/esito") == dict(dest=out, formato="progetto", totale=10, fatti=10, saltati=[], errori=[], risultato=out + ".zip", finito=True)
     leggimi = open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8").read()
-    assert "choose the ⋯ menu › “Open existing album…”" in leggimi and "(or “Import ZIP…” if you have the .zip file)" in leggimi and "The photos are in the Foto folder" in leggimi
+    assert "choose the ⋯ menu › “Open existing album…”" in leggimi and "(or “Import ZIP…” if you have the .zip file)" in leggimi and "The photos are in the folder named “Foto”" in leggimi
     assert open(os.path.join(out, "font_usati.txt"), encoding="utf-8").read().startswith("Fonts used in the text (install them on the computer where you open the project):\n")
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); dialoghi.imposta(Finti(str(dest)))
     out = c.post("/api/prj_esporta", {"foto": False})["cartella"]; attendi_log(c)
