@@ -572,6 +572,7 @@ function pageHasText(side) { return slotsOf(cur).some(i => i.side === side && i.
 
 function render() {
   if (!S) return;
+  if (view !== "album") gapClose();
   msel = msel.filter(k => { const [a, b] = k.split(":"); return S.spreads[Math.min(cur, S.spreads.length - 1)].items.some(i => i.side === a && i.idx === +b); });
   if (sel && msel.length === 0) msel = [sel.side + ":" + sel.idx];
   cur = Math.min(cur, S.spreads.length - 1);
@@ -711,7 +712,8 @@ function gapMenu(btn) {       // mini menu del tasto «Correggi spazi»: a quale
     <div class="mb"><button id="gmb1">Correggi questo spread</button><button id="gmb2">Tutto l'album</button></div>`;
   document.body.appendChild(m);
   m.querySelector(`input[value="${GAPMODE}"]`).checked = true;
-  const close = () => { m.remove(); document.removeEventListener("pointerdown", out, true); document.removeEventListener("keydown", esc, true); };
+  const close = () => { m.remove(); gapMenu.close = null; document.removeEventListener("pointerdown", out, true); document.removeEventListener("keydown", esc, true); };
+  gapMenu.close = close;      // si chiude anche quando si cambia vista o si apre una finestra (A-30)
   const out = e => { if (!m.contains(e.target) && e.target !== btn && !btn.contains(e.target)) close(); }, esc = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
   const apply = () => { GAPMODE = m.querySelector("input[name=gm]:checked").value; if (GAPMODE === "custom") { const n = parseFloat($("gmv").value.replace(",", ".")); if (!(n > 0)) { toast("Scrivi lo stacco in cm", true); return false; } GAPVAL = n / 2.54 * S.ppi; } return true; };
   $("gmv").onfocus = () => { m.querySelector('input[value="custom"]').checked = true; }; $("gmv").onkeydown = e => e.stopPropagation();
@@ -719,6 +721,7 @@ function gapMenu(btn) {       // mini menu del tasto «Correggi spazi»: a quale
   $("gmb2").onclick = async () => { if (!apply()) return; close(); let n = 0; for (let i = 0; i < S.spreads.length; i++) n += (await gapFix(i, true)) ? 1 : 0; toast(n ? `Corretti ${n} spread` : "Gli stacchi sono già giusti"); };
   document.addEventListener("pointerdown", out, true); document.addEventListener("keydown", esc, true);
 }
+function gapClose() { if (gapMenu.close) gapMenu.close(); }
 async function gapFix(si = cur, quiet = false) {
   if (!S.spreads.length) return 0;
   const R = new Map(); let ch = 0;
@@ -1936,7 +1939,7 @@ function fbUpdate() {
   $("fbgo").textContent = folder ? "Importa questa cartella" : `Importa ${FB.sel.length || ""} foto`.replace("  ", " "); $("fbgo").disabled = folder ? false : !FB.sel.length;
   $("fball").style.display = $("fbnone").style.display = folder ? "none" : "";
 }
-function fbOpen(mode) { FB.mode = mode; $("fbd").style.display = "flex"; $("fbmain").focus(); fbLoad(FB.path || ""); }
+function fbOpen(mode) { gapClose(); FB.mode = mode; $("fbd").style.display = "flex"; $("fbmain").focus(); fbLoad(FB.path || ""); }
 function fbAll() { if (FB.mode === "files") { FB.sel = FB.data.files.map(f => f.n); FB.last = FB.sel[FB.sel.length - 1] || null; fbUpdate(); } }
 $("fbup").onclick = () => FB.data.parent && fbLoad(FB.data.parent); $("fball").onclick = fbAll; $("fbnone").onclick = () => { FB.sel = []; fbUpdate(); };
 $("fbcancel").onclick = () => $("fbd").style.display = "none";
@@ -2027,7 +2030,7 @@ $("verb").onclick = async () => {
       await new Promise(r => setTimeout(r, 1500)); for (let i = 0; i < 120; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); } };
     l.appendChild(b); });
 };
-$("save").onclick = async () => { try { S = await api("/api/save", {}); render(); toast("Salvato spec.py e progetto.json (copie in _backup_editor)"); } catch (e) {} };
+$("save").onclick = async () => { try { S = await api("/api/save", {}); render(); toast("Salvato alle " + S.salvato.slice(9, 11) + ":" + S.salvato.slice(11, 13)); } catch (e) {} };
 // ---- esportazione: un solo pannello per JPG, PDF e PSD
 let EF = "jpg", elog = null;
 function openExp() {

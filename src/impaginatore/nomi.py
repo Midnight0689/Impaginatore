@@ -41,6 +41,23 @@ def nome_cartella(nome, ripiego="Progetto"):
     return s
 
 
+_GENERICHE = {"jpg", "jpeg", "jpgs", "foto", "photo", "photos", "immagini", "images", "export", "exports", "esportazioni",
+              "selezione", "selezionate", "selected", "scelte", "alta", "alta risoluzione", "hi-res", "hires", "web", "stampa",
+              "originali", "dcim", "raw"}
+_FINALE_JPG = re.compile(r"[\s_-]*jpe?g$", re.IGNORECASE)
+
+
+def nome_da_cartella(percorso):
+    """nome da proporre per un progetto nuovo dalla cartella delle foto: l'ultima cartella (barre di Windows comprese),
+    senza «JPG» in fondo («Sposi Rossi JPG» → «Sposi Rossi»); se la cartella ha un nome generico («JPG», «Foto»,
+    «Export», «Selezione»...) si sale a quella che la contiene (A-01: «…/Rossi/JPG» → «Rossi»). Vuoto se non c'è niente"""
+    parti = [p for p in re.split(r"[\\/]+", str(percorso or "")) if p and not p.endswith(":")]
+    for p in reversed(parti):
+        nome = _FINALE_JPG.sub("", p).strip(" _-")
+        if nome and nome.lower() not in _GENERICHE: return unicodedata.normalize("NFC", nome)
+    return ""
+
+
 def componente_valido(parte):
     """True se `parte` (un pezzo di percorso, es. il nome di un file in uno ZIP) è accettabile su tutti e tre i sistemi:
     niente caratteri vietati o invisibili, niente punto o spazio in fondo, niente nomi riservati, al massimo 255 caratteri"""

@@ -235,7 +235,7 @@ class H(Gestore):
                 if not os.path.exists(os.path.join(p, "progetto.json")): raise ValueError("In quella cartella non c'è progetto.json: scegli la cartella del progetto")
                 salva_registro(registro() + [p]); self.send({"path": p})
             elif u.path == "/api/scegli-foto":
-                p = scegli_cartella("Scegli la cartella con le foto del cliente"); RADICI.scelta(p); self.send({"path": p})
+                p = scegli_cartella("Scegli la cartella con le foto del cliente"); RADICI.scelta(p); self.send({"path": p, "nome": nomi.nome_da_cartella(p)})
             elif u.path == "/api/aggiorna": self.send({"ok": AGGIORNAMENTI.aggiorna()})
             elif u.path == "/api/ripristina": self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
             elif u.path == "/api/controlla": self.send(AGGIORNAMENTI.controlla())

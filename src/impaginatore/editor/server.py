@@ -1889,7 +1889,7 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")

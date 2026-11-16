@@ -173,7 +173,7 @@ function openNew() { $("err").textContent = ""; $("vnew").style.display = "flex"
 $("w").oninput = $("h").oninput = pinfo;
 document.querySelectorAll(".pre button").forEach(b => b.onclick = () => { const [w, h] = b.dataset.p.split(","); $("w").value = cm(w); $("h").value = cm(h); pinfo(); });
 $("advt").onclick = () => { $("adv").classList.toggle("on"); $("advt").textContent = ($("adv").classList.contains("on") ? "▾" : "▸") + " Avanzate (abbondanza, spazio tra le foto, margine)"; };
-$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.path.split(/[\\/]/).filter(Boolean).pop().replace(/\s*JPG$/i, ""); } } catch (e) { $("err").textContent = e.message; } };
+$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.nome || ""; } } catch (e) { $("err").textContent = e.message; } };
 $("cancel").onclick = () => $("vnew").style.display = "none";
 $("create").onclick = async () => {
   try {
