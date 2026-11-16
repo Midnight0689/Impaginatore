@@ -299,7 +299,8 @@ def test_prepara_una_release(tmp_path):
     for riga in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
     note = (rel / "NOTE.md").read_text(encoding="utf-8")
-    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "CHIAVI_FIDATE[1]" in note and "mac-x86_64" in note and "00-installazione.md" in note and (rel / "SHA256SUMS").read_text(encoding="utf-8").strip() in note
+    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "CHIAVI_FIDATE[1]" in note and "mac-x86_64" in note and "`docs/manuale/00-installazione.md`" in note
+    assert all(f"| `{nome}` | {rilascio.megabyte((rel / nome).stat().st_size)} | `{h}` |" in note for h, nome in (r.split("  ") for r in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines()) if nome.startswith("Impaginatore-"))
     r = esegui("prepara", str(art), "--uscita", str(rel), "--prova"); assert r.returncode != 0 and "non è vuota" in r.stderr
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel3"), "--prova", "--id", "2"); assert r.returncode != 0 and "Nessuna chiave dei rilasci 2" in r.stderr
     (art / "vecchio").mkdir(); (art / "vecchio" / "Impaginatore-2.0.0-linux.deb").write_bytes(b"x")
@@ -342,7 +343,7 @@ def _artefatti(cartella, versione, chiavi=rilascio.SISTEMI, arm="ok", esiti=None
 def _bozza(tmp_path, art, tag, nome="bozza"):
     out = tmp_path / nome
     a = ["bozza", str(art), "--tag", tag, "--uscita", str(out / "release"), "--note", str(out / "note.md"), "--esito", str(out / "esito.json"),
-         "--esecuzione", "https://github.com/studio/impaginatore/actions/runs/7"]
+         "--esecuzione", "https://github.com/studio/impaginatore/actions/runs/7", "--repository", "studio/impaginatore"]
     assert rilascio.main(a) == 0
     return out, json.loads((out / "esito.json").read_text(encoding="utf-8")), (out / "note.md").read_text(encoding="utf-8")
 
@@ -360,14 +361,23 @@ def test_bozza_della_release(tmp_path, capsys):
     assert b"\r" not in (out / "release" / "SHA256SUMS").read_bytes()
     for riga in somme.splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((out / "release" / nome).read_bytes()).hexdigest() == h
-    assert len(somme.splitlines()) == 4 and somme.strip() in testo
+    assert len(somme.splitlines()) == 4 and "impaginatore-2.0.1rc1-py3-none-any.whl" not in testo, "nella tabella i pacchetti, la wheel solo in SHA256SUMS"
+    for riga in somme.splitlines():
+        h, nome = riga.split("  "); assert nome.endswith(".whl") or f"| `{nome}` | {rilascio.megabyte((out / 'release' / nome).stat().st_size)} | `{h}` |" in testo
     v = json.loads((out / "release" / "verifiche.json").read_text(encoding="utf-8"))
     assert v["esecuzione"].endswith("/runs/7") and v["verifiche"]["windows-arm64"]["macchina"] == "ARM64" and v["verifiche"]["windows-arm64"]["eseguibile"] == "x86_64"
     assert v["verifiche"]["mac-x86_64"]["esito"] == "no" and v["verifiche"]["linux"]["controlli"] == {"file": "ok"}
     for frammento in ("Bozza preparata dalla pipeline", "(https://github.com/studio/impaginatore/actions/runs/7)", "rilascio.py pubblica v2.0.1rc1", "(come pre-release)",
-                      "**Incompleta.**", "> - mac-x86_64", "| Mac con chip Apple (M1 e successivi), macOS 13.0 o successivo | `Impaginatore-2.0.1rc1-mac-arm64.dmg` |",
-                      "anche Windows 11 sui PC con processore ARM", "00-installazione.md"):
+                      "**Incompleta.**", "> - mac-x86_64", "| Mac con chip Apple (M1 e successivi), macOS 13.0 o successivo | `Impaginatore-2.0.1rc1-mac-arm64.dmg` | 0,0 MB | `",
+                      "anche Windows 11 sui PC con processore ARM", "[guida di installazione](https://github.com/studio/impaginatore/blob/v2.0.1rc1/docs/manuale/00-installazione.md)",
+                      "`shasum -a 256 <file>`", "`Get-FileHash <file> -Algorithm SHA256`", "`sha256sum -c SHA256SUMS --ignore-missing`"):
         assert frammento in testo, frammento
+    # le voci del registro solo nella sezione ripiegata, in fondo: le note restano corte
+    prima, _, ripiegata = testo.partition("<details>")
+    voce = re.compile(r"^- `[A-Z]{3}-\d+`", re.M)
+    assert not voce.search(prima) and voce.search(ripiegata) and ripiegata.rstrip().endswith("</details>") and "</summary>\n\n" in ripiegata
+    assert rilascio.megabyte(91993688) == "92,0 MB" and rilascio.indirizzo_guida(None, "v2.0.1") is None
+    assert "<details>" not in rilascio.note("2.0.1", [], [], [], changelog=_changelog(tmp_path, "2.0.0")), "senza voci per la versione, niente sezione"
     assert "Bozza v2.0.1rc1: linux, mac-arm64, windows; mancano" in capsys.readouterr().out
     # tutto: completa; il pacchetto Windows senza la prova su ARM non basta
     _, esito, testo = _bozza(tmp_path, _artefatti(tmp_path / "art2", "2.0.1"), "v2.0.1", "b2")
@@ -437,7 +447,8 @@ def test_pubblica_la_bozza(monkeypatch, tmp_path, capsys, versione, pre):
     for riga in somme:
         h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
     assert g.note.startswith(f"# Impaginatore {versione}\n"), "né «PROVA: NON PUBBLICARE» né la testa della bozza"
-    assert "  manifesto.json\n" in g.note and "| Mac con processore Intel, macOS 14.0 o successivo | `Impaginatore-" in g.note
+    assert f"`{rilascio.SOMME}`" in g.note and "| Mac con processore Intel, macOS 14.0 o successivo | `Impaginatore-" in g.note and f"blob/v{versione}/docs/manuale/00-installazione.md)" in g.note
+    assert all(f"| `{nome}` | " in g.note and h in g.note for h, nome in (r.split("  ") for r in somme) if nome.startswith("Impaginatore-"))
     with pytest.raises(SystemExit, match="non è una bozza"): rilascio.main([*a, "--cartella", str(tmp_path / "p3"), "--si"])
 
 

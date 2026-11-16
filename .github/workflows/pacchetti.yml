@@ -541,7 +541,8 @@ jobs:
       - name: File della release
         run: |
           uv run --no-project --python 3.12 strumenti/rilascio.py bozza dist/artefatti --tag "$TAG" --uscita dist/release \
-            --note dist/note.md --esito dist/esito.json --esecuzione "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            --note dist/note.md --esito dist/esito.json --esecuzione "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --repository "$GITHUB_REPOSITORY"
           cat dist/note.md >> "$GITHUB_STEP_SUMMARY"
 
       # il gettone del giro solo in questo passo, che usa solo gh
