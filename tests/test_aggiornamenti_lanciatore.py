@@ -133,12 +133,12 @@ def test_avvia_salta_nella_copia(base, monkeypatch):
     assert L.avvia(["--porta", "1"]) == s
     assert salti == [[sys.executable, "-c", L.CODICE, s, "--porta", "1"]] and os.environ[L.VAR_SCELTA] == s and os.environ[L.VAR_BASE] == base
     assert L.leggi()["tentativi"] == 1
-    for argv in (["editor", "--progetto", "x"], ["mcp"], ["--versione"], ["-h"]):
+    for argv in (["editor", "--progetto", "x"], ["mcp"], ["_psd", "--spread", "1"], ["_rilancia", "0", "x"], ["--versione"], ["-h"]):
         os.environ.pop(L.VAR_SCELTA); assert L.avvia(argv) == s
-    assert L.leggi()["tentativi"] == 1, "editor, server MCP e --versione non contano come avvii della schermata"
+    assert L.leggi()["tentativi"] == 1, "editor, server MCP, sottocomandi interni e --versione non contano come avvii della schermata"
     monkeypatch.setattr(L, "qui", lambda: s)
     assert L.avvia(["--porta", "1"]) is None and L.VAR_SCELTA not in os.environ, "nella copia scelta: si parte, e la variabile sparisce"
-    assert L.avvia([]) is None and len(salti) == 5 and L.leggi()["tentativi"] == 2, "la copia stessa, scelta senza salto"
+    assert L.avvia([]) is None and len(salti) == 7 and L.leggi()["tentativi"] == 2, "la copia stessa, scelta senza salto"
 
 
 def test_avvia_non_salta(base, monkeypatch, caplog):
@@ -152,6 +152,10 @@ def test_avvia_non_salta(base, monkeypatch, caplog):
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     assert L.avvia([]) is None and salti == [], "programma compilato: niente copie"
     monkeypatch.delattr(sys, "frozen")
+    from impaginatore import compilato
+    monkeypatch.setitem(compilato.__dict__, "__compiled__", object())       # come lo mette Nuitka, prima ancora di compilato.prepara()
+    assert L.avvia([]) is None and salti == [], "compilato con Nuitka: mai codice .py dalla cartella dei dati"
+    monkeypatch.delitem(compilato.__dict__, "__compiled__")
     monkeypatch.setattr(L, "scegli", lambda conta: (_ for _ in ()).throw(PermissionError("dati")))
     with caplog.at_level(logging.WARNING, logger="impaginatore.aggiornamenti"): assert L.avvia([]) is None
     assert "non scelta (PermissionError)" in caplog.text and salti == []

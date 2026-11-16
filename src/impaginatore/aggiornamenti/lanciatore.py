@@ -21,7 +21,8 @@ Contratto che resta uguale in ogni versione (ognuna, installata, fa da base alle
   schermata è in ascolto; editor, server MCP e --versione non contano); se non ci riesce il lanciatore torna da solo alla
   precedente e la segna «scartata».
 Da un checkout git (sviluppo) le copie si usano solo con IMPAGINATORE_AGGIORNAMENTI_FINTI: il codice su cui si lavora
-non resta nascosto da una copia vecchia. Il programma compilato (sys.frozen) non usa copie: si sostituisce intero.
+non resta nascosto da una copia vecchia. Il programma compilato (compilato.attivo()) non usa copie e non legge mai codice
+dalla cartella dei dati: la versione nuova si installa intera, con il suo pacchetto (installazione.InstallazioneCompilata).
 """
 import json
 import logging
@@ -29,6 +30,8 @@ import os
 import re
 import secrets
 import sys
+
+from .. import compilato
 
 FORMATO = 1
 PUNTATORE = "attuale.json"
@@ -168,8 +171,8 @@ def avvia(argv):
     if scelta:                                                # già scelta da un lanciatore: mai un secondo salto (niente giri senza fine)
         if os.path.realpath(scelta) != io: log.warning("la copia scelta (%s) non è quella partita (%s)", scelta, io)
         return None
-    if getattr(sys, "frozen", False): return None
-    schermata = list(argv[:1]) not in (["editor"], ["mcp"]) and not set(argv) & {"--versione", "-h", "--help"}
+    if compilato.attivo(): return None                      # compilato (T-302): nessuna copia, mai codice .py dalla cartella dei dati
+    schermata = not (argv[:1] and argv[0] in ("editor", "mcp", *compilato.INTERNI)) and not set(argv) & {"--versione", "-h", "--help"}
     try: dest = scegli(conta=schermata)
     except (OSError, ValueError) as e:
         log.warning("versione da avviare non scelta (%s): parte questa", type(e).__name__); return None

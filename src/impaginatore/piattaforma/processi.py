@@ -7,10 +7,13 @@ import os
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 import threading
+import time
 import webbrowser
 
-from .. import giornale
+from .. import compilato, giornale
 from . import sistema
+
+RILANCIO = "import subprocess, sys, time; time.sleep(float(sys.argv[1])); subprocess.Popen(sys.argv[2:])"
 
 
 def cartella_pacchetto():
@@ -49,8 +52,10 @@ def opzioni_staccato():
 
 
 def riesegui(argv=None):
-    """sostituisce il processo con una copia di se stesso (stessi argomenti): serve all'editor per rileggere le foto"""
-    argv = list(sys.orig_argv if argv is None else argv)
+    """sostituisce il processo con una copia di se stesso (stessi argomenti): serve all'editor per rileggere le foto.
+    Compilato: il programma stesso con gli argomenti che ha ricevuto (sys.orig_argv è quello dell'interprete)"""
+    if argv is None: argv = [sys.executable, *sys.argv[1:]] if compilato.attivo() else sys.orig_argv
+    argv = list(argv)
     if sistema() == "windows":                     # os.execv di Windows non mette tra virgolette gli argomenti con spazi
         argv = [subprocess.list2cmdline([a]) for a in argv]
     os.execv(sys.executable, argv)  # nosec B606  # riparte questo stesso Python (sys.executable) con i suoi argomenti
@@ -59,11 +64,19 @@ def riesegui(argv=None):
 def rilancia_dopo(argv, ritardo=1.5, gettone=None):
     """fa ripartire il comando argv tra `ritardo` secondi, fuori da questo processo (che sta per chiudersi e liberare la porta);
     gettone: quello della sessione, che il programma rilanciato tiene (passa nell'ambiente, mai sulla riga di comando)"""
-    codice = "import subprocess, sys, time; time.sleep(float(sys.argv[1])); subprocess.Popen(sys.argv[2:])"
     env = ambiente_figli()
     if gettone: env["IMPAGINATORE_GETTONE"] = gettone
-    subprocess.Popen([sys.executable, "-c", codice, str(ritardo), *argv], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,  # nosec B603  # questo stesso Python con il codice fisso qui sopra; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
+    aiutante = [sys.executable, "_rilancia"] if compilato.attivo() else [sys.executable, "-c", RILANCIO]          # compilato: lo stesso codice è rilancio()
+    subprocess.Popen([*aiutante, str(ritardo), *argv], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,  # nosec B603  # questo stesso programma con il codice fisso RILANCIO (o rilancio()); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                      cwd=cartella_pacchetto(), env=env, **opzioni_staccato())
+
+
+def rilancio(argv):
+    """il processo aiutante di rilancia_dopo nel programma compilato («impaginatore _rilancia <ritardo> <comando…>»): fa
+    quello che fa RILANCIO da Python"""
+    time.sleep(float(argv[0]))
+    subprocess.Popen(argv[1:])  # nosec B603  # il comando del programma preparato da rilancia_dopo; argomenti in lista, senza shell
+    return 0
 
 
 def stacca(registro):
