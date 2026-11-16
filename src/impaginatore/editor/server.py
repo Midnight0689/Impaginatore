@@ -36,6 +36,7 @@ from ..laboratori import consegna as CONSEGNA
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
 HOME = ""                                            # indirizzo della schermata dei progetti: il pulsante «Progetti» torna lì
+SERVER = None                                        # l'ultimo server creato (crea_server): il riavvio lo segna nel file di sessione
 log = logging.getLogger("impaginatore.editor")
 
 def _raccogli_foto():                                # foto importate in <progetto>/Foto quando il progetto legge un'altra cartella: le aggiungo, così compaiono sempre
@@ -2456,6 +2457,7 @@ def riavvia_processo():
     """riparte da capo con gli stessi argomenti (il motore rilegge foto e progetto). Chi usa l'editor dentro un altro
     processo (test, finestra desktop) può sostituire questa funzione"""
     statistiche.svuota()                                         # T-204: i conteggi in memoria non si perdono con il riavvio
+    if SERVER is not None: SERVER.segna_riavvio()                # la schermata aspetta questo editor sulla stessa porta (Windows: processo nuovo)
     processi.riesegui()
 
 def restart():
@@ -2699,7 +2701,9 @@ def aggiungi_a_caldo():
 def crea_server(porta=0, gettone=None):
     """server HTTP dell'editor su 127.0.0.1 (porta 0 = una libera: si legge da server_address). Non lo avvia: serve_forever().
     gettone: quello della sessione (None = uno nuovo); il file di sessione per la schermata dei progetti si scrive qui"""
-    return ServerLocale(("127.0.0.1", porta), H, tipo="editor", gettone=gettone, progetto=PROJ)
+    global SERVER
+    SERVER = ServerLocale(("127.0.0.1", porta), H, tipo="editor", gettone=gettone, progetto=PROJ)
+    return SERVER
 
 
 _FERMI = []

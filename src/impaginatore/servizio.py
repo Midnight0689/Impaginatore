@@ -13,6 +13,7 @@ import os
 import secrets
 import socket
 import sys
+import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -38,8 +39,16 @@ class ServerLocale(ThreadingHTTPServer):
 
     def __init__(self, indirizzo, gestore, tipo=None, gettone=None, **info):
         super().__init__(indirizzo, gestore)
-        self.sessione = sicurezza.Sessione(gettone); self.tipo = tipo
+        self.sessione = sicurezza.Sessione(gettone); self.tipo = tipo; self.info = info
         if tipo: sicurezza.scrivi_sessione(tipo, self.server_address[1], self.sessione.gettone, **info)
+
+    def segna_riavvio(self, quando=None):
+        """il processo sta per ripartire da capo (processi.riesegui) e tornerà su questa porta: lo dice il file di sessione
+        («riavvio»), solo se è ancora il suo. Su Windows os.execv avvia un processo nuovo: la schermata dei progetti intanto
+        continua a contare l'editor come aperto e non ne avvia un secondo"""
+        d = sicurezza.leggi_sessione(self.tipo, self.server_address[1]) if self.tipo else None
+        if d and sicurezza.uguali(d["gettone"], self.sessione.gettone):
+            sicurezza.scrivi_sessione(self.tipo, self.server_address[1], self.sessione.gettone, riavvio=time.time() if quando is None else quando, **self.info)
 
     def indirizzo_avvio(self):
         """URL monouso che collega il browser a questo server (cookie) e apre la pagina"""

@@ -150,14 +150,19 @@ def pronto(pt):
     return sicurezza.indirizzo_avvio("editor", pt, timeout=1)
 
 
+ATTESA_RIAVVIO = 120                           # secondi: un editor che doveva ripartire e non è tornato entro questo tempo è chiuso
+
+
 class Editor:
     """l'editor di un progetto lanciato da qui, con la parte di Popen che usano la schermata e la finestra del programma (pid,
     poll, terminate, kill, wait). Su Windows l'editor che si riavvia (processi.riesegui: os.execv) è un processo nuovo e il
-    figlio lanciato da qui finisce: allora si segue quello nuovo, se il file di sessione della stessa porta ha un altro pid
-    per lo stesso progetto e /api/ping, con il gettone di quel file, lo conferma (stesso progetto, stesso pid). Su macOS e
-    Linux os.execv tiene il processo: si segue sempre il figlio"""
+    figlio lanciato da qui finisce. Prima di ripartire l'editor lo scrive nel suo file di sessione («riavvio», ancora con il
+    pid del figlio): fino a quando il nuovo risponde conta come aperto, così «Apri» non ne avvia un secondo. Poi si segue
+    quello nuovo, se il file di sessione della stessa porta ha un altro pid per lo stesso progetto e /api/ping, con il
+    gettone di quel file, lo conferma (stesso progetto, stesso pid). Su macOS e Linux os.execv tiene il processo: si segue
+    sempre il figlio"""
 
-    def __init__(self, processo, progetto, porta): self.processo, self.progetto, self.porta = processo, progetto, porta
+    def __init__(self, processo, progetto, porta): self.processo, self.progetto, self.porta, self.fermato = processo, progetto, porta, False
 
     @property
     def pid(self): return self.processo.pid
@@ -165,14 +170,25 @@ class Editor:
     def poll(self):
         r = self.processo.poll()
         if r is None: return None
-        nuovo = self._riavviato()
-        if nuovo is None: return r
-        self.processo = nuovo; return None
-
-    def _riavviato(self):
         s = sicurezza.leggi_sessione("editor", self.porta) or {}
+        if s.get("progetto") != self.progetto: return r
+        nuovo = self._riavviato(s)
+        if nuovo is not None:
+            self.processo = nuovo
+            if self.fermato: nuovo.terminate()                          # fermato mentre ripartiva: si ferma anche il nuovo
+            return None
+        return None if self._in_partenza(s) else r
+
+    def _in_partenza(self, s):
+        """l'editor sta ripartendo: il figlio l'ha scritto prima di finire («riavvio», con il suo pid), oppure il processo
+        nuovo ha già scritto il file di sessione e non risponde ancora («creato»). Vale per ATTESA_RIAVVIO secondi"""
         pid = s.get("pid")
-        if s.get("progetto") != self.progetto or pid == self.processo.pid or not processi.vivo(pid): return None
+        t = s.get("riavvio") if pid == self.processo.pid else s.get("creato") if processi.vivo(pid) else None
+        return type(t) in (int, float) and 0 <= time.time() - t < ATTESA_RIAVVIO
+
+    def _riavviato(self, s):
+        pid = s.get("pid")
+        if pid == self.processo.pid or not processi.vivo(pid): return None
         try: ping = sicurezza.chiedi(self.porta, "/api/ping", s["gettone"], timeout=1)
         except (OSError, ValueError) as e:
             log.debug("editor riavviato sulla porta %s non risponde: %s", self.porta, type(e).__name__); return None
@@ -181,14 +197,20 @@ class Editor:
         return p if p.poll() is None else None
 
     def terminate(self):
+        self.fermato = True
         if self.poll() is None: self.processo.terminate()
 
     def kill(self):
+        self.fermato = True
         if self.poll() is None: self.processo.kill()
 
     def wait(self, timeout=None):
-        self.poll()
-        return self.processo.wait(timeout)
+        """come Popen.wait; durante un riavvio aspetta anche l'editor nuovo (che poll ferma, se intanto è stato fermato)"""
+        fine = None if timeout is None else time.monotonic() + timeout
+        while self.processo.poll() is not None and self.poll() is None:     # riavvio in corso: il processo nuovo non c'è ancora
+            if fine is not None and time.monotonic() >= fine: raise subprocess.TimeoutExpired(f"editor sulla porta {self.porta}", timeout)
+            time.sleep(0.1)
+        return self.processo.wait(None if fine is None else max(0, fine - time.monotonic()))
 
 
 def apri(path):

@@ -189,6 +189,28 @@ def test_file_di_sessione(home_srv, casa):
     assert sicurezza.sessioni("home") == [] and sicurezza.sessioni("editor") == []
 
 
+def test_riavvio_segnato_nel_file_di_sessione(casa, monkeypatch):
+    """prima di ripartire (os.execv) l'editor scrive «riavvio» nel suo file di sessione, con il resto com'era; solo se il
+    file è ancora il suo. Un server senza tipo non ha file di sessione"""
+    from impaginatore.editor import server as E
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None, tipo="editor", progetto="/album")
+    try:
+        prima = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        srv.segna_riavvio(123.5); d = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        assert d["riavvio"] == 123.5 and {k: d[k] for k in ("gettone", "pid", "progetto", "porta")} == {k: prima[k] for k in ("gettone", "pid", "progetto", "porta")}
+        riavvii = []; monkeypatch.setattr(E.processi, "riesegui", lambda: riavvii.append(1)); monkeypatch.setattr(E, "SERVER", srv)
+        E.riavvia_processo(); d = sicurezza.leggi_sessione("editor", srv.server_address[1])
+        assert riavvii == [1] and abs(d["riavvio"] - time.time()) < 60, "il riavvio dell'editor lo segna"
+        monkeypatch.setattr(E, "SERVER", None); E.riavvia_processo(); assert riavvii == [1, 1], "editor dentro un altro processo: niente file"
+        sicurezza.scrivi_sessione("editor", srv.server_address[1], "di un altro")
+        srv.segna_riavvio(); assert "riavvio" not in sicurezza.leggi_sessione("editor", srv.server_address[1]), "il file non è più suo"
+    finally: srv.server_close()
+    srv.segna_riavvio()
+    senza = servizio.ServerLocale(("127.0.0.1", 0), None)
+    try: senza.segna_riavvio(); assert [(x["gettone"], "riavvio" in x) for x in sicurezza.sessioni("editor")] == [("di un altro", False)]
+    finally: senza.server_close()
+
+
 def test_file_di_sessione_casi_limite(casa, monkeypatch):
     monkeypatch.setattr(sicurezza, "cartella_sessioni", lambda: str(casa / "nessuna"))
     assert sicurezza.sessioni("home") == []

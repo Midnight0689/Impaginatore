@@ -38,7 +38,13 @@ def test_programma_completo(tmp_path, foto_campione):
         nuova = os.path.join(p, "nuova"); os.mkdir(nuova)                          # dentro il progetto: una cartella che l'editor può usare
         shutil.copy(os.path.join(foto_campione, "V10.jpg"), os.path.join(nuova, "Z99.jpg"))
         r = e.post("/api/import", {"paths": [str(nuova)]}); assert r == {"importate": 1, "saltate": 0, "riavvio": True}
-        attendi(lambda: e.get("/api/ping")["boot"] != st["boot"], 120)          # riavviato con lo stesso gettone (variabile d'ambiente, non argomenti)
+        visti = []                           # per tutto il riavvio (su Windows: processo nuovo) l'album resta aperto e «Apri» non ne avvia un altro
+
+        def riavviato():
+            visti.append((h.get("/api/progetti")["progetti"][0]["aperto"], h.post("/api/apri", {"path": p})["porta"]))
+            return e.get("/api/ping")["boot"] != st["boot"]
+        attendi(riavviato, 120, 0.05)                                            # riavviato con lo stesso gettone (variabile d'ambiente, non argomenti)
+        assert visti and set(visti) == {(True, ep)}, visti
         assert len(e.get("/api/state")["photos"]) == 5
         el = h.get("/api/progetti")["progetti"]; assert el[0]["aperto"] and el[0]["foto"] == 5
         with open(os.path.join(str(progetti), "editor.log"), encoding="utf-8") as f: assert "Editor album" in f.read()

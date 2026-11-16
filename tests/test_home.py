@@ -3,6 +3,7 @@ l'editor vero parte come processo a parte solo in test_processi.py)."""
 import json
 import os
 import sys
+import time
 import types
 import zipfile
 
@@ -185,22 +186,67 @@ def test_editor_riavviato_in_un_processo_nuovo(home_srv, editor, monkeypatch):
     H.EDITORS[editor.progetto] = (e, editor.porta)
     assert home_srv.post("/api/esci") == {"ok": True} and seguiti[0].fermato, "«Esci» ferma l'editor nuovo"
     H.EDITORS.clear()
-    # non si segue: altro progetto, nessuna sessione, stesso pid (riavvio in corso), pid finito, porta chiusa, ping diverso, processo finito
+    # non si segue: altro progetto, nessuna sessione, stesso pid senza riavvio segnato, pid finito, porta chiusa, ping diverso,
+    # processo finito (i file di sessione sono di editor partiti da tempo: non «in partenza»)
+    vecchio = time.time() - H.ATTESA_RIAVVIO - 1
     assert H.Editor(finito, "/altro", editor.porta).poll() == 0 and H.Editor(finito, editor.progetto, 9).poll() == 0
     for pid in (finito.pid, 2**22 + 12345, os.getpid()):
-        sicurezza.scrivi_sessione("editor", 9, "g", progetto="/x")
-        with open(os.path.join(sicurezza.cartella_sessioni(), "editor-9.json"), encoding="utf-8") as f: d = json.load(f)
-        d["pid"] = pid
-        with open(os.path.join(sicurezza.cartella_sessioni(), "editor-9.json"), "w", encoding="utf-8") as f: json.dump(d, f)
-        assert H.Editor(finito, "/x", 9).poll() == 0
+        _sessione(9, progetto="/x", pid=pid, creato=vecchio); assert H.Editor(finito, "/x", 9).poll() == 0
     vero = sicurezza.chiedi
     for ping in ({"path": "/x", "pid": 1}, {"path": "/y", "pid": os.getpid()}, []):
         monkeypatch.setattr(sicurezza, "chiedi", lambda *a, ping=ping, **k: ping); assert H.Editor(finito, "/x", 9).poll() == 0
-    monkeypatch.setattr(sicurezza, "chiedi", vero)
+    monkeypatch.setattr(sicurezza, "chiedi", lambda *a, **k: {"path": "/x", "pid": os.getpid()})
     monkeypatch.setattr(processi, "Processo", lambda pid: Seguito(pid, fine=0))
-    e = H.Editor(finito, editor.progetto, editor.porta); assert e.poll() == 0 and e.processo is finito
+    e = H.Editor(finito, "/x", 9); assert e.poll() == 0 and e.processo is finito
     e.terminate(); e.kill(); assert e.wait(1) == 0, "finito: niente da fermare"
     assert len(seguiti) > 1 and not any(s.fermato or s.uccisi for s in seguiti[1:]), "ogni volta si riprova, e un processo finito non si segue"
+    monkeypatch.setattr(sicurezza, "chiedi", vero)
+
+
+def _sessione(porta, **campi):
+    """file di sessione di un editor sulla porta, con i campi dati al posto di quelli scritti da scrivi_sessione"""
+    from impaginatore import sicurezza
+    sicurezza.scrivi_sessione("editor", porta, "g")
+    f = os.path.join(sicurezza.cartella_sessioni(), f"editor-{porta}.json")
+    with open(f, encoding="utf-8") as fh: d = json.load(fh)
+    with open(f, "w", encoding="utf-8") as fh: json.dump(dict(d, **campi), fh)
+
+
+def test_editor_che_riparte_conta_come_aperto(home, monkeypatch):
+    """Windows: tra la fine del figlio (os.execv) e la risposta dell'editor nuovo l'album resta aperto e «Apri» dà la stessa
+    porta senza avviarne un secondo; fermato in quel momento, l'editor nuovo si ferma appena c'è. Un riavvio segnato da
+    troppo tempo, o un figlio finito senza segnarlo, è un editor chiuso"""
+    import subprocess
+
+    from impaginatore import sicurezza
+    from impaginatore.piattaforma import processi
+    finito = subprocess.Popen([sys.executable, "-c", "pass"]); finito.wait()
+    adesso, vecchio = time.time(), time.time() - home.ATTESA_RIAVVIO - 1
+    p = home.nuovo({"nome": "Riparte", "w": 30, "h": 30})
+    monkeypatch.setattr(home.subprocess, "Popen", lambda *a, **k: pytest.fail("nessun secondo editor"))
+    monkeypatch.setattr(sicurezza, "chiedi", lambda *a, **k: (_ for _ in ()).throw(ConnectionRefusedError()))      # nessuno risponde ancora
+    e = home.Editor(finito, p, 9); home.EDITORS[p] = (e, 9)
+    _sessione(9, progetto=p, pid=finito.pid, riavvio=adesso)
+    assert e.poll() is None and home.apri(p) == 9 and [x["aperto"] for x in home.progetti() if x["path"] == p] == [True], "il figlio ha segnato il riavvio"
+    _sessione(9, progetto=p, pid=os.getpid()); assert e.poll() is None, "l'editor nuovo ha scritto la sessione e non risponde ancora"
+    for campi in (dict(pid=finito.pid, riavvio=vecchio), dict(pid=finito.pid), dict(pid=finito.pid, riavvio="ieri"), dict(pid=os.getpid(), creato=vecchio),
+                  dict(pid=2**22 + 12345), dict(pid=finito.pid, riavvio=adesso, progetto="/altro")):
+        _sessione(9, **dict(dict(progetto=p), **campi)); assert e.poll() == 0, campi
+    # fermato mentre riparte: wait aspetta l'editor nuovo; quando risponde si segue e si ferma subito
+    _sessione(9, progetto=p, pid=finito.pid, riavvio=adesso)
+    e.terminate(); assert e.fermato and e.poll() is None
+    with pytest.raises(subprocess.TimeoutExpired): e.wait(0.3)
+    seguiti = []
+    monkeypatch.setattr(processi, "Processo", lambda pid: seguiti.append(_Processo()) or seguiti[-1])
+    monkeypatch.setattr(sicurezza, "chiedi", lambda *a, **k: {"path": p, "pid": os.getpid()})
+    _sessione(9, progetto=p, pid=os.getpid())
+    assert e.wait(5) == 0 and seguiti[0].fermato and e.processo is seguiti[0]
+    home.EDITORS.clear(); _sessione(9, progetto=p, pid=finito.pid)
+    e = home.Editor(finito, p, 9); e.kill(); assert e.fermato and e.poll() == 0
+    monkeypatch.setattr(home, "gia_attivo", lambda path: 8822)
+    home.EDITORS[p] = (home.Editor(finito, p, 9), 9)
+    assert home.apri(p) == 8822, "chiuso: si cerca un editor già attivo"
+    home.EDITORS.clear()
 
 
 def test_nuovo_con_cartella_foto_che_non_esiste(home, tmp_path):
