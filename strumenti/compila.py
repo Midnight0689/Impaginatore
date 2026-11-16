@@ -412,8 +412,13 @@ def controlla_macos(prog, k):
     if not minimi: raise SystemExit("Nessun binario Mach-O con la versione minima di macOS nel bundle: otool non ha letto niente")
     sopra = {n: ".".join(map(str, v)) for n, v in minimi.items() if v > tupla(dichiarato)}
     if sopra: raise SystemExit(f"Binari che chiedono più di macOS {dichiarato}: {dict(list(sopra.items())[:10])}. Ruote scelte per un macOS più nuovo (MACOSX_DEPLOYMENT_TARGET e «uv sync --python-platform»)?")
-    binari = ".".join(map(str, max(minimi.values())))
+    alto = max(minimi.values()); binari = ".".join(map(str, alto))
     print(f"macOS minimo: {dichiarato} (Info.plist); il binario più esigente chiede {binari} ({len(minimi)} binari Mach-O controllati)")
+    # nel registro: quanti binari per versione (l'eseguibile di Nuitka chiede quella del Python che compila, meno del
+    # dichiarato: vale Info.plist) e quali fissano il minimo
+    conta = {}
+    for v in sorted(minimi.values(), reverse=True): k = ".".join(map(str, v)); conta[k] = conta.get(k, 0) + 1
+    print("  per versione: " + ", ".join(f"{v}: {n}" for v, n in conta.items()) + f"; chiedono {binari}: {', '.join(n for n, v in minimi.items() if v == alto)}")
     return dict(macos_minimo=dichiarato, macos_minimo_binari=binari)
 
 

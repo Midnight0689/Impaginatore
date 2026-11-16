@@ -581,8 +581,9 @@ def _bundle(tmp_path, minimo, binari):
     return prog
 
 
-def test_versione_minima_dichiarata_e_controllata(monkeypatch, tmp_path):
-    """macOS: Info.plist dichiara MACOS_MINIMO e nessun binario del bundle chiede di più (otool -l su ogni Mach-O)"""
+def test_versione_minima_dichiarata_e_controllata(monkeypatch, tmp_path, capsys):
+    """macOS: Info.plist dichiara MACOS_MINIMO e nessun binario del bundle chiede di più (otool -l su ogni Mach-O); il
+    registro dice quanti binari per versione e quali fissano il minimo"""
     minos = {"impaginatore-app": "11.0", "libnumpy.dylib": "11.0", "cv2.so": "13.0", "universale.so": None, "x": "14.0"}
     prog = _bundle(tmp_path, "13.0", {"impaginatore-app": b"\xcf\xfa\xed\xfe", "libnumpy.dylib": b"\xcf\xfa\xed\xfe", "cv2.so": b"\xca\xfe\xba\xbe", "universale.so": b"\xcf\xfa\xed\xfe"})
     letti = []
@@ -592,6 +593,7 @@ def test_versione_minima_dichiarata_e_controllata(monkeypatch, tmp_path):
     monkeypatch.setattr(compila.subprocess, "run", otool)
     assert compila.controlla_macos(prog, "mac-arm64") == {"macos_minimo": "13.0", "macos_minimo_binari": "13.0"}
     assert sorted(letti) == ["cv2.so", "impaginatore-app", "libnumpy.dylib", "universale.so"], "solo i Mach-O, non i dati né i collegamenti"
+    assert "per versione: 13.0: 1, 11.0: 2; chiedono 13.0: Contents/MacOS/cv2.so" in capsys.readouterr().out
     minos["libnumpy.dylib"] = "14.0"
     with pytest.raises(SystemExit, match=r"più di macOS 13.0: \{'Contents/MacOS/libnumpy.dylib': '14.0'\}"): compila.controlla_macos(prog, "mac-arm64")
     assert compila.controlla_macos(_bundle(tmp_path / "intel", "14.0", {"x": b"\xcf\xfa\xed\xfe"}), "mac-x86_64")["macos_minimo"] == "14.0"
