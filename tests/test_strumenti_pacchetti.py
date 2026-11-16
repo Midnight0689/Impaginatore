@@ -329,3 +329,40 @@ def test_versione_minima_di_macos():
                        "Load command 12", "      cmd LC_BUILD_VERSION", " platform 2", "    minos 17.0",
                        "Load command 13", "          cmd LC_LOAD_DYLIB", "compatibility version 1.0.0"])
     assert compila.minos(otool) == [(14, 0), (10, 13)], "solo macOS (platform 1), mai le versioni delle librerie"
+
+
+# ---------------------------------------------------------------- verifica_pacchetto.py: rapporto e finestra
+def test_un_errore_inatteso_e_un_controllo_che_non_va(monkeypatch):
+    """un errore della prova (o una risposta inattesa del programma) non ferma la prova: il controllo risulta «no», con il
+    punto in cui è successo, e gli altri vanno avanti"""
+    monkeypatch.setattr(verifica, "RAPPORTO", {"controlli": [], "tempi": {}, "non_provato": []})
+    rotto = verifica.controllo("rotto")(lambda: {}["manca"])
+    with pytest.raises(verifica.NonVa, match="errore inatteso KeyError"): rotto()
+    assert verifica.controllo("buono")(lambda: 7)() == 7 and rotto.nome == "rotto"
+    no, ok = verifica.RAPPORTO["controlli"]
+    assert no["nome"] == "rotto" and no["esito"] == "no" and "test_strumenti_pacchetti.py" in no["motivo"] and ok["esito"] == "ok"
+    verifica.saltato("dopo", "serve «rotto»"); verifica.RAPPORTO["non_provato"].append("finestra | fotografia")
+    md = verifica.riepilogo(dict(verifica.RAPPORTO, versione="2.0.1", sistema="win32"))
+    assert "| rotto | **NO** |" in md and "| dopo | saltato |  | serve «rotto» |" in md and "NON PROVATO su questa macchina: finestra \\| fotografia" in md
+    assert all(r.count("|") - r.count("\\|") == 5 for r in md.splitlines() if r.startswith("| ")), "una riga per controllo, il motivo su una riga sola"
+
+
+def test_la_pagina_nella_finestra_si_riconosce_dalle_statistiche():
+    """l'evento «finestra» della schermata Album, mandato dalla pagina caricata nella finestra, dopo quelli che c'erano"""
+    righe = [json.dumps(dict(ev="avvio", proc="home", finestra_programma=None)), json.dumps(dict(ev="chiusura", proc="home")),
+             json.dumps(dict(ev="avvio", proc="home", finestra_programma=True)), json.dumps(dict(ev="finestra", pagina="editor", larghezza=9))]
+    class C:
+        def get(self, path): assert path == "/api/statistiche/registro"; return dict(righe=righe[-3:], totale=len(righe))
+    assert verifica.pagina_nella_finestra(C(), 2) is None, "finché la schermata Album non manda il suo evento"
+    righe.append(json.dumps(dict(ev="finestra", pagina="album", larghezza=1088, altezza=700)))
+    avvio, f = verifica.pagina_nella_finestra(C(), 2)
+    assert avvio["finestra_programma"] is True and f["larghezza"] == 1088, "solo gli eventi dopo i primi 2 (righe mostrate: le ultime 3)"
+    tutti = verifica.eventi(C(), 0)
+    assert len(tutti) == 3 and tutti[0]["finestra_programma"] is True, "il registro mostra solo le ultime righe"
+
+
+def test_comando_della_fotografia_dello_schermo(tmp_path):
+    assert verifica.comando_foto(tmp_path / "f.png", "darwin") == ["screencapture", "-x", "-t", "png", str(tmp_path / "f.png")]
+    w = verifica.comando_foto("C:\\Prove\\l'album\\f.png", "win32")
+    assert w[:4] == ["powershell", "-NoProfile", "-NonInteractive", "-Command"] and w[4].endswith("$b.Save('C:\\Prove\\l''album\\f.png')"), "apice raddoppiato per PowerShell"
+    assert verifica.comando_foto(tmp_path / "f.png", "linux") is None and verifica.fotografa_schermo(None) == "nessuna cartella per le immagini"
