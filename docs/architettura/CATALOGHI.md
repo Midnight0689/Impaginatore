@@ -215,8 +215,9 @@ Editor, Esporta → **Consegna** (`/api/export` con `fmt: "consegna"`), o l'assi
    risoluzione, profilo, file e pixel, spread rispetto ai limiti, esito del controllo, filigrana della prova, copertina
    «da preparare a parte», elenco dei file. Da mandare al laboratorio insieme ai file.
 
-Il registro (`/api/log`) ha le stesse righe dei JPG: `Esporto N spread in CONSEGNA → <cartella>`, `  spread k: <file>`,
-`SALTATO spread k -> <motivo>`, `ESPORTATI`, `RISULTATO:<cartella>`, `[finito]`. Nessuna rete: la consegna è una
+Il registro (`/api/log`) ha le stesse righe dei JPG, nella lingua dell'utente (in italiano: `Esporto N spread in CONSEGNA →
+<cartella>`, `  spread k: <file>`, `SALTATO spread k -> <motivo>`, `ESPORTATI`), più le due righe fisse `RISULTATO:<cartella>`
+e `[finito]`. Chi deve sapere com'è andata (pagina, assistente) legge `/api/esito`, che è uguale in ogni lingua. Nessuna rete: la consegna è una
 cartella sul computer; il caricamento sul sito del laboratorio lo fa il fotografo.
 
 ## Assistente AI (MCP)

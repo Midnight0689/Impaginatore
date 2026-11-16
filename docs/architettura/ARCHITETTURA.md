@@ -26,7 +26,7 @@ src/impaginatore/
 ├── laboratori/         cataloghi dei laboratori (T-208): formato e firma (catalogo.py), installati e importati, prodotto
 │                       dell'album, file della consegna (consegna.py); cataloghi/generico.json (CATALOGHI.md)
 ├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti, licenza
-├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni
+├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni (esito in /api/esito)
 ├── motore/              motore di impaginazione (viene dalla skill «impaginazione-album-stefano»)
 │   ├── album.py         progetto caricato, geometria, foto (metadati, miniature, volti con OpenCV), moduli P/FULL/DUO..., render
 │   ├── album_libere.py  cornici libere, angoli, stili, testi liberi, tono/ritocco: si «installa» dentro album all'import
@@ -107,8 +107,10 @@ impaginatore                         (senza --browser, --no-browser, --daemon)
       │                              dopo ogni caricamento (l'unico su macOS): solo http://127.0.0.1:<schermata o editor>
       ├─ dialoghi.py                 GTK e macOS: finestre di scelta di pywebview; l'editor le chiede alla schermata
       │                              (IMPAGINATORE_DIALOGHI=finestra:<porta> → POST /api/dialogo). Windows: tkinter come prima
-      └─ chiusura della finestra     misura salvata, ogni editor salva (POST /api/save) e si chiude (5 s, poi kill), la
-                                     schermata si ferma, main() restituisce 0. «Esci» nella pagina chiude la finestra
+      └─ chiusura della finestra     se un editor esporta (/api/ping «esporta») chiede conferma in una finestra del sistema
+                                     (desktop.esporta_titolo/testo, da un thread a parte: il gestore «closing» gira nel thread
+                                     dell'interfaccia); poi misura salvata, ogni editor salva (POST /api/save) e si chiude
+                                     (5 s, poi kill), la schermata si ferma, main() restituisce 0. «Esci» nella pagina chiude la finestra
 ```
 
 - Motori ammessi: WebKitGTK (`gtkwebkit2`, Linux: PyGObject e WebKit2GTK 4.1 o 4.0 del sistema, non installabili da

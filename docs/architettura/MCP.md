@@ -166,10 +166,12 @@ del server le proposte si perdono.
 
 ### Esportazioni
 
-Il registro dell'editor (`/api/log`) è uno solo e ogni esportazione lo ricomincia, anche quella chiesta dalla pagina o
-rifiutata. L'esito si legge finché il registro è dell'esportazione dell'assistente (riga «Esporto … → <cartella>»);
-dopo, `stato_esportazione` risponde `non_seguibile` e indica la cartella. Mentre un'esportazione dell'assistente è in
-corso non se ne parte un'altra.
+L'esito dell'editor (`/api/esito`: `dest`, `formato`, `totale`, `fatti`, `saltati` con spread e motivo, `errori`,
+`risultato`, `finito`) è uno solo e ogni esportazione lo ricomincia, anche quella chiesta dalla pagina o rifiutata. È
+fatto di numeri e motivi, quindi vale in ogni lingua: il server MCP non interpreta le righe del registro (`/api/log`),
+che seguono la lingua dell'utente. L'esito si legge finché `dest` è la cartella dell'esportazione dell'assistente; dopo
+(o se resta vuoto per più di 10 s, o torna vuoto dopo che era la nostra), `stato_esportazione` risponde `non_seguibile`
+e indica la cartella. Mentre un'esportazione dell'assistente è in corso non se ne parte un'altra.
 
 ## Immagini: consenso esplicito
 
