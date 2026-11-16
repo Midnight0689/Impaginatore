@@ -5,4 +5,4 @@ progetti, non apre porte e non scrive file: tutto parte da funzioni esplicite (c
 editor.server.inizializza, motore.album.carica_progetto).
 """
 
-__version__ = "2.0.0.dev0"          # unico posto della versione: lo leggono pyproject.toml (hatch), la schermata dei progetti e l'editor
+__version__ = "2.0.0b1"          # unico posto della versione: lo leggono pyproject.toml (hatch), la schermata dei progetti e l'editor
