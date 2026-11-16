@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" role="img" aria-labelledby="t d">
+<title id="t">Primo avvio</title><desc id="d">Schermata unica con la prova già attiva: area grande per trascinare la cartella delle foto, scelta della cartella, frase sulla prova di 30 giorni senza carta e sulle foto che restano sul computer, e in piccolo Ho una chiave.</desc>
+<rect width="1280" height="800" fill="#1E1E1E"/>
+<rect x="0" y="0" width="1280" height="52" fill="#141414"/>
+<line x1="0" y1="52" x2="1280" y2="52" stroke="#424242" stroke-width="1"/>
+<rect x="20" y="16" width="20" height="20" fill="none" rx="3" stroke="#7BCC9C" stroke-width="2"/>
+<line x1="30" y1="16" x2="30" y2="36" stroke="#7BCC9C" stroke-width="2"/>
+<text x="50" y="33" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="18" font-weight="500" fill="#F5F5F5" text-anchor="start">Impaginatore</text>
+<rect x="1140" y="12" width="120" height="28" fill="none" rx="4"/>
+<text x="1200.0" y="30.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="middle">Ho una chiave</text>
+<rect x="240" y="150" width="800" height="360" fill="none" rx="12" stroke="#989898" stroke-width="1.5" stroke-dasharray="8 6"/>
+<path d="M600.0 230 h28 l8 10 h44 v50 h-80 z" fill="none" stroke="#989898" stroke-width="2" stroke-linejoin="round"/>
+<text x="640.0" y="336" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="26" font-weight="500" fill="#F5F5F5" text-anchor="middle">Trascina qui la cartella delle foto di un album</text>
+<text x="640.0" y="368" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="14" font-weight="400" fill="#989898" text-anchor="middle">Impaginatore crea l'album accanto alle foto e lo apre: le prime foto si vedono subito.</text>
+<rect x="540.0" y="400" width="200" height="34" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="640.0" y="422.04" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="14" font-weight="400" fill="#F5F5F5" text-anchor="middle">Scegli la cartella…</text>
+<text x="640.0" y="470" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="middle">JPG, TIFF, PNG, WebP: le foto finite, non i RAW</text>
+<text x="640.0" y="580" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="400" fill="#F5F5F5" text-anchor="middle">Prova completa per 30 giorni, senza carta e senza registrazione.</text>
+<text x="640.0" y="606" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#989898" text-anchor="middle">Le foto restano sul tuo computer: Impaginatore non le copia e non le carica in rete.</text>
+<rect x="0" y="760" width="1280" height="40" fill="#141414"/>
+<line x1="0" y1="760" x2="1280" y2="760" stroke="#424242" stroke-width="1"/>
+<text x="24" y="785" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Hai già una chiave? Incollala qui (Ctrl+V) in qualunque momento.</text>
+<text x="1256" y="785" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="end">Aiuto › Guida rapida</text>
+</svg>

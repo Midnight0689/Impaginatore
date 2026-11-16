@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" role="img" aria-labelledby="t d">
+<title id="t">Schermata Album</title><desc id="d">Elenco degli album come uno scaffale: area per trascinare la cartella di un album nuovo, una riga per album con miniatura, formato, spread, foto, stato e ultima modifica; un album danneggiato offre il ripristino.</desc>
+<rect width="1280" height="800" fill="#1E1E1E"/>
+<rect x="0" y="0" width="1280" height="52" fill="#141414"/>
+<line x1="0" y1="52" x2="1280" y2="52" stroke="#424242" stroke-width="1"/>
+<rect x="20" y="16" width="20" height="20" fill="none" rx="3" stroke="#7BCC9C" stroke-width="2"/>
+<line x1="30" y1="16" x2="30" y2="36" stroke="#7BCC9C" stroke-width="2"/>
+<text x="50" y="33" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="18" font-weight="500" fill="#F5F5F5" text-anchor="start">Impaginatore</text>
+<rect x="860" y="12" width="240" height="28" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="874" y="31" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#989898" text-anchor="start">Cerca un album</text>
+<rect x="1112" y="12" width="148" height="28" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1186.0" y="30.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="middle">Nuovo album…</text>
+<rect x="24" y="76" width="1232" height="76" fill="none" rx="8" stroke="#989898" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="640.0" y="108" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="16" font-weight="400" fill="#F5F5F5" text-anchor="middle">Trascina qui la cartella delle foto per un album nuovo</text>
+<text x="640.0" y="132" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#989898" text-anchor="middle">L'album nasce accanto alle foto, che restano dove sono, sul tuo computer</text>
+<text x="184" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Album</text>
+<text x="600" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Formato</text>
+<text x="744" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Spread</text>
+<text x="820" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Foto</text>
+<text x="900" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Stato</text>
+<text x="1150" y="188" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Modificato</text>
+<line x1="24" y1="198" x2="1256" y2="198" stroke="#424242" stroke-width="1"/>
+<rect x="24" y="216" width="144" height="54" fill="#FDFCF9"/>
+<rect x="24" y="216" width="72.0" height="54" fill="#55595e"/>
+<rect x="102.0" y="222" width="60.0" height="42" fill="#4d5560"/>
+<text x="184" y="240" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Giulia e Marco</text>
+<text x="184" y="260" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Clienti/Matrimonio Giulia e Marco</text>
+<text x="600" y="246" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">60 × 22,5</text>
+<text x="744" y="246" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">35</text>
+<text x="820" y="246" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">100</text>
+<circle cx="906" cy="242" r="4" fill="#989898"/>
+<text x="918" y="246" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="start">In lavorazione</text>
+<text x="1150" y="246" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="start">oggi 10:42</text>
+<line x1="24" y1="286" x2="1256" y2="286" stroke="#424242" stroke-width="1"/>
+<rect x="16" y="286" width="1248" height="76" fill="#262626" rx="6"/>
+<rect x="24" y="296" width="144" height="54" fill="#FDFCF9"/>
+<rect x="24" y="296" width="72.0" height="54" fill="#6b665f"/>
+<rect x="102.0" y="302" width="60.0" height="42" fill="#76716a"/>
+<text x="184" y="320" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Sara e Luca</text>
+<text x="184" y="340" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Clienti/Matrimonio Sara e Luca</text>
+<text x="600" y="326" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">70 × 25</text>
+<text x="744" y="326" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">28</text>
+<text x="820" y="326" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">84</text>
+<circle cx="906" cy="322" r="4" fill="#88B9EC"/>
+<text x="918" y="326" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="start">Inviato al cliente il 12/11</text>
+<rect x="1150" y="312" width="64" height="26" fill="#5AB481" rx="4"/>
+<text x="1182.0" y="329.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F0E0C" text-anchor="middle">Apri</text>
+<rect x="1220" y="312" width="32" height="26" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1236.0" y="329.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">⋯</text>
+<line x1="24" y1="366" x2="1256" y2="366" stroke="#424242" stroke-width="1"/>
+<rect x="24" y="376" width="144" height="54" fill="#FDFCF9"/>
+<rect x="24" y="376" width="72.0" height="54" fill="#4d5560"/>
+<rect x="102.0" y="382" width="60.0" height="42" fill="#5f6a64"/>
+<text x="184" y="400" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Battesimo di Leo</text>
+<text x="184" y="420" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Clienti/Battesimo Leo</text>
+<text x="600" y="406" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">40 × 30</text>
+<text x="744" y="406" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">12</text>
+<text x="820" y="406" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">36</text>
+<circle cx="906" cy="402" r="4" fill="#7BCC9C"/>
+<text x="918" y="406" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="start">Consegnato il 03/11</text>
+<text x="1150" y="406" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="start">03/11</text>
+<line x1="24" y1="446" x2="1256" y2="446" stroke="#424242" stroke-width="1"/>
+<rect x="24" y="456" width="144" height="54" fill="#303030"/>
+<text x="96.0" y="488" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="18" font-weight="400" fill="#989898" text-anchor="middle">?</text>
+<text x="184" y="480" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Anna e Paolo</text>
+<text x="184" y="500" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Clienti/Matrimonio Anna e Paolo</text>
+<text x="600" y="486" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">60 × 22,5</text>
+<text x="744" y="486" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">—</text>
+<text x="820" y="486" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">—</text>
+<circle cx="906" cy="482" r="4" fill="#F2897C"/>
+<text x="918" y="486" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F2897C" text-anchor="start">Non si apre: file danneggiato</text>
+<rect x="918" y="496" width="230" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1033.0" y="511.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Ripristina la copia delle 10:02</text>
+<text x="1150" y="486" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="start">28/10</text>
+<line x1="24" y1="526" x2="1256" y2="526" stroke="#424242" stroke-width="1"/>
+<rect x="24" y="536" width="144" height="54" fill="#FDFCF9"/>
+<text x="184" y="560" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Prova formato quadrato</text>
+<text x="184" y="580" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Progetti/Prova</text>
+<text x="600" y="566" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">30 × 30</text>
+<text x="744" y="566" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">0</text>
+<text x="820" y="566" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">0</text>
+<circle cx="906" cy="562" r="4" fill="#989898"/>
+<text x="918" y="566" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="start">Senza foto</text>
+<text x="1150" y="566" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="start">21/10</text>
+<line x1="24" y1="606" x2="1256" y2="606" stroke="#424242" stroke-width="1"/>
+<rect x="0" y="760" width="1280" height="40" fill="#141414"/>
+<line x1="0" y1="760" x2="1280" y2="760" stroke="#424242" stroke-width="1"/>
+<text x="24" y="785" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Prova: restano 5 giorni (riga visibile solo negli ultimi 7)</text>
+<rect x="410" y="768" width="150" height="24" fill="none" rx="4"/>
+<text x="485.0" y="784.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Compra una chiave</text>
+<text x="1256" y="785" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="end">5 album</text>
+</svg>

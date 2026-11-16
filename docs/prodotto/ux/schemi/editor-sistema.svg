@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" role="img" aria-labelledby="t d">
+<title id="t">Editor con il pannello Controlla</title><desc id="d">L'indicatore in alto è aperto; il pannello di destra elenca cosa blocca la stampa, cosa va guardato e cosa si sistema da solo, con un riepilogo e il pulsante Sistema; sullo spread è segnata la foto con il volto vicino alla piega; dopo Sistema compare un avviso con Annulla.</desc>
+<rect width="1280" height="800" fill="#1E1E1E"/>
+<rect x="0" y="0" width="1280" height="44" fill="#141414"/>
+<line x1="0" y1="44" x2="1280" y2="44" stroke="#424242" stroke-width="1"/>
+<rect x="10" y="8" width="74" height="28" fill="none" rx="4"/>
+<text x="47.0" y="26.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="middle">‹ Album</text>
+<text x="100" y="28" font-family="Newsreader, Iowan Old Style, Georgia, serif" font-size="16" font-weight="500" fill="#F5F5F5" text-anchor="start">Giulia e Marco</text>
+<text x="226" y="28" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="12" font-weight="400" fill="#989898" text-anchor="start">60 × 22,5 cm · 35 spread</text>
+<rect x="548" y="8" width="184" height="28" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<rect x="550" y="10" width="86" height="24" fill="none" rx="4"/>
+<text x="593.0" y="26.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="middle">Foto</text>
+<rect x="640" y="10" width="90" height="24" fill="#F6F3EC" rx="4"/>
+<text x="685.0" y="26.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#181715" text-anchor="middle">Impagina</text>
+<text x="860" y="28" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Salvato alle 10:42</text>
+<rect x="984" y="8" width="150" height="28" fill="#303030" rx="14" stroke="#EABC6E" stroke-width="1.5"/>
+<circle cx="1002" cy="22" r="5" fill="#EABC6E"/>
+<text x="1014" y="27" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="400" fill="#F5F5F5" text-anchor="start">3 da controllare</text>
+<rect x="1146" y="8" width="122" height="28" fill="#5AB481" rx="4"/>
+<text x="1207.0" y="26.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F0E0C" text-anchor="middle">Consegna…</text>
+<rect x="0" y="45" width="136" height="755" fill="#262626"/>
+<line x1="136" y1="45" x2="136" y2="800" stroke="#424242" stroke-width="1"/>
+<text x="12" y="68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Spread</text>
+<rect x="102" y="52" width="24" height="24" fill="none" rx="4"/>
+<text x="114.0" y="69.4" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="400" fill="#F5F5F5" text-anchor="middle">+</text>
+<rect x="40" y="82" width="56" height="42" fill="#FDFCF9"/>
+<rect x="40" y="82" width="28.0" height="42" fill="#55595e"/>
+<rect x="68.0" y="82" width="28.0" height="42" fill="#6b665f"/>
+<text x="68" y="140" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#989898" text-anchor="middle">Copertina</text>
+<rect x="12" y="154" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="154" width="56.0" height="42" fill="#6b665f"/>
+<rect x="74.0" y="160" width="44.0" height="30" fill="#5f6a64"/>
+<text x="12" y="212" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">01–02</text>
+<rect x="12" y="226" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="226" width="56.0" height="42" fill="#4d5560"/>
+<rect x="68.0" y="226" width="56.0" height="42" fill="#76716a"/>
+<text x="12" y="284" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">03–04</text>
+<rect x="12" y="298" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="298" width="56.0" height="42" fill="#76716a"/>
+<rect x="74.0" y="304" width="44.0" height="30" fill="#4f5a52"/>
+<text x="12" y="356" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">05–06</text>
+<rect x="12" y="370" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="370" width="56.0" height="42" fill="#5f6a64"/>
+<rect x="68.0" y="370" width="56.0" height="42" fill="#68605c"/>
+<rect x="9" y="367" width="118" height="48" fill="none" rx="2" stroke="#FFFFFF" stroke-width="1.5"/>
+<text x="12" y="428" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="start">07–08</text>
+<rect x="12" y="442" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="442" width="56.0" height="42" fill="#68605c"/>
+<rect x="74.0" y="448" width="44.0" height="30" fill="#55595e"/>
+<text x="12" y="500" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">09–10</text>
+<rect x="12" y="514" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="514" width="56.0" height="42" fill="#4f5a52"/>
+<rect x="68.0" y="514" width="56.0" height="42" fill="#7a7468"/>
+<text x="12" y="572" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">11–12</text>
+<rect x="12" y="586" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="586" width="56.0" height="42" fill="#7a7468"/>
+<rect x="74.0" y="592" width="44.0" height="30" fill="#4d5560"/>
+<text x="12" y="644" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">13–14</text>
+<rect x="12" y="658" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="658" width="56.0" height="42" fill="#55595e"/>
+<rect x="68.0" y="658" width="56.0" height="42" fill="#6b665f"/>
+<text x="12" y="716" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">15–16</text>
+<rect x="12" y="730" width="112" height="42" fill="#FDFCF9"/>
+<rect x="12" y="730" width="56.0" height="42" fill="#6b665f"/>
+<rect x="74.0" y="736" width="44.0" height="30" fill="#5f6a64"/>
+<text x="12" y="788" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">17–18</text>
+<rect x="137" y="45" width="807" height="36" fill="#1E1E1E"/>
+<line x1="136" y1="81" x2="944" y2="81" stroke="#424242" stroke-width="1"/>
+<text x="152" y="68" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="13" font-weight="600" fill="#F5F5F5" text-anchor="start">07–08</text>
+<text x="206" y="68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Sinistra: Piena · Destra: Bianca</text>
+<rect x="426" y="51" width="160" height="24" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="506.0" y="67.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Altra disposizione  D</text>
+<rect x="594" y="51" width="76" height="24" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="632.0" y="67.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Testo  T</text>
+<rect x="852" y="51" width="80" height="24" fill="none" rx="4"/>
+<text x="892.0" y="67.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Adatta ▾</text>
+<rect x="152" y="210" width="776" height="301" fill="none" stroke="#F2897C" stroke-width="1" stroke-dasharray="5 4" opacity="0.7"/>
+<rect x="160" y="218" width="760" height="285" fill="#FDFCF9"/>
+<line x1="540.0" y1="200" x2="540.0" y2="208" stroke="#989898" stroke-width="1.5"/>
+<line x1="540.0" y1="513" x2="540.0" y2="521" stroke="#989898" stroke-width="1.5"/>
+<rect x="160" y="218" width="380.0" height="285" fill="#55595e"/>
+<rect x="562.0" y="240" width="141.12" height="241" fill="#4d5560"/>
+<rect x="708.12" y="240" width="189.88" height="118.0" fill="#76716a"/>
+<rect x="708.12" y="363.0" width="189.88" height="118.0" fill="#5f6a64"/>
+<rect x="470.0" y="297.8" width="56" height="68" fill="none" stroke="#EABC6E" stroke-width="2"/>
+<rect x="310.0" y="267.8" width="150" height="22" fill="#303030" rx="11" stroke="#EABC6E" stroke-width="1"/>
+<text x="385.0" y="282.8" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#EABC6E" text-anchor="middle">Volto vicino alla piega</text>
+<text x="160" y="600" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#989898" text-anchor="start">dopo «Sistema»:</text>
+<rect x="250" y="584" width="420" height="30" fill="#F6F3EC" rx="6"/>
+<text x="264" y="604" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#181715" text-anchor="start">Sistemato: spazi in 4 spread, tono di 5 foto.</text>
+<text x="656" y="604" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#181715" text-anchor="end">Annulla</text>
+<rect x="137" y="640" width="807" height="160" fill="#262626"/>
+<line x1="136" y1="640" x2="944" y2="640" stroke="#424242" stroke-width="1"/>
+<text x="152" y="662" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#F5F5F5" text-anchor="start">Foto</text>
+<rect x="196" y="646" width="272" height="24" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<rect x="198" y="648" width="100" height="20" fill="#F6F3EC" rx="4"/>
+<text x="248.0" y="662.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#181715" text-anchor="middle">Da usare 38</text>
+<rect x="300" y="648" width="72" height="20" fill="none" rx="4"/>
+<text x="336.0" y="662.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Tutte 100</text>
+<rect x="374" y="648" width="44" height="20" fill="none" rx="4"/>
+<text x="396.0" y="662.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">★ 12</text>
+<rect x="420" y="648" width="46" height="20" fill="none" rx="4"/>
+<text x="443.0" y="661.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Colore</text>
+<rect x="816" y="646" width="116" height="24" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="874.0" y="662.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Aggiungi foto…</text>
+<rect x="152" y="680" width="126.0" height="84" fill="#5f6a64"/>
+<rect x="286.0" y="680" width="56.028000000000006" height="84" fill="#68605c"/>
+<rect x="350.028" y="680" width="126.0" height="84" fill="#4f5a52"/>
+<rect x="484.028" y="680" width="126.0" height="84" fill="#7a7468"/>
+<rect x="618.028" y="680" width="56.028000000000006" height="84" fill="#55595e"/>
+<rect x="682.056" y="680" width="84.0" height="84" fill="#6b665f"/>
+<rect x="774.056" y="680" width="126.0" height="84" fill="#4d5560"/>
+<text x="152" y="790" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#989898" text-anchor="start">Trascina una foto su una cornice per sostituirla, tra due spread per crearne uno nuovo</text>
+<rect x="944" y="45" width="336" height="755" fill="#262626"/>
+<line x1="944" y1="45" x2="944" y2="800" stroke="#424242" stroke-width="1"/>
+<text x="960" y="72" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="600" fill="#F5F5F5" text-anchor="start">Controlla</text>
+<text x="960" y="92" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">35 spread · aggiornato ora</text>
+<rect x="1240" y="56" width="24" height="24" fill="none" rx="4"/>
+<text x="1252.0" y="72.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">✕</text>
+<rect x="960" y="106" width="304" height="136" fill="#303030" rx="6" stroke="#424242" stroke-width="1"/>
+<text x="974" y="130" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#F5F5F5" text-anchor="start">Posso sistemare 9 cose da solo:</text>
+<text x="974" y="152" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">spazi diversi in 4 spread</text>
+<text x="974" y="170" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">tono di 5 foto in 3 spread</text>
+<text x="974" y="192" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#989898" text-anchor="start">Non cambio disposizioni né foto scelte.</text>
+<rect x="974" y="204" width="112" height="28" fill="#5AB481" rx="4"/>
+<text x="1030.0" y="222.68" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F0E0C" text-anchor="middle">Sistema 9</text>
+<rect x="1094" y="204" width="116" height="28" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1152.0" y="222.32" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="middle">Cosa cambia</text>
+<text x="960" y="270" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#989898" text-anchor="start">Blocca la stampa · 0</text>
+<circle cx="1256" cy="266" r="4" fill="#7BCC9C"/>
+<text x="1246" y="270" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#7BCC9C" text-anchor="end">nessuno</text>
+<line x1="960" y1="282" x2="1264" y2="282" stroke="#424242" stroke-width="1"/>
+<text x="960" y="306" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#EABC6E" text-anchor="start">Da guardare · 3</text>
+<rect x="960" y="320" width="52" height="20" fill="#FDFCF9"/>
+<rect x="960" y="320" width="26" height="20" fill="#55595e"/>
+<rect x="989" y="323" width="20" height="14" fill="#76716a"/>
+<text x="1022" y="329" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">07–08</text>
+<text x="1068" y="329" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">Volto vicino alla piega</text>
+<text x="1022" y="347" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">DEMO_0031 · 6 mm dalla piega</text>
+<rect x="1220" y="320" width="44" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1242.0" y="334.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Vai</text>
+<rect x="1022" y="354" width="120" height="18" fill="none" rx="4"/>
+<text x="1032" y="366.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="start">Non è un volto</text>
+<rect x="960" y="378" width="52" height="20" fill="#FDFCF9"/>
+<rect x="960" y="378" width="26" height="20" fill="#6b665f"/>
+<rect x="989" y="381" width="20" height="14" fill="#5f6a64"/>
+<text x="1022" y="387" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">12–13</text>
+<text x="1068" y="387" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">Foto morbida in stampa</text>
+<text x="1022" y="405" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">DEMO_0044 · 168 ppi</text>
+<rect x="1220" y="378" width="44" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1242.0" y="392.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Vai</text>
+<rect x="960" y="436" width="52" height="20" fill="#FDFCF9"/>
+<rect x="960" y="436" width="26" height="20" fill="#4d5560"/>
+<rect x="989" y="439" width="20" height="14" fill="#68605c"/>
+<text x="1022" y="445" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">21–22</text>
+<text x="1068" y="445" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">Ritaglio forte</text>
+<text x="1022" y="463" font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace" font-size="11" font-weight="400" fill="#989898" text-anchor="start">DEMO_0058 · ritaglio ×1,42</text>
+<rect x="1220" y="436" width="44" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1242.0" y="450.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Vai</text>
+<line x1="960" y1="496" x2="1264" y2="496" stroke="#424242" stroke-width="1"/>
+<text x="960" y="516" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#989898" text-anchor="start">Si sistemano da soli · 9</text>
+<text x="960" y="538" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">Spazi diversi da 2,5 mm</text>
+<text x="960" y="556" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#989898" text-anchor="start">4 spread: 03–04, 09–10, 15–16, 27–28</text>
+<rect x="1194" y="526" width="70" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1229.0" y="540.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Sistema</text>
+<text x="960" y="582" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">Tono</text>
+<text x="960" y="600" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#989898" text-anchor="start">5 foto più chiare del resto dello spread</text>
+<rect x="1194" y="570" width="70" height="22" fill="#303030" rx="4" stroke="#424242" stroke-width="1"/>
+<text x="1229.0" y="584.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Sistema</text>
+<line x1="960" y1="616" x2="1264" y2="616" stroke="#424242" stroke-width="1"/>
+<text x="960" y="636" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="600" fill="#989898" text-anchor="start">Per sapere</text>
+<text x="960" y="658" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" font-weight="400" fill="#F5F5F5" text-anchor="start">6 foto ★ non usate</text>
+<rect x="1194" y="644" width="70" height="22" fill="none" rx="4"/>
+<text x="1229.0" y="658.96" font-family="Instrument Sans, Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="11" font-weight="400" fill="#F5F5F5" text-anchor="middle">Mostra</text>
+</svg>
