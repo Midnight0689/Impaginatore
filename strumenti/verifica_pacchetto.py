@@ -8,7 +8,8 @@ Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginator
 (IMPAGINATORE_DATI, IMPAGINATORE_CACHE, cartella dei progetti), con foto sintetiche create qui.
 
 Controlli, in ordine:
-    file          nessun .py del programma; schermata di avvio (avvio.html), copie del motore per la 1.x, licenze
+    file          nessun .py del programma; schermata di avvio (avvio.html), copie del motore per la 1.x, licenze, file di
+                  OpenCV per i volti
     versione      «impaginatore --versione»
     avvio         la pagina della schermata di avvio («_avvio», la stessa della finestra) con versione e licenza: prova
                   gratuita, sola lettura dopo una prova finita, in italiano e in inglese
@@ -16,11 +17,14 @@ Controlli, in ordine:
     schermata     la schermata dei progetti risponde (ping, licenza, aggiornamenti: si installano a mano, canale spento)
     editor        progetto nuovo con 6 foto, editor in un processo a parte (sottocomando «editor»), spread, JPG e PDF
     progetto 1.x  un progetto della 1.5.2 (spec.py) si apre e si esporta di nuovo per la 1.x (spec.py e copie del motore)
-    psd           il sottocomando interno «_psd» risponde (senza Photoshop non si genera niente)
+    psd           il sottocomando interno «_psd» (quello che l'editor lancia) carica l'album (anche i volti, con OpenCV) e
+                  prepara gli spread, poi senza Photoshop si ferma con il suo messaggio (nella prova gratuita l'editor non
+                  lo lancia: niente PSD)
     mcp           «impaginatore mcp» su stdio: initialize e tools/list (gli strumenti hanno nome e descrizione)
     chiusura      /api/esci chiude schermata ed editor
     finestra      (--finestra) la finestra del programma si apre (Linux: dentro xvfb-run) e si chiude con /api/esci; sotto
-                  Xvfb fotografa la schermata di avvio (avvio-finestra.png in --immagini, di serie accanto al rapporto)
+                  Xvfb fotografa la schermata di avvio (avvio-finestra.png in --immagini, di serie accanto al rapporto) e
+                  poi la finestra del programma (finestra-programma.png), che deve vedersi
 Esce con 0 se tutto va, 1 al primo controllo che non va (con il motivo). --rapporto scrive tempi e misure in JSON.
 """
 import argparse
@@ -135,7 +139,7 @@ def prova_file(exe):
     d = programma_dir(exe)
     sorgenti = [str(p.relative_to(d)) for p in d.rglob("*") if p.suffix in (".py", ".pyc") and "impaginatore" in p.relative_to(d).parts]
     deve(not sorgenti, f"file sorgente del programma nel pacchetto: {sorgenti[:5]}")
-    for n in ("avvio.html", "home.html", "index.html", "album_libere.py.txt", "testo.py.txt", "componenti.json", "tier.json"):
+    for n in ("avvio.html", "home.html", "index.html", "album_libere.py.txt", "testo.py.txt", "componenti.json", "tier.json", "haarcascade_frontalface_default.xml", "haarcascade_profileface.xml"):
         deve(any(d.rglob(n)), f"manca {n}")
     RAPPORTO["misure"] = dict(programma_mb=round(sum(p.stat().st_size for p in d.rglob("*") if p.is_file()) / 1e6, 1),
                               file=sum(1 for p in d.rglob("*") if p.is_file()), eseguibile_mb=round(Path(exe).stat().st_size / 1e6, 1))
@@ -246,9 +250,11 @@ def prova_progetto_1x(pr, c):
 
 
 @controllo("psd")
-def prova_psd(pr):
-    r = subprocess.run([str(pr.exe), "_psd", "--help"], capture_output=True, text=True, encoding="utf-8", env=pr.env, timeout=120)  # nosec B603
-    deve(r.returncode == 0 and "--spread" in r.stdout, f"«_psd --help»: {r.returncode} {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+def prova_psd(pr, album):
+    r = subprocess.run([str(pr.exe), "_psd", "--progetto", album, "--spread", "1"], capture_output=True, text=True, encoding="utf-8", env=pr.env, timeout=300)  # nosec B603
+    if r.returncode == 0: RAPPORTO["psd"] = "Photoshop presente: PSD generato"; return
+    deve("Photoshop" in r.stderr and "Traceback" not in r.stderr, f"«_psd»: {r.returncode} {r.stdout[-300:]!r} {r.stderr[-500:]!r}")
+    RAPPORTO["psd"] = r.stderr.strip()[-200:]
 
 
 @controllo("mcp")
@@ -291,10 +297,11 @@ def cattura(display):
     d = r.stdout
     if r.returncode or len(d) < 100: return None
     h = struct.unpack(">25I", d[:100])                      # XWDFileHeader: dimensione, …, larghezza 4, altezza 5, ordine 7, bit 11, riga 12, colori 19
-    if h[11] != 32: return None
+    modi = {32: ("BGRX", "XRGB"), 24: ("BGR", "RGB")}       # 24 bit (3 byte, righe lunghe come a 32) quando sullo schermo c'è una
+    if h[11] not in modi: return None                       # finestra di profondità diversa, come la schermata di avvio
     from PIL import Image
     inizio = h[0] + h[19] * 12
-    return Image.frombuffer("RGB", (h[4], h[5]), d[inizio:inizio + h[12] * h[5]], "raw", "BGRX" if h[7] == 0 else "XRGB", h[12], 1)
+    return Image.frombuffer("RGB", (h[4], h[5]), d[inizio:inizio + h[12] * h[5]], "raw", modi[h[11]][h[7] != 0], h[12], 1)
 
 
 FONDO_AVVIO = (0x18, 0x17, 0x15)                            # desktop.avvio.FONDO
@@ -307,18 +314,42 @@ def con_avvio(img):
     return sum(all(abs(a - b) <= 3 for a, b in zip(px, FONDO_AVVIO)) for px in punti) >= 60
 
 
-def fotografa_avvio(cartella, secondi=20):
-    """sotto Xvfb: aspetta la schermata di avvio, la salva in avvio-finestra.png e dice se l'ha vista"""
+def con_programma(img):
+    """la finestra del programma (più grande della schermata di avvio, al centro) è sullo schermo: fuori dal rettangolo
+    della schermata di avvio non c'è solo il nero del fondo di Xvfb, e la schermata di avvio non c'è più"""
+    w, h = img.size
+    punti = [img.getpixel((w // 2 + dx, h // 2 + dy)) for dx in (-300, 0, 300) for dy in (-200, 200)]
+    return sum(px != (0, 0, 0) for px in punti) >= 4 and not con_avvio(img)
+
+
+def dettaglio(img):
+    """quanti colori diversi ci sono sullo schermo: una pagina disegnata ne ha più del suo solo fondo"""
+    return len(img.getcolors(1 << 20) or ())
+
+
+def fotografa(cartella, nome, vede, secondi=20, finche=3.0):
+    """sotto Xvfb: aspetta che lo schermo mostri `vede` e lo salva in <cartella>/<nome>. Fra le fotografie in cui si vede
+    (per al massimo `finche` secondi, o finché non si vede più) tiene quella con più dettaglio: la pagina già disegnata,
+    non il solo colore di fondo della finestra. Dice se l'ha visto; None se lo schermo non si può leggere qui"""
     display = os.environ.get("DISPLAY")
     if not (display and shutil.which("xwd") and cartella): return None
-    fine = time.time() + secondi
+    fine, migliore, punti = time.time() + secondi, None, -1
     while time.time() < fine:
         img = cattura(display)
-        if img is not None and con_avvio(img):
-            Path(cartella).mkdir(parents=True, exist_ok=True); img.save(Path(cartella) / "avvio-finestra.png")
-            return True
+        if img is not None and vede(img):
+            if migliore is None: fine = min(fine, time.time() + finche)
+            p = dettaglio(img)
+            if p > punti: migliore, punti = img, p
+        elif migliore is not None: break                    # non si vede più: la schermata di avvio si è chiusa
         time.sleep(0.1)
-    return False
+    if migliore is None: return False
+    Path(cartella).mkdir(parents=True, exist_ok=True); migliore.save(Path(cartella) / nome)
+    return True
+
+
+def fotografa_avvio(cartella, secondi=20):
+    """la schermata di avvio, in avvio-finestra.png"""
+    return fotografa(cartella, "avvio-finestra.png", con_avvio, secondi)
 
 
 @controllo("finestra")
@@ -331,6 +362,10 @@ def prova_finestra(pr, immagini=None):
         vista = fotografa_avvio(immagini)
         if vista is not None: RAPPORTO["schermata_avvio_vista"] = vista; print(f"    schermata di avvio {'vista e fotografata' if vista else 'NON vista'}", flush=True)
     c.get("/api/progetti")                                                       # la schermata Album è pronta: finisce la schermata di avvio
+    if not prefisso:
+        vista = fotografa(immagini, "finestra-programma.png", con_programma)
+        if vista is not None: RAPPORTO["finestra_programma_vista"] = vista
+        deve(vista is not False, "dopo la schermata di avvio la finestra del programma non si vede")
     time.sleep(3)
     deve(p.poll() is None, "il programma si è chiuso")
     c.post("/api/esci")
@@ -359,9 +394,9 @@ def main(argv=None):
             p, c, secondi, _ = pr.avvia_schermata("--no-browser")
             RAPPORTO["tempi"]["schermata_porta_s"] = round(secondi, 2)
             prova_schermata(c, attesa, segno)
-            _, e = prova_editor(pr, c)
+            album, e = prova_editor(pr, c)
             prova_progetto_1x(pr, c)
-            prova_psd(pr)
+            prova_psd(pr, album)
             prova_mcp(pr)
             prova_chiusura(p, c, [c.porta, e.porta])
             if a.finestra: prova_finestra(pr, a.immagini or (str(Path(a.rapporto).resolve().parent) if a.rapporto else None))

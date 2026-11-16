@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import types
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -21,6 +22,7 @@ STRUMENTI = os.path.join(RADICE, "strumenti")
 sys.path.insert(0, STRUMENTI)
 import compila  # noqa: E402
 import rilascio  # noqa: E402
+import verifica_pacchetto as verifica  # noqa: E402
 
 
 # ---------------------------------------------------------------- compila.py
@@ -57,6 +59,8 @@ def test_argomenti_di_nuitka(sis, tmp_path):
               "--nofollow-import-to=pytest", "--nofollow-import-to=pillow_heif", f"--report={tmp_path / 'r.xml'}"):
         assert o in a, o
     assert f"--include-data-files={tmp_path / 'm1x'}{os.sep}*.txt=impaginatore/risorse/motore_1x/" in a
+    cascate = [x.split("=", 1)[1] for x in a if x.startswith("--include-data-files=") and "haarcascade" in x]
+    assert cascate == [f"{compila.cartella_cascate() / n}=cv2/data/{n}" for n in compila.CASCATE_OPENCV] and all((compila.cartella_cascate() / n).is_file() for n in compila.CASCATE_OPENCV)
     assert ("--nofollow-import-to=tkinter" in a) == (sis != "windows") and ("--enable-plugin=tk-inter" in a) == (sis == "windows")
     if sis == "windows": assert "--file-version=2.0.1.0" in a and "--windows-console-mode=attach" in a
     if sis == "mac": assert f"--macos-signed-app-name={compila.ID_MAC}" in a and "--macos-app-version=2.0.1" in a
@@ -64,6 +68,35 @@ def test_argomenti_di_nuitka(sis, tmp_path):
     assert f"--output-filename={'impaginatore' if sis == 'windows' else 'impaginatore-app'}" in a, "mai come la cartella dei dati impaginatore/ (Nuitka la rifiuta)"
     for x in a:
         if x.startswith(("--linux-icon=", "--windows-icon-from-ico=", "--macos-app-icon=")): assert os.path.isfile(x.split("=", 1)[1]), x
+
+
+def test_moduli_per_il_gi_del_sistema(tmp_path):
+    """Linux: i moduli della libreria standard che PyGObject e pycairo del sistema importano entrano nel programma compilato
+    (lo provo sul gi di questo computer, se c'è)"""
+    a = compila.argomenti_nuitka("linux", "2.0.0", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
+    assert all(f"--include-module={m}" in a for m in compila.PER_GI_DEL_SISTEMA)
+    assert not any("optparse" in x for x in compila.argomenti_nuitka("windows", "2.0.0", tmp_path, tmp_path / "r.xml", tmp_path / "m1x"))
+    import ast
+    cartella = "/usr/lib/python3/dist-packages"
+    if not os.path.isdir(os.path.join(cartella, "gi")): pytest.skip("PyGObject del sistema non c'è")
+    usati = set()
+    for nome in ("gi", "cairo"):
+        for d, _, fs in os.walk(os.path.join(cartella, nome)):
+            for f in (f for f in fs if f.endswith(".py")):
+                for n in ast.walk(ast.parse(open(os.path.join(d, f), encoding="utf-8").read())):
+                    if isinstance(n, ast.Import): usati |= {x.name.split(".")[0] for x in n.names}
+                    elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module: usati.add(n.module.split(".")[0])
+    di_python = {m for m in usati if m in sys.stdlib_module_names and m not in sys.builtin_module_names and m != "__future__"}
+    assert di_python <= set(compila.PER_GI_DEL_SISTEMA), di_python - set(compila.PER_GI_DEL_SISTEMA)
+
+
+def test_file_di_opencv_nominati_nel_codice():
+    """ogni file di dati di OpenCV che il programma apre (haarcascade_….xml) entra nel programma compilato"""
+    nominati = set()
+    for d, _, fs in os.walk(os.path.join(RADICE, "src", "impaginatore")):
+        for f in fs:
+            if f.endswith(".py"): nominati |= set(re.findall(r"haarcascade_\w+\.xml", open(os.path.join(d, f), encoding="utf-8").read()))
+    assert nominati and nominati == set(compila.CASCATE_OPENCV)
 
 
 def test_entrata_e_copie_del_motore(tmp_path):
@@ -112,7 +145,11 @@ def test_controllo_del_programma(tmp_path):
     with pytest.raises(SystemExit, match="motore per la 1.x"): compila.controlla_programma(prog)
     for n in ("album_libere.py.txt", "testo.py.txt"): (prog / "impaginatore" / "risorse" / "motore_1x" / n).write_text("x", encoding="utf-8")
     with pytest.raises(SystemExit, match="schermata di avvio"): compila.controlla_programma(prog)
-    (prog / "impaginatore" / "risorse" / "avvio.html").write_text("x", encoding="utf-8"); compila.controlla_programma(prog)
+    (prog / "impaginatore" / "risorse" / "avvio.html").write_text("x", encoding="utf-8")
+    with pytest.raises(SystemExit, match="OpenCV per i volti"): compila.controlla_programma(prog)
+    (prog / "cv2" / "data").mkdir(parents=True)
+    for n in compila.CASCATE_OPENCV: (prog / "cv2" / "data" / n).write_text("x", encoding="utf-8")
+    compila.controlla_programma(prog)
     (prog / "numpy").mkdir(); (prog / "numpy" / "x.py").write_text("", encoding="utf-8"); compila.controlla_programma(prog)
     (prog / "impaginatore" / "cli.py").write_text("", encoding="utf-8")
     with pytest.raises(SystemExit, match="file sorgente"): compila.controlla_programma(prog)
@@ -207,6 +244,57 @@ def test_trova_i_pacchetti(tmp_path):
     with pytest.raises(SystemExit, match="Nessun pacchetto"): rilascio.trova(tmp_path, "2.0.1")
     for d in ("a", "b"): (tmp_path / d).mkdir(); (tmp_path / d / "Impaginatore-2.0.1-linux.deb").write_bytes(b"x")
     with pytest.raises(SystemExit, match="Più pacchetti linux"): rilascio.trova(tmp_path, "2.0.1")
+
+
+# ---------------------------------------------------------------- verifica_pacchetto.py: fotografie sotto Xvfb
+def _xwd(punti, bit):
+    """file XWD come lo scrive «xwd -root» su Xvfb: righe lunghe come a 32 bit anche quando i punti sono a 24"""
+    import struct
+    h, w = len(punti), len(punti[0])
+    riga = w * 4
+    testa = [100, 7, 2, 24, w, h, 0, 0, 32, 0, 32, bit, riga, 4, 0xff0000, 0xff00, 0xff, 8, 256, 2] + [0] * 5
+    dati = b""
+    for r in punti:
+        b = b"".join(bytes((bl, g, rr)) + (b"\0" if bit == 32 else b"") for rr, g, bl in r)
+        dati += b + b"\0" * (riga - len(b))
+    return struct.pack(">25I", *testa) + b"\0" * 24 + dati
+
+
+@pytest.mark.parametrize("bit", [32, 24])
+def test_schermo_di_xvfb(monkeypatch, bit):
+    """xwd scrive 24 bit per punto quando sullo schermo c'è una finestra di profondità diversa (la schermata di avvio)"""
+    punti = [[(10 * x, 20 * y, 30) for x in range(5)] for y in range(3)]
+    monkeypatch.setattr(verifica.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout=_xwd(punti, bit)))
+    img = verifica.cattura(":9")
+    assert img.size == (5, 3) and [[img.getpixel((x, y)) for x in range(5)] for y in range(3)] == punti
+    monkeypatch.setattr(verifica.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout=_xwd(punti, 16)))
+    assert verifica.cattura(":9") is None
+    monkeypatch.setattr(verifica.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=1, stdout=b""))
+    assert verifica.cattura(":9") is None
+
+
+def _schermo(avvio=False, testo=False, programma=False):
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB", (1280, 800)); d = ImageDraw.Draw(img)
+    if programma: d.rectangle((96, 50, 1183, 749), fill=(0x2B, 0x2B, 0x2B)); d.text((200, 80), "Album", fill=(230, 230, 230))
+    if avvio: d.rectangle((400, 250, 879, 549), fill=verifica.FONDO_AVVIO)
+    if testo: d.text((460, 430), "Prova gratuita · 30 giorni", fill=(240, 236, 228))
+    return img
+
+
+def test_fotografie_della_finestra(monkeypatch, tmp_path):
+    assert verifica.con_avvio(_schermo(avvio=True)) and not verifica.con_avvio(_schermo())
+    assert verifica.con_programma(_schermo(programma=True)) and not verifica.con_programma(_schermo())
+    assert not verifica.con_programma(_schermo(programma=True, avvio=True)), "con la schermata di avvio davanti non conta"
+    monkeypatch.setenv("DISPLAY", ":9"); monkeypatch.setattr(verifica.shutil, "which", lambda n: "/usr/bin/" + n)
+    sequenza = [_schermo(), _schermo(avvio=True), _schermo(avvio=True, testo=True), _schermo(avvio=True), _schermo(programma=True), _schermo()]
+    monkeypatch.setattr(verifica, "cattura", lambda d: sequenza.pop(0) if sequenza else None)
+    assert verifica.fotografa_avvio(str(tmp_path)) is True and len(sequenza) == 1, "si ferma quando la schermata di avvio si chiude"
+    from PIL import Image
+    assert Image.open(tmp_path / "avvio-finestra.png").getpixel((470, 435)) != verifica.FONDO_AVVIO, "tiene la fotografia con la pagina disegnata"
+    assert verifica.fotografa(str(tmp_path / "f"), "x.png", verifica.con_avvio, secondi=0.3) is False and not (tmp_path / "f").exists()
+    monkeypatch.delenv("DISPLAY")
+    assert verifica.fotografa(str(tmp_path), "x.png", verifica.con_avvio) is None, "senza schermo da leggere non dice niente"
 
 
 def test_versione_minima_di_macos():

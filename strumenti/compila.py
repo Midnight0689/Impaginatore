@@ -65,6 +65,14 @@ ESCLUSI = {
     "windows": ("gi", "cairo"),                              # tkinter serve: finestre di scelta senza WebView2
 }
 DA_INCLUDERE = ("anyio._backends._asyncio",)                 # caricato per nome dall'SDK MCP (anyio): Nuitka non lo vede da solo
+# Linux: PyGObject («gi») e pycairo sono quelli del sistema (compilato.CARTELLE_GI) e importano moduli della libreria
+# standard che il programma non usa: senza, la finestra non parte (gi/_option.py: «No module named 'optparse'») e si apre
+# il browser. Sono tutti quelli che importano (fcntl e sys sono già dentro Python); un test li confronta con il gi del sistema
+PER_GI_DEL_SISTEMA = ("collections", "contextlib", "functools", "importlib", "inspect", "optparse", "os", "pkgutil", "re", "signal", "socket",
+                      "threading", "types", "warnings")
+# file di dati di OpenCV per i volti (motore/album.py, _build_faces): Nuitka non li vede. Senza, i volti non si trovano e
+# l'editor non lo dice (i ritagli non li evitano più); un test controlla che siano tutti quelli nominati nel codice
+CASCATE_OPENCV = ("haarcascade_frontalface_default.xml", "haarcascade_profileface.xml")
 NOMI_LICENZA = re.compile(r"(?i)^(licen[cs]e|copying|notice|authors|copyright)")
 
 
@@ -110,9 +118,10 @@ def argomenti_nuitka(sis, versione, uscita, rapporto, motore_1x):
          f"--include-data-files={motore_1x}{os.sep}*.txt=impaginatore/risorse/{CARTELLA_MOTORE_1X}/", "--noinclude-data-files=webview/lib/*.jar",
          "--python-flag=no_docstrings", f"--report={rapporto}", "--assume-yes-for-downloads"]
     a += [f"--include-module={m}" for m in DA_INCLUDERE]
+    a += [f"--include-data-files={cartella_cascate() / n}=cv2/data/{n}" for n in CASCATE_OPENCV]
     a += [f"--nofollow-import-to={m}" for m in (*ESCLUSI_SEMPRE, *ESCLUSI[sis])]
     if sis == "linux":
-        a += [f"--linux-icon={ICONE / 'icona-256.png'}"]
+        a += [f"--linux-icon={ICONE / 'icona-256.png'}"] + [f"--include-module={m}" for m in PER_GI_DEL_SISTEMA]
     elif sis == "windows":
         vw = versione_windows(versione)
         a += ["--enable-plugin=tk-inter", "--windows-console-mode=attach", f"--windows-icon-from-ico={ICONE / 'icona.ico'}",
@@ -122,6 +131,11 @@ def argomenti_nuitka(sis, versione, uscita, rapporto, motore_1x):
         a += [f"--macos-app-icon={ICONE / 'icona.icns'}", f"--macos-app-name={NOME}", f"--macos-signed-app-name={ID_MAC}",
               f"--macos-app-version={'.'.join(_parti(versione)[:3])}", "--macos-app-mode=gui"]
     return a + [str(ENTRATA)]
+
+
+def cartella_cascate():
+    import cv2
+    return Path(cv2.data.haarcascades)
 
 
 def prepara_motore_1x(cartella):
@@ -225,6 +239,8 @@ def controlla_programma(prog):
     for n in MOTORE_1X:
         if not any(prog.rglob(n + ".txt")): raise SystemExit(f"Manca la copia del motore per la 1.x: {n}.txt")
     if not any(prog.rglob("avvio.html")): raise SystemExit("Manca la schermata di avvio (risorse/avvio.html)")
+    for n in CASCATE_OPENCV:
+        if not any(prog.rglob(n)): raise SystemExit(f"Manca il file di OpenCV per i volti: {n}")
 
 
 # ---------------------------------------------------------------- pacchetti
