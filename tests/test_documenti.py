@@ -21,3 +21,11 @@ def test_skill_segue_le_regole_del_repository():
         if re.search(r"git push|\bpush\b", riga): assert "Niente `git push`" in riga and "richiesta esplicita del titolare" in riga, riga
     assert "Nessun push e nessuna modifica a `main` senza richiesta esplicita del titolare" in regole
 
+
+def test_ambiente_della_suite_completa():
+    """guida e LEGGIMI dicono con quali extra gira la suite completa: senza «mcp» i test del server MCP si saltano"""
+    for doc in (("docs", "sviluppo", "GUIDA.md"), ("LEGGIMI.md",)):
+        t = _leggi(*doc)
+        assert SYNC in t and "suite completa" in t, doc
+        assert "uv sync --extra" not in t, f"{doc}: senza --locked le versioni non sono quelle di uv.lock"
+    assert '"--locked", "--extra", "dev", "--extra", "mcp"' in _leggi("strumenti", "controlli.py"), "i controlli usano lo stesso ambiente"

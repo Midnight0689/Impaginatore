@@ -35,11 +35,17 @@ Dove un comando non è stato provato, è scritto.
 Dalla cartella del codice:
 
 ```bash
-uv sync --extra dev --extra mcp
+uv sync --locked --extra dev --extra mcp
 ```
 
 Crea `.venv` con il programma installato in modo modificabile, gli strumenti di sviluppo (`pytest`, `pytest-cov`,
-`coverage`, `ruff`) e l'SDK MCP. Gli extra:
+`coverage`, `ruff`) e l'SDK MCP, nelle versioni di `uv.lock` (`--locked`: se il lock non è aggiornato si ferma invece di
+cambiarlo).
+
+**La suite completa e la copertura al 100 % vogliono tutti e due gli extra, `dev` e `mcp`.** Con il solo `dev` i test
+del server MCP (`tests/test_mcp_server.py`, `test_import_dei_moduli_degli_extra_senza_effetti`,
+`test_strumenti_dell_assistente_in_inglese`) si saltano con il motivo «extra «mcp» non installato» e la copertura di
+`mcp/server.py` non arriva al 100 %. `python3 strumenti/controlli.py` usa sempre i due extra. Gli extra:
 
 | Extra | Cosa aggiunge |
 |---|---|

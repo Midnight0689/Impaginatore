@@ -184,6 +184,7 @@ def test_aiuto_in_inglese(inglese, capsys):
 
 
 def test_strumenti_dell_assistente_in_inglese(inglese):
+    pytest.importorskip("mcp", reason="extra «mcp» non installato (uv sync --locked --extra dev --extra mcp)")       # come i test del server MCP
     from impaginatore.mcp import server
     assert server.istruzioni().startswith("Impaginatore lays out photo albums")
     srv = server.crea(S.Assistente())
