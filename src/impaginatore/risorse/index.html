@@ -642,7 +642,7 @@ function render() {
   cur = Math.max(0, Math.min(cur, S.spreads.length - 1));
   if (sel && (!S.spreads.length || !selItem())) sel = null;
   $("title").textContent = S.nome; document.title = S.nome + " · Impaginatore";
-  $("meta").textContent = t("editor.top.meta", { w: cmF(S.W / S.ppi * 2.54), h: cmF(S.H / S.ppi * 2.54), n: S.spreads.length });
+  $("meta").textContent = tn("editor.top.meta", S.spreads.length, { w: cmF(S.W / S.ppi * 2.54), h: cmF(S.H / S.ppi * 2.54) });
   $("undo").disabled = !S.canundo; $("redo").disabled = !S.canredo;
   $("undo").title = S.annulla ? conTasto(t("editor.top.annulla_n", { nome: nomePasso(S.annulla) }), "⌘ Z") : t("editor.top.niente_annulla");
   $("redo").title = S.ripeti ? conTasto(t("editor.top.ripeti_n", { nome: nomePasso(S.ripeti) }), MAC() ? "⇧ ⌘ Z" : "⌘ Y") : t("editor.top.niente_ripeti");
@@ -811,7 +811,7 @@ async function gapFix(si = cur, quiet = false) {          // «Correggi spazi» 
 async function gapFixAll() {                               // tutto l'album: «Sistema» con i soli spazi (un passo d'annulla; licenza: correzione_spaziature_album)
   if (licenzaNo("correzione_spaziature_album")) return;
   const d = await op(spaziOp({ op: "sistema", spazi: true, tono: false })); if (!d) return; const n = (d.esito || {}).spazi || 0;
-  toast(n ? t("editor.spazi.album_corretti", { n }) : GAPMODE === "freq" ? t("editor.spazi.album_giusti") : t("editor.spazi.album_uguali", { mm: cmF((GAPMODE === "custom" ? GAPCM : cmOf(S.gap)) * 10) }), false, n ? annullaAz() : null);
+  toast(n ? tn("editor.spazi.album_corretti", n) : GAPMODE === "freq" ? t("editor.spazi.album_giusti") : t("editor.spazi.album_uguali", { mm: cmF((GAPMODE === "custom" ? GAPCM : cmOf(S.gap)) * 10) }), false, n ? annullaAz() : null);
 }
 function selMarks() {       // foto scelta/e: le distanze dai bordi della pagina restano visibili finché non la deseleziono
   if (DRAG || !S || view !== "album" || !S.spreads.length) return;
@@ -1055,7 +1055,7 @@ const spreadsDi = names => S.spreads.map((sp, k) => sp.items.some(i => i.name &&
 async function newSpreadFrom(names, pos) {
   const src = spreadsDi(names);
   try { await op({ op: "newspreadsel", pos, names }); } catch (e) { toast(e.message || String(e), true); return false; }
-  cur = pos; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(t("editor.pool.nuovo", { n: nomeSpread(pos), nfoto: names.length }), false, annullaAz());
+  cur = pos; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(t("editor.pool.nuovo", { n: nomeSpread(pos), foto: tn("editor.conta.foto", names.length) }), false, annullaAz());
   await senzaFoto(src.map(k => k + (pos <= k ? 1 : 0))); return true;
 }
 async function addToSpread(names, k) {
@@ -1359,13 +1359,13 @@ async function apriBozza() {
     try { BZ.d = await api("/api/bozza", Object.assign({ ritmo: BZ.ritmo, stelle: BZ.stelle, seme: BZ.seme }, BZ.per ? { per_spread: BZ.per } : {})); } catch (e) { $("bzl").innerHTML = ""; return; }
     const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: d.spreads.length, nfoto: d.foto, capitoli: d.capitoli, per: cmF(d.per_spread) });
     let capo = -1; $("bzl").innerHTML = d.spreads.map((s, n) => { const testa = s.capitolo !== capo ? `<div class="bz-cap">${escH(t("editor.bozza.capitolo", { n: s.capitolo + 1 }))}${s.ora ? ` <span class="mono" style="font-size:12px;color:var(--dim)">${escH(s.ora)}</span>` : ""}</div>` : ""; capo = s.capitolo;
-      return testa + `<figure><img loading="lazy" alt="${escH(t("editor.bozza.anteprima", { n: n + 1 }))}" src="/img/bozza/${n}?k=0.08&v=${BZ.seme}-${encU(BZ.ritmo)}-${BZ.per}"><figcaption><b>${nomeSpread(S.spreads.length + n)}</b><span>${escH(t("editor.bozza.foto_n", { n: s.foto.length }))}${s.taglia > 1.25 ? " · ×" + cmF(Math.round(s.taglia * 10) / 10) : ""}</span></figcaption></figure>`; }).join("");
-    $("bzok").disabled = !d.spreads.length; $("bzok").textContent = t("editor.bozza.aggiungi_n", { n: d.spreads.length }); $("bzok").focus();
+      return testa + `<figure><img loading="lazy" alt="${escH(t("editor.bozza.anteprima", { n: n + 1 }))}" src="/img/bozza/${n}?k=0.08&v=${BZ.seme}-${encU(BZ.ritmo)}-${BZ.per}"><figcaption><b>${nomeSpread(S.spreads.length + n)}</b><span>${escH(tn("editor.conta.foto", s.foto.length))}${s.taglia > 1.25 ? " · ×" + cmF(Math.round(s.taglia * 10) / 10) : ""}</span></figcaption></figure>`; }).join("");
+    $("bzok").disabled = !d.spreads.length; $("bzok").textContent = tn("editor.bozza.aggiungi_sp", d.spreads.length); $("bzok").focus();
   };
   o.querySelectorAll("#bzr button").forEach(b => b.onclick = () => { BZ.ritmo = b.dataset.r; o.querySelectorAll("#bzr button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); carica(); });
   $("bzp").onchange = () => { BZ.per = +$("bzp").value; carica(); }; $("bzst").onchange = () => { BZ.stelle = $("bzst").checked; carica(); };
   $("bzn").onclick = () => { BZ.seme = (BZ.seme + 1) % 1000; carica(); }; $("bzx").onclick = close;
-  $("bzok").onclick = async () => { const pos = S.spreads.length, d = await op({ op: "bozza", spreads: BZ.d.spreads, pos }); if (!d) return; close(); view = "album"; cur = pos; sel = null; msel = []; render(); toast(t("editor.bozza.aggiunti", { n: d.esito.spread, nfoto: d.esito.foto }), false, annullaAz()); };
+  $("bzok").onclick = async () => { const pos = S.spreads.length, d = await op({ op: "bozza", spreads: BZ.d.spreads, pos }); if (!d) return; close(); view = "album"; cur = pos; sel = null; msel = []; render(); toast(tn("editor.bozza.aggiunti", d.esito.spread, { foto: tn("editor.conta.foto", d.esito.foto) }), false, annullaAz()); };
   carica();
 }
 
@@ -2123,7 +2123,7 @@ async function loadProposals() {
   $("tplwhere").style.display = names.length ? "" : "none";
   if (!names.length) { cap.innerHTML = `${tH("editor.lib.seleziona")}<br><span style="font-size:12px">${tH("editor.lib.seleziona_nota", { maiusc: t("editor.tasti.maiusc") })}</span>`; L.innerHTML = ""; return; }
   const d = await api("/api/templates", { photos: names }); if (seq !== propSeq) return;
-  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${tH("editor.lib.sel_n", { n: names.length })}</b> · ${tH("editor.lib.sel_modelli", { n: d.tot + (d.utente || []).length })}` : `<b>${tH("editor.bozza.foto_n", { n: names.length })}</b>: ${tH("editor.lib.sel_nessun")}`;
+  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${tH("editor.lib.sel_n", { n: names.length })}</b> · ${tH("editor.lib.sel_modelli", { n: d.tot + (d.utente || []).length })}` : `<b>${escH(tn("editor.conta.foto", names.length))}</b>: ${tH("editor.lib.sel_nessun")}`;
   L.innerHTML = "";
   const mk = (t, lab) => mkTile(t, lab, async () => {
     const pos = $("wherenew").value === "after" && S.spreads.length ? cur + 1 : S.spreads.length;
@@ -2219,7 +2219,7 @@ async function openTpl() {
   ut.forEach(t => {
     const tile = mkTile(t, (t.cur ? t.nome + " · " + TT("editor.prov.attuale") : t.nome) + (t.progetto ? " · " + TT("editor.tpl.del_progetto") : ""), apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
     (t.progetto ? [[TT("editor.tpl.b_aggiungi"), TT("editor.tpl.b_aggiungi_tit"), () => mod({ azione: "importa", id: t.id }, TT("editor.tpl.aggiunto"))]] :
-    [[TT("editor.mod.aggiorna_ok"), TT("editor.tpl.aggiorna_tit"), async () => { if (await foglio(TT("editor.mod.aggiorna_tit", { nome: t.nome }), TT("editor.mod.aggiorna", { n: d.n }), [{ t: TT("comune.annulla"), v: false }, { t: TT("editor.mod.aggiorna_ok"), v: true, main: true }])) mod({ azione: "aggiorna", s: cur, id: t.id }, TT("editor.tpl.aggiornato")); }],
+    [[TT("editor.mod.aggiorna_ok"), TT("editor.tpl.aggiorna_tit"), async () => { if (await foglio(TT("editor.mod.aggiorna_tit", { nome: t.nome }), TT("editor.mod.aggiorna", { foto: tn("editor.conta.foto", d.n) }), [{ t: TT("comune.annulla"), v: false }, { t: TT("editor.mod.aggiorna_ok"), v: true, main: true }])) mod({ azione: "aggiorna", s: cur, id: t.id }, TT("editor.tpl.aggiornato")); }],
      [TT("editor.tpl.rinomina"), "", async () => { const n = await chiediNome(TT("editor.mod.rinomina_tit"), TT("editor.prov.nome"), t.nome); if (n && n !== t.nome) mod({ azione: "rinomina", id: t.id, nome: n }, TT("editor.tpl.rinominato")); }],
      [TT("editor.mod.elimina_ok"), TT("editor.tpl.elimina_tit"), async () => { if (await foglio(TT("editor.mod.elimina_tit", { nome: t.nome }), TT("editor.mod.elimina"), [{ t: TT("comune.annulla"), v: false, main: true }, { t: TT("editor.mod.elimina_ok"), v: true, danger: true }])) mod({ azione: "elimina", id: t.id }, TT("editor.tpl.eliminato")); }]]).forEach(([l, ti, fn]) => {
       const b = document.createElement("button"); b.textContent = l; b.title = ti; b.style.cssText = "font-size:11px;padding:2px 6px"; if (l === TT("editor.mod.elimina_ok")) b.className = "danger"; b.onclick = ev => { ev.stopPropagation(); fn(); }; bar.appendChild(b); });
@@ -2272,7 +2272,7 @@ $("verb").onclick = async () => {
   $("verd").style.display = "flex"; const l = $("verl"); l.textContent = "…";
   const v = await api("/api/versioni"); l.textContent = v.length ? "" : t("editor.ver.nessuna");
   v.forEach(x => { const b = document.createElement("button"); b.style.textAlign = "left"; b.textContent = tn("editor.ver.riga", x.spread, { label: x.label });
-    b.onclick = async () => { if (!(await foglio(t("editor.ver.torna_tit", { data: x.label }), t("editor.ver.torna", { n: x.spread }), [{ t: t("comune.annulla"), v: false }, { t: t("editor.ver.torna_ok"), v: true, main: true }]))) return;
+    b.onclick = async () => { if (!(await foglio(t("editor.ver.torna_tit", { data: x.label }), tn("editor.ver.torna", x.spread), [{ t: t("comune.annulla"), v: false }, { t: t("editor.ver.torna_ok"), v: true, main: true }]))) return;
       const boot = S.boot; await api("/api/ripristina", { ts: x.ts }); $("verd").style.display = "none"; toast(t("editor.ver.ripristino"));
       await new Promise(r => setTimeout(r, 1500)); for (let i = 0; i < 120; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); } };
     l.appendChild(b); });
