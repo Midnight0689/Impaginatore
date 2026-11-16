@@ -74,14 +74,15 @@ def test_programma_compilato_scarica_dalla_pagina(home_srv, tmp_path, monkeypatc
 
     a = Compilato(); a.s.update(manuale=True, annuncio=None); monkeypatch.setattr(home_srv.modulo, "AGGIORNAMENTI", a)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME); b.attendi("!document.getElementById('aggav').hidden")
         assert b.js("document.getElementById('aggav-ok').textContent") == "Scarica la versione nuova"
         assert b.js("document.getElementById('aggav-n').textContent").startswith("Si apre la pagina dei download")
-        b.js("document.getElementById('aggav-ok').click()"); b.pausa(0.8)
-        assert a.aggiornati == 1 and b.js("document.getElementById('avvtxt').textContent").startswith("Nel browser si è aperta la pagina di Impaginatore 2.0.1")
+        b.js("document.getElementById('aggav-ok').click()")
+        b.attendi("document.getElementById('avvtxt').textContent", lambda t: t.startswith("Nel browser si è aperta la pagina di Impaginatore 2.0.1"))
+        assert a.aggiornati == 1
         assert b.js("getComputedStyle(document.getElementById('vwait')).display") == "none" and b.js("document.getElementById('aggav') !== null"), "nessuna attesa né schermata finale: il programma non si riavvia"
-        b.js("document.getElementById('verb').click()"); b.pausa(0.5)
-        assert b.js("document.getElementById('vgo').textContent") == "Scarica la versione nuova"
-        b.js("document.getElementById('vgo').click()"); b.pausa(0.8)
-        assert a.aggiornati == 2, "dalla finestra della versione senza la domanda sul riavvio"
+        b.js("document.getElementById('verb').click()")
+        b.attendi("document.getElementById('vgo').textContent", lambda t: t == "Scarica la versione nuova")
+        b.js("document.getElementById('vgo').click()")
+        assert b.attendi_che(lambda: a.aggiornati == 2), "dalla finestra della versione senza la domanda sul riavvio"
         assert not b.problemi(), b.problemi()
