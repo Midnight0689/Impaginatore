@@ -306,6 +306,22 @@ def test_lingua_cambiata_a_meta_si_vede_subito(monkeypatch):
     assert nomi_it() == "Enter the album name" and lingua.attuale() == "en"
 
 
+def test_prodotti_dei_laboratori_in_inglese(editor, home_srv, inglese):
+    a = S.Assistente(); p = S.id_progetto(editor.progetto)
+    with pytest.raises(S.Rifiuto, match="prodotto: the id that elenca_prodotti gives, for example “generico/quadrato-30”"): a.imposta_prodotto(p, "boh")
+    with pytest.raises(S.Rifiuto, match="misure: numbers .*, or the product"): a.crea_progetto("x", "a", 1)
+    assert licenze.motivo("preset_laboratori", dict(licenze.stato(), sola_lettura=False, stato="prova")).startswith("Using the labs' catalogues isn't part of the free trial")
+
+
+def test_finestra_del_catalogo_in_inglese(inglese):
+    visti = []
+
+    class Prova(dialoghi.Dialoghi):
+        def _scegli(self, tipo, messaggio): visti.append((tipo, messaggio)); return []
+    Prova().scegli_catalogo(); Prova().scegli_catalogo("Mio")
+    assert visti == [("catalogo", "Choose the lab's catalogue (.json)"), ("catalogo", "Mio")]
+
+
 def nomi_it():
     try: nomi.nome_progetto("")
     except ValueError as e: return str(e)

@@ -105,7 +105,7 @@ def test_chiudi_programma_chiede_in_pagina(home_srv, tmp_path):
     with Browser(tmp_path) as b:
         b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
         b.js("document.getElementById('altro').click()"); b.pausa(0.3)
-        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Chiudi programma"]
+        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Lingua…", "Chiudi programma"]
         b.js(VOCE % "'Chiudi programma'" + ".click()"); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "flex"; b.js(ESC); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "none" and home_srv.uscite == []
@@ -188,7 +188,7 @@ def test_tema_scuro_predefinito_e_si_ricorda(home_srv, tmp_path):
 
 
 def test_nessun_testo_italiano_nel_codice_della_pagina():
-    """i testi visibili passano da t(): nell'HTML restano solo marchio e credito"""
+    """i testi visibili passano da t(): nell'HTML restano solo il marchio e il nome dell'autore"""
     import re
     from impaginatore import risorse
     html = risorse.leggi("home.html").decode("utf-8")
@@ -197,7 +197,7 @@ def test_nessun_testo_italiano_nel_codice_della_pagina():
     assert "backdrop-filter" not in html and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgba?\(", html.split("</style>")[0]), "solo i token della marca"
     corpo = re.sub(r"<style>.*?</style>|<script.*?</script>", "", html, flags=re.S)
     visibile = re.sub(r"<[^>]+>", " ", corpo)
-    assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w not in ("Impaginatore", "Created", "Stefano", "Imperato")] == []
+    assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w not in ("Impaginatore", "Stefano", "Imperato")] == []
     assert json.loads(json.dumps(risorse.testi())) and json.loads(json.dumps(risorse.testi("en")))
 
 

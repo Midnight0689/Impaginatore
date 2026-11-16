@@ -27,6 +27,7 @@
   "sistema.richiesta_non_valida": "richiesta non valida",
   "sistema.richiesta_troppo_grande": "richiesta troppo grande",
   "sistema.scegli_cartella": "Scegli la cartella",
+  "sistema.scegli_catalogo": "Scegli il catalogo del laboratorio (.json)",
   "sistema.scegli_foto": "Scegli le foto",
   "sistema.scegli_zip": "Scegli il file ZIP dell'album"
 }

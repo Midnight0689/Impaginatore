@@ -118,6 +118,12 @@ Obbligatoria solo `formato_cm` ([larghezza, altezza] da 1 a 1000 cm). Controllat
 `testo`, `esposizione`, `centri_volto`, `bilanciamento_bianco`, `tono`, `tono_L`, `tono_Z`, `ritocco`, `colori`, `stili`, `guide`.
 Formato e risoluzione insieme non possono superare 4 miliardi di pixel per spread.
 
+`prodotto` (facoltativa, T-208): il prodotto del laboratorio scelto per l'album, copiato dal catalogo
+(`formato_catalogo`, `catalogo`, `nome_catalogo`, `laboratorio`, `data`, `stato`, `prodotto`), così il progetto resta giusto
+anche se il catalogo cambia o sparisce. All'apertura si controlla con le regole dei cataloghi
+([`CATALOGHI.md`](CATALOGHI.md)); se non va o viene da una versione più recente, l'album si apre senza prodotto e il file la
+tiene com'era. I progetti senza questa chiave si aprono come prima: nessuna migrazione.
+
 Il **nome del progetto** è un dato: sta in `progetto.json` e nell'interfaccia, mai dentro un file di codice (SEC-003).
 Si accetta un testo di una riga, al massimo 120 caratteri, senza caratteri invisibili o che cambiano il verso del testo.
 

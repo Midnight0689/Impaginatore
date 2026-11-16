@@ -32,6 +32,7 @@
   "licenze.funzione_ignota": "La funzione «{funzione}»",
   "licenze.funzione_impaginazione_automatica_album": "L'impaginazione automatica dell'album",
   "licenze.funzione_modelli_personali": "Il salvataggio dei modelli personali",
+  "licenze.funzione_preset_laboratori": "L'uso dei cataloghi dei laboratori",
   "licenze.funzione_server_mcp": "Il collegamento con l'assistente AI (MCP)",
   "licenze.funzione_uniformita_tono": "Il controllo del tono dell'album",
   "licenze.intanto_la_prova": "Intanto vale la prova gratuita: {dettaglio}",

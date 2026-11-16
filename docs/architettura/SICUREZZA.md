@@ -257,7 +257,11 @@ gli argomenti (`tests/test_sicurezza_server.py`, `tests/test_piattaforma.py`).
 
 Ogni dato inserito con `innerHTML`/`insertAdjacentHTML` passa da una sola funzione di escaping per pagina (`escH` in
 `index.html`, `esc` in `home.html`: `& < > " ' \``); i nomi negli indirizzi passano da `encU` (`encodeURIComponent` più
-`! ' ( ) *`, sicuro anche dentro `url("…")` dei CSS). Il censimento di tutti i punti è nel resoconto di T-102. La CSP con
+`! ' ( ) *`, sicuro anche dentro `url("…")` dei CSS). I testi della tabella (T-206) non contengono HTML e dentro
+`innerHTML` entrano con `tH(chiave, parametri)`, che fa l'escape del testo già completo dei parametri (un nome di file
+come parametro resta testo); la tabella arriva nello script come JSON senza `<` (`risorse.testi_pagina`).
+`tests/test_lingua.py` fallisce se un testo della tabella contiene `<` o se una riga con `innerHTML` usa `t()` nudo.
+Il censimento di tutti i punti è nel resoconto di T-102. La CSP con
 nonce è la seconda difesa: anche un'iniezione sfuggita non esegue script. La prova `test_xss_da_nomi_ed_exif` apre
 schermata ed editor in Chrome senza schermo con nome del progetto, nome di file, data EXIF e nome di carattere malevoli.
 

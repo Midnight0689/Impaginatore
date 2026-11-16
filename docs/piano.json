@@ -25,7 +25,7 @@
     {"id": "T-205", "fase": 2, "titolo": "Interfaccia ridisegnata con la marca", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-005", "T-105", "T-209"], "stato": "in_verifica"},
     {"id": "T-206", "fase": 2, "titolo": "Italiano e inglese", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-205"], "stato": "da_fare"},
     {"id": "T-207", "fase": 2, "titolo": "Aggiornamenti dalle release", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-201"], "stato": "da_fare"},
-    {"id": "T-208", "fase": 2, "titolo": "Pacchetti catalogo per i laboratori", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-101"], "stato": "da_fare"},
+    {"id": "T-208", "fase": 2, "titolo": "Pacchetti catalogo per i laboratori", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-101"], "stato": "in_verifica"},
 
     {"id": "T-301", "fase": 3, "titolo": "Pipeline di controllo sui tre sistemi", "ruolo": "Release Engineer", "dipende_da": ["T-006"], "stato": "in_verifica"},
     {"id": "T-302", "fase": 3, "titolo": "Compilazione Nuitka e installer", "ruolo": "Release Engineer", "dipende_da": ["T-201", "T-202"], "stato": "da_fare"},
@@ -33,10 +33,10 @@
     {"id": "T-304", "fase": 3, "titolo": "Sicurezza della filiera", "ruolo": "Release Engineer", "dipende_da": ["T-301"], "stato": "in_verifica"},
     {"id": "T-305", "fase": 3, "titolo": "Distribuzione senza certificati: comandi di installazione, firma propria delle release, guide illustrate", "ruolo": "Release Engineer", "dipende_da": ["T-302"], "stato": "da_fare", "nota": "Decisione del titolare: nessun conto Apple Developer, nessun certificato Windows, nessun push per ora"},
 
-    {"id": "T-401", "fase": 4, "titolo": "Manuale d'uso", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},
+    {"id": "T-401", "fase": 4, "titolo": "Manuale d'uso", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "in_verifica"},
     {"id": "T-402", "fase": 4, "titolo": "Guida di installazione e attivazione", "ruolo": "Autore", "dipende_da": ["T-202", "T-302"], "stato": "da_fare"},
-    {"id": "T-403", "fase": 4, "titolo": "Guida al server MCP", "ruolo": "Autore", "dipende_da": ["T-203"], "stato": "da_fare"},
-    {"id": "T-404", "fase": 4, "titolo": "Guida per sviluppatori e README", "ruolo": "Autore", "dipende_da": ["T-006"], "stato": "da_fare"},
+    {"id": "T-403", "fase": 4, "titolo": "Guida al server MCP", "ruolo": "Autore", "dipende_da": ["T-203"], "stato": "in_verifica"},
+    {"id": "T-404", "fase": 4, "titolo": "Guida per sviluppatori e README", "ruolo": "Autore", "dipende_da": ["T-006"], "stato": "in_verifica"},
     {"id": "T-405", "fase": 4, "titolo": "Bozze di licenza d'uso e informativa", "ruolo": "Autore", "dipende_da": ["T-004"], "stato": "fatto", "nota": "Da far rivedere a un legale"},
 
     {"id": "T-501", "fase": 5, "titolo": "Schermate renderizzate", "ruolo": "Autore", "dipende_da": ["T-205"], "stato": "da_fare"},

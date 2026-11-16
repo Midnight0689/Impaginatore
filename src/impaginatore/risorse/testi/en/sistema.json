@@ -27,6 +27,7 @@
   "sistema.richiesta_non_valida": "invalid request",
   "sistema.richiesta_troppo_grande": "request too large",
   "sistema.scegli_cartella": "Choose the folder",
+  "sistema.scegli_catalogo": "Choose the lab's catalogue (.json)",
   "sistema.scegli_foto": "Choose the photos",
   "sistema.scegli_zip": "Choose the album's ZIP file"
 }

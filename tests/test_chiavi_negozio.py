@@ -88,3 +88,19 @@ def test_registro_di_prima_senza_la_colonna_della_scadenza(negozio, capsys):
 
 def test_autotest_dello_strumento(negozio, capsys):
     assert negozio.esegui("autotest") == 0 and "formati 1 e 2" in capsys.readouterr().out
+
+
+def test_firma_catalogo(negozio, capsys, tmp_path):
+    """T-208: il catalogo di un laboratorio firmato dallo strumento è «verificato» nel programma, con la stessa chiave pubblica"""
+    from impaginatore.laboratori import catalogo as CAT
+    C = negozio
+    doc = {"formato_catalogo": 1, "id": "lab-prova", "nome": "Album è prova", "laboratorio": "Lab", "data": "2026-11-01",
+           "prodotti": [{"id": "a30", "nome": "A 30", "pagina_cm": [30, 22.5], "abbondanza_mm": 3, "ppi": 300, "consegna": {"nome": "{n}"}}], "firma": "vecchia"}
+    src = tmp_path / "lab.json"; src.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+    assert C.esegui("firma-catalogo", str(src)) == 0 and "firmato con la chiave 1" in capsys.readouterr().out
+    firmato = json.loads((tmp_path / "lab-firmato.json").read_text(encoding="utf-8"))
+    assert CAT.verifica(firmato) == (True, "firmato dal produttore di Impaginatore") and CAT.valida(firmato)["nome"] == "Album è prova"
+    assert C.esegui("firma-catalogo", str(src), "--uscita", str(tmp_path / "altro.json")) == 0 and CAT.verifica(json.loads((tmp_path / "altro.json").read_text(encoding="utf-8")))[0]
+    (tmp_path / "x.json").write_text('{"formato_catalogo": 2}', encoding="utf-8")
+    with pytest.raises(SystemExit, match="non è un catalogo del formato 1"): C.esegui("firma-catalogo", str(tmp_path / "x.json"))
+    with pytest.raises(SystemExit, match="catalogo non letto"): C.esegui("firma-catalogo", str(tmp_path / "manca.json"))

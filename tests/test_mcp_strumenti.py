@@ -163,7 +163,7 @@ def test_esporta_in_una_cartella_nuova(editor, a, monkeypatch):
     assert r1["cartella"] != r2["cartella"] and r2["cartella"].endswith("(2)"), "mai sopra un'esportazione che c'è già"
     assert os.listdir(os.path.join(editor.progetto, r2["cartella"])) == ["Prova - bozza.pdf"]
     r3 = a.esporta(p, "pdf"); assert r3["cartella"].endswith("(3)")
-    assert rifiuto(a.esporta, p, "psd") == "formato: uno tra jpg, pdf", "il PSD (Photoshop) non si esporta dall'assistente"
+    assert rifiuto(a.esporta, p, "psd") == "formato: uno tra jpg, pdf, consegna", "il PSD (Photoshop) non si esporta dall'assistente"
     assert "spread: numeri" in rifiuto(a.esporta, p, "jpg", "1; rm -rf /")
     assert rifiuto(a.esporta, p, "jpg", "7") == "spread inesistenti: [7] (l'album ne ha 1)", "i controlli dell'editor"
     assert "risoluzione" in rifiuto(a.esporta, p, "jpg", "", "altissima")

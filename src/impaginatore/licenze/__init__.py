@@ -300,7 +300,7 @@ def limite(funzione, st=None):
 
 
 FUNZIONI_CON_NOME = frozenset(("editor_completo", "export_jpg", "export_pdf", "export_psd_livelli", "impaginazione_automatica_album",
-                               "correzione_spaziature_album", "uniformita_tono", "modelli_personali", "server_mcp"))     # nomi in licenze.funzione_<id>
+                               "correzione_spaziature_album", "uniformita_tono", "modelli_personali", "server_mcp", "preset_laboratori"))     # nomi in licenze.funzione_<id>
 
 
 def nome_funzione(funzione):
@@ -318,7 +318,7 @@ def motivo(funzione, st=None):
 
 OP_SENZA_MODIFICHE = frozenset({"copia"})                 # appunti dell'editor: non cambiano il progetto
 OP_FUNZIONI = dict.fromkeys(("tono_fix", "tono_L", "tono_escl"), "uniformita_tono")   # operazioni del pannello del tono; tutte le altre: editor_completo
-ESPORTAZIONI = {"jpg": "export_jpg", "pdf": "export_pdf", "psd": "export_psd_livelli"}
+ESPORTAZIONI = {"jpg": "export_jpg", "pdf": "export_pdf", "psd": "export_psd_livelli", "consegna": "export_jpg"}     # la consegna al laboratorio (T-208) sono JPG
 LETTURE = {"/api/tono": "uniformita_tono", "/api/tono_all": "uniformita_tono"}      # GET dell'editor che sono funzioni di fascia
 
 

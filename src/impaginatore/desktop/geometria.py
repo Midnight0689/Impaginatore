@@ -42,7 +42,7 @@ class Geometria:
         """argomenti per create_window: width, height, x, y, maximized (dal file, controllati; altrimenti predefiniti)"""
         try:
             d = formato.leggi_json(self.percorso, 4096)
-            if not isinstance(d, dict): raise ValueError("non è un oggetto")
+            if not isinstance(d, dict): raise ValueError("non è un oggetto")           # non tradotto: finisce solo nel registro
         except FileNotFoundError: d = {}
         except (OSError, ValueError) as e:                 # ErroreProgetto è un ValueError
             log.info("misura della finestra non letta (%s): uso quella predefinita", type(e).__name__); d = {}

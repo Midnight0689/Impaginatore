@@ -28,6 +28,7 @@ def istruzioni():
 def _descr(chiave, **campi):
     """descrizione di un argomento, nella lingua in uso (si legge all'avvio: cambiare lingua vale al riavvio dell'assistente)"""
     return Field(description=lingua.t(chiave), **campi)
+Prodotto = Annotated[str | None, _descr("mcp.arg_prodotto", max_length=81)]
 
 
 def risultato(fn, *a, **k):
@@ -71,13 +72,22 @@ def crea(assistente):
     def mostra_editor(progetto: Progetto) -> CallToolResult:
         return risultato(a.mostra_editor, progetto)
 
+    @tool(**_testi("elenca_prodotti"), annotations=LETTURA)
+    def elenca_prodotti() -> CallToolResult:
+        return risultato(a.elenca_prodotti)
+
     @tool(**_testi("crea_progetto"), annotations=MODIFICA)
     def crea_progetto(nome: Annotated[str, Field(max_length=120)],
-                      larghezza_cm: Annotated[float, _descr("mcp.arg_larghezza")],
-                      altezza_cm: Annotated[float, _descr("mcp.arg_altezza")],
+                      larghezza_cm: Annotated[float | None, _descr("mcp.arg_larghezza")] = None,
+                      altezza_cm: Annotated[float | None, _descr("mcp.arg_altezza")] = None,
                       abbondanza_mm: float = 0.0, spazio_mm: float = 2.5, margine_mm: float = 10.0,
-                      scegli_cartella_foto: Annotated[bool, _descr("mcp.arg_scegli_cartella_foto")] = False) -> CallToolResult:
-        return risultato(a.crea_progetto, nome, larghezza_cm, altezza_cm, abbondanza_mm, spazio_mm, margine_mm, scegli_cartella_foto)
+                      scegli_cartella_foto: Annotated[bool, _descr("mcp.arg_scegli_cartella_foto")] = False,
+                      prodotto: Prodotto = None) -> CallToolResult:
+        return risultato(a.crea_progetto, nome, larghezza_cm, altezza_cm, abbondanza_mm, spazio_mm, margine_mm, scegli_cartella_foto, prodotto)
+
+    @tool(**_testi("imposta_prodotto"), annotations=MODIFICA)
+    def imposta_prodotto(progetto: Progetto, prodotto: Prodotto = None) -> CallToolResult:
+        return risultato(a.imposta_prodotto, progetto, prodotto)
 
     @tool(**_testi("aggiungi_foto"), annotations=MODIFICA)
     def aggiungi_foto(progetto: Progetto, cosa: Literal["cartella", "foto"] = "cartella") -> CallToolResult:
@@ -134,7 +144,7 @@ def crea(assistente):
         return risultato(a.salva, progetto)
 
     @tool(**_testi("esporta"), annotations=MODIFICA)
-    def esporta(progetto: Progetto, formato: Literal["jpg", "pdf"], spread: Annotated[str, _descr("mcp.arg_esporta_spread", max_length=200)] = "",
+    def esporta(progetto: Progetto, formato: Literal["jpg", "pdf", "consegna"], spread: Annotated[str, _descr("mcp.arg_esporta_spread", max_length=200)] = "",
                 risoluzione: Literal["stampa", "schermo"] = "stampa") -> CallToolResult:
         return risultato(a.esporta, progetto, formato, spread, risoluzione)
 

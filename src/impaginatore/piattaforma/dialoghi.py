@@ -1,6 +1,6 @@
-"""Finestre di sistema per scegliere cartelle, foto e file ZIP.
+"""Finestre di sistema per scegliere cartelle, foto, file ZIP e cataloghi dei laboratori (JSON).
 
-Il programma chiama sempre le funzioni di questo modulo (scegli_cartella, scegli_zip, scegli_percorsi); dietro c'è
+Il programma chiama sempre le funzioni di questo modulo (scegli_cartella, scegli_zip, scegli_catalogo, scegli_percorsi); dietro c'è
 un'implementazione per sistema:
     macOS            osascript (finestre del Finder)
     Windows, Linux   tkinter (in un processo a parte: le richieste arrivano dai thread del server HTTP)
@@ -31,23 +31,32 @@ def senza_barra(p):
     return q if q and not q.endswith(":") else p
 
 
+def _testo(messaggio, chiave):
+    """il titolo della finestra: quello dato (anche vuoto), altrimenti quello della tabella nella lingua in uso"""
+    return lingua.t(chiave) if messaggio is None else messaggio
+
+
 class Dialoghi:
-    """interfaccia: le sottoclassi implementano _scegli(tipo, messaggio) -> [percorsi]; tipo = "cartella", "zip" o "foto" (più file)"""
+    """interfaccia: le sottoclassi implementano _scegli(tipo, messaggio) -> [percorsi]; tipo = "cartella", "zip", "catalogo"
+    (un file JSON) o "foto" (più file)"""
     nome = "base"
 
     def _scegli(self, tipo, messaggio):
         raise NotImplementedError
 
     def scegli_cartella(self, messaggio=None):
-        return senza_barra((self._scegli("cartella", messaggio or lingua.t("sistema.scegli_cartella")) or [""])[0])
+        return senza_barra((self._scegli("cartella", _testo(messaggio, "sistema.scegli_cartella")) or [""])[0])
 
     def scegli_zip(self, messaggio=None):
-        return (self._scegli("zip", messaggio or lingua.t("sistema.scegli_zip")) or [""])[0]
+        return (self._scegli("zip", _testo(messaggio, "sistema.scegli_zip")) or [""])[0]
+
+    def scegli_catalogo(self, messaggio=None):
+        return (self._scegli("catalogo", _testo(messaggio, "sistema.scegli_catalogo")) or [""])[0]
 
     def scegli_percorsi(self, cartella=False, messaggio=None):
         """una cartella (cartella=True) o una o più foto (JPEG, PNG, TIFF, WebP, HEIC): elenco di percorsi"""
-        if cartella: return self._scegli("cartella", messaggio or lingua.t("sistema.scegli_cartella"))
-        return self._scegli("foto", messaggio or lingua.t("sistema.scegli_foto"))
+        if cartella: return self._scegli("cartella", _testo(messaggio, "sistema.scegli_cartella"))
+        return self._scegli("foto", _testo(messaggio, "sistema.scegli_foto"))
 
 
 class Nessuno(Dialoghi):
@@ -65,6 +74,7 @@ class Mac(Dialoghi):
     def _scegli(self, tipo, messaggio):
         if tipo == "cartella": sc = 'POSIX path of (choose folder with prompt (item 1 of argv))'
         elif tipo == "zip": sc = 'POSIX path of (choose file of type {"public.zip-archive"} with prompt (item 1 of argv))'
+        elif tipo == "catalogo": sc = 'POSIX path of (choose file of type {"public.json"} with prompt (item 1 of argv))'
         else: sc = ('set fs to choose file with prompt (item 1 of argv) of type {' + ", ".join(f'"{u}"' for u in UTI_FOTO) + '} with multiple selections allowed\nset out to ""\n'
                     'repeat with f in fs\nset out to out & POSIX path of f & linefeed\nend repeat\nreturn out')
         r = subprocess.run(["osascript", "-e", "on run argv\n" + sc + "\nend run", str(messaggio)], capture_output=True, text=True, encoding="utf-8", env=ambiente_figli())  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell; il messaggio è un argomento dello script (SEC-004)
@@ -80,6 +90,7 @@ except Exception: pass
 k, msg = sys.argv[1], sys.argv[2]
 if k == "cartella": out = [filedialog.askdirectory(title=msg)]
 elif k == "zip": out = [filedialog.askopenfilename(title=msg, filetypes=[("ZIP", "*.zip")])]
+elif k == "catalogo": out = [filedialog.askopenfilename(title=msg, filetypes=[("Catalogo", "*.json")])]
 else: out = list(filedialog.askopenfilenames(title=msg, filetypes=[("Foto", sys.argv[3])]))
 sys.stdout.write("\n".join(x for x in out if x))
 '''
@@ -101,6 +112,7 @@ class Zenity(Dialoghi):
         cmd = ["zenity", "--file-selection", "--title", messaggio]
         if tipo == "cartella": cmd.append("--directory")
         elif tipo == "zip": cmd += ["--file-filter", "ZIP | *.zip"]
+        elif tipo == "catalogo": cmd += ["--file-filter", "Catalogo | *.json"]
         else: cmd += ["--multiple", "--separator", "\n", "--file-filter", "Foto | " + " ".join(TIPI_FOTO)]
         r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", env=ambiente_figli())  # nosec B603  # zenity del PATH dell'utente; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
@@ -113,6 +125,7 @@ class Kdialog(Dialoghi):
         base = os.path.expanduser("~")
         if tipo == "cartella": cmd = ["kdialog", "--title", messaggio, "--getexistingdirectory", base]
         elif tipo == "zip": cmd = ["kdialog", "--title", messaggio, "--getopenfilename", base, "*.zip"]
+        elif tipo == "catalogo": cmd = ["kdialog", "--title", messaggio, "--getopenfilename", base, "*.json"]
         else: cmd = ["kdialog", "--title", messaggio, "--getopenfilenames", base, " ".join(TIPI_FOTO), "--separate-output"]
         r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", env=ambiente_figli())  # nosec B603  # kdialog del PATH dell'utente; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
@@ -156,4 +169,5 @@ def attuali():
 
 def scegli_cartella(messaggio=None): return attuali().scegli_cartella(messaggio)
 def scegli_zip(messaggio=None): return attuali().scegli_zip(messaggio)
+def scegli_catalogo(messaggio=None): return attuali().scegli_catalogo(messaggio)
 def scegli_percorsi(cartella=False, messaggio=None): return attuali().scegli_percorsi(cartella, messaggio)
