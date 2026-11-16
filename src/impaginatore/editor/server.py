@@ -11,7 +11,7 @@ del motore. Importare il modulo non legge niente: inizializza(progetto) carica i
 porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
 main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
+import argparse, copy, functools, hashlib, io, json, logging, os, re, shutil, subprocess, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
@@ -20,6 +20,7 @@ from .. import __version__, compilato, formato, formato_1x, giornale, lingua, no
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import bozza as BZ                     # bozza dell'album (UX-018)
+from ..motore import varieta as VA                   # varietà delle disposizioni: misura, famiglie, ordine delle proposte
 from ..motore import spazi as SPAZI                  # spazi fra le foto (controllo e «Sistema»)
 from ..motore import testo as TX
 from ..motore import genera_psd as GPSD             # motivi per cui un PSD si salta (codici del protocollo con il processo dei PSD)
@@ -101,11 +102,105 @@ BUILD = {
     "S6": lambda p, m: [A.P(p[j], 4 * (j % 3), 4 * (j // 3), 4, 4) for j in range(6)],       # 6 foto: griglia 3x2
 }
 
+# ---- moduli adattivi (varietà, docs/architettura/VARIETA.md): cornici libere calcolate sulla pagina vera, con le
+# proporzioni delle foto (3:2 orizzontali, 2:3 verticali) e lo stesso spazio G fra le foto, su ogni formato. Una ricetta
+# riceve larghezza e altezza del riquadro della pagina (quello delle cornici libere: al vivo per «I», dentro il margine
+# per «W») e G, e dà i rettangoli in pixel in ordine di lettura; «m» specchia (destra/sinistra o sopra/sotto)
+OR, VE = 1.5, 2 / 3
+
+
+def _centra(R, bw, bh):
+    x0, y0 = min(r[0] for r in R), min(r[1] for r in R); x1, y1 = max(r[0] + r[2] for r in R), max(r[1] + r[3] for r in R)
+    dx, dy = (bw - (x1 - x0)) / 2 - x0, (bh - (y1 - y0)) / 2 - y0
+    return [(x + dx, y + dy, w, h) for x, y, w, h in R]
+
+
+def _griglia(c, r, ar):
+    """c x r caselle con proporzioni ar, le più grandi che entrano, al centro"""
+    def ric(bw, bh, G):
+        w = (bw - (c - 1) * G) / c; h = w / ar
+        if r * h + (r - 1) * G > bh: h = (bh - (r - 1) * G) / r; w = h * ar
+        return _centra([(i * (w + G), j * (h + G), w, h) for j in range(r) for i in range(c)], bw, bh)
+    return ric
+
+
+def _colonna(k, ar):
+    """una grande a tutta altezza e una colonna di k piccole con proporzioni ar dal lato della piega (pagina al vivo)"""
+    def ric(bw, bh, G):
+        h = (bh - (k - 1) * G) / k; w = min(h * ar, (bw - G) / 2)
+        return [(0, 0, bw - G - w, bh)] + [(bw - w, j * (h + G), w, h) for j in range(k)]
+    return ric
+
+
+def _fascia(k, ar):
+    """una grande a tutta larghezza e sotto una fila di k piccole con proporzioni ar (pagina al vivo)"""
+    def ric(bw, bh, G):
+        w = (bw - (k - 1) * G) / k; h = min(w / ar, (bh - G) / 2)
+        return [(0, 0, bw, bh - G - h)] + [(j * (w + G), bh - h, w, h) for j in range(k)]
+    return ric
+
+
+def _sotto(k, ar):
+    """una grande e sotto k piccole, tutte con proporzioni ar e la stessa larghezza in tutto, al centro della pagina"""
+    def ric(bw, bh, G):
+        a = min(bw, (bh - G + (k - 1) * G / (k * ar)) / (1 / ar + 1 / (k * ar))); w = (a - (k - 1) * G) / k
+        return _centra([(0, 0, a, a / ar)] + [(j * (w + G), a / ar + G, w, w / ar) for j in range(k)], bw, bh)
+    return ric
+
+
+def _fianco(k, ar):
+    """una grande e a fianco una colonna di k piccole, tutte con proporzioni ar e la stessa altezza in tutto, al centro"""
+    def ric(bw, bh, G):
+        a = min(bh, (bw - G + ar * (k - 1) * G / k) / (ar + ar / k)); h = (a - (k - 1) * G) / k
+        return _centra([(0, 0, a * ar, a)] + [(a * ar + G, j * (h + G), h * ar, h) for j in range(k)], bw, bh)
+    return ric
+
+
+def _angolo(bw, bh, G):
+    """una orizzontale piccola nell'angolo in basso, tanto bianco attorno"""
+    w = 0.62 * bw; h = min(w / OR, 0.7 * bh); w = h * OR
+    return [(0, bh - h, w, h)]
+
+
+def _mezza(bw, bh, G):
+    """una verticale al vivo a tutta altezza su metà pagina, l'altra metà bianca"""
+    w = min(bh * VE, bw); return [(0, 0, w, bh)]
+
+
+def _coppia_piccola(bw, bh, G):
+    """due verticali piccole affiancate al centro"""
+    h = 0.7 * bh; w = min(h * VE, (bw - G) / 2); h = w / VE
+    return _centra([(0, 0, w, h), (w + G, 0, w, h)], bw, bh)
+
+
+ADATTIVI = {  # nome: (ricetta, modo, specchio in verticale) — il modo è quello di LAYS
+    "CO3": (_colonna(3, OR), "I", False), "CV2": (_colonna(2, VE), "I", False), "FO3": (_fascia(3, OR), "I", True), "FO4": (_fascia(4, OR), "I", True),
+    "GO6": (_griglia(3, 2, OR), "W", False), "GV4": (_griglia(2, 2, VE), "W", False), "GV6": (_griglia(3, 2, VE), "W", False),
+    "SO3": (_griglia(1, 3, OR), "W", False), "SR3": (_griglia(3, 1, OR), "W", False), "SV4": (_griglia(4, 1, VE), "W", False),
+    "DO3": (_sotto(2, OR), "W", True), "DO4": (_sotto(3, OR), "W", True), "DV3": (_fianco(2, VE), "W", False), "MO4": (_fianco(3, OR), "W", False),
+    "RO1": (_angolo, "W", False), "RV2": (_coppia_piccola, "W", False), "VI1": (_mezza, "I", False),
+}
+
+
+def _adattivo(nome):
+    ric, modo, verticale = ADATTIVI[nome]
+
+    def build(p, m=False):
+        (x0, x1), (y0, y1) = A._frame("L", modo); bw, bh = x1 - x0, y1 - y0; R = ric(bw, bh, A.G)
+        if m: R = sorted(([(x, bh - y - h, w, h) for x, y, w, h in R] if verticale else [(bw - x - w, y, w, h) for x, y, w, h in R]), key=lambda r: (round(r[1]), round(r[0])))
+        return [dict(k="f", i=p[j] - 1, x=round(x / bw, 5), y=round(y / bh, 5), w=round(w / bw, 5), h=round(h / bh, 5), bw=False, z=1.0) for j, (x, y, w, h) in enumerate(R)]
+    return build
+
+
+for _a in ADATTIVI:
+    BUILD[_a] = _adattivo(_a); NPH[_a] = len(ADATTIVI[_a][0](1000, 1000, 1))
+
 # ---- modelli «d'autore» pensati sullo spread intero (cornici libere): alcuni attraversano la piega o hanno margini bianchi
 def _sp_split(a, b, n, g):
     t = (b - a - g * (n - 1)) / n; return [(a + i * (t + g), a + i * (t + g) + t) for i in range(n)]
 def _sp_stack(x0, x1, n, y0, y1, g):
     t = (y1 - y0 - g * (n - 1)) / n; return [(x0, y0 + i * (t + g), x1, y0 + i * (t + g) + t) for i in range(n)]
+@functools.lru_cache(maxsize=8)
 def _sp_models(CW, CH, G):
     F = CW / 2; PL, PR = F - G / 2, F + G / 2; M = {}
     M["X1"] = [(0, 0, PL, .62 * CH)] + [(a, .62 * CH + G, b, CH) for a, b in _sp_split(0, PL, 2, G)] + [(a, 0, b, CH) for a, b in _sp_split(PR, CW, 2, G)]
@@ -202,6 +297,7 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("PANO", "W", False), ("ANG", "W", False), ("ANG", "W", True), ("D2H", "I", False), ("D2H", "W", False), ("D2B", "I", False), ("D2B", "I", True), ("D2B", "W", False),
         ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
+LAYS += [(k, ADATTIVI[k][1], m) for k in ADATTIVI for m in ((False, True) if k not in ("GO6", "GV4", "GV6", "SO3", "SR3", "SV4", "RV2") else (False,))]   # i moduli adattivi (simmetrici: una volta sola)
 SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
 UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, chiave: del nome (NOMI_OP), s: spread toccato, gruppo, rev} (UX-003)
 ESPORTA = set()                                     # esportazioni in corso (/api/ping «esporta»: la finestra chiede conferma prima di chiudersi)
@@ -1056,10 +1152,21 @@ def cornici_attuali(s, sides="LR"):
 DISP = {}                      # ultima serie di «Altra disposizione»: spread e pagina, rev dopo l'ultima pressione, ordine delle foto della prima
 
 
+def ordine_disposizioni(tutte):
+    """ordine di «Altra disposizione»: prima quelle che rispettano le foto, in ordine di varietà a partire dalla meno
+    costosa (ordine_vario, senza guardare quella attuale: l'ordine non dipende da dove si è arrivati), poi quelle che
+    tagliano di più, dal taglio minore"""
+    buone = sorted((t for t in tutte if t["worst"] <= TOLL_PROPORZIONI), key=lambda t: (t["cost"], _chiave_cornici(t)))
+    altre = sorted((t for t in tutte if t["worst"] > TOLL_PROPORZIONI), key=lambda t: (t["worst"], t["cost"], _chiave_cornici(t)))
+    n = len(buone[0]["frames"]) if buone else 0; costi = [(t["cost"] + PENALITA_VOLTO * t.get("volti", 0)) / max(n, 1) for t in buone]
+    return [buone[k] for k in VA.ordina([VA.descrivi(t["frames"], VW, VH) for t in buone], costi, primo=_primo(buone, costi))] + altre
+
+
 def disposizioni(s, side=None):
     """(disposizioni, indice di quella attuale o None, pagina) per le foto dello spread s o della sola pagina side, in un
-    ordine che non cambia mentre le si scorre (UX-001): prima quelle che rispettano le foto, dal costo minore, poi quelle
-    che tagliano di più. Le pressioni di fila tengono l'ordine delle foto della prima"""
+    ordine che non cambia mentre le si scorre (UX-001): prima quelle che rispettano le foto, alternando famiglie e
+    geometrie diverse (ordine_disposizioni), poi quelle che tagliano di più. Le pressioni di fila tengono l'ordine delle
+    foto della prima"""
     lk = locked_sides(s)
     if len(lk) == 2: raise ValueError(lingua.t("server.disposizioni_due_testi"))
     if side in lk: raise ValueError(lingua.t("server.disposizioni_pagina_testo"))
@@ -1071,7 +1178,7 @@ def disposizioni(s, side=None):
     for t in d["items"] + d["piu"]:
         k = _chiave_cornici(t)
         if k not in visti or t["cost"] < visti[k]["cost"]: visti[k] = t
-    ordine = sorted(visti.values(), key=lambda t: (t["worst"] > TOLL_PROPORZIONI, t["worst"] if t["worst"] > TOLL_PROPORZIONI else 0, t["cost"], _chiave_cornici(t)))
+    ordine = ordine_disposizioni(list(visti.values()))
     DISP.update(chiave=(s, side), foto=photos)
     return ordine, next((k for k, t in enumerate(ordine) if t["cur"]), None), side
 
@@ -1087,7 +1194,7 @@ def altra_disposizione(s, passo=1, side=None):
     if not ordine or (len(ordine) == 1 and k == 0): raise ValueError(lingua.t("server.disposizioni_nessuna_altra"))
     n = (k + passo) % len(ordine) if k is not None else (0 if passo > 0 else len(ordine) - 1)
     _metti_disposizione(s, ordine[n]); DISP["rev"] = REV + 1
-    ESITO.update(disposizione=n + 1, di=len(ordine), taglia=round(math.exp(ordine[n]["worst"]), 2), a_mano=k is None, lato=side)
+    ESITO.update(disposizione=n + 1, di=len(ordine), taglia=round(math.exp(ordine[n]["worst"]), 2), a_mano=k is None, lato=side, famiglia=ordine[n].get("fam"))
 
 
 def _ritaglio(s, side, idx):
@@ -1291,15 +1398,16 @@ def _foto_bozza(almeno=0):
 
 def bozza(o):
     """proposta di bozza per le foto da usare (non tocca l'album): {spreads: [{L, R, foto, nomi, capitolo, inizio, ora,
-    taglia}], capitoli, foto, per_spread}. Le anteprime: /img/bozza/<n>. Licenza: impaginazione_automatica_album"""
+    taglia, fam, schema}], capitoli, foto, per_spread, schemi}. Le anteprime: /img/bozza/<n>. Licenza:
+    impaginazione_automatica_album"""
     _cancello("impaginazione_automatica_album")
     with LOCK:
         ritmo, per, stelle, seme = _opzioni_bozza(o); liberi = _spread_liberi(); foto = _foto_bozza(BZ.MIN_FOTO)
         if liberi is not None: per = max(per, min(len(foto) / liberi, BZ.MAX_GRUPPO))           # T-208: gli spread che il prodotto ammette ancora
-        p = BZ.proposta(foto, tpl_options, ritmo, per, stelle, seme)
+        p = BZ.proposta(foto, lambda ix: tpl_options(ix, vario=False), ritmo, per, stelle, seme, piega=not (_prodotto() or {}).get("piega_mm"))     # a cavallo della piega solo se il prodotto non ha una zona della piega
         if liberi is not None and len(p["spreads"]) > liberi:
             fuori = p["spreads"][liberi:]; p["spreads"] = p["spreads"][:liberi]; n = sum(len(s["foto"]) for s in p["spreads"])
-            p.update(foto=n, capitoli=len({s["capitolo"] for s in p["spreads"]}), per_spread=round(n / liberi, 1),
+            p.update(foto=n, capitoli=len({s["capitolo"] for s in p["spreads"]}), per_spread=round(n / liberi, 1), schemi=BZ.schemi(p["spreads"]),
                      limite_prodotto=dict(spread_max=_prodotto()["spread_max"], foto_escluse=sum(len(s["foto"]) for s in fuori)))
         for s in p["spreads"]: s["nomi"] = [A.name(i) for i in s["foto"]]
         BOZZA.clear(); BOZZA.update(spreads=p["spreads"])
@@ -1408,9 +1516,10 @@ def _elenco_spread(x):
     return sorted(set(x))
 
 
-def tpl_options(photos, cur=None, side=None, s=None):
+def tpl_options(photos, cur=None, side=None, s=None, vario=True):
     """modelli di spread per queste foto, con le foto già assegnate alle cornici (come «Rearrange» di Smart Albums); in più i modelli salvati dall'utente con lo stesso numero di foto.
-    side = "L"/"R": l'altra pagina è di testo e resta com'è (s = lo spread): si cambia solo questa"""
+    side = "L"/"R": l'altra pagina è di testo e resta com'è (s = lo spread): si cambia solo questa.
+    vario: le proposte in ordine di varietà, con la famiglia (ordine_vario); la bozza non ne ha bisogno (sceglie da sé)"""
     import math
     N = len(photos); sides = "LR" if side is None else side
 
@@ -1418,14 +1527,24 @@ def tpl_options(photos, cur=None, side=None, s=None):
         if mod in NPH: return NPH[mod]
         t = next(t for t in ut_tutti() if t["id"] == mod.split(":")[1]); return len(t["pages"][0 if mod.endswith(":L") else 1]["items"])
 
-    def build(a, b=None):
-        if side is None: tup = tuple((m, BUILD[mod](list(range(1, NPH_(mod) + 1)), mir)) for (mod, m, mir) in (a, b))
-        else:
-            mod, m, mir = a; new = (m, BUILD[mod](list(range(1, NPH_(mod) + 1)), mir)); fixed = SP[s][1 if side == "L" else 0]
-            tup = (new, (fixed[0], fixed[1])) if side == "L" else ((fixed[0], fixed[1]), new)
-        lay = sorted((L for L in A.layout(tup) if L["k"] != "t" and L["side"] in sides), key=lambda L: L.get("_o", 0))
-        fr = [dict(x=L["x"] - BL, y=L["y"] - BL, w=L["W"], h=L["H"]) for L in lay]
-        far = [f["w"] / f["h"] for f in fr]; mis = [[abs(math.log(far[j] / A.M[photos[q]]["ar"])) for q in range(N)] for j in range(N)]
+    lar = sorted(math.log(A.M[q]["ar"]) for q in photos); pagine = {}
+
+    def pagina(mod, m, mir, lato):
+        """cornici (px della vista, in ordine) del modulo sulla pagina lato: non dipendono dalle foto né dall'altra pagina"""
+        k = (mod, m, mir, lato)
+        if k not in pagine:
+            its = (m, BUILD[mod](list(range(1, NPH_(mod) + 1)), mir)); tup = (its, ("W", [])) if lato == "L" else (("W", []), its)
+            pagine[k] = [dict(x=L["x"] - BL, y=L["y"] - BL, w=L["W"], h=L["H"]) for L in sorted(A.layout(tup), key=lambda L: L.get("_o", 0)) if L["k"] != "t"]
+        return [dict(f) for f in pagine[k]]
+
+    def build(a, b=None, tutti=True):
+        """la disposizione con le foto abbinate alle cornici; None (solo se non tutti) se nemmeno l'abbinamento migliore
+        possibile (proporzioni in ordine: il limite sotto il quale non si scende) sta entro TAGLIO_PIU e non è quella attuale"""
+        fr = pagina(*a, "L" if side is None else side) + (pagina(*b, "R") if side is None else [])
+        okc = cur is not None and sorted((round(f["x"]), round(f["y"]), f["w"], f["h"]) for f in fr) == cur
+        far = [f["w"] / f["h"] for f in fr]
+        if not tutti and not okc and max((abs(x - y) for x, y in zip(sorted(math.log(v) for v in far), lar)), default=0.0) > TAGLIO_PIU: return None
+        mis = [[abs(math.log(far[j] / A.M[photos[q]]["ar"])) for q in range(N)] for j in range(N)]
         dp = {0: (0.0, [])}                      # abbinamento ottimo foto-cornici (programmazione dinamica sulle foto già usate)
         if N > 9:                                 # tantissime foto: abbinamento veloce (la cornice più grande sceglie per prima)
             left = list(range(N)); asg = [None] * N; cost = 0.0
@@ -1442,34 +1561,42 @@ def tpl_options(photos, cur=None, side=None, s=None):
             dp = nx
         cost, asg = dp[(1 << N) - 1]; worst = max((mis[j][asg[j]] for j in range(N)), default=0.0)
         for j, f in enumerate(fr): f["n"] = A.name(photos[asg[j]])
-        okc = cur is not None and sorted((round(f["x"]), round(f["y"]), f["w"], f["h"]) for f in fr) == cur
-        if side is not None: return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, **{side: dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg])})
+        vv = _volti_a_rischio(fr, [photos[asg[j]] for j in range(N)]); extra = {"volti": vv} if vv else {}       # volti noti tagliati o sulla piega
+        if side is not None: return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, **extra, **{side: dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg])})
         na = NPH_(a[0])
-        return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, L=dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg[:na]]),
+        return dict(cost=round(cost, 3), worst=round(worst, 3), frames=fr, cur=okc, **extra, L=dict(mode=a[1], module=a[0], mirror=a[2], photos=[photos[q] for q in asg[:na]]),
                     R=dict(mode=b[1], module=b[0], mirror=b[2], photos=[photos[q] for q in asg[na:]]))
 
-    out = []
-    if side is None:
+    def genera(tutti):
+        out = []
+        if side is None:
+            for a in LAYS:
+                for b in LAYS:
+                    if NPH[a[0]] + NPH[b[0]] != N or (a[0] == "BLANK" and b[0] == "BLANK"): continue
+                    out.append(build(a, b, tutti))
+            for a, b in COUPLED:
+                if NPH[a[0]] + NPH[b[0]] == N: out.append(build(a, b, tutti))
+            seen = set(); dd = []       # uno stesso schema ottenuto in due modi (modulo di pagina o modello d'autore) si mostra una volta sola
+            for t in out:
+                if t is None: continue
+                k = tuple(sorted((round(f["x"] / 40), round(f["y"] / 40), round(f["w"] / 40), round(f["h"] / 40)) for f in t["frames"]))
+                if k in seen and not t["cur"]: continue
+                seen.add(k); dd.append(t)
+            return dd
         for a in LAYS:
-            for b in LAYS:
-                if NPH[a[0]] + NPH[b[0]] != N or (a[0] == "BLANK" and b[0] == "BLANK"): continue
-                out.append(build(a, b))
-        for a, b in COUPLED:
-            if NPH[a[0]] + NPH[b[0]] == N: out.append(build(a, b))
-        seen = set(); dd = []       # uno stesso schema ottenuto in due modi (modulo di pagina o modello d'autore) si mostra una volta sola
-        for t in out:
-            k = tuple(sorted((round(f["x"] / 40), round(f["y"] / 40), round(f["w"] / 40), round(f["h"] / 40)) for f in t["frames"]))
-            if k in seen and not t["cur"]: continue
-            seen.add(k); dd.append(t)
-        out = dd
-    else:
-        for a in LAYS:
-            if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a))
+            if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a, None, tutti))
+        return [t for t in out if t is not None]
+    out = genera(False)              # senza le disposizioni che non possono stare entro TAGLIO_PIU: non si mostrerebbero
+    if not any(not t["cur"] and t["worst"] <= TOLL_PROPORZIONI for t in out) and sum(1 for t in out if not t["cur"] and t["worst"] <= TAGLIO_PIU) < 3:
+        out = genera(True)           # servono le meno peggio fra tutte (sotto)
     out.sort(key=lambda t: (not t["cur"], t["cost"]))
     TOLL = TOLL_PROPORZIONI
     buoni = [t for t in out if t["cur"] or t["worst"] <= TOLL]
     if not any(not t["cur"] for t in buoni): buoni = buoni + sorted((t for t in out if not t["cur"]), key=lambda t: (t["worst"], t["cost"]))[:3]       # nessuna alternativa rispetta le foto: solo i meno peggio
-    piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
+    piu = sorted((t for t in out if t not in buoni and t["worst"] <= TAGLIO_PIU), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
+    if vario:                                             # varietà: la migliore per prima, poi famiglie e geometrie diverse (motore/varieta.py)
+        buoni = ordine_vario(buoni, N)
+        for t in piu: t["fam"] = VA.descrivi(t["frames"], VW, VH).fam
     out = buoni
     ut = []
     for t in ut_tutti():
@@ -1479,7 +1606,56 @@ def tpl_options(photos, cur=None, side=None, s=None):
             else: d = build(("U:%s:%s" % (t["id"], side), t["pages"][0 if side == "L" else 1]["mode"], False))
             d.update(id=t["id"], nome=t["nome"], progetto=bool(t.get("progetto"))); ut.append(d)
         except Exception as ex: LOG.append(lingua.t("server.modello_non_applicabile", nome=t.get("nome"), motivo=ex))
-    return dict(items=out[:90], piu=piu, n=N, tot=len(out), utente=ut, lato=side)
+    return dict(items=out[:90], piu=piu, n=N, tot=len(out), utente=ut, lato=side, vista=[VW, VH])
+
+
+TAGLIO_PIU = 0.55             # oltre questa differenza di proporzioni un modello non si propone nemmeno fra quelli che tagliano di più («piu»)
+PENALITA_VOLTO = 0.5          # ordine delle proposte: un volto noto tagliato o sulla piega pesa come mezza foto molto tagliata
+
+
+def ordine_vario(items, N):
+    """le disposizioni items (con le stesse N foto) in ordine di varietà (motore/varieta.py, «ordina»): prima la meno
+    costosa per le foto (volti noti tagliati compresi), poi ogni volta quella che unisce costo basso e differenza da quelle
+    già messe; quella attuale (cur) resta in testa. Mette in ogni disposizione la sua famiglia («fam»)"""
+    if not items: return []
+    ds = [VA.descrivi(t["frames"], VW, VH) for t in items]
+    for t, d in zip(items, ds): t["fam"] = d.fam
+    costi = [(t["cost"] + PENALITA_VOLTO * t.get("volti", 0)) / max(N, 1) for t in items]
+    return sorted((items[k] for k in VA.ordina(ds, costi, primo=_primo(items, costi))), key=lambda t: not t["cur"])
+
+
+def _classica(t): return not any(t[s]["module"] in ADATTIVI for s in "LR" if s in t)
+
+
+def _primo(items, costi):
+    """la prima proposta: la meno costosa fra quelle fatte con i moduli di sempre (griglia e modelli d'autore), così la
+    disposizione che il programma sceglie da solo per delle foto (trascinate sulla fila, prima proposta) resta quella di
+    prima; i moduli adattivi entrano con l'ordine di varietà. None (la meno costosa di tutte) se non ce n'è"""
+    cl = [k for k, t in enumerate(items) if _classica(t)]
+    return min(cl, key=lambda k: (costi[k], k)) if cl else None
+
+
+def _zona_piega():
+    """mezza zona della piega in px: quella del prodotto del laboratorio o 1 cm (come il controllo, volto_piega)"""
+    pr = _prodotto(); cm = pr["piega_mm"] / 10 if pr and pr.get("piega_mm") else PIEGA_CM
+    return cm / 2.54 * A.PPI
+
+
+def _volti_a_rischio(fr, foto):
+    """quanti volti noti (rilevati o già controllati: non quelli con il centro fissato a mano) la disposizione taglia oltre
+    il 15 % (come il controllo, volto_tagliato) o mette nella zona della piega; fr: cornici in px della vista"""
+    tot = 0; piega = VW / 2; zona = None
+    for f, i in zip(fr, foto):
+        volti = (A.F or {}).get(A.M[i]["n"])
+        if not volti or A.name(i) in A.FACE_FIX or f["w"] <= 0 or f["h"] <= 0: continue
+        l_, t_, r_, b_ = A.crop(i, f["w"], f["h"])
+        for fl, ft, fr_, fb in volti:
+            area = max((fr_ - fl) * (fb - ft), 1e-9); dentro = max(0.0, min(fr_, r_) - max(fl, l_)) * max(0.0, min(fb, b_) - max(ft, t_))
+            if 1 - dentro / area > 0.15: tot += 1; continue
+            zona = _zona_piega() if zona is None else zona
+            x0 = f["x"] + (max(fl, l_) - l_) / (r_ - l_) * f["w"]; x1 = f["x"] + (min(fr_, r_) - l_) / (r_ - l_) * f["w"]
+            if x0 < piega + zona and x1 > piega - zona: tot += 1
+    return tot
 
 def tpl_from_spread(s):
     """(pagine, n, lato): se una pagina è di solo testo si salva solo l'altra (lato = quella), altrimenti tutto lo spread (lato = None)"""

@@ -62,6 +62,8 @@ def test_zone_barre_e_tema(editor, tmp_path):
         assert b.js("document.getElementById('sbarR').children.length") == 0, "barra della selezione solo con una selezione"
         assert b.attendi("document.querySelectorAll('#provl .tp').length") > 1 and "Altre disposizioni" in b.js("document.getElementById('insp').innerText")
         assert b.js("document.querySelectorAll('#provl .tp.cur').length") == 1, "la disposizione attuale è contornata"
+        fam = "(vuota|a tutta pagina|con respiro|coppia|dominante|griglia|striscia|mosaico|a cavallo della piega)"
+        assert b.js("PROV.d.items.every(x => x.fam)") and re.search(rf" · {fam}( \+ {fam})?$", b.js("document.querySelector('#provl .tp').title")), "ogni proposta dice la sua famiglia (VARIETA.md)"
         b.js("(() => { const it = slotsOf(0).find(i => i.k !== 't'); sel = { s: 0, side: it.side, idx: it.idx }; msel = [it.side + ':' + it.idx]; render(); })()")
         assert b.js("[...document.querySelectorAll('#sbarR button span')].map(x => x.textContent)") == ["Sostituisci", "Altra disposizione", "Ritaglia", "B/N"]
         assert re.search(r"\d+ ppi", b.js("document.querySelector('#insp .sub').innerText"))

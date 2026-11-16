@@ -1,0 +1,3 @@
+# gli script di PowerShell tengono i fine riga di Windows e il segno di UTF-8 in testa (PowerShell 5.1 li vuole)
+*.ps1 text eol=crlf
+*.sh text eol=lf

@@ -484,6 +484,72 @@ def test_pubblica_si_ferma_se_manca_qualcosa(monkeypatch, tmp_path, capsys):
     with pytest.raises(SystemExit, match="non è vuota"): rilascio.main([*a, "--cartella", str(tmp_path / "piena")])
 
 
+def test_aggiunge_alla_bozza_un_pacchetto_costruito_su_un_computer(monkeypatch, tmp_path, capsys):
+    """il Mac con chip Apple costruito fuori dalla pipeline (costruzione/mac-arm64): entra nella bozza con impronta e prova
+    controllate, SHA256SUMS e verifiche.json aggiornati, e poi «pubblica» lo firma con gli altri"""
+    v = "2.0.1rc1"; senza = tuple(k for k in rilascio.SISTEMI if k != "mac-arm64")
+    out, esito, _ = _bozza(tmp_path, _artefatti(tmp_path / "art", v, chiavi=senza), f"v{v}")
+    assert any(m.startswith("mac-arm64") for m in esito["mancanti"])
+    locale = _artefatti(tmp_path / "stefano", v, chiavi=("mac-arm64",), arm=None) / "pacchetto-mac-arm64"
+    g = GitHubFinto(out / "release"); monkeypatch.setattr(rilascio, "gh", g)
+    a = ["aggiungi", f"v{v}", str(locale), "--repo", "studio/impaginatore"]
+    assert rilascio.main([*a, "--prova"]) == 0 and "niente caricato" in capsys.readouterr().out and not (out / "release" / f"Impaginatore-{v}-mac-arm64.dmg").exists()
+    monkeypatch.setattr("builtins.input", lambda domanda: "n")
+    assert rilascio.main(a) == 1 and [c[0][1] for c in g.chiamate].count("upload") == 0
+    assert rilascio.main([*a, "--si"]) == 0 and "Non rilanciare il giro del tag" in capsys.readouterr().out
+    rel = out / "release"
+    somme = (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+    assert [r.split("  ")[1] for r in somme] == sorted(r.split("  ")[1] for r in somme) and any(r.endswith(f"  Impaginatore-{v}-mac-arm64.dmg") for r in somme)
+    for riga in somme:
+        h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
+    ver = json.loads((rel / "verifiche.json").read_text(encoding="utf-8"))["verifiche"]
+    assert ver["mac-arm64"]["esito"] == "ok" and ver["mac-arm64"]["origine"] == "computer" and "origine" not in ver["linux"]
+    assert (rel / f"Impaginatore-{v}-mac-arm64.dmg.sha256").is_file() and (rel / f"Impaginatore-{v}-mac-arm64.dmg.componenti.json").is_file()
+    _, _, problemi = rilascio.controlla_scaricati(rel, v, set())
+    assert problemi == [], "la bozza completata passa i controlli di «pubblica»"
+    # non si sostituisce un pacchetto già nella bozza; impronta, prova e architettura devono tornare
+    with pytest.raises(SystemExit, match="Niente aggiunto"): rilascio.main([*a, "--si"])
+    assert "la bozza ha già" in capsys.readouterr().err
+    for i, (rotte, esiti, arch, atteso) in enumerate([(("mac-arm64",), None, "arm64", "l'impronta"), ((), {"mac-arm64": "no"}, "arm64", "non è passata"), ((), None, "x86_64", "non arm64")]):
+        out2, _, _ = _bozza(tmp_path, _artefatti(tmp_path / f"art{i}", v, chiavi=senza), f"v{v}", nome=f"bozza{i}")
+        d = _artefatti(tmp_path / f"loc{i}", v, chiavi=("mac-arm64",), arm=None, rotte=rotte, esiti=esiti) / "pacchetto-mac-arm64"
+        r = json.loads((d / "verifica-mac-arm64.json").read_text(encoding="utf-8")); r["misure"]["eseguibile_architettura"] = arch
+        (d / "verifica-mac-arm64.json").write_text(json.dumps(r), encoding="utf-8")
+        monkeypatch.setattr(rilascio, "gh", GitHubFinto(out2 / "release"))
+        with pytest.raises(SystemExit, match="Niente aggiunto"): rilascio.main(["aggiungi", f"v{v}", str(d), "--si"])
+        assert atteso in capsys.readouterr().err
+    with pytest.raises(SystemExit, match="Nessun pacchetto"): rilascio.main(["aggiungi", f"v{v}", str(tmp_path), "--si"])
+    g.bozza = False; monkeypatch.setattr(rilascio, "gh", g)
+    with pytest.raises(SystemExit, match="non è una bozza"): rilascio.main([*a, "--si"])
+
+
+def test_script_di_costruzione_per_sistema():
+    """costruzione/<sistema>: uno script per ogni pacchetto, con la versione minima di macOS e l'architettura di
+    compila.py e di rilascio.py, e la pipeline costruisce con quelli"""
+    from pathlib import Path
+    base = Path(RADICE) / "costruzione"
+    comune = (base / "comune.sh").read_text(encoding="utf-8")
+    for k in rilascio.SISTEMI:
+        f = base / k / ("costruisci.ps1" if k == "windows" else "costruisci.sh")
+        assert f.is_file(), f"manca lo script di {k}"
+        if k == "windows":
+            grezzo = f.read_bytes()
+            assert grezzo.startswith(b"\xef\xbb\xbf"), "PowerShell 5.1 legge UTF-8 solo con il segno in testa"
+            assert '$Chiave = "windows"' in grezzo.decode("utf-8-sig") and "--architettura x86_64" in grezzo.decode("utf-8-sig")
+            continue
+        testo = f.read_text(encoding="utf-8")
+        assert os.name == "nt" or os.access(f, os.X_OK), f"{f} non è eseguibile"
+        assert re.search(rf"^CHIAVE={k}$", testo, re.M) and re.search(rf"^ARCHITETTURA={rilascio.ARCHITETTURE[k]}$", testo, re.M)
+        assert "comune.sh" in testo and 'costruisci "$@"' in testo
+        if k.startswith("mac"): assert re.search(rf"^MACOS_MINIMO={re.escape(compila.MACOS_MINIMO[k])}$", testo, re.M)
+    assert "strumenti/compila.py" in comune and "strumenti/verifica_pacchetto.py" in comune and "uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione" in comune
+    assert not re.search(r"^\s*(sudo|brew install|apt)\b", comune, re.M), "gli script non installano niente e non chiedono la password: dicono cosa manca"
+    pipeline = (Path(RADICE) / ".github" / "workflows" / "pacchetti.yml").read_text(encoding="utf-8")
+    assert "costruzione/${{ matrix.chiave }}/costruisci.sh" in pipeline and "costruzione/windows/costruisci.ps1" in pipeline
+    guida = (base / "LEGGIMI.md").read_text(encoding="utf-8")
+    assert all(f"costruzione/{k}/" in guida or f"costruzione\\{k}\\" in guida for k in rilascio.SISTEMI) and "rilascio.py aggiungi" in guida
+
+
 def test_gh(monkeypatch):
     """«gh» di chi pubblica: argomenti in lista, --repo se dato, errori chiari"""
     visti = []

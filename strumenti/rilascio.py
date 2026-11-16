@@ -29,6 +29,13 @@ strumenti/aggiornamento.py, docs/architettura/AGGIORNAMENTI.md):
         altrimenti come ultima versione. Si ferma se manca qualcosa (controlla, chiave privata diversa da quella di
         CHIAVI_FIDATE, un sistema senza pacchetto: --senza CHIAVE per farne a meno di proposito). Chiede conferma prima di
         caricare (--si per non chiederla). --prova: fa tutto in --cartella ma non carica e non pubblica niente
+    python strumenti/rilascio.py aggiungi v<v> CARTELLA [--repo PROPRIETARIO/NOME] [--prova] [--si]
+        (sul computer di chi pubblica) aggiunge alla release in bozza un pacchetto costruito su un computer, fuori dalla
+        pipeline, con costruzione/<sistema>/costruisci (per esempio il Mac con chip Apple quando GitHub non ha macchine):
+        CARTELLA è dist/pacchetti di quel computer. Controlla l'impronta (.sha256) e la prova (verifica-<chiave>.json,
+        con l'architettura giusta), non sostituisce un pacchetto che la bozza ha già, carica pacchetto, impronta e
+        componenti e aggiorna SHA256SUMS e verifiche.json, dove resta scritto che il pacchetto viene da un computer.
+        Dopo, il giro del tag non va rilanciato: il job della bozza riscriverebbe SHA256SUMS e verifiche.json
     python strumenti/rilascio.py prepara CARTELLA_ARTEFATTI [--uscita dist/rilascio-<v>] [--dir CHIAVI] [--id 1]
                                          [--novita-it "…"] [--novita-en "…"] [--prova]
         come «pubblica», ma da una cartella di artefatti scaricati a mano e senza GitHub: copia, firma, SHA256SUMS e
@@ -42,6 +49,7 @@ import re
 import shutil
 import subprocess  # nosec B404  # gh (GitHub CLI) di chi pubblica, con argomenti in lista
 import sys
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -63,6 +71,7 @@ DESCRIZIONI = {"mac-arm64": "Mac con chip Apple (M1 e successivi)", "mac-x86_64"
 GUIDA = "docs/manuale/00-installazione.md"
 VERIFICHE = "verifiche.json"
 SOMME = "SHA256SUMS"
+ARCHITETTURE = {"mac-arm64": "arm64", "mac-x86_64": "x86_64", "windows": "x86_64", "linux": "x86_64", "linux-arm64": "arm64"}
 
 
 def pre_release(versione):
@@ -318,6 +327,46 @@ def controlla_scaricati(cartella, versione, senza):
     return wheel, pacchetti, out
 
 
+def cmd_aggiungi(a):
+    """un pacchetto costruito su un computer (costruzione/<sistema>/costruisci) entra nella release in bozza"""
+    versione = versione_del_tag(a.tag)
+    info = json.loads(gh("release", "view", a.tag, "--json", "isDraft,isPrerelease,name,url", repo=a.repo))
+    if not info.get("isDraft"): raise SystemExit(f"La release {a.tag} non è una bozza (è già pubblicata?): non la tocco")
+    origine = Path(a.cartella)
+    trovati = {k: origine / f"Impaginatore-{versione}-{k}.{ESTENSIONI[k]}" for k in SISTEMI if (origine / f"Impaginatore-{versione}-{k}.{ESTENSIONI[k]}").is_file()}
+    if not trovati: raise SystemExit(f"Nessun pacchetto Impaginatore-{versione}-… in {origine} (la versione del tag {a.tag} è {versione})")
+    with tempfile.TemporaryDirectory() as tmp:
+        bozza = Path(tmp)
+        gh("release", "download", a.tag, "--dir", str(bozza), "--pattern", SOMME, "--pattern", VERIFICHE, repo=a.repo)
+        righe = (bozza / SOMME).read_text(encoding="utf-8").splitlines() if (bozza / SOMME).is_file() else []
+        dati = leggi_json(bozza / VERIFICHE) or dict(versione=versione, verifiche={})
+        out, carica = [], []
+        for k, p in trovati.items():
+            r = leggi_json(origine / f"verifica-{k}.json") or {}
+            architettura = ((r.get("misure") or {}).get("eseguibile_architettura") or "").lower()
+            if any(x.endswith(f"  {p.name}") for x in righe): out.append(f"{k}: la bozza ha già {p.name} (non lo sostituisco)")
+            elif impronta_scritta(p) != impronta(p): out.append(f"{k}: l'impronta {p.name}.sha256 manca o non è quella del file")
+            elif r.get("esito") != "ok": out.append(f"{k}: la prova del programma installato (verifica-{k}.json) manca o non è passata")
+            elif architettura != ARCHITETTURE[k]: out.append(f"{k}: la prova dice un eseguibile «{architettura}», non {ARCHITETTURE[k]}")
+            else:
+                righe.append(f"{impronta(p)}  {p.name}")
+                dati.setdefault("verifiche", {})[k] = dict(riassunto_verifica(r), origine="computer")
+                carica += [p, *[q for q in (Path(f"{p}.sha256"), Path(f"{p}.componenti.json")) if q.is_file()]]
+        if out:
+            for x in out: print(f"- {x}", file=sys.stderr)
+            raise SystemExit(f"Niente aggiunto alla release {a.tag} (sopra il motivo).")
+        (bozza / SOMME).write_text("\n".join(sorted(righe, key=lambda x: x.partition("  ")[2])) + "\n", encoding="utf-8", newline="\n")
+        (bozza / VERIFICHE).write_text(json.dumps(dati, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        nomi = ", ".join(p.name for p in trovati.values())
+        if a.prova:
+            print(f"PROVA: {nomi} è in ordine; niente caricato. La release {a.tag} resta com'è."); return 0
+        if not a.si and input(f"Carico {nomi} nella release in bozza {a.tag}? [s/N] ").strip().lower() not in ("s", "si", "sì"):
+            print("Niente caricato."); return 1
+        gh("release", "upload", a.tag, *[str(x) for x in carica], str(bozza / SOMME), str(bozza / VERIFICHE), "--clobber", repo=a.repo)
+    print(f"Aggiunto alla bozza {a.tag}: {nomi}. Non rilanciare il giro del tag; poi «rilascio.py pubblica {a.tag}».")
+    return 0
+
+
 def cmd_pubblica(a):
     versione = versione_del_tag(a.tag); pre = pre_release(versione)
     info = json.loads(gh("release", "view", a.tag, "--json", "isDraft,isPrerelease,name,url", repo=a.repo))
@@ -361,8 +410,10 @@ def main(argv=None):
         else:
             p.add_argument("--repo"); p.add_argument("--cartella"); p.add_argument("--si", action="store_true")
             p.add_argument("--senza", action="append", default=[], choices=[*SISTEMI, WINDOWS_ARM])
+    g = sub.add_parser("aggiungi"); g.add_argument("tag"); g.add_argument("cartella"); g.add_argument("--repo")
+    g.add_argument("--prova", action="store_true"); g.add_argument("--si", action="store_true")
     a = ap.parse_args(argv)
-    try: return {"controlla": cmd_controlla, "bozza": cmd_bozza, "prepara": cmd_prepara, "pubblica": cmd_pubblica}[a.comando](a)
+    try: return {"controlla": cmd_controlla, "bozza": cmd_bozza, "prepara": cmd_prepara, "pubblica": cmd_pubblica, "aggiungi": cmd_aggiungi}[a.comando](a)
     except (OSError, ValueError, KeyError) as e: raise SystemExit(f"Errore: {e}") from None
 
 

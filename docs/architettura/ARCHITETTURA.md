@@ -35,6 +35,7 @@ src/impaginatore/
 │   ├── album_libere.py  cornici libere, angoli, stili, testi liberi, tono/ritocco: si «installa» dentro album all'import
 │   ├── spazi.py         stacchi fra le foto: stato e correzione («Correggi spazi», «Sistema»), gli stessi della pagina
 │   ├── bozza.py         bozza dell'album: capitoli, gruppi, ritmo, scelta delle disposizioni (UX-018)
+│   ├── varieta.py       varietà delle disposizioni: misura, famiglie, ordine delle proposte, ripetizioni (VARIETA.md)
 │   ├── testo.py         testi liberi: font installati (nomi letti dai file), misura e disegno
 │   ├── photoshop.py     funzioni per gli script (app_name, run_jsx, open_documents) + libreria ExtendScript JS_LIB
 │   ├── genera_psd_angolo.py  genera_psd con le parti JavaScript estese (angoli, testi, tono, sRGB): niente exec

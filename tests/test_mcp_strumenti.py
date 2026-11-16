@@ -70,6 +70,7 @@ def test_dal_progetto_alla_bozza_rifinita(editor, home_srv, a, tmp_path):
     assert len(E.SP) == 0, "la proposta non cambia l'album"
     assert prop["foto"] == 10 and prop["spread"] == len(prop["spreads"]) >= 3 and prop["spreads"][0]["numero"] == 1 and prop["spreads"][0]["inizio_capitolo"] is True
     assert sorted(n for s in prop["spreads"] for n in s["sinistra"] + s["destra"]) == sorted(f["foto"] for f in fo["foto"])
+    assert all(s["famiglia"] for s in prop["spreads"]) and 1 <= prop["disposizioni_diverse"] <= prop["spread"], "la varietà della bozza (docs/architettura/VARIETA.md)"
     r = a.applica_bozza(p, prop["proposta"])
     assert r["aggiunti"] == dict(spread=prop["spread"], foto=10, dal_numero=1) and r["annulla"] == {"nome": "Bozza dell'album", "spread": 1} and r["modifiche_da_salvare"] is True
     assert len(E.SP) == prop["spread"] and E.LASTC == a.cid, "l'editor sa che l'ultima modifica è dell'assistente"
@@ -83,7 +84,7 @@ def test_dal_progetto_alla_bozza_rifinita(editor, home_srv, a, tmp_path):
     assert a.stato_album(p, da_spread=99)["spread"] == []
 
     r = a.cambia_disposizione(p, 1)
-    assert r["disposizione"] >= 1 and r["di"] >= r["disposizione"] and r["annulla"] == {"nome": "Altra disposizione", "spread": 1}
+    assert r["disposizione"] >= 1 and r["di"] >= r["disposizione"] and r["annulla"] == {"nome": "Altra disposizione", "spread": 1} and r["famiglia"]
     r = a.cambia_disposizione(p, 1, passo=-1)
     assert r["annulla"]["nome"] == "Altra disposizione" and len(E.UNDO) == 2, "le pressioni di fila sullo stesso spread: un passo solo"
     sa = a.stato_album(p)

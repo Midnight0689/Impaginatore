@@ -36,6 +36,10 @@ sistema restano e la guida li spiega.
 
 ## Come si costruisce
 
+Per costruire un pacchetto su un computer c'è uno script per sistema in `costruzione/` (`costruzione/LEGGIMI.md`, con
+i passi per chi lo fa la prima volta): controlla il computer, prepara l'ambiente, compila, impacchetta e prova. La
+pipeline costruisce con gli stessi script. I comandi che gli script eseguono sono questi:
+
 ```
 UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
 .venv-compilazione/bin/python strumenti/compila.py                 # programma + pacchetto in dist/pacchetti
@@ -143,6 +147,11 @@ copie del motore dalle risorse quando i `.py` non ci sono.
 | Linux x86_64 (Ubuntu 24.04 e derivate) | `linux.deb` | `ubuntu-24.04` | `ubuntu-24.04` | nativo amd64 |
 | Linux arm64 (Ubuntu 24.04 e derivate) | `linux-arm64.deb` | `ubuntu-24.04-arm` | `ubuntu-24.04-arm` | nativo arm64 |
 
+Quando GitHub non ha macchine libere per un sistema (il 16/11/2026 è successo per tutto il giorno con i Mac con chip
+Apple), quel pacchetto si costruisce su un computer con `costruzione/<sistema>/costruisci.sh` e chi pubblica lo
+aggiunge alla bozza con `rilascio.py aggiungi` (sotto, «Rilascio»): in `verifiche.json` resta scritto `"origine":
+"computer"`.
+
 Ogni pacchetto si costruisce sul sistema e sull'architettura per cui è: Nuitka non compila per un'altra architettura
 («macOS»). La prova (`verifica_pacchetto.py --architettura`) legge l'architettura dell'eseguibile installato (ELF,
 PE, Mach-O) e si ferma se non è quella attesa; il rapporto dice anche l'architettura della macchina (`misure.macchina`):
@@ -198,13 +207,18 @@ così la prova su Windows 11 ARM mostra un eseguibile `x86_64` su una macchina `
     `Info.plist` dice altro. Dichiarato e misurato vanno in `componenti.json` (`macos_minimo`, `macos_minimo_binari`);
     la pipeline stampa `lipo -archs`, `vtool -show-build` e `LSMinimumSystemVersion` dell'eseguibile del DMG montato, e la
     prova mette architettura e versione minima nel rapporto (`misure`).
-  - Letto sul Mac Intel nella pipeline (16/11/2026): `lipo -archs` `x86_64`, `LSMinimumSystemVersion` 14.0,
-    `macos_minimo` e `macos_minimo_binari` 14.0 in `componenti.json`. L'eseguibile stesso (`impaginatore-app`) ha
-    `minos 10.15` (`vtool -show-build`, `sdk 15.5`): Nuitka lo compila con la versione del Python che compila, non con
-    `MACOSX_DEPLOYMENT_TARGET`. Chiede meno del dichiarato, quindi il controllo passa, e la versione che conta è quella di
-    `Info.plist`: aperto dal Finder su un macOS più vecchio, il sistema dice che il programma non è compatibile. Lanciato
-    direttamente dal Terminale (per esempio `impaginatore-app mcp`) su un macOS più vecchio partirebbe e si fermerebbe
-    sulle librerie da 14.0: è fuori dai sistemi supportati e non è provato.
+  - **Il minimo vero è quello di `Info.plist`** (`LSMinimumSystemVersion`, cioè `compila.MACOS_MINIMO`). L'eseguibile
+    di Nuitka (`impaginatore-app`) chiede meno: Nuitka lo compila con la versione del Python che compila, non con
+    `MACOSX_DEPLOYMENT_TARGET` (sul Mac Intel `minos 10.15`, `sdk 15.5` con `vtool -show-build`). Le librerie incluse
+    arrivano esattamente al minimo di `Info.plist` e mai oltre: sono loro a fissarlo. Aperto dal Finder su un macOS più
+    vecchio, il sistema dice che il programma non è compatibile; lanciato direttamente dal Terminale (per esempio
+    `impaginatore-app mcp`) partirebbe e si fermerebbe sulle librerie: è fuori dai sistemi supportati e non è provato.
+  - Letto sul DMG del Mac Intel della pipeline (16/11/2026; estratto con `7z` e letto con `llvm-otool -l`, come fa
+    `compila.minimi_macos`): 58 binari Mach-O, 19 con `minos 14.0` (`cv2.so`, `_multiarray_umath.so` di numpy, `_rust.so`
+    di cryptography, `libaom`, `libavif`, `libdav1d`, `libvmaf`…), 3 con 10.15 (eseguibile compreso), 34 con 10.13, 2 con
+    10.12; `LSMinimumSystemVersion` 14.0; `lipo -archs` `x86_64`; `macos_minimo` e `macos_minimo_binari` 14.0 in
+    `componenti.json`. Dal 16/11/2026 `compila.py` scrive nel registro quanti binari chiedono ogni versione e quali
+    fissano il minimo.
   Non provato: l'avvio vero su macOS 13 o 14 (i runner sono macOS 15); quello che vale è il controllo sui binari.
 - Finestre di scelta: quelle del Finder (osascript), come nel pacchetto Python.
 
@@ -344,9 +358,12 @@ Dal 16/11/2026 il repository è pubblico: i runner standard non si pagano e hann
 | Pacchetto | Senza cache di Nuitka | Con la cache del giro prima |
 |---|---|---|
 | linux | 16 min | 5 min |
-| windows | più di 26 min (il primo giro si è fermato dopo la compilazione) | 10 min |
-| mac-x86_64 | più di 29 min (il primo giro si è fermato al DMG) | 13–15 min |
+| linux-arm64 | 17 min | 4 min |
+| windows | 26 min | 10 min |
+| mac-x86_64 | più di 29 min (il primo giro si è fermato al DMG) | 13–15 min; 31 min quando cambia la versione minima di macOS |
 | mac-arm64 | non misurata (nessun runner) | non misurata |
+
+I test che precedono i pacchetti su un tag: Linux 11–13 min, Windows 18 min, macOS Intel 7 min.
 
 I job girano in parallelo: un giro dura quanto il più lento. Se il repository tornasse privato, i runner Linux e
 Windows avrebbero 2 core (la compilazione senza cache dura circa il doppio) e GitHub conterebbe i minuti macOS 10 volte
@@ -365,7 +382,10 @@ pipeline né in un segreto di GitHub. Per questo il rilascio va in due tempi:
    è `a`, `b` o `rc`). Dentro: i pacchetti che hanno passato la prova, con `.sha256` e `.componenti.json`, la wheel,
    `SHA256SUMS` (pacchetti e wheel) e `verifiche.json` (esito, sistema e architetture della prova di ogni pacchetto). Un
    pacchetto senza impronta giusta o senza prova passata non entra: le note della bozza lo dicono in testa e il job
-   finisce in errore. Rilanciando il job che mancava (`gh run rerun <id> --failed`) il job «release» rigira e completa
+   finisce in errore. Le note sono corte (le stesse, senza la testa della bozza, dopo `pubblica`): tabella dei pacchetti
+   con sistema, versione minima di macOS, dimensione e impronta SHA-256, cosa manca, come controllare l'impronta su ogni
+   sistema, il collegamento alla guida di installazione alla versione del tag e, ripiegate (`<details>`), le voci del
+   registro. Rilanciando il job che mancava (`gh run rerun <id> --failed`) il job «release» rigira e completa
    la stessa bozza; una release già pubblicata la pipeline non la tocca. Permesso `contents: write` solo in quel job,
    nessun segreto oltre `GITHUB_TOKEN`, azioni fissate per hash.
 2. **Computer di chi pubblica**: `strumenti/rilascio.py pubblica v<versione>` scarica la bozza con `gh`, ricontrolla
@@ -398,6 +418,9 @@ A ogni versione:
    corregge, si cancellano la bozza (`gh release delete v<versione> --yes`) e il tag, e si rifà il tag sul commit
    corretto. L'indirizzo di una bozza è `…/releases/tag/untagged-…`: si apre dalla pagina Releases o con `gh release view
    v<versione>`.
+   Se le macchine per un sistema non arrivano, quel pacchetto si costruisce su un computer dallo stesso tag
+   (`costruzione/LEGGIMI.md`) e si aggiunge alla bozza: `python strumenti/rilascio.py aggiungi v<versione> <cartella
+   dist/pacchetti ricevuta>` (prima con `--prova`). Dopo `aggiungi` il giro del tag non si rilancia più.
 5. Facoltativo: `python strumenti/rilascio.py pubblica v<versione> --prova` prepara tutto in
    `dist/pubblica-<versione>` (scarica, ricontrolla, firma) senza caricare né pubblicare niente.
 6. `python strumenti/rilascio.py pubblica v<versione> --novita-it "…" --novita-en "…"` (una opzione per riga di
@@ -500,6 +523,29 @@ find devices on local networks?» (Rete locale, macOS 15). La prova è passata c
 programma lavora senza quel permesso (i suoi server ascoltano solo su 127.0.0.1); cosa la fa comparire non è ancora
 chiaro (`WKWebView`, o una risoluzione del nome del computer). Va capito prima della beta, e intanto la guida dice di
 rispondere «Non consentire».
+
+### Release di prova `v2.0.0b1` (16/11/2026)
+
+Tag di prova sul ramo `pacchetti/rilascio`, per dimostrare il giro intero fino alla bozza. La bozza non è mai stata
+pubblicata.
+
+| Che cosa | Esito | Dove |
+|---|---|---|
+| Bozza incompleta dichiarata | la bozza dice in testa che cosa manca e il job «release» finisce in errore | giro 43923784180 (mancavano Windows e Mac chip Apple) |
+| Linux x86_64 e arm64, b1 | costruiti, installati con `apt`, provati con la finestra | giro 43932976545 |
+| Windows x64, b1 | costruito, installato, provato con la finestra, disinstallato | giro 43932976545 |
+| Windows 11 ARM | il pacchetto x64 installato e provato su `windows-11-arm` (Windows 10.0.26200 Arm64, WebView2 157): eseguibile `x86_64` su macchina `ARM64`, finestra compresa; `sha256sum -c` passa | giri 43919003527 e 43932976545 |
+| Mac Intel, b1 | costruito al secondo tentativo del giro (al primo mancava la macchina per i test macOS), provato dal DMG; `LSMinimumSystemVersion` 14.0, 58 binari, 19 dei quali chiedono macOS 14.0 | giro 43932976545 |
+| Mac chip Apple | **mai costruito**: otto tentativi fra le 16:39 e le 21:50 UTC, tutti annullati da GitHub dopo 15 minuti senza una macchina («capacity constraints … macOS arm64») | giri 43919003527, 43923784180, 43932976545 |
+| Pubblicazione, in prova | `rilascio.py pubblica v2.0.0b1 --prova --senza mac-arm64` con una chiave di prova: scarica la bozza, ricontrolla impronte e prove, firma il manifesto per cinque pacchetti (wheel compresa); niente caricato, la release resta in bozza | computer del titolare |
+| Script di costruzione su un computer | `costruzione/linux/costruisci.sh` su Ubuntu 24.04; gli altri girano nella pipeline | computer del titolare, pipeline |
+
+Dimensioni della b1: `windows.exe` 67,8 MB, `linux.deb` 92,0 MB, `linux-arm64.deb` 69,4 MB, `mac-x86_64.dmg` 96,8 MB,
+wheel 2,2 MB.
+
+Restano da provare su macchine vere, con la beta: il pacchetto per i Mac con chip Apple (da costruire su un Mac con
+chip Apple con `costruzione/mac-arm64/costruisci.sh`), gli avvisi di Gatekeeper e SmartScreen su un file scaricato,
+l'avvio su macOS 13 e 14 (la pipeline ha solo macOS 15).
 
 ## Decisioni per il titolare
 
