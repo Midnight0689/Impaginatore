@@ -140,7 +140,7 @@ def stringhe_js(js):
             while j < n and (js[j] != "/" or classe) and js[j] != "\n":
                 if js[j] == "\\": j += 2; continue
                 classe = (classe or js[j] == "[") and js[j] != "]"; j += 1
-            i = j + 1; prima = "x"; continue
+            i = j if j < n and js[j] == "\n" else j + 1; prima = "x"; continue          # non una regex: l'a capo si conta
         if not c.isspace(): prima = c
         i += 1
     return out
@@ -200,7 +200,7 @@ def test_inglese_tradotto_davvero():
     assert uguali == []
     assert [k for k, v in en.items() if "«" in v or "»" in v] == []
     italiane = re.compile(r"\b(il|della|delle|degli|nella|questo|questa|sono|perché|più|già|foto|spread\w* \d+–\d+ e)\b")
-    assert [k for k, v in en.items() if italiane.search(v) and not re.fullmatch(r"[^a-z]*", v)] == []
+    assert [k for k, v in en.items() if italiane.search(SEGNAPOSTO.sub(" ", v)) and not re.fullmatch(r"[^a-z]*", v)] == []
 
 
 # ---------------------------------------------------------------- chiavi usate dal codice
@@ -323,6 +323,7 @@ def test_il_controllo_riconosce_i_testi():
     assert [t for _, t in stringhe_js('x = `a ${f(`b ${"c"}`)} d`; y = /\\/"/; z = \'e\';')] == ["c", "b  {x} ", "a  {x}  d", "e"]
     assert any(prosa(x) for x in visibili_html_js('<b title="Chiudi la finestra">x</b>'))
     assert segnata(["x = 'Ciao' // non tradotto: nome di un font"], 1, 1) and not segnata(["x = 'Ciao' // non tradotto:"], 1, 1)
+    assert stringhe_js('x = (a) / 2\ny = "Ciao a te"') == [(2, "Ciao a te")], "una divisione non fa perdere il conto delle righe"
 
 
 # ---------------------------------------------------------------- lingua.py
