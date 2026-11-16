@@ -102,7 +102,7 @@ def test_dal_progetto_alla_bozza_rifinita(editor, home_srv, a, tmp_path):
     r = a.sistema_album(p, spazi=False)
     assert r["foto_con_tono_corretto"] >= 0
 
-    passi = len(E.UNDO); nome = E.UNDO[-1]["nome"] if E.UNDO else None
+    passi = len(E.UNDO); nome = E.passi()["annulla"]["nome"] if E.UNDO else None
     r = a.annulla(p)
     assert r["annullato"]["nome"] == nome and len(E.UNDO) == passi - 1 and r["ripeti"]["nome"] == nome
     assert a.ripeti(p)["ripetuto"]["nome"] == nome
