@@ -82,10 +82,13 @@ jobs:
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
 
+      # storia intera (pochi MB): test_progetto_si_esporta_per_la_1x legge dalla storia gli script della 1.5.2 (957fdf7)
+      # e prova che girano sul progetto esportato; con il solo ultimo commit quella parte si salterebbe
       - name: Codice
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: uv e Python ${{ matrix.python }}
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
