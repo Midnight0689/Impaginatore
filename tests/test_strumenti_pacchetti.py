@@ -53,7 +53,7 @@ def test_nomi_dei_pacchetti():
 @pytest.mark.parametrize("sis", ["linux", "mac", "windows"])
 def test_argomenti_di_nuitka(sis, tmp_path):
     a = compila.argomenti_nuitka(sis, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
-    assert a[:3] == [sys.executable, "-m", "nuitka"] and a[-1] == str(compila.ENTRATA)
+    assert a[:5] == [sys.executable, "-X", "utf8", "-m", "nuitka"] and a[-1] == str(compila.ENTRATA), "Nuitka in modalità UTF-8: il programma compilato la eredita"
     assert ("--mode=app" in a) == (sis == "mac") and ("--mode=standalone" in a) == (sis != "mac")
     for o in ("--include-package=impaginatore", "--include-package-data=impaginatore", "--python-flag=no_docstrings", "--nofollow-import-to=gi", "--noinclude-data-files=webview/lib/*.jar",
               "--nofollow-import-to=pytest", "--nofollow-import-to=pillow_heif", f"--report={tmp_path / 'r.xml'}"):
@@ -114,6 +114,18 @@ def _rapporto(p, moduli):
     return p
 
 
+def test_rapporto_di_nuitka_con_lettere_non_ascii(tmp_path):
+    """Nuitka scrive il rapporto in UTF-8 dichiarandolo encoding='utf8' (ElementTree.tostring(encoding="utf8")), che
+    expat legge come una codifica a un byte: su Windows la © di --copyright lo rendeva illeggibile"""
+    radice = ET.Element("nuitka-compilation-report"); ET.SubElement(radice, "option", value="--copyright=© 2026 Studio")
+    for m in ("numpy.core", "PIL.Image"): ET.SubElement(radice, "module", name=m, kind="CompiledPythonModule")
+    r = tmp_path / "r.xml"; r.write_bytes(ET.tostring(radice, encoding="utf8"))
+    assert r.read_bytes().startswith(b"<?xml version='1.0' encoding='utf8'?>")
+    with pytest.raises(ET.ParseError): ET.parse(r)
+    assert compila.leggi_rapporto(r).find("option").get("value") == "--copyright=© 2026 Studio"
+    assert set(compila.distribuzioni_incluse(r)) == {"numpy", "pillow"}
+
+
 def test_licenze_dei_componenti(tmp_path):
     prog = tmp_path / "Impaginatore"; (prog / "numpy.libs").mkdir(parents=True); (prog / "numpy.libs" / "libopenblas.so.0").write_bytes(b"x"); (prog / "impaginatore").write_bytes(b"x")
     r = _rapporto(tmp_path / "r.xml", ["impaginatore.cli", "numpy.core", "PIL.Image", "json", "nonesiste"])
@@ -155,6 +167,32 @@ def test_controllo_del_programma(tmp_path):
     with pytest.raises(SystemExit, match="file sorgente"): compila.controlla_programma(prog)
 
 
+def test_dmg_copia_la_firma_con_ditto(monkeypatch, tmp_path):
+    """macOS: la firma ad hoc dei file di dati in Contents/MacOS sta negli attributi estesi, che shutil.copytree non copia:
+    il bundle va nel DMG con ditto e la firma si controlla sulla copia, prima di hdiutil"""
+    prog = tmp_path / "b" / "Impaginatore.app"; (prog / "Contents" / "MacOS").mkdir(parents=True); comandi = []
+    monkeypatch.setattr(compila.subprocess, "run", lambda c, check: comandi.append(c))
+    monkeypatch.setattr(compila, "ripeti", lambda c: comandi.append(c))
+    out = compila.pacchetto_dmg(prog, tmp_path / "u", "2.0.1", "mac-arm64")
+    copia = str(prog.parent / "dmg" / "Impaginatore.app")
+    assert [c[:2] for c in comandi] == [["codesign", "--force"], ["codesign", "--verify"], ["ditto", str(prog)], ["codesign", "--verify"], ["hdiutil", "create"]]
+    assert comandi[2][2] == copia and comandi[3][-1] == copia and comandi[4][-1] == str(out) and out.name == "Impaginatore-2.0.1-mac-arm64.dmg"
+    assert os.readlink(prog.parent / "dmg" / "Applicazioni") == "/Applications"
+
+
+def test_ripete_i_comandi_che_a_volte_non_vanno(monkeypatch):
+    """«hdiutil create» sui Mac di GitHub a volte risponde «Resource busy»: si riprova, e alla fine l'errore passa"""
+    esiti = [1, 1, 0]; chiamate = []
+    def run(cmd, check):
+        chiamate.append(cmd); e = esiti.pop(0)
+        if e: raise subprocess.CalledProcessError(e, cmd)
+        return types.SimpleNamespace(returncode=0)
+    monkeypatch.setattr(compila.subprocess, "run", run); monkeypatch.setattr(compila.time, "sleep", lambda s: None)
+    assert compila.ripeti(["hdiutil", "create"]).returncode == 0 and len(chiamate) == 3
+    esiti[:] = [1, 1]
+    with pytest.raises(subprocess.CalledProcessError): compila.ripeti(["hdiutil", "create"], volte=2)
+
+
 def test_testi_del_pacchetto_deb():
     c = compila.controllo_deb("2.0.0.dev0", 123456)
     assert "Version: 2.0.0~~dev0\n" in c and "Installed-Size: 123456\n" in c and "Depends: python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1\n" in c
@@ -164,6 +202,7 @@ def test_testi_del_pacchetto_deb():
     assert d["NomeFile"] == "Impaginatore-2.0.1rc1-windows" and d["VersioneFile"] == "2.0.1.0"
     iss = open(compila.ISS, encoding="utf-8").read()
     assert all("{#" + k + "}" in iss for k in d if k != "Licenze") and "PrivilegesRequired=lowest" in iss
+    assert iss.startswith("﻿"), "UTF-8 con BOM: Inno Setup legge giusti gli accenti e le «» dei messaggi"
 
 
 @pytest.mark.skipif(not shutil.which("dpkg-deb") or os.name == "nt", reason="serve dpkg-deb")
@@ -316,3 +355,46 @@ def test_versione_minima_di_macos():
                        "Load command 12", "      cmd LC_BUILD_VERSION", " platform 2", "    minos 17.0",
                        "Load command 13", "          cmd LC_LOAD_DYLIB", "compatibility version 1.0.0"])
     assert compila.minos(otool) == [(14, 0), (10, 13)], "solo macOS (platform 1), mai le versioni delle librerie"
+
+
+# ---------------------------------------------------------------- verifica_pacchetto.py: rapporto e finestra
+def test_un_errore_inatteso_e_un_controllo_che_non_va(monkeypatch):
+    """un errore della prova (o una risposta inattesa del programma) non ferma la prova: il controllo risulta «no», con il
+    punto in cui è successo, e gli altri vanno avanti"""
+    monkeypatch.setattr(verifica, "RAPPORTO", {"controlli": [], "tempi": {}, "non_provato": []})
+    rotto = verifica.controllo("rotto")(lambda: {}["manca"])
+    with pytest.raises(verifica.NonVa, match="errore inatteso KeyError"): rotto()
+    assert verifica.controllo("buono")(lambda: 7)() == 7 and rotto.nome == "rotto"
+    no, ok = verifica.RAPPORTO["controlli"]
+    assert no["nome"] == "rotto" and no["esito"] == "no" and "test_strumenti_pacchetti.py" in no["motivo"] and ok["esito"] == "ok"
+    verifica.saltato("dopo", "serve «rotto»"); verifica.RAPPORTO["non_provato"].append("finestra | fotografia")
+    md = verifica.riepilogo(dict(verifica.RAPPORTO, versione="2.0.1", sistema="win32"))
+    assert "| rotto | **NO** |" in md and "| dopo | saltato |  | serve «rotto» |" in md and "NON PROVATO su questa macchina: finestra \\| fotografia" in md
+    assert all(r.count("|") - r.count("\\|") == 5 for r in md.splitlines() if r.startswith("| ")), "una riga per controllo, il motivo su una riga sola"
+
+
+def test_la_pagina_nella_finestra_si_riconosce_dalle_statistiche():
+    """l'evento «finestra» della schermata Album, mandato dalla pagina caricata nella finestra, dopo quelli che c'erano"""
+    righe = [json.dumps(dict(ev="avvio", proc="home", finestra_programma=None)), json.dumps(dict(ev="chiusura", proc="home")),
+             json.dumps(dict(ev="avvio", proc="home", finestra_programma=True)), json.dumps(dict(ev="finestra", pagina="editor", larghezza=9))]
+    class C:
+        def get(self, path): assert path == "/api/statistiche/registro"; return dict(righe=righe[-3:], totale=len(righe))
+    assert verifica.pagina_nella_finestra(C(), 2) is None, "finché la schermata Album non manda il suo evento"
+    righe.append(json.dumps(dict(ev="finestra", pagina="album", larghezza=1088, altezza=700)))
+    avvio, f = verifica.pagina_nella_finestra(C(), 2)
+    assert avvio["finestra_programma"] is True and f["larghezza"] == 1088, "solo gli eventi dopo i primi 2 (righe mostrate: le ultime 3)"
+    tutti = verifica.eventi(C(), 0)
+    assert len(tutti) == 3 and tutti[0]["finestra_programma"] is True, "il registro mostra solo le ultime righe"
+
+
+def test_su_windows_la_prova_non_lavora_in_appdata():
+    """la cartella temporanea di Windows sta in AppData, riservata per il programma: gli album della prova non possono stare lì"""
+    assert verifica.cartella_di_lavoro("win32") == os.path.expanduser("~")
+    assert verifica.cartella_di_lavoro("linux") is None and verifica.cartella_di_lavoro("darwin") is None
+
+
+def test_comando_della_fotografia_dello_schermo(tmp_path):
+    assert verifica.comando_foto(tmp_path / "f.png", "darwin") == ["screencapture", "-x", "-t", "png", str(tmp_path / "f.png")]
+    w = verifica.comando_foto("C:\\Prove\\l'album\\f.png", "win32")
+    assert w[:4] == ["powershell", "-NoProfile", "-NonInteractive", "-Command"] and w[4].endswith("$b.Save('C:\\Prove\\l''album\\f.png')"), "apice raddoppiato per PowerShell"
+    assert verifica.comando_foto(tmp_path / "f.png", "linux") is None and verifica.fotografa_schermo(None) == "nessuna cartella per le immagini"

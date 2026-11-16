@@ -1,7 +1,10 @@
 # Distribuzione: programma compilato e pacchetti di installazione (T-302)
 
-Stato al 16/11/2026: costruzione, pacchetto e prova scritti per i tre sistemi; **provati davvero solo su Linux** (sotto,
-«Cosa è provato»). Per la beta privata, senza certificati Apple e Microsoft, per scelta del titolare.
+Stato al 16/11/2026: costruzione, pacchetto e prova scritti per i tre sistemi e provati nella pipeline di GitHub su
+Linux, Windows e Mac Intel, con il programma installato come lo installerebbe un utente e la sua finestra vera (sotto,
+«Cosa è provato»). Il pacchetto per i Mac con chip Apple non è ancora stato costruito: GitHub non ha trovato un runner
+macOS arm64 libero (sotto, «Pipeline»). Per la beta privata, senza certificati Apple e Microsoft, per scelta del
+titolare.
 
 Guida per chi installa: `docs/manuale/00-installazione.md`. Aggiornamenti: `AGGIORNAMENTI.md`.
 
@@ -37,6 +40,14 @@ UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra
 - `strumenti/compila.py` (stesso comando sui tre sistemi, costruisce per quello su cui gira): Nuitka in modalità
   standalone (macOS: `--mode=app`), punto d'ingresso `strumenti/compilazione/avvio_impaginatore.py` (= `cli.main`),
   poi il pacchetto del sistema. Opzioni `--solo-programma`, `--solo-pacchetto`, `--uscita`.
+- Nuitka gira con `python -X utf8`: il programma compilato prende la modalità UTF-8 da chi lo compila e non legge
+  `PYTHONUTF8` (Nuitka ignora le variabili `PYTHON*`). Senza, su Windows il compilato scriverebbe in cp1252 nei tubi e nei
+  registri (il messaggio «Photoshop non è stato trovato» del sottocomando `_psd` arriverebbe rovinato all'editor),
+  mentre il pacchetto Python dà UTF-8 a ogni processo figlio (`processi.ambiente_figli`). Su Linux e macOS non cambia
+  niente di visibile.
+- Cache: con `NUITKA_CACHE_DIR` Nuitka tiene lì ccache (Linux, macOS; va installato: `apt install ccache`, `brew
+  install ccache`), il suo clcache (Windows con MSVC) e i moduli già analizzati. Una seconda compilazione rifà solo i
+  file C cambiati.
 - Nuitka è nell'extra `compilazione` di `pyproject.toml` (versione fissata, 4.3.5, con `patchelf` su Linux): entra solo
   nell'ambiente di compilazione `.venv-compilazione`, mai nel programma distribuito né in quello di sviluppo.
 - Serve un compilatore C: Linux `gcc` (con `ccache` va più veloce), macOS gli strumenti a riga di comando di Xcode,
@@ -114,28 +125,52 @@ copie del motore dalle risorse quando i `.py` non ci sono.
   a quello i permessi dati dall'utente, come l'accesso a Documenti e Scrivania) dentro un DMG compresso (UDZO) con il
   collegamento ad Applicazioni.
 - Firma **ad hoc** (`codesign --force --deep --sign -`), poi `codesign --verify --deep --strict`: sui Mac con chip Apple
-  un eseguibile senza nessuna firma non parte, quella ad hoc basta. Non è un'identità: Gatekeeper al primo avvio blocca
-  il programma scaricato e l'utente lo apre da Impostazioni › Privacy e sicurezza › «Apri comunque» (macOS 15 ha tolto
-  la scorciatoia Ctrl-clic › Apri). La guida lo spiega passo per passo.
-- Un DMG per architettura (`mac-arm64` su `macos-26`, `mac-x86_64` su `macos-15-intel`): Nuitka non fa binari universali
+  il sistema non esegue un binario arm64 senza nessuna firma, quella ad hoc basta. È il comportamento normale degli
+  strumenti: Nuitka firma già ad hoc alla fine della compilazione (`--macos-sign-identity`, di serie «ad-hoc») e
+  `compila.py` rifirma allo stesso modo dopo aver aggiunto le licenze (che cambiano il contenuto del bundle). Non è
+  un'identità e non tocca quarantena né impostazioni del sistema: Gatekeeper al primo avvio blocca il programma
+  scaricato e l'utente lo apre da Impostazioni › Privacy e sicurezza › «Apri comunque» (macOS 15 ha tolto la scorciatoia
+  Ctrl-clic › Apri). La guida lo spiega passo per passo.
+- `hdiutil create` sui Mac di GitHub a volte risponde «Resource busy»: `compila.ripeti` lo riprova fino a 4 volte.
+- Un DMG per architettura (`mac-arm64` su `macos-15`, `mac-x86_64` su `macos-15-intel`): Nuitka non fa binari universali
   da un solo ambiente e le ruote di numpy/OpenCV sono per architettura. Il manifesto degli aggiornamenti ha una chiave
   per ognuna.
+- Il bundle va nel DMG copiato con `ditto`: `codesign` firma i file di dati in `Contents/MacOS` con la firma negli
+  attributi estesi, che `shutil.copytree` su macOS perde (sotto, «Problemi»). La firma si controlla sul bundle e sulla
+  copia, e la pipeline la ricontrolla sul DMG montato.
+- Mac Intel: **cryptography** (la usa il server MCP: `mcp.server.request_state`, via `pyjwt[crypto]`) non ha più ruote
+  per macOS x86_64 dalla 49 (l'ultima con le ruote è la 48.0.1); `uv.lock` ha la 50.0.2. Sul Mac Intel uv la costruisce
+  dal sorgente con il Rust del runner e l'OpenSSL 3 di Homebrew collegato in modo statico (`OPENSSL_STATIC=1`).
+  Provato nella pipeline: circa 3 minuti, e nell'elenco delle librerie native del programma non c'è nessuna libreria
+  OpenSSL (né altre di Homebrew).
 - Versione minima di macOS: la decide la libreria che chiede la versione più alta; `compila.macos_minimo` la legge da
-  tutti i binari del bundle (`otool -l`) e la scrive in `componenti.json` e nel registro della costruzione. Va riportata
-  nella guida alla prima costruzione vera (oggi la guida dice «macOS 14, da confermare»).
+  tutti i binari del bundle (`otool -l`) e la scrive in `componenti.json`, nel registro della costruzione e nel rapporto
+  della prova (`misure.macos_minimo`). Sul Mac Intel è **14.0** (pipeline, 16/11/2026; Nuitka da solo direbbe 10.15, ma
+  numpy e OpenCV vogliono 14). Sul Mac con chip Apple ci si aspetta lo stesso (numpy 2.5.4 `macosx_14_0_arm64`): da
+  misurare.
 - Finestre di scelta: quelle del Finder (osascript), come nel pacchetto Python.
 
 ### Windows
 
 - Installatore Inno Setup 6 (`strumenti/compilazione/impaginatore.iss`), **per l'utente** (`PrivilegesRequired=lowest`):
   non chiede la password di amministratore e non scrive in `Program Files`. Italiano e inglese. `AppId` fisso: una
-  versione nuova si installa sopra la vecchia (la cartella del programma si svuota prima, `InstallDelete`).
+  versione nuova si installa sopra la vecchia (la cartella del programma si svuota prima, `InstallDelete`). Il file è in
+  UTF-8 con BOM, perché Inno Setup legga giusti gli accenti e le «» dei messaggi. Inno Setup 6.7.1 c'è già
+  sull'immagine `windows-2025` di GitHub (immagine 20261111); se manca la pipeline lo installa con choco.
+- Compilatore: MSVC di Visual Studio 2022 (17.14 sull'immagine `windows-2025`), con il clcache di Nuitka.
 - Non firmato: SmartScreen mostra «Windows ha protetto il PC» la prima volta e l'utente sceglie «Ulteriori
   informazioni» › «Esegui comunque». La reputazione di SmartScreen per un file non firmato si azzera a ogni versione.
 - WebView2: l'installatore controlla nel registro se c'è e, se manca, lo dice (non lo scarica). Senza WebView2 il
   programma si apre nel browser; le finestre di scelta usano tkinter (incluso solo su Windows, `--enable-plugin=tk-inter`).
 - Eseguibile con console «attach» (`--windows-console-mode=attach`): aperto da Start non mostra una console, da un
-  terminale scrive lì (serve a `impaginatore mcp` su stdio). **Da provare su Windows vero.**
+  terminale scrive lì (serve a `impaginatore mcp` su stdio). Dal codice di Nuitka 4.3.5 (`HelpersConsole.c`): si attacca
+  alla console di chi lo lancia e tiene i canali già rediretti (tubi, file), quindi la prova e un assistente AI che
+  parlano con lui su stdin/stdout li ricevono. Provato nella pipeline: il controllo «mcp» parla con il programma
+  installato su stdin/stdout. Che aperto da Start non mostri una console è da guardare su un PC vero.
+- WebView2: c'è sull'immagine `windows-2025` di GitHub (la finestra della prova si apre con WebView2), anche se il suo
+  elenco del software non lo nomina.
+- L'icona della finestra su Windows è un `.ico` (`risorse/icona.ico`, la stessa di `brand/icona/icona.ico`): con il PNG
+  la finestra non si apriva (sotto, «Problemi»).
 - Antivirus: i programmi compilati con Nuitka e non firmati a volte vengono segnalati per errore. Se succede, si manda il
   file al produttore dell'antivirus come falso positivo; la guida dice all'utente di non spegnere l'antivirus.
 
@@ -167,25 +202,64 @@ il bundle notarizzato (macOS): `InstallazioneCompilata` è il solo punto da camb
 
 ## Pipeline (`.github/workflows/pacchetti.yml`)
 
-- Parte a mano o con un tag `v*`. Permessi in sola lettura, nessun segreto, nessuna release: i pacchetti restano come
-  artefatti dell'esecuzione per 30 giorni. Azioni fissate per hash come in `ci.yml`.
-- Prima i test (`strumenti/controlli.py`: lint e copertura su Linux, test su macOS e Windows), poi un job per pacchetto
-  (`linux`, `mac-arm64`, `mac-x86_64`, `windows`) e la wheel.
+- Permessi in sola lettura, nessun segreto, nessuna release: i pacchetti restano come artefatti dell'esecuzione (30
+  giorni sui tag, 7 negli altri giri). Azioni fissate per hash come in `ci.yml`.
+- Il repository è pubblico, e con lui registri e artefatti dei giri: l'artefatto di ogni pacchetto contiene solo il
+  pacchetto (con `.sha256` e `.componenti.json`) e il riepilogo della verifica (`verifica-<chiave>.json` e le
+  fotografie della finestra). Il rapporto di Nuitka e la diagnosi di un controllo che non va non entrano
+  nell'artefatto: la diagnosi è nel registro del job.
+- Quali pacchetti, per non spendere minuti che non servono:
+
+  | Come parte | Pacchetti | Test e wheel |
+  |---|---|---|
+  | tag `v*` (rilascio) | tutti e quattro | sì: test su Linux (copertura), macOS e Windows |
+  | avvio manuale (quando il file è sul ramo principale) | scelta: `linux` (di serie), `windows`, `mac-arm64`, `mac-x86_64`, `tre`, `tutti` | sì: Linux, più macOS o Windows se c'è il loro pacchetto |
+  | push su `pacchetti/<chiave>` | solo quello (`pacchetti/windows`, `pacchetti/mac-arm64`…); `pacchetti/tre` = Linux, Mac chip Apple, Windows; `pacchetti/tutti` e `pacchetti/prova` = tutti e quattro; ogni altro `pacchetti/**` = solo Linux | no (i test li fa `ci.yml` sui rami `prodotto/**`) |
+
+  Un push nuovo sullo stesso ramo `pacchetti/**` annulla il giro precedente; sui tag no.
 - Ogni job di pacchetto: licenze delle dipendenze di quel sistema (macOS e Windows ne hanno di proprie: pyobjc,
-  pythonnet…; `sicurezza.yml` controlla quelle di Linux), ambiente di compilazione, `compila.py`, installazione come la
-  farebbe un utente (`apt install ./….deb`; installatore silenzioso, che si installa per l'utente; DMG montato in sola
-  lettura con `codesign --verify`), `verifica_pacchetto.py` sul programma installato, disinstallazione (Windows).
+  pythonnet…; `sicurezza.yml` controlla quelle di Linux; solo sui tag e con l'avvio manuale), ambiente di compilazione,
+  `compila.py`, installazione come la farebbe un utente (`apt install ./….deb`; installatore silenzioso, che si installa
+  per l'utente; DMG montato in sola lettura con `codesign --verify`), `verifica_pacchetto.py --finestra` sul programma
+  installato, disinstallazione (Windows). Ogni job ha un tempo massimo per sistema (Linux e Mac arm64 120 minuti, Mac
+  Intel 150, Windows 180), perché un blocco non tenga occupato un runner per ore.
+- Cache: uv (con `enable-cache`; sul Mac Intel tiene anche la cryptography costruita dal sorgente) e Nuitka
+  (`NUITKA_CACHE_DIR` in `actions/cache`, una chiave per esecuzione e si riparte dall'ultima). La cache di Nuitka si
+  salva subito dopo la compilazione, anche quando dopo qualcosa non va.
 - La schermata di avvio si prova su tutti i sistemi con `impaginatore _avvio` (la stessa pagina della finestra): versione,
   «Prova gratuita · 30 giorni», «Free trial · 30 days left» e «Sola lettura» dopo una prova finita. «Beta privata» vuole
   una chiave firmata con la chiave vera e si prova nei test (`tests/test_avvio.py`).
-- La prova della finestra blocca solo su Linux (xvfb). Lì fotografa la schermata di avvio (`avvio-finestra.png`
-  nell'artefatto, non bloccante: dura un secondo) e poi la finestra del programma (`finestra-programma.png`), che deve
-  vedersi. Su macOS e Windows dipende dalla sessione grafica del runner e non blocca: il risultato è nel suo rapporto
-  JSON.
+- La finestra vera si prova su tutti e tre i sistemi e blocca: la prova accende le statistiche d'uso nella sua cartella
+  dei dati (restano lì: il programma non ha un server a cui mandarle) e aspetta l'evento «finestra» che la schermata
+  Album manda quando si carica, con la misura della pagina: così sa che la pagina gira **dentro** la finestra (WebKitGTK,
+  WKWebView, WebView2), non in un browser. L'evento «avvio» dice che il motore della finestra è partito. Sotto Xvfb
+  (Linux) fotografa e giudica la schermata di avvio (`avvio-finestra.png`) e la finestra del programma
+  (`finestra-programma.png`); su macOS e Windows fotografa lo schermo (`screencapture`, PowerShell) come documento e il
+  riepilogo dice «NON PROVATO su questa macchina» per il giudizio automatico della fotografia.
+- La prova va avanti dopo un controllo che non va (quelli che ne dipendono risultano «saltato») e, se qualcosa non va,
+  stampa le ultime righe di uscita, registro ed `editor.log` del programma e le salva nell'artefatto
+  (`diagnosi-*.txt`): un giro fallito dice tutto quello che c'è da sapere, senza rifarlo per leggere un altro errore.
 - Il controllo dei PSD lancia il sottocomando `_psd` su un album vero: carica l'album (volti compresi, con OpenCV) e,
-  senza Photoshop, deve fermarsi con il suo messaggio e non con un errore.
-- Costo: stima nella testa del workflow (circa 8 $ a esecuzione, quasi tutto macOS; il Mac Intel è il job più caro). Da
-  rifare con i tempi della prima esecuzione.
+  senza Photoshop, deve fermarsi con il suo messaggio (senza caratteri rovinati) e non con un errore.
+
+### Consumo
+
+Dal 16/11/2026 il repository è pubblico: i runner standard non si pagano e hanno 4 core su Linux, Windows e Mac Intel,
+3 sul Mac arm64. Durata dei job di pacchetto misurata nella pipeline (16/11/2026), dall'inizio alla fine del job:
+
+| Pacchetto | Senza cache di Nuitka | Con la cache del giro prima |
+|---|---|---|
+| linux | 16 min | 5 min |
+| windows | più di 26 min (il primo giro si è fermato dopo la compilazione) | 10 min |
+| mac-x86_64 | più di 29 min (il primo giro si è fermato al DMG) | 13–15 min |
+| mac-arm64 | non misurata (nessun runner) | non misurata |
+
+I job girano in parallelo: un giro dura quanto il più lento. Se il repository tornasse privato, i runner Linux e
+Windows avrebbero 2 core (la compilazione senza cache dura circa il doppio) e GitHub conterebbe i minuti macOS 10 volte
+e Windows 2 volte, sul piano da 2.000 minuti al mese: un giro dei quattro pacchetti con la cache costerebbe circa
+5 + 2 × 10 + 10 × 15 + 10 × 15 = 325 minuti, senza cache più di 1.000; con i test del job `test` (circa 170 minuti
+fatturati) un tag ne costerebbe quindi circa 500 con la cache. I rami `pacchetti/<chiave>` servono a provare un
+sistema solo.
 
 ## Rilascio (T-303, sul computer di chi pubblica)
 
@@ -228,27 +302,34 @@ compilati il file va messo nel repository sul tag del rilascio (è firmato e non
 
 ## Cosa è provato
 
-| | Linux | macOS | Windows |
+Pipeline `pacchetti.yml` sul ramo `pacchetti/prova`, 16/11/2026 (runner standard dei repository pubblici):
+
+| | Linux (`ubuntu-24.04`) | Windows (`windows-2025`) | Mac Intel (`macos-15-intel`) | Mac chip Apple |
+|---|---|---|---|---|
+| Compilazione e pacchetto | provati | provati | provati | **non costruito**: nessun runner arm64 libero (sotto) |
+| Installazione come un utente | `apt install ./….deb` | installatore silenzioso, per l'utente, poi disinstallazione | DMG montato in sola lettura, `codesign --verify --deep --strict` | — |
+| Programma installato: schermata di avvio (prova, inglese, sola lettura), schermata, editor, JPG e PDF, progetto 1.x, PSD fino a Photoshop, MCP, chiusura | provato | provato | provato | — |
+| Finestra vera con la schermata Album caricata dentro | provata (WebKitGTK, Xvfb), fotografie giudicate | provata (WebView2), fotografia nell'artefatto | provata (WKWebView), fotografia nell'artefatto | — |
+| Avvisi del sistema (Gatekeeper, SmartScreen) e testi della guida | — | da provare su un PC vero (il runner non ha SmartScreen sul file scaricato) | da provare su un Mac vero (il DMG non viene da internet: niente quarantena) | da provare su un Mac vero |
+
+Su questo computer (Ubuntu 24.04, 12 core) anche il `.deb` estratto e lanciato da un collegamento come
+`/usr/bin/impaginatore`, con la stessa prova.
+
+Misure della pipeline (16/11/2026; «con la cache» = cache di Nuitka del giro prima, solo i file C cambiati da rifare):
+
+| | Linux | Windows | Mac Intel |
 |---|---|---|---|
-| Compilazione e pacchetto | provati su questo computer (Ubuntu 24.04, Python 3.12.9 di python-build-standalone) | solo scritti | solo scritti |
-| Installazione come un utente | `.deb` estratto (`dpkg-deb -x`, senza amministratore non si installa) e lanciato da un collegamento come `/usr/bin/impaginatore` | solo scritto (DMG montato nella pipeline) | solo scritto (installatore silenzioso nella pipeline) |
-| Programma installato: schermata di avvio (prova, inglese, sola lettura), schermata, editor, JPG e PDF, progetto 1.x, PSD fino a Photoshop, MCP, chiusura | provato | da provare nella pipeline | da provare nella pipeline |
-| Finestra: schermata di avvio con versione e licenza, poi la finestra del programma | provata e fotografata sotto Xvfb (WebKitGTK del sistema) | non provata | non provata |
-| Avvisi del sistema (Gatekeeper, SmartScreen) e testi della guida | — | da provare su un Mac vero | da provare su un PC vero |
-| Pipeline su GitHub | mai eseguita | mai eseguita | mai eseguita |
+| Core del runner | 4 | 4 | 4 |
+| Compilazione e pacchetto, senza cache | 15 min (899 s) | 25 min di Nuitka (1.508 s) più Inno Setup | 25 min (1.497 s) |
+| Con la cache | 3 min (186 s) | 8 min (488 s) | 10 min (588 s) |
+| Pacchetto | `.deb` 92,0 MB | `.exe` 67,7 MB | `.dmg` 98,9 MB |
+| Programma installato | 376,2 MB, 196 file, eseguibile 96,4 MB | 278,3 MB, 1.148 file, eseguibile 80,3 MB | 240,9 MB |
+| Componenti di terze parti | 34 | 38 | 38 |
+| macOS minimo (dalle librerie) | — | — | 14.0 |
+| Prova completa con la finestra | 17 s | circa 30 s | circa 90 s (il primo avvio di un programma nuovo su macOS è lento) |
 
-Misure su Linux (16/11/2026, Ubuntu 24.04.5, 12 core, gcc 13 senza ccache, Nuitka 4.3.5, Python 3.12.9):
-
-| | |
-|---|---|
-| Compilazione e pacchetto | 15 min 43 s (114 min di CPU); i file più lunghi sono `editor/server.c` (circa 12 min) e `bottle.c` |
-| Pacchetto `.deb` | 93,2 MB |
-| Programma installato | 382,4 MB su disco, 196 file, eseguibile 96,3 MB, 34 componenti di terze parti |
-| Prova completa con la finestra | 14 s |
-| Versione / porta della schermata / editor pronto | 0,17 s / 0,13 s / 0,52 s |
-| Esportazione JPG / PDF di uno spread | 0,27 s / 0,27 s |
-
-Dalla prima esecuzione della pipeline le misure dei tre sistemi sono nel suo riepilogo (`verifica-<chiave>.json`).
+Python 3.12.16 di python-build-standalone (uv) su tutti e tre. Ogni esecuzione mette le misure nel suo riepilogo e in
+`verifica-<chiave>.json`.
 
 Problemi che la prova del programma compilato ha trovato, e che i test sul sorgente non vedevano:
 
@@ -257,7 +338,26 @@ Problemi che la prova del programma compilato ha trovato, e che i test sul sorge
 - i modelli di OpenCV per i volti e `optparse` per il `gi` del sistema mancavano (sopra, «Cosa c'è»);
 - su Linux la finestra del programma, creata nascosta per la schermata di avvio, non si mostrava mai: pywebview 6 su
   GTK la rinasconde se resta segnata come nascosta (anche dal sorgente; `desktop/avvio.py`). La prova della finestra
-  vera (`tests/prova_finestra.py`) ora lo controlla, ma gira solo con un Python che vede il PyGObject del sistema.
+  vera (`tests/prova_finestra.py`) ora lo controlla, ma gira solo con un Python che vede il PyGObject del sistema;
+- su Windows la finestra non si apriva e il programma si chiudeva: pywebview (WinForms) passa l'icona a
+  `System.Drawing.Icon`, che vuole un `.ico` e con il PNG solleva un'eccezione .NET. Valeva anche per il pacchetto
+  Python; ora su Windows la finestra riceve `risorse/icona.ico` (`desktop/finestra.ICONA`);
+- su macOS `codesign` firma i file di dati che Nuitka mette in `Contents/MacOS` (i modelli di OpenCV, le risorse) con
+  la firma negli attributi estesi; `shutil.copytree` su macOS non li copia e il DMG usciva con il bundle «not signed at
+  all». Ora il bundle va nel DMG con `ditto` e la firma si ricontrolla sulla copia;
+- Nuitka scrive il suo rapporto in UTF-8 dichiarandolo `encoding='utf8'`, che expat legge come una codifica a un byte:
+  su Windows la © di `--copyright` lo rendeva illeggibile e il pacchetto non si costruiva (`compila.leggi_rapporto`);
+- senza `-X utf8` a Nuitka il compilato su Windows scriverebbe in cp1252 (sopra, «Come si costruisce»): la prova dei PSD
+  ora rifiuta anche i caratteri rovinati, e su Windows passa;
+- limiti della prova, non del programma: su Windows la cartella temporanea sta in `AppData`, che il programma considera
+  riservata (lì la prova ora usa la cartella dell'utente); sul runner Windows lo schermo è 1024 × 768 e la finestra
+  (1440 × 900 di serie) esce dallo schermo.
+
+Da guardare su un Mac vero: al primo avvio sul Mac Intel della pipeline macOS ha mostrato «Allow "Impaginatore" to
+find devices on local networks?» (Rete locale, macOS 15). La prova è passata con la domanda ancora aperta, quindi il
+programma lavora senza quel permesso (i suoi server ascoltano solo su 127.0.0.1); cosa la fa comparire non è ancora
+chiaro (`WKWebView`, o una risoluzione del nome del computer). Va capito prima della beta, e intanto la guida dice di
+rispondere «Non consentire».
 
 ## Decisioni per il titolare
 
@@ -266,6 +366,12 @@ Problemi che la prova del programma compilato ha trovato, e che i test sul sorge
 - HEIC escluso dal programma compilato (o una libreria HEIC con licenza compatibile).
 - Identificativo del bundle macOS `it.impaginatore.Impaginatore` e indirizzo del sito nel pacchetto `.deb`
   (`impaginatore.example`, segnaposto): definitivi prima del primo rilascio.
-- Il Mac Intel nella pipeline (costo) e la versione minima di macOS.
+- Il Mac Intel nella pipeline: funziona (cryptography costruita dal sorgente, 3 minuti in più) e con il repository
+  pubblico non costa; se il repository tornasse privato è il job più caro. La versione minima di macOS è 14.0 (misurata
+  sul Mac Intel; sul Mac con chip Apple da misurare).
+- Mac con chip Apple: dal passaggio del repository a pubblico i runner macOS arm64 gratuiti non sono stati disponibili
+  (GitHub ha annullato i job dopo 15 minuti in coda, anche quelli di `ci.yml`). Se continua: riprovare in un altro
+  orario, o un runner a pagamento (`macos-15-xlarge`), o costruire il pacchetto su un Mac con chip Apple a mano con
+  gli stessi due comandi (sopra, «Come si costruisce»).
 - Elenco delle revoche nel repository sul tag del rilascio.
 - AppImage per le distribuzioni che non sono Ubuntu 24.04.

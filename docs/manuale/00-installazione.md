@@ -1,5 +1,14 @@
 # 0. Installare il programma
 
+<!-- Per chi mantiene la guida, stato al 16/11/2026 (dettagli: docs/architettura/DISTRIBUZIONE.md, «Cosa è provato»).
+Provato nella pipeline di GitHub, sul programma installato come un utente: Linux («apt install», comando
+/usr/bin/impaginatore), Windows (installatore silenzioso per l'utente in %LOCALAPPDATA%\Programs\Impaginatore, poi
+disinstallazione) e Mac Intel (DMG montato, firma ad hoc verificata, avvio da Impaginatore.app): schermata di avvio con
+la prova gratuita, schermata Album nella finestra del programma, editor, esportazioni, assistente AI con «mcp».
+macOS 14 come minimo: misurato sul Mac Intel. Non provato: il Mac con chip Apple (nessun runner libero), gli avvisi di
+Gatekeeper e SmartScreen su un file scaricato davvero, i passi a mano dell'installatore e del DMG, i testi esatti degli
+avvisi e le schermate «SCHERMATA DA FARE»: vanno rifatti su un Mac e un PC veri con la prima beta. -->
+
 Questa guida è per la **beta privata**: ricevi da noi il collegamento ai file. Ogni passo dice cosa vedi sullo schermo,
 compresi gli avvisi del sistema, e perché compaiono.
 
@@ -14,7 +23,7 @@ chiede, non farlo.
 | Sistema | Versione | File da scaricare |
 |---|---|---|
 | Mac con chip Apple (M1, M2, M3, M4…) | macOS 14 Sonoma o successivo *(da confermare con la prima beta)* | `Impaginatore-<versione>-mac-arm64.dmg` |
-| Mac con processore Intel | macOS 14 Sonoma o successivo *(da confermare con la prima beta)* | `Impaginatore-<versione>-mac-x86_64.dmg` |
+| Mac con processore Intel | macOS 14 Sonoma o successivo | `Impaginatore-<versione>-mac-x86_64.dmg` |
 | Windows | Windows 10 o 11, 64 bit | `Impaginatore-<versione>-windows.exe` |
 | Linux | Ubuntu 24.04 o una distribuzione basata su di lei (Linux Mint 22, Pop!_OS 24.04…), 64 bit | `Impaginatore-<versione>-linux.deb` |
 
@@ -68,6 +77,12 @@ resta diversa, scrivici.
    Su macOS 14 Sonoma c'è anche una strada più breve: nel Finder, Ctrl-clic (o clic destro) su Impaginatore › «Apri» ›
    «Apri». Da macOS 15 Sequoia questa strada non c'è più: si passa da Impostazioni.
 5. Dalla seconda volta Impaginatore si apre con un doppio clic, senza avvisi.
+
+Al primo avvio macOS può chiedere anche **«Consentire a "Impaginatore" di trovare dispositivi sulle reti locali?»**
+Rispondi **«Non consentire»**: Impaginatore lavora sul tuo computer e non ha bisogno di cercare altri dispositivi in
+rete.
+
+[SCHERMATA DA FARE: domanda «reti locali» di macOS 15]
 
 La prima volta che apri un album o scegli una cartella nella Scrivania, in Documenti o in Download, macOS chiede se
 Impaginatore può accedervi: rispondi «Consenti», altrimenti il programma non vede le foto. Dopo un aggiornamento

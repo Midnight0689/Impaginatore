@@ -22,6 +22,9 @@ from .navigazione import PROGRAMMA, Navigazione, classifica, installa_filtro, or
 TITOLO = "Impaginatore"
 SFONDO = "#2B2B2B"                                  # fondo della schermata dei progetti: niente lampo bianco prima della pagina
 GUI = {"linux": "gtk", "windows": "edgechromium", "mac": "cocoa"}
+# icona della finestra: su Windows pywebview la dà a System.Drawing.Icon, che vuole un .ico; con il PNG la finestra non si
+# apre (System.ArgumentException, «must be a picture that can be used as a Icon»: prova del pacchetto, 16/11/2026)
+ICONA = {"windows": "icona.ico"}
 MOTORI = ("gtkwebkit2", "edgechromium", "wkwebview")     # WebKitGTK, WebView2, WKWebView. Mai Internet Explorer (mshtml) né Qt
 SPENTA = ("no", "0", "browser")                     # IMPAGINATORE_FINESTRA: il browser anche se la finestra c'è (i test)
 # finestre di scelta di pywebview: dove pywebview le apre dal thread giusto (GTK: provate sotto Xvfb; macOS: le apre nel
@@ -128,7 +131,7 @@ class Finestra:
     def avvia(self):
         """apre la finestra e aspetta che si chiuda (thread principale: lo vuole pywebview)"""
         self.m.wv.start(gui=GUI[sistema()], debug=sviluppo(), private_mode=False, storage_path=os.path.join(cartelle.dati_utente(), "finestra"),
-                        icon=risorse.percorso("icona.png"))
+                        icon=risorse.percorso(ICONA.get(sistema(), "icona.png")))
 
     def chiudi(self):
         """chiude la finestra da un altro thread («Esci» nella pagina, riavvio dopo un aggiornamento)"""

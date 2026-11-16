@@ -379,6 +379,17 @@ def test_crea_e_avvia(motore, wv, home, sistema):
     F.ATTUALE[0] = None
 
 
+def test_su_windows_la_finestra_ha_l_icona_ico(motore, wv, home, sistema):
+    """WinForms (System.Drawing.Icon) vuole un .ico: con il PNG la finestra non si apriva (prova del pacchetto Windows)"""
+    sistema("windows")
+    f = F.Finestra(motore, "8765"); f.crea(AVVIO); f.avvia()
+    assert wv.avvii[-1]["gui"] == "edgechromium" and wv.avvii[-1]["icon"] == risorse.percorso("icona.ico")
+    with open(risorse.percorso("icona.ico"), "rb") as i: assert i.read(4) == b"\x00\x00\x01\x00", "un file ICO vero"
+    with open(risorse.percorso("icona.ico"), "rb") as i, open(os.path.join(os.path.dirname(__file__), "..", "brand", "icona", "icona.ico"), "rb") as b:
+        assert i.read() == b.read(), "la stessa icona del marchio (brand/icona/icona.ico)"
+    F.ATTUALE[0] = None
+
+
 def test_link_esterni_su_mac(motore, wv):
     motore.nome = "wkwebview"
     F.Finestra(motore, 8765).crea(AVVIO)
