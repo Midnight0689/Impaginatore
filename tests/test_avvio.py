@@ -44,6 +44,21 @@ def test_licenza_vera_e_illeggibile(monkeypatch, caplog):
     assert "ZeroDivisionError" in caplog.text, "la schermata di avvio non ferma mai il programma"
 
 
+def test_vera_chiave_beta(licenza, monkeypatch):
+    """una chiave della beta privata come quelle di «chiavi.py emetti-beta» (Studio, segni omaggio e beta, a scadenza),
+    firmata dalla fixture: «Beta privata» finché vale, «Sola lettura» dopo l'ultimo giorno"""
+    from impaginatore.licenze import chiave as K
+    licenza.usa(licenza.chiavi.chiave(fascia="studio", flag=K.FLAG_OMAGGIO | K.FLAG_BETA, scadenza="2027-01-31", seriale=7, intestatario="Anna Neri"))
+    ultimo, dopo = time.mktime((2027, 1, 31, 23, 0, 0, 0, 0, -1)), time.mktime((2027, 2, 1, 9, 0, 0, 0, 0, -1))
+    monkeypatch.setattr(licenze, "orologio", lambda: ultimo)
+    st = licenze.stato(); assert (st["stato"], st["beta"], st["fascia"]) == ("attiva", True, "studio")
+    assert avvio.licenza() == ("Beta privata", "beta")
+    monkeypatch.setattr(licenze, "orologio", lambda: dopo)
+    assert avvio.licenza() == ("Sola lettura", "sola"), "beta finita: sola lettura, come nella schermata Album"
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); assert avvio.licenza() == ("Read-only", "sola")
+    monkeypatch.setattr(licenze, "orologio", lambda: ultimo); assert avvio.licenza() == ("Private beta", "beta")
+
+
 def _tracciati(svg):
     return re.findall(r'<path[^>]* d="([^"]+)"', svg)
 
