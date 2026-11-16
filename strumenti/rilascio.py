@@ -12,8 +12,9 @@ repository (strumenti/aggiornamento.py, docs/architettura/AGGIORNAMENTI.md). I p
                                          [--novita-it "…"] [--novita-en "…"] [--prova]
         cerca nella cartella (anche nelle sottocartelle) la wheel impaginatore-<v>-py3-none-any.whl e i pacchetti
         Impaginatore-<v>-<sistema>.<dmg|exe|deb>; li copia in --uscita, firma il manifesto con tutti i pacchetti, scrive
-        SHA256SUMS (formato di sha256sum) e NOTE.md (da CHANGELOG.md, con le impronte). --prova: va avanti anche se
-        «controlla» trova problemi (la release dice in testa che è una prova e non va pubblicata)
+        SHA256SUMS (formato di sha256sum) e NOTE.md (da CHANGELOG.md, con le impronte). Controlla anche che la chiave
+        privata usata (--dir, --id) sia quella di CHIAVI_FIDATE. --prova: va avanti anche se trova problemi (la release
+        dice in testa che è una prova e non va pubblicata)
 
 Si pubblica a mano: release su GitHub con tag v<v>, i file di --uscita come asset (AGGIORNAMENTI.md, «Come si pubblica»).
 """
@@ -109,6 +110,9 @@ def cmd_prepara(a):
     if len(wheel_in) != 1: raise SystemExit(f"Serve una e una sola wheel del programma in {a.artefatti} (trovate {len(wheel_in)}): «uv build --wheel»")
     versione = rilascio.versione_del_pacchetto(str(wheel_in[0]))
     trovati = problemi(versione)
+    pub = aggiornamento.ed25519.pubblica(aggiornamento.leggi_privata(aggiornamento.cartella(a.dir), a.id)).hex()
+    if pub != firmati.CHIAVI_FIDATE.get(a.id):
+        trovati.append(f"la chiave privata dei rilasci {a.id} non è quella di CHIAVI_FIDATE[{a.id}] in aggiornamenti/firmati.py: i programmi installati rifiuterebbero la release")
     if trovati and not a.prova:
         for x in trovati: print(f"- {x}", file=sys.stderr)
         raise SystemExit("La versione non è pronta per il rilascio (sopra cosa manca). Con --prova si prepara lo stesso, da non pubblicare.")
@@ -120,7 +124,6 @@ def cmd_prepara(a):
     aggiornamento.cmd_firma(SimpleNamespace(dir=a.dir, id=a.id, pacchetto=str(uscita / wheel.name), uscita=str(uscita), novita_it=a.novita_it, novita_en=a.novita_en,
                                             python_minimo=a.python_minimo, compilato=[f"{k}={uscita / p.name}" for k, p in pacchetti.items()]))
     m = json.loads((uscita / firmati.MANIFESTO).read_bytes())
-    pub = (firmati.CHIAVI_FIDATE.get(a.id) if firmati.pubblica(firmati.CHIAVI_FIDATE.get(a.id)) else None) or aggiornamento.ed25519.pubblica(aggiornamento.leggi_privata(aggiornamento.cartella(a.dir), a.id)).hex()
     firmati.verifica((uscita / firmati.MANIFESTO).read_bytes(), (uscita / firmati.FIRMA).read_bytes(), {a.id: pub})
     tutti = sorted([*copie, uscita / firmati.MANIFESTO, uscita / firmati.FIRMA], key=lambda p: p.name)
     impronte = [f"{impronta(p)}  {p.name}" for p in tutti]

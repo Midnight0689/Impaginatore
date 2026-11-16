@@ -153,16 +153,22 @@ def _changelog(tmp_path, versione):
     return p
 
 
-def test_controlli_prima_del_rilascio(tmp_path):
+def test_controlli_prima_del_rilascio(tmp_path, licenza):
+    """le chiavi pubbliche vere sono nel codice (16/11/2026): il controllo passa su questo punto e si ferma solo se qualcuno
+    rimette i segnaposto"""
     from impaginatore.licenze import chiave as K
-    p = rilascio.problemi(__version__, chiavi_licenze={1: K.Pubblica(K.SEGNAPOSTO)})          # i test usano una coppia di prova per le licenze (conftest)
-    for frammento in ("chiave degli aggiornamenti", "chiave pubblica 1", "REPOSITORY", "di sviluppo", f"[{__version__}]"):
+    p = rilascio.problemi(__version__, chiavi_licenze=licenza.pubbliche_vere)                  # nei test le licenze usano una coppia di prova (conftest)
+    assert not any("chiave" in x for x in p), p
+    for frammento in ("REPOSITORY", "di sviluppo", f"[{__version__}]"):
+        assert any(frammento in x for x in p), (frammento, p)
+    p = rilascio.problemi(__version__, chiavi_aggiornamenti={1: firmati.SEGNAPOSTO}, chiavi_licenze={1: K.Pubblica(K.SEGNAPOSTO)})
+    for frammento in ("chiave degli aggiornamenti", "chiave pubblica 1"):
         assert any(frammento in x for x in p), (frammento, p)
     buone = {1: K.Pubblica(ed25519.pubblica(bytes(32)).hex())}
     assert rilascio.problemi("2.0.1", _changelog(tmp_path, "2.0.1"), {1: PUB_FINTA}, buone, "studio/impaginatore") == []
     assert rilascio.problemi("2.0.2", _changelog(tmp_path, "2.0.1"), {1: PUB_FINTA}, buone, "studio/impaginatore") == ["CHANGELOG.md non ha la sezione «## [2.0.2]»"]
     r = subprocess.run([sys.executable, os.path.join(STRUMENTI, "rilascio.py"), "controlla"], capture_output=True, text=True, encoding="utf-8", timeout=120)
-    assert r.returncode == 1 and "cose da sistemare" in r.stdout
+    assert r.returncode == 1 and "cose da sistemare" in r.stdout and "chiave" not in r.stdout, r.stdout
 
 
 def test_prepara_una_release(tmp_path):
@@ -176,6 +182,7 @@ def test_prepara_una_release(tmp_path):
         d = art / f"pacchetto-{k}"; d.mkdir(parents=True); (d / compila.nome_pacchetto("2.0.1", k)).write_bytes(k.encode() * 100)
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel"))
     assert r.returncode != 0 and "non è pronta per il rilascio" in r.stderr and "di sviluppo" not in r.stderr and "REPOSITORY" in r.stderr
+    assert "non è quella di CHIAVI_FIDATE[1]" in r.stderr, "una chiave privata che non è quella vera: i programmi rifiuterebbero la release"
     assert not (tmp_path / "rel").exists()
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel"), "--prova", "--novita-it", "Pacchetti", "--novita-en", "Packages")
     assert r.returncode == 0, r.stderr
@@ -187,8 +194,9 @@ def test_prepara_una_release(tmp_path):
     for riga in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
     note = (rel / "NOTE.md").read_text(encoding="utf-8")
-    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "mac-x86_64" in note and "00-installazione.md" in note and (rel / "SHA256SUMS").read_text(encoding="utf-8").strip() in note
+    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "CHIAVI_FIDATE[1]" in note and "mac-x86_64" in note and "00-installazione.md" in note and (rel / "SHA256SUMS").read_text(encoding="utf-8").strip() in note
     r = esegui("prepara", str(art), "--uscita", str(rel), "--prova"); assert r.returncode != 0 and "non è vuota" in r.stderr
+    r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel3"), "--prova", "--id", "2"); assert r.returncode != 0 and "Nessuna chiave dei rilasci 2" in r.stderr
     (art / "vecchio").mkdir(); (art / "vecchio" / "Impaginatore-2.0.0-linux.deb").write_bytes(b"x")
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel2"), "--prova"); assert r.returncode != 0 and "di un'altra versione" in r.stderr
 
