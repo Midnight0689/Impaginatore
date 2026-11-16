@@ -136,8 +136,10 @@ def test_riavvii_da_compilato(compilato_finto, monkeypatch):
     monkeypatch.setattr(processi.os, "execv", lambda exe, argv: chiamate.append((exe, argv)))
     monkeypatch.setattr(sys, "argv", [compilato_finto, "editor", "--progetto", "/a b"])
     monkeypatch.setattr(sys, "orig_argv", ["python", "-X", "utf8", "-m", "impaginatore"])
-    processi.riesegui()
+    monkeypatch.setattr(processi, "sistema", lambda: "linux"); processi.riesegui()
     assert chiamate == [(compilato_finto, [compilato_finto, "editor", "--progetto", "/a b"])], "il programma stesso, non l'interprete"
+    monkeypatch.setattr(processi, "sistema", lambda: "windows"); processi.riesegui()
+    assert chiamate[-1] == (compilato_finto, [compilato_finto, "editor", "--progetto", '"/a b"']), "su Windows con le virgolette, anche da compilato"
 
     class Popen:
         def __init__(self, cmd, **k): lanci.append((cmd, k))
