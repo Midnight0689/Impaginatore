@@ -87,7 +87,7 @@ def punteggio(t, k, ritmo, sole, precedenti):
 def proposta(foto, opzioni, ritmo="alterna", per_spread=PER_SPREAD, stelle=True, seme=0):
     """foto: [{i, dt, ar, stella}] da usare, in ordine di scatto; opzioni(indici) -> {items, piu} come tpl_options.
     Restituisce {spreads: [{L, R, foto, capitolo, inizio, ora, taglia}], capitoli, foto, per_spread}"""
-    rnd = random.Random(seme) if seme else None
+    rnd = random.Random(seme) if seme else None  # nosec B311  # ordine della bozza, non sicurezza
     sole = {f["i"] for f in foto if f["ar"] >= PANORAMICA or (stelle and f.get("stella"))}
     out, precedenti = [], []
     for c, cap in enumerate(capitoli(foto)):

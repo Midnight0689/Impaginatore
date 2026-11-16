@@ -61,9 +61,9 @@ GITLEAKS_SHA256 = {
     ("windows", "arm64"): "b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f",
 }
 
-# una versione di Python per ogni ramo di «resolution-markers» in uv.lock (< 3.12, >= 3.12): le dipendenze
+# una versione di Python per ogni ramo di «resolution-markers» in uv.lock (< 3.12, da 3.12 a 3.13, >= 3.14): le dipendenze
 # installate cambiano da un ramo all'altro. Se il lock ne aggiunge uno, va aggiunto anche qui.
-PYTHON_LICENZE = ("3.11", "3.12")
+PYTHON_LICENZE = ("3.11", "3.12", "3.14")
 
 # Licenze compatibili con un programma proprietario distribuito compilato: solo permissive. Niente GPL, LGPL, AGPL, MPL,
 # EPL, SSPL né licenze sconosciute: una dipendenza così va valutata a parte prima di aggiungerla qui.
@@ -79,6 +79,7 @@ LICENZE_AMMESSE = (
     "HPND", "Historical Permission Notice and Disclaimer (HPND)",
     "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",       # numpy dalla 2.3
     "MIT-0",                                                    # cffi dalla 2.1 (extra «desktop», solo su Windows: pythonnet)
+    "Apache-2.0 OR BSD-3-Clause",                               # cryptography (extra «mcp», via pyjwt[crypto]): a scelta tra due licenze già ammesse
 )
 
 
@@ -115,8 +116,9 @@ def strumento(pacchetto, comando, *argomenti):
 
 
 def nel_progetto(*comando):
-    """comando nell'ambiente del progetto con gli extra di sviluppo, alle versioni esatte di uv.lock"""
-    return [uv(), "run", "--locked", "--extra", "dev", *comando]
+    """comando nell'ambiente del progetto con gli extra di sviluppo e l'SDK del server MCP (i suoi test e la sua copertura),
+    alle versioni esatte di uv.lock"""
+    return [uv(), "run", "--locked", "--extra", "dev", "--extra", "mcp", *comando]
 
 
 # ---------------------------------------------------------------- controlli
@@ -155,7 +157,7 @@ def dipendenze():
 
 
 def licenze():
-    """licenze delle dipendenze del programma (senza gli extra di sviluppo, con la finestra desktop), installate in
+    """licenze delle dipendenze del programma (senza gli extra di sviluppo, con la finestra desktop e il server MCP), installate in
     ambienti temporanei. Valgono quelle di questo sistema: pywebview su Linux porta bottle, proxy-tools e
     typing-extensions; le dipendenze solo per macOS (pyobjc) e Windows (pythonnet, clr-loader, cffi) le controlla
     chi esegue il controllo su quei sistemi"""
@@ -164,7 +166,7 @@ def licenze():
         for versione in PYTHON_LICENZE:
             ambiente = Path(tmp, "py" + versione)
             env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(ambiente))
-            if not esegui([uv(), "sync", "--locked", "--no-install-project", "--extra", "desktop", "--quiet", "--python", versione], env=env):
+            if not esegui([uv(), "sync", "--locked", "--no-install-project", "--extra", "desktop", "--extra", "mcp", "--quiet", "--python", versione], env=env):
                 ok = False
                 continue
             interprete = ambiente / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
