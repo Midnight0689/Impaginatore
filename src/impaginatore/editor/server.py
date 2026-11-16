@@ -964,7 +964,7 @@ def modelli(o):
 def templates(s):
     with LOCK:
         lk = locked_sides(s)
-        if len(lk) == 2: return dict(items=[], utente=[], nota="Le due pagine sono di solo testo: non ci sono foto da impaginare.")
+        if len(lk) == 2: return dict(items=[], utente=[], nota="Le due pagine sono di solo testo: non ci sono foto da impaginare.")  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_modelli_errori
         side = None if not lk else next(x for x in "LR" if x not in lk); sides = "LR" if side is None else side
         photos = [it["i"] for k, x in enumerate("LR") if x in sides for it in SP[s][k][1] if it["k"] != "t"]
         cur = sorted((round(e["x"]), round(e["y"]), e["w"], e["h"]) for e in spread_view(s)["items"] if e["k"] != "t" and e["side"] in sides)
@@ -1125,7 +1125,7 @@ def tono_spread(s, over=None, light=False):
     with LOCK:
         ms = _tono_misure(s); items = []; pen = []; L0 = _tono_L0()
         if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_st(m, over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]))) if m["name"] in over else m for m in ms]
-        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)
+        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_tono_spread_senza_foto_e_vicini_esclusi
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d = st["M"] - L0
             ze = m["ze"]; stato = "escl" if esc else _tono_stato(d, ze, ze + 6)
@@ -1223,7 +1223,7 @@ def spread_jpg(s, K, hide=None):
     """immagine dello spread; hide = (side, idx) di una cornice libera da NON disegnare (serve mentre la si trascina)"""
     with LOCK:
         key = (spread_hash(s), K, hide)
-        if key in CACHE: return CACHE[key]
+        if key in CACHE: return CACHE[key]  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
         tup = spread_tuple(s)
         if hide:
             pi = 0 if hide[0] == "L" else 1; its = SP[s][pi][1]
