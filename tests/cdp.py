@@ -132,7 +132,7 @@ class Browser:
     richieste in corso in self.in_corso (requestId → url)"""
 
     def __init__(self, cartella):
-        self.cartella = str(cartella); self.n = 0; self.eventi = []; self.in_corso = {}; self.ultima_rete = time.monotonic()
+        self.cartella = str(cartella); self.n = 0; self.eventi = []; self.in_corso = {}; self._documento = {}; self.ultima_rete = time.monotonic()
 
     def __enter__(self):
         prof = os.path.join(self.cartella, "chrome-cdp"); os.makedirs(prof, exist_ok=True)
@@ -183,13 +183,18 @@ class Browser:
         """un evento della pagina: si tiene, e le richieste di rete si contano (partite, finite, fallite). Una fetch è finita
         già quando arriva la risposta: Chrome dà loadingFinished solo quando la pagina ne legge il corpo, e una fetch di cui
         alla pagina basta l'invio (la misura della finestra per le statistiche) non lo legge mai. Se la pagina lo legge, il
-        loadingFinished che segue sposta comunque ultima_rete, e attendi_rete aspetta la quiete dopo"""
-        self.eventi.append(m); metodo = m["method"]
+        loadingFinished che segue sposta comunque ultima_rete, e attendi_rete aspetta la quiete dopo.
+        Quando la scheda passa a un documento nuovo, le richieste di quello vecchio non contano più: Chrome le interrompe ma
+        non sempre lo dice (né loadingFinished né loadingFailed). Capitava alla pagina di /avvio, che passa a «/» mentre si
+        carica ancora (macOS), e a una /api/controlla dell'editor ancora in corso quando il test lo riapriva (Windows)"""
+        self.eventi.append(m); metodo = m["method"]; p = m.get("params", {})
         if metodo.startswith("Network."):
-            p = m.get("params", {}); self.ultima_rete = time.monotonic()
-            if metodo == "Network.requestWillBeSent": self.in_corso[p["requestId"]] = p["request"]["url"]
+            self.ultima_rete = time.monotonic()
+            if metodo == "Network.requestWillBeSent": self.in_corso[p["requestId"]] = p["request"]["url"]; self._documento[p["requestId"]] = p.get("loaderId")
             elif metodo in ("Network.loadingFinished", "Network.loadingFailed") or (metodo == "Network.responseReceived" and p.get("type") == "Fetch"):
                 self.in_corso.pop(p["requestId"], None)
+        elif metodo == "Page.frameNavigated" and not p["frame"].get("parentId"):          # documento nuovo nella scheda (non in un riquadro)
+            for r in [r for r in self.in_corso if self._documento.get(r) != p["frame"]["loaderId"]]: self.in_corso.pop(r)
 
     def _leggi(self, secondi):
         m = json.loads(self.ws.ricevi(secondi))
