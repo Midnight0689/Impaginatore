@@ -81,7 +81,7 @@ def test_proposta_con_disposizioni_finte():
     assert p["spreads"][0]["inizio"] is True and p["spreads"][0]["ora"] == "10:00" and p["spreads"][1]["inizio"] is False and p["spreads"][1]["ora"] is None
     assert p["capitoli"] == 1 and p["per_spread"] == round(9 / 4, 1) and p["spreads"][0]["taglia"] == round(__import__("math").exp(0.1), 2)
     assert [4] in chiesti and [7] in chiesti, "i gruppi senza disposizione si dividono"
-    assert BZ.proposta([], opzioni) == dict(spreads=[], capitoli=0, foto=0, per_spread=0)
+    assert BZ.proposta([], opzioni) == dict(spreads=[], capitoli=0, foto=0, per_spread=0, schemi=0), "schemi: quanti schemi diversi usa la bozza (varietà)"
     a, b = BZ.proposta(foto, opzioni, seme=7), BZ.proposta(foto, opzioni, seme=7)
     assert a == b, "stesso seme, stessa bozza"
 

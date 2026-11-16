@@ -425,8 +425,9 @@ class Assistente:
         for k, s in enumerate(p["spreads"]):
             nomi = dict(zip(s["foto"], s["nomi"]))
             sp.append(dict(numero=k + 1, capitolo=s["capitolo"] + 1, **({"inizio_capitolo": True, "ora": dato(s["ora"], 10) if s.get("ora") else None} if s.get("inizio") else {}),
-                           sinistra=[dato(nomi.get(i, "?")) for i in s["L"]["photos"]], destra=[dato(nomi.get(i, "?")) for i in s["R"]["photos"]], ritaglio_peggiore=s.get("taglia")))
-        return dict(progetto=progetto, proposta=pid, spread=len(sp), foto=p["foto"], capitoli=p["capitoli"], foto_per_spread=round(p["per_spread"], 2), spreads=sp,
+                           sinistra=[dato(nomi.get(i, "?")) for i in s["L"]["photos"]], destra=[dato(nomi.get(i, "?")) for i in s["R"]["photos"]], ritaglio_peggiore=s.get("taglia"),
+                           famiglia=s.get("fam")))
+        return dict(progetto=progetto, proposta=pid, spread=len(sp), foto=p["foto"], capitoli=p["capitoli"], foto_per_spread=round(p["per_spread"], 2), disposizioni_diverse=p.get("schemi"), spreads=sp,
                     messaggio=lingua.t("mcp.proposta_pronta"), dati_utente=dati_utente())
 
     @strumento
@@ -449,7 +450,7 @@ class Assistente:
         if pagina is not None: corpo["side"] = LATI[scelta(pagina, tuple(LATI), "pagina")]
         st, _ = self._op(progetto, corpo, gruppo); e = st.get("esito", {})
         return self._dopo(st, disposizione=e.get("disposizione"), di=e.get("di"), ritaglio_peggiore=e.get("taglia"), partiva_da_una_disposizione_a_mano=e.get("a_mano"),
-                          pagina=NOMI_LATI.get(e.get("lato")))
+                          pagina=NOMI_LATI.get(e.get("lato")), famiglia=e.get("famiglia"))
 
     @strumento
     def sostituisci_foto(self, progetto, spread, pagina, cornice, foto, adatta=True, gruppo=None):

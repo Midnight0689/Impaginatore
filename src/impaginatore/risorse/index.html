@@ -1022,7 +1022,7 @@ async function altraDisp(passo = 1) {
   if (!S.spreads.length) return;
   const side = latoSel(), d = await op(Object.assign({ op: "disposizione", s: cur, passo }, side ? { side } : {})); if (!d || !d.esito) return;
   const e = d.esito; DSERIE = { s: cur, rev: d.rev };
-  pillola(t("editor.disp.pill", { n: e.disposizione, di: e.di }) + (e.taglia > 1.25 ? " · " + t("editor.disp.taglia", { x: cmF(e.taglia) }) : "") + (e.a_mano ? " · " + t("editor.disp.a_mano") : ""), t("editor.disp.tasti", { d: "D", md: tasto("⇧ D").replace(" ", "") }), 5000);
+  pillola(conFam(t("editor.disp.pill", { n: e.disposizione, di: e.di }), e.famiglia) + (e.taglia > 1.25 ? " · " + t("editor.disp.taglia", { x: cmF(e.taglia) }) : "") + (e.a_mano ? " · " + t("editor.disp.a_mano") : ""), t("editor.disp.tasti", { d: "D", md: tasto("⇧ D").replace(" ", "") }), 5000);
 }
 async function dispEsc() {                                      // Esc dopo una serie di D: torna alla disposizione di prima (un solo annulla)
   if (!DSERIE || DSERIE.s !== cur || DSERIE.rev !== S.rev || !S.canundo) { DSERIE = null; return false; }
@@ -1281,7 +1281,7 @@ function disegnaProvini() {
     const tile = mkTile(x, x.tuo ? x.nome : t("editor.prov.numero", { n: n + 1 }), async () => { await op({ op: "template", s: cur, L: x.L, R: x.R }); toast(t("editor.prov.applicata", { n: n + 1 }), false, annullaAz()); });
     tile.insertAdjacentHTML("afterbegin", `<span class="nr">${x.tuo ? "★" : n + 1}</span>`); const tg = Math.exp(x.worst || 0);
     if (tg > 1.15) tile.insertAdjacentHTML("afterbegin", `<span class="tg">×${cmF(Math.round(tg * 10) / 10)}</span>`);
-    tile.tabIndex = 0; tile.setAttribute("role", "button"); tile.setAttribute("aria-label", (x.tuo ? x.nome : t("editor.prov.numero", { n: n + 1 })) + (x.cur ? " · " + t("editor.prov.attuale") : "")); tile.title = tile.getAttribute("aria-label");
+    tile.tabIndex = 0; tile.setAttribute("role", "button"); tile.setAttribute("aria-label", conFam((x.tuo ? x.nome : t("editor.prov.numero", { n: n + 1 })) + (x.cur ? " · " + t("editor.prov.attuale") : ""), x.fam)); tile.title = tile.getAttribute("aria-label");
     tile.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tile.click(); } }; g.appendChild(tile);
   });
   if (!PROV.piu && (d.piu || []).length) { const b = document.createElement("button"); b.className = "piatto"; b.style.marginTop = "8px"; b.textContent = tn("editor.prov.altre", d.piu.length); b.onclick = () => { PROV.piu = true; disegnaProvini(); }; L.appendChild(b); }
@@ -1389,7 +1389,7 @@ async function apriBozza() {
   const carica = async () => {
     $("bzok").disabled = true; $("bzl").innerHTML = `<div class="empty">${escH(t("editor.bozza.preparo"))}</div>`;
     try { BZ.d = await api("/api/bozza", Object.assign({ ritmo: BZ.ritmo, stelle: BZ.stelle, seme: BZ.seme }, BZ.per ? { per_spread: BZ.per } : {})); } catch (e) { $("bzl").innerHTML = ""; return; }
-    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: tn("editor.conta.spread", d.spreads.length), nfoto: tn("editor.conta.foto", d.foto), capitoli: d.capitoli, per: cmF(d.per_spread) });
+    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: tn("editor.conta.spread", d.spreads.length), nfoto: tn("editor.conta.foto", d.foto), capitoli: d.capitoli, per: cmF(d.per_spread), schemi: d.schemi || 0 });
     let capo = -1; $("bzl").innerHTML = d.spreads.map((s, n) => { const testa = s.capitolo !== capo ? `<div class="bz-cap">${escH(t("editor.bozza.capitolo", { n: s.capitolo + 1 }))}${s.ora ? ` <span class="mono" style="font-size:12px;color:var(--dim)">${escH(s.ora)}</span>` : ""}</div>` : ""; capo = s.capitolo;
       return testa + `<figure><img loading="lazy" alt="${escH(t("editor.bozza.anteprima", { n: n + 1 }))}" src="/img/bozza/${n}?k=0.08&v=${BZ.seme}-${encU(BZ.ritmo)}-${BZ.per}"><figcaption><b>${nomeSpread(S.spreads.length + n)}</b><span>${escH(tn("editor.conta.foto", s.foto.length))}${s.taglia > 1.25 ? " · ×" + cmF(Math.round(s.taglia * 10) / 10) : ""}</span></figcaption></figure>`; }).join("");
     $("bzok").disabled = !d.spreads.length; $("bzok").textContent = tn("editor.bozza.aggiungi_sp", d.spreads.length); $("bzok").focus();
@@ -1945,8 +1945,10 @@ FOGLIO.addEventListener("change", e => { const [l, s_, p_] = panels();
 try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPanels(pn[0] === "1", pn[1] === "1", pn[2] === "1"); } catch (e) {}
 
 // ---- libreria foto: seleziona le foto e compaiono i modelli per quel numero di foto
+const nomeFam = f => f ? f.split("+").map(x => t("editor.fam." + x)).join(" + ") : "";     // famiglia di una disposizione (motore/varieta.py): «coppia + intera», «a cavallo della piega»
+const conFam = (testo, f) => f ? testo + " · " + nomeFam(f) : testo;
 function mkTile(t, label, onclick) {
-  const c = document.createElement("div"); c.className = "tp" + (t.cur ? " cur" : "");
+  const c = document.createElement("div"); c.className = "tp" + (t.cur ? " cur" : ""); label = conFam(label, t.fam);
   const pv = document.createElement("div"); pv.className = "pv"; pv.style.paddingTop = (S.H / S.W * 100) + "%";
   t.frames.forEach(f => { const i = document.createElement("i"); i.style.cssText = `left:${f.x / S.W * 100}%;top:${f.y / S.H * 100}%;width:${f.w / S.W * 100}%;height:${f.h / S.H * 100}%;background-image:url("/img/thumb/${encU(f.n)}?w=520")`; pv.appendChild(i); });
   pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${escH(label)}</span>`); c.onclick = onclick; return c;

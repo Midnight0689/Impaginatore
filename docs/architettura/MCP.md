@@ -132,9 +132,9 @@ Convenzioni:
 | `stato_album` | `progetto`, `da_spread`, `quanti` (≤ 50) | spread per pagina: cornici con foto, misure in cm, ppi, ritaglio, libera, bianco e nero; testi | lettura |
 | `elenca_foto` | `progetto`, `filtro` (`tutte`, `libere`, `nell_album`, `con_stella`, `tolte`), `da`, `quanti` (≤ 500) | nome, proporzioni, orientamento, data di scatto, spread, stella, etichetta | lettura |
 | `controlla_album` | `progetto`, `spread` (elenco), `tono` | pronto per la stampa, conteggi, problemi (livello, tipo, dove, testo, se «Sistema» li corregge) | lettura |
-| `proponi_bozza` | `progetto`, `ritmo`, `foto_per_spread` o `numero_spread`, `stelle`, `seme` | proposta (id `b…`), spread con le foto per pagina, capitoli; l'album non cambia | lettura |
+| `proponi_bozza` | `progetto`, `ritmo`, `foto_per_spread` o `numero_spread`, `stelle`, `seme` | proposta (id `b…`), spread con le foto per pagina e la famiglia della disposizione, capitoli, disposizioni diverse (VARIETA.md); l'album non cambia | lettura |
 | `applica_bozza` | `progetto`, `proposta`, `dopo_spread` (0 = all'inizio), `gruppo` | spread e foto aggiunti, un solo passo d'annulla | modifica |
-| `cambia_disposizione` | `progetto`, `spread`, `pagina`, `passo` (1/−1), `gruppo` | disposizione n di m, ritaglio peggiore | modifica |
+| `cambia_disposizione` | `progetto`, `spread`, `pagina`, `passo` (1/−1), `gruppo` | disposizione n di m, ritaglio peggiore, famiglia (VARIETA.md) | modifica |
 | `sostituisci_foto` | `progetto`, `spread`, `pagina`, `cornice`, `foto`, `adatta`, `gruppo` | scambio con un altro spread, disposizione riadattata | modifica |
 | `sistema_album` | `progetto`, `spread`, `spazi`, `tono`, `gruppo` | spread con spazi corretti, foto con tono corretto | modifica |
 | `annulla` / `ripeti` | `progetto` | il passo annullato o rifatto, con il nome | modifica |

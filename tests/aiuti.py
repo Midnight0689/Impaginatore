@@ -136,10 +136,12 @@ def attendi_log(c, secondi=300):
 
 
 def riduci(st):
-    """parte dello stato dell'editor che non dipende dai font del sistema (i testi si misurano con i font installati)"""
+    """parte dello stato dell'editor che non dipende dai font del sistema (i testi si misurano con i font installati). I
+    moduli adattivi (varietà, nati dopo la 1.5.2) non sono nello stato della 1.5.2: si confrontano gli altri"""
+    from impaginatore.editor.server import ADATTIVI
     chiavi = ("k", "name", "side", "x", "y", "w", "h", "a", "bw", "z", "free", "bd", "sh", "oc", "ev", "evp", "rit", "tono", "crop", "cell", "box")
     return dict(nome=st["nome"], W=st["W"], H=st["H"], fold=st["fold"], gap=st["gap"], ppi=st["ppi"], globale=st["globale"], tolte=st["tolte"], unused=st["unused"],
-                modules=st["modules"], photos=st["photos"],
+                modules={k: v for k, v in st["modules"].items() if k not in ADATTIVI}, photos=st["photos"],
                 spreads=[dict(L=s["L"], R=s["R"], items=[{k: it.get(k) for k in chiavi} for it in s["items"] if it["k"] != "t"]) for s in st["spreads"]])
 
 
