@@ -33,9 +33,12 @@
 # pubblico, e con lui registri e artefatti: negli artefatti vanno solo pacchetti, impronte, elenchi dei componenti e
 # riepilogo della verifica; la diagnosi di un controllo che non va resta nel registro del job.
 #
-# Sui tag e con l'avvio manuale prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), che
-# devono passare; sui rami pacchetti/** i test non girano (li fa ci.yml sui rami prodotto/**) e si compila subito. Poi un
-# job per pacchetto: compila, impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso,
+# Sui tag e con l'avvio manuale prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows); sui
+# rami pacchetti/** i test non girano (li fa ci.yml sui rami prodotto/**) e si compila subito. Un test FALLITO ferma tutti
+# i pacchetti. Il test macOS ha un job suo («test-mac»): le macchine macOS di GitHub a volte mancano per ore e GitHub
+# annulla il job dopo circa 15 minuti in coda; se è ANNULLATO così, Linux e Windows vanno avanti e mancano solo i
+# pacchetti Mac (il loro job si ferma subito, senza occupare un Mac), finché «gh run rerun <id> --failed» non trova una
+# macchina e rifà test e pacchetti Mac. Poi un job per pacchetto: compila, impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso,
 # il DMG montato) e avvia il programma installato con strumenti/verifica_pacchetto.py --finestra: architettura
 # dell'eseguibile, schermata di avvio con lo stato della licenza, schermata, editor, esportazioni JPG e PDF, progetto 1.x,
 # PSD fino a Photoshop, server MCP, chiusura e la finestra vera, con la schermata Album caricata dentro (Linux dentro
@@ -97,6 +100,7 @@ jobs:
     outputs:
       chiavi: ${{ steps.s.outputs.chiavi }}
       test: ${{ steps.s.outputs.test }}
+      test_mac: ${{ steps.s.outputs.test_mac }}
     steps:
       - name: Pacchetti e sistemi dei test
         id: s
@@ -114,10 +118,12 @@ jobs:
             linux|linux-arm64|windows|mac-arm64|mac-x86_64) chiavi="[\"$s\"]" ;;
             *) chiavi='["linux"]' ;;
           esac
-          # test: Linux sempre (con la copertura), macOS e Windows se c'è un loro pacchetto
-          test=$(jq -cn --argjson c "$chiavi" '["ubuntu-24.04"] + (if any($c[]; startswith("mac")) then ["macos-15-intel"] else [] end) + (if any($c[]; . == "windows") then ["windows-2025"] else [] end)')
-          echo "chiavi=$chiavi" >> "$GITHUB_OUTPUT"; echo "test=$test" >> "$GITHUB_OUTPUT"
-          echo "Pacchetti: $chiavi; test (sui tag e con l'avvio manuale): $test" | tee -a "$GITHUB_STEP_SUMMARY"
+          # test: Linux sempre (con la copertura), Windows se c'è il suo pacchetto; macOS (job «test-mac») se c'è un
+          # pacchetto Mac
+          test=$(jq -cn --argjson c "$chiavi" '["ubuntu-24.04"] + (if any($c[]; . == "windows") then ["windows-2025"] else [] end)')
+          test_mac=$(jq -rn --argjson c "$chiavi" 'any($c[]; startswith("mac"))')
+          { echo "chiavi=$chiavi"; echo "test=$test"; echo "test_mac=$test_mac"; } >> "$GITHUB_OUTPUT"
+          echo "Pacchetti: $chiavi; test (sui tag e con l'avvio manuale): $test, macOS: $test_mac" | tee -a "$GITHUB_STEP_SUMMARY"
 
   test:
     name: Test (${{ matrix.os }})
@@ -159,23 +165,62 @@ jobs:
         timeout-minutes: 40
         run: uv run --no-project strumenti/controlli.py ${{ runner.os == 'Linux' && 'copertura' || 'test' }}
 
+  # i test su macOS, a parte (in testa al file): FALLITI fermano tutti i pacchetti, ANNULLATI (nessuna macchina macOS
+  # libera, o tempo massimo superato) fermano solo i pacchetti Mac
+  test-mac:
+    name: Test (macos-15-intel)
+    needs: scelta
+    if: (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.scelta.outputs.test_mac == 'true'
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv e Python 3.12
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Test
+        timeout-minutes: 40
+        run: uv run --no-project strumenti/controlli.py test
+
   pacchetto:
     name: Pacchetto ${{ matrix.chiave }}
-    needs: [scelta, test]
-    # test passati, oppure (solo sui rami pacchetti/**) non eseguiti
-    if: ${{ !cancelled() && needs.scelta.result == 'success' && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
+    needs: [scelta, test, test-mac]
+    # test di Linux e Windows passati, oppure (solo sui rami pacchetti/**) non eseguiti, e test macOS non FALLITO: se è
+    # stato annullato per mancanza di macchine si fermano solo i pacchetti Mac (primo passo, «Test su macOS passati?»)
+    if: ${{ !cancelled() && needs.scelta.result == 'success' && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) && needs.test-mac.result != 'failure' }}
     # runner e tempo massimo (minuti) per pacchetto. La versione minima di macOS la decide compila.MACOS_MINIMO, non il
     # runner. Il 16/11/2026, dopo il passaggio del repository a pubblico, GitHub ha lasciato in coda per ore i job macOS
     # arm64 e li ha annullati dopo 15 minuti senza un runner libero (macos-26, macos-15; «capacity constraints»);
     # macos-14 non c'è più («configuration 'macos-14-arm64-us-default' is not supported»). Si rilancia il solo job:
-    # gh run rerun <id> --failed
-    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","linux-arm64":"ubuntu-24.04-arm","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
+    # gh run rerun <id> --failed. Un pacchetto Mac senza test macOS passati gira su Linux solo per fermarsi subito, senza
+    # aspettare un Mac
+    runs-on: ${{ (startsWith(matrix.chiave, 'mac') && needs.test-mac.result != 'success' && needs.test-mac.result != 'skipped') && 'ubuntu-24.04' || fromJSON('{"linux":"ubuntu-24.04","linux-arm64":"ubuntu-24.04-arm","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
     timeout-minutes: ${{ fromJSON('{"linux":120,"linux-arm64":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
     strategy:
       fail-fast: false
       matrix:
         chiave: ${{ fromJSON(needs.scelta.outputs.chiavi) }}
     steps:
+      # sui tag e con l'avvio manuale un pacchetto Mac si costruisce solo dopo i test su macOS passati; se sono stati
+      # annullati (nessuna macchina) questo job si ferma qui, la release in bozza dice che il pacchetto manca e il rilancio
+      # dei job falliti rifà test e pacchetto
+      - name: Test su macOS passati?
+        if: startsWith(matrix.chiave, 'mac') && needs.test-mac.result != 'success' && needs.test-mac.result != 'skipped'
+        run: |
+          echo "::error::Test su macOS: ${{ needs.test-mac.result }}. Niente pacchetto ${{ matrix.chiave }} in questo giro (Linux e Windows vanno avanti); quando ci sono macchine macOS: gh run rerun ${{ github.run_id }} --failed"
+          exit 1
+
       - name: Fine riga come nel repository
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
@@ -349,7 +394,9 @@ jobs:
             dist/pacchetti/Impaginatore-*
             dist/pacchetti/verifica-${{ matrix.chiave }}.json
             dist/pacchetti/*.png
-          if-no-files-found: error
+          # se non c'è niente il job è già in errore (e la bozza dice che il pacchetto manca)
+          if-no-files-found: warn
+          overwrite: true             # un job rilanciato (gh run rerun) sostituisce l'artefatto del tentativo prima
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
   windows-arm:
@@ -425,13 +472,15 @@ jobs:
             dist/verifica/*.png
           # se la prova non è partita il job è già in errore, e senza rapporto la release in bozza dice che la prova manca
           if-no-files-found: warn
+          overwrite: true
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
   wheel:
     name: Wheel (aggiornamenti delle installazioni Python)
-    needs: test
-    # solo sui tag e con l'avvio manuale, dopo i test: serve al rilascio, non alle prove dei pacchetti
-    if: ${{ !cancelled() && needs.test.result == 'success' }}
+    needs: [test, test-mac]
+    # solo sui tag e con l'avvio manuale, dopo i test (macOS non fallito, come per i pacchetti): serve al rilascio, non
+    # alle prove dei pacchetti
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.test-mac.result != 'failure' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -453,6 +502,7 @@ jobs:
           name: wheel
           path: dist/wheel/*.whl
           if-no-files-found: error
+          overwrite: true
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
   release:
