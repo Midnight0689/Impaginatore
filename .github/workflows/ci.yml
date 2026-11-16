@@ -5,14 +5,13 @@
 # Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.11 (la minima di
 # pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
 #
-# Tempi reali (esecuzioni di novembre 2026, cache di uv calda), job paralleli: un'esecuzione dura quanto il job più lungo,
-# ~18-20 minuti. Prezzi GitHub di novembre 2026 (Linux 2 core 0,006 $/min, Windows 0,010 $/min, macOS 0,062 $/min; ogni
-# job è arrotondato al minuto intero):
-#     lint ~15 s (1 min) + Linux ~15-18 min per job x 4  = ~70 min Linux   ~ 0,42 $
-#     Windows senza browser ~15,5-17 min + browser       = ~30 min Windows ~ 0,30 $   (browser: da misurare con Chrome che parte)
-#     macOS senza browser ~6,5 min + browser ~5,5 min     = ~13 min macOS   ~ 0,81 $
-#     totale ~1,50 $ a esecuzione, cioè ~250 minuti Linux equivalenti, per metà macOS.
-# Il piano gratuito include 12 $ al mese (~2.000 minuti Linux): circa 8 esecuzioni al mese, più quelle di sicurezza.yml.
+# Tempi reali (esecuzioni del 16/11/2026, cache di uv calda); i job sono paralleli, un'esecuzione dura quanto il più lungo
+# (~20 minuti). Minuti del piano (repository privato: ogni job arrotondato al minuto intero, Windows conta 2 volte, macOS 10):
+#     lint ~15 s (1) + Linux ~15-17 min per job x 4      = ~66 minuti
+#     Windows senza browser ~15,5-20 min + browser ~6-7  = ~27 min x 2  = ~54 minuti
+#     macOS senza browser ~6,5-7 min + browser ~4-6      = ~13 min x 10 = ~130 minuti
+#     totale ~250 minuti a esecuzione, metà macOS: i 2.000 minuti al mese del piano bastano per ~8 esecuzioni, più quelle
+#     di sicurezza.yml (~1 minuto ciascuna).
 name: CI
 
 on:
