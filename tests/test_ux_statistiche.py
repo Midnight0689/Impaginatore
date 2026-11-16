@@ -3,15 +3,14 @@ nell'editor, la domanda del consenso al primo avvio con la licenza beta («No, g
 la finestra «Statistiche d'uso» (interruttore che ripassa dalla domanda, «Cosa condivido», nuovo codice, cancellazione),
 nessun errore in console né blocco della CSP."""
 import json
-import shutil
 import time
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import statistiche as S
 from impaginatore.statistiche import invio
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 VOCE = "[...document.querySelectorAll('#menu button')].find(b => b.textContent.startsWith(%s))"
