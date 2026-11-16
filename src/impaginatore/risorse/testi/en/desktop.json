@@ -1,4 +1,10 @@
 {
+  "desktop.avvio_beta": "Beta licence",
+  "desktop.avvio_licenza": "{fascia} licence",
+  "desktop.avvio_prova_1": "Free trial · {n} day left",
+  "desktop.avvio_prova_n": "Free trial · {n} days left",
+  "desktop.avvio_sola_lettura": "Read-only",
+  "desktop.avvio_versione": "Version {versione}",
   "desktop.esporta_testo": "If you quit Impaginatore now, the export stops and the spreads not yet written will be missing. Quit anyway?",
   "desktop.esporta_titolo": "Export in progress",
   "desktop.filtro_catalogo": "Catalogue",

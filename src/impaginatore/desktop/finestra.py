@@ -2,7 +2,8 @@
 
 motore()  pywebview pronto con il motore giusto per il sistema, oppure None (motivo nel registro: si apre il browser)
 esegui()  la finestra di chi ha avviato la schermata dei progetti: alla chiusura salva e chiude gli editor, poi la schermata;
-          con un'esportazione in corso chiede prima conferma (T-206)
+          con un'esportazione in corso chiede prima conferma (T-206). Nasce nascosta dietro la schermata di avvio (avvio.py,
+          T-207) e si mostra quando la schermata Album è pronta
 ospite()  una seconda finestra sulla schermata già in funzione (secondo avvio del comando): alla chiusura non ferma niente
 """
 import logging
@@ -14,6 +15,7 @@ import threading
 from .. import lingua, risorse, sicurezza
 from ..piattaforma import cartelle, dialoghi, sistema
 from . import dialoghi as dialoghi_finestra
+from .avvio import Avvio
 from .geometria import MINIMA, Geometria
 from .navigazione import PROGRAMMA, Navigazione, classifica, installa_filtro, origine, porte_programma
 
@@ -99,13 +101,14 @@ class Finestra:
         self.finestra = None
         self.in_corso, self.forza = None, False              # proteggi(): esportazioni in corso? / chiusura già confermata
 
-    def crea(self, indirizzo):
-        """crea la finestra sull'indirizzo di avvio (che non passa da nessuna riga di comando)"""
+    def crea(self, indirizzo, nascosta=False):
+        """crea la finestra sull'indirizzo di avvio (che non passa da nessuna riga di comando); nascosta: si mostra dopo
+        (show(), dalla schermata di avvio)"""
         s = self.m.wv.settings
         s["ALLOW_DOWNLOADS"] = False; s["ALLOW_FILE_URLS"] = False; s["IGNORE_SSL_ERRORS"] = False; s["REMOTE_DEBUGGING_PORT"] = None
         s["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = self.m.nome == "wkwebview"      # dove c'è il filtro del motore i link _blank passano da lì
         g = self.geo.iniziale(self.m.schermi())
-        f = self.m.wv.create_window(TITOLO, url=indirizzo, min_size=MINIMA, background_color=SFONDO, text_select=True, draggable=True, zoomable=False, **g)
+        f = self.m.wv.create_window(TITOLO, url=indirizzo, min_size=MINIMA, background_color=SFONDO, text_select=True, draggable=True, zoomable=False, hidden=nascosta, **g)
         f.events.before_show += lambda: installa_filtro(self.m.nome, f, self.nav)
         f.events.loaded += self.caricata
         self.geo.collega(f)
@@ -179,6 +182,15 @@ def chiudi_editor(editors, attesa=5):
         except subprocess.TimeoutExpired: pr.kill()
 
 
+def schermata_di_avvio(m):
+    """la schermata di avvio (prima finestra creata: pywebview la mostra per prima), o None se non si crea: allora la
+    finestra del programma si mostra subito, come prima"""
+    try:
+        a = Avvio(m); a.crea(TITOLO); return a
+    except Exception as e:                              # la schermata di avvio non deve mai impedire l'apertura del programma
+        log.warning("schermata di avvio non creata: %s", e); return None
+
+
 def esegui(m, srv, fermo):
     """finestra della schermata dei progetti `srv` (già creata, non ancora in ascolto). Restituisce quando la finestra si
     chiude, dopo aver chiuso editor e schermata"""
@@ -192,7 +204,9 @@ def esegui(m, srv, fermo):
     H.esci, H.FINESTRA = f.chiudi, True
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        w = f.crea(srv.indirizzo_avvio()); f.proteggi(lambda: esportazioni(H.EDITORS) > 0)
+        avvio = schermata_di_avvio(m)
+        w = f.crea(srv.indirizzo_avvio(), nascosta=avvio is not None); f.proteggi(lambda: esportazioni(H.EDITORS) > 0)
+        if avvio: avvio.segui(w, H.PRONTA)
         if proprie: dialoghi.imposta(dialoghi_finestra.DialoghiFinestra(w, m.wv.FileDialog))
         f.avvia()
     finally:
