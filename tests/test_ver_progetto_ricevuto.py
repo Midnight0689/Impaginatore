@@ -90,8 +90,13 @@ def test_ricollega_ricorda_la_cartella(apri_editor, progetto, tmp_path):
     assert c.codice("/api/fthumb?p=" + quote(str(altrove / nomi[0]))) == 200
 
 
+# cartelle di sistema del computer che esegue i test: su Windows «/etc/passwd» è D:\\etc\\passwd, una cartella qualsiasi
+DI_SISTEMA = ([os.path.join(os.environ["SystemRoot"], "System32", "config", "SAM"), os.path.join(os.environ["ProgramFiles"], "x.jpg"), os.path.join(os.environ["ProgramData"], "x")]
+              if os.name == "nt" else ["/etc/passwd", "/proc/self", "/usr/share/x.jpg"])
+
+
 def test_riservata(casa, tmp_path, monkeypatch):
-    for p in (casa / ".ssh" / "id", casa / ".config", casa / "dati" / "sessioni", "/etc/passwd", "/proc/self", "/usr/share/x.jpg"):
+    for p in (casa / ".ssh" / "id", casa / ".config", casa / "dati" / "sessioni", *DI_SISTEMA):
         assert percorsi.riservata(str(p)), p
     for p in (casa / "Immagini" / "x.jpg", tmp_path / "Progetti", casa, "/tmp/x.jpg", casa / "Lavori" / ".nascosta" / "x.jpg"):
         assert not percorsi.riservata(str(p)), p
