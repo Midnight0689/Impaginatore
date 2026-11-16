@@ -11,9 +11,10 @@
 #
 # Prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), poi un job per pacchetto: compila,
 # impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso, il DMG montato) e avvia
-# il programma installato con strumenti/verifica_pacchetto.py (schermata, editor, esportazioni JPG e PDF, progetto
-# 1.x, server MCP, chiusura; su Linux anche la finestra dentro xvfb). La prova della finestra su macOS e Windows
-# non blocca: dipende dalla sessione grafica dei runner, che GitHub non garantisce.
+# il programma installato con strumenti/verifica_pacchetto.py (schermata di avvio con lo stato della licenza, schermata,
+# editor, esportazioni JPG e PDF, progetto 1.x, server MCP, chiusura; su Linux anche la finestra dentro xvfb, con la
+# fotografia della schermata di avvio nell'artefatto). La prova della finestra su macOS e Windows non blocca: dipende
+# dalla sessione grafica dei runner, che GitHub non garantisce.
 #
 # Consumo stimato (prezzi GitHub di novembre 2026: Linux 0,006 $/min, Windows 0,010 $/min, macOS 0,062 $/min), da
 # confermare alla prima esecuzione: finora il workflow non è mai stato eseguito su GitHub.
@@ -150,7 +151,7 @@ jobs:
         timeout-minutes: 10
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends xvfb xauth ./dist/pacchetti/Impaginatore-*-linux.deb
+          sudo apt-get install -y -q --no-install-recommends xvfb xauth x11-apps ./dist/pacchetti/Impaginatore-*-linux.deb
           echo "PROGRAMMA=/usr/bin/impaginatore" >> "$GITHUB_ENV"
 
       - name: Monta il DMG (macOS)
@@ -176,7 +177,7 @@ jobs:
         timeout-minutes: 20
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
+            xvfb-run -a -s "-screen 0 1280x800x24" ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
           else
             ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
           fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prova il programma compilato vero (T-302), come lo usa un fotografo, senza rete e senza toccare i suoi dati.
 
-    python strumenti/verifica_pacchetto.py PROGRAMMA [--finestra] [--rapporto file.json]
+    python strumenti/verifica_pacchetto.py PROGRAMMA [--finestra] [--rapporto file.json] [--immagini CARTELLA]
 
 PROGRAMMA è l'eseguibile: build/compila/linux/Impaginatore/impaginatore-app, /usr/bin/impaginatore (dopo il .deb),
 Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginatore.exe. Tutto gira in una cartella temporanea
@@ -10,6 +10,8 @@ Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginator
 Controlli, in ordine:
     file          nessun .py del programma; schermata di avvio (avvio.html), copie del motore per la 1.x, licenze
     versione      «impaginatore --versione»
+    avvio         la pagina della schermata di avvio («_avvio», la stessa della finestra) con versione e licenza: prova
+                  gratuita, sola lettura dopo una prova finita, in italiano e in inglese
     copie         una «versione aggiornata» finta nella cartella dei dati: il programma compilato non la avvia mai
     schermata     la schermata dei progetti risponde (ping, licenza, aggiornamenti: si installano a mano, canale spento)
     editor        progetto nuovo con 6 foto, editor in un processo a parte (sottocomando «editor»), spread, JPG e PDF
@@ -17,7 +19,8 @@ Controlli, in ordine:
     psd           il sottocomando interno «_psd» risponde (senza Photoshop non si genera niente)
     mcp           «impaginatore mcp» su stdio: initialize e tools/list (gli strumenti hanno nome e descrizione)
     chiusura      /api/esci chiude schermata ed editor
-    finestra      (--finestra) la finestra del programma si apre (Linux: dentro xvfb-run) e si chiude con /api/esci
+    finestra      (--finestra) la finestra del programma si apre (Linux: dentro xvfb-run) e si chiude con /api/esci; sotto
+                  Xvfb fotografa la schermata di avvio (avvio-finestra.png in --immagini, di serie accanto al rapporto)
 Esce con 0 se tutto va, 1 al primo controllo che non va (con il motivo). --rapporto scrive tempi e misure in JSON.
 """
 import argparse
@@ -25,6 +28,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import subprocess  # nosec B404  # lancia il programma da provare, con argomenti in lista
 import sys
 import tempfile
@@ -140,6 +144,25 @@ def prova_versione(pr, attesa):
     r = subprocess.run([str(pr.exe), "--versione"], capture_output=True, text=True, encoding="utf-8", env=pr.env, timeout=120)  # nosec B603
     RAPPORTO["tempi"]["versione_s"] = round(time.time() - inizio, 2)
     deve(r.returncode == 0 and r.stdout.strip() == f"Impaginatore {attesa}", f"«--versione» ha risposto {r.returncode} {r.stdout!r} {r.stderr[-500:]!r}")
+
+
+@controllo("avvio")
+def prova_avvio(pr, attesa):
+    """la schermata di avvio del programma compilato legge versione e licenza. La beta privata («Beta privata») vuole una
+    chiave firmata con la chiave vera: si prova nei test (tests/test_avvio.py), non qui"""
+    def pagina(**env):
+        r = subprocess.run([str(pr.exe), "_avvio"], capture_output=True, env=dict(pr.env, **env), timeout=120)  # nosec B603
+        deve(r.returncode == 0, f"«_avvio»: {r.returncode} {r.stderr[-500:]!r}")
+        return r.stdout.decode("utf-8")
+    p = pagina()
+    deve(f"Versione {attesa}" in p and re.search(r"base64,[A-Za-z0-9+/=]{10000,}\)", p), "versione o carattere mancanti nella schermata di avvio")
+    deve('<span class="licenza prova">Prova gratuita · 30 giorni</span>' in p, "la schermata di avvio non dice «Prova gratuita · 30 giorni»")
+    deve('<span class="licenza prova">Free trial · 30 days left</span>' in pagina(IMPAGINATORE_LINGUA="en"), "schermata di avvio in inglese")
+    finita = pr.dir / "dati-prova-finita"; (finita / "licenza").mkdir(parents=True)
+    t = time.time() - 40 * 86400
+    (finita / "licenza" / "prova.json").write_text(json.dumps(dict(formato=1, inizio=t, visto=t)), encoding="utf-8")
+    deve('<span class="licenza sola">Sola lettura</span>' in pagina(IMPAGINATORE_DATI=str(finita)), "prova finita: la schermata di avvio non dice «Sola lettura»")
+    RAPPORTO["avvio"] = ["Prova gratuita · 30 giorni", "Free trial · 30 days left", "Sola lettura"]
 
 
 def copia_finta(pr):
@@ -258,12 +281,52 @@ def prova_chiusura(p, c, porte):
     attendi(lambda: all(chiusa(x) for x in porte), 60)
 
 
+def cattura(display):
+    """lo schermo di Xvfb (xwd -root) come immagine RGB di Pillow, o None"""
+    try: r = subprocess.run(["xwd", "-root", "-silent", "-display", display], capture_output=True, timeout=30)  # nosec B603, B607  # xwd del sistema
+    except (OSError, subprocess.TimeoutExpired): return None
+    d = r.stdout
+    if r.returncode or len(d) < 100: return None
+    h = struct.unpack(">25I", d[:100])                      # XWDFileHeader: dimensione, …, larghezza 4, altezza 5, ordine 7, bit 11, riga 12, colori 19
+    if h[11] != 32: return None
+    from PIL import Image
+    inizio = h[0] + h[19] * 12
+    return Image.frombuffer("RGB", (h[4], h[5]), d[inizio:inizio + h[12] * h[5]], "raw", "BGRX" if h[7] == 0 else "XRGB", h[12], 1)
+
+
+FONDO_AVVIO = (0x18, 0x17, 0x15)                            # desktop.avvio.FONDO
+
+
+def con_avvio(img):
+    """la schermata di avvio (480 × 300, al centro, fondo Inchiostro) è sullo schermo"""
+    w, h = img.size; x0, y0 = (w - 480) // 2, (h - 300) // 2
+    punti = [img.getpixel((x0 + 10 + i * 46, y0 + 6 + j * 28)) for i in range(10) for j in range(10)]
+    return sum(all(abs(a - b) <= 3 for a, b in zip(px, FONDO_AVVIO)) for px in punti) >= 60
+
+
+def fotografa_avvio(cartella, secondi=20):
+    """sotto Xvfb: aspetta la schermata di avvio, la salva in avvio-finestra.png e dice se l'ha vista"""
+    display = os.environ.get("DISPLAY")
+    if not (display and shutil.which("xwd") and cartella): return None
+    fine = time.time() + secondi
+    while time.time() < fine:
+        img = cattura(display)
+        if img is not None and con_avvio(img):
+            Path(cartella).mkdir(parents=True, exist_ok=True); img.save(Path(cartella) / "avvio-finestra.png")
+            return True
+        time.sleep(0.1)
+    return False
+
+
 @controllo("finestra")
-def prova_finestra(pr):
-    prefisso = ("xvfb-run", "-a") if sys.platform.startswith("linux") and not os.environ.get("DISPLAY") else ()
+def prova_finestra(pr, immagini=None):
+    prefisso = ("xvfb-run", "-a", "-s", "-screen 0 1280x800x24") if sys.platform.startswith("linux") and not os.environ.get("DISPLAY") else ()
     pr.env.pop("IMPAGINATORE_DIALOGHI", None)
     p, c, secondi, righe = pr.avvia_schermata(prefisso=prefisso)
     RAPPORTO["tempi"]["finestra_porta_s"] = round(secondi, 2)
+    if not prefisso:
+        vista = fotografa_avvio(immagini)
+        if vista is not None: RAPPORTO["schermata_avvio_vista"] = vista; print(f"    schermata di avvio {'vista e fotografata' if vista else 'NON vista'}", flush=True)
     c.get("/api/progetti")                                                       # la schermata Album è pronta: finisce la schermata di avvio
     time.sleep(3)
     deve(p.poll() is None, "il programma si è chiuso")
@@ -277,6 +340,7 @@ def prova_finestra(pr):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="verifica_pacchetto", description=__doc__.split("\n")[0])
     ap.add_argument("programma"); ap.add_argument("--finestra", action="store_true"); ap.add_argument("--rapporto")
+    ap.add_argument("--immagini", help="dove salvare la fotografia della schermata di avvio (di serie la cartella del rapporto)")
     ap.add_argument("--versione", help="versione attesa (di serie quella di src/impaginatore/__init__.py)")
     a = ap.parse_args(argv)
     attesa = a.versione or re.search(r'__version__ = "([^"]+)"', (RADICE / "src" / "impaginatore" / "__init__.py").read_text(encoding="utf-8")).group(1)
@@ -287,6 +351,7 @@ def main(argv=None):
         try:
             prova_file(a.programma)
             prova_versione(pr, attesa)
+            prova_avvio(pr, attesa)
             segno = copia_finta(pr)
             p, c, secondi, _ = pr.avvia_schermata("--no-browser")
             RAPPORTO["tempi"]["schermata_porta_s"] = round(secondi, 2)
@@ -296,7 +361,7 @@ def main(argv=None):
             prova_psd(pr)
             prova_mcp(pr)
             prova_chiusura(p, c, [c.porta, e.porta])
-            if a.finestra: prova_finestra(pr)
+            if a.finestra: prova_finestra(pr, a.immagini or (str(Path(a.rapporto).resolve().parent) if a.rapporto else None))
         except NonVa: esito = 1
         finally: pr.chiudi_tutto()
     if a.rapporto: Path(a.rapporto).write_text(json.dumps(RAPPORTO, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
