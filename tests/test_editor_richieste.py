@@ -88,7 +88,9 @@ def test_operazioni_valide_passano(editor):
     st = c.post("/api/op", dict(cid="t", rev=st["rev"], op="undo")); st = c.post("/api/op", dict(cid="t", rev=st["rev"], op="redo"))
 
 
-NOMI = ["Sposi àè", "100% vero", "n#1", "che?", "a+b", "x&y=z", "spazio  doppio", "çà ñ ü"]
+# «?» apre la query di un indirizzo; Windows non lo ammette nei nomi dei file: lì lo stesso ruolo lo prova «;», che apre i
+# parametri del percorso (urlparse lo separa dal percorso). Sugli altri sistemi resta «che?»
+NOMI = ["Sposi àè", "100% vero", "n#1", "che;" if os.name == "nt" else "che?", "a+b", "x&y=z", "spazio  doppio", "çà ñ ü"]
 
 
 def test_nomi_con_caratteri_speciali(home, apri_editor):
