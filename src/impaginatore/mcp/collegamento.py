@@ -28,8 +28,6 @@ MAX_RISPOSTA = 64 * 2**20         # byte al massimo letti da una risposta (lo st
 ATTESA_AVVIO = 30                 # secondi per vedere la schermata dei progetti in funzione dopo averla avviata
 PASSO = 0.2                       # secondi tra due controlli mentre si aspetta
 
-_APRI = urllib.request.build_opener(urllib.request.ProxyHandler({}))          # niente proxy: il gettone resta su 127.0.0.1
-
 
 class NonRaggiungibile(Exception):
     """il server non risponde (spento, chiuso male, file di sessione rimasto)"""
@@ -47,7 +45,7 @@ def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
     dati = None if corpo is None else json.dumps(corpo).encode("utf-8")
     r = urllib.request.Request(f"http://127.0.0.1:{int(porta)}{percorso}", dati, {sicurezza.INTESTAZIONE: gettone or "", "Content-Type": "application/json"})
     try:
-        with _APRI.open(r, timeout=timeout) as f: b = f.read(MAX_RISPOSTA + 1)
+        with sicurezza.APRI_LOCALE.open(r, timeout=timeout) as f: b = f.read(MAX_RISPOSTA + 1)      # niente proxy: il gettone resta su 127.0.0.1
     except urllib.error.HTTPError as e:
         try: d = json.loads(e.read(65536))
         except ValueError: d = None

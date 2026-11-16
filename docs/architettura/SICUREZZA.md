@@ -183,10 +183,16 @@ for s in sicurezza.sessioni("editor"):                       # [{tipo, porta, ge
     url = sicurezza.chiedi(s["porta"], "/api/avvio", s["gettone"], {})["indirizzo"]   # per aprire la pagina all'utente
 ```
 
-Regole per il client: `Host: 127.0.0.1:<porta>`, nessun `Origin`, `Content-Type: application/json` nelle POST. Un file
+Regole per il client: `Host: 127.0.0.1:<porta>`, nessun `Origin`, `Content-Type: application/json` nelle POST, **mai un
+proxy** (con `HTTP_PROXY` impostato, o un proxy di sistema, `urllib.request.urlopen` manderebbe anche le richieste a
+127.0.0.1, gettone compreso, al proxy: `sicurezza.chiedi` e il server MCP usano `sicurezza.APRI_LOCALE`, senza proxy). Un file
 può essere vecchio (server chiuso male): se il server non risponde si ignora. Il gettone non va scritto in altri file,
 registri o argomenti. Gli altri utenti del computer non leggono i file (0600 in una cartella 0700); su Windows la
 protezione è quella della cartella `%APPDATA%` dell'utente (i permessi POSIX non valgono).
+
+Il server MCP (`mcp/collegamento.py`) segue queste regole e in più non manda il gettone a un file di sessione il cui
+processo non c'è più (su macOS e Linux: un altro programma potrebbe aver preso la porta). Non ascolta su nessuna porta:
+parla con l'assistente su stdio. Il resto del suo modello di minaccia è in `MCP.md`.
 
 ## Percorsi: radici consentite (SEC-005, SEC-010)
 

@@ -176,11 +176,16 @@ def togli_sessione(tipo, porta, gettone):
 
 
 # ---------------------------------------------------------------- client
+# client per i server del programma, SENZA proxy: urlopen userebbe HTTP_PROXY (o il proxy di sistema) anche per 127.0.0.1
+# quando NO_PROXY non lo esclude, e il gettone andrebbe al proxy. Solo http://127.0.0.1:<porta>, mai indirizzi da fuori
+APRI_LOCALE = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def chiedi(porta, percorso, gettone, corpo=None, timeout=3):
     """richiesta JSON a un server locale (GET, o POST se c'è un corpo), con il gettone"""
     dati = None if corpo is None else json.dumps(corpo).encode("utf-8")
     r = urllib.request.Request(f"http://127.0.0.1:{int(porta)}{percorso}", dati, {INTESTAZIONE: gettone or "", "Content-Type": "application/json"})
-    with urllib.request.urlopen(r, timeout=timeout) as f: return json.load(f)  # nosec B310  # sempre http://127.0.0.1:<porta> con un percorso fisso del programma: lo schema non viene da fuori
+    with APRI_LOCALE.open(r, timeout=timeout) as f: return json.load(f)
 
 
 def indirizzo_avvio(tipo, porta, timeout=3):
