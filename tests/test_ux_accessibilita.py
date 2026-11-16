@@ -85,3 +85,41 @@ def test_schermata_album_accessibile(home_srv, tmp_path, monkeypatch, lingua):
             b.js(apri); b.pausa(0.4)
             assert controlla(b) == [], apri
         assert not b.problemi(), b.problemi()
+
+
+def album(c, n=2):
+    """n spread con le prime foto, come li fa la pagina"""
+    nomi = [p["n"] for p in c.get("/api/state")["photos"]]; k = 0
+    for s, q in enumerate((3, 2, 3)[:n]):
+        t = c.post("/api/templates", {"photos": nomi[k:k + q]})["items"][0]; k += q
+        c.post("/api/op", dict(op="newspread", pos=s, L=t["L"], R=t["R"]))
+
+
+SELEZIONA = "(() => { const it = slotsOf(0).find(i => i.k !== 't'); sel = { s: 0, side: it.side, idx: it.idx }; msel = [it.side + ':' + it.idx]; render(); })()"
+STATI_EDITOR = {
+    "impagina": "", "selezione": SELEZIONA, "controlla": "apriControlla(true)", "foto": "view = 'foto'; render()",
+    "foto scelte": "view = 'foto'; SELP = S.photos.filter(p => p.sp == null).slice(0, 3).map(p => p.n); render()", "esporta": "openExp()",
+    "versioni": "document.getElementById('verb').click()", "progetto": "document.getElementById('prjb').click()",
+    "menu": "document.getElementById('morb').click()", "tasti": "keysOpen()", "bozza": "apriBozza()",
+}
+
+
+@pytest.mark.parametrize("lingua", ["it", "en"])
+def test_editor_accessibile(editor, tmp_path, monkeypatch, lingua):
+    """l'editor in ogni stato principale, a 1280 × 800 e (con il foglio di destra aperto) a 1024 × 700"""
+    from cdp import Browser
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", lingua); album(editor)
+    trovati = {}
+    with Browser(tmp_path) as b:
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False)
+        for nome, apri in STATI_EDITOR.items():
+            b.apri(editor.srv.indirizzo_avvio(), 1.2)
+            if apri: b.js(apri); b.pausa(0.8)
+            p = controlla(b)
+            if p: trovati[nome] = p
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False)
+        b.apri(editor.srv.indirizzo_avvio(), 1.2); b.js("document.getElementById('sideb').click()"); b.js(SELEZIONA); b.pausa(0.5)
+        p = controlla(b)
+        if p: trovati["1024 con il foglio"] = p
+        assert trovati == {}, "\n".join(f"{k}: {x}" for k, v in trovati.items() for x in v)
+        assert not b.problemi(), b.problemi()
