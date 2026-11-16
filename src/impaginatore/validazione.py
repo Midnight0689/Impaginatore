@@ -5,6 +5,7 @@ controllano tipi, intervalli e chiavi; un problema produce sempre ErroreProgetto
 («spread 3, pagina sinistra, elemento 2, z: deve essere un numero maggiore di 0 e non oltre 20»), mai un'eccezione
 qualsiasi più avanti, mai codice eseguito. Lo schema completo è in docs/architettura/FORMATO-PROGETTO.md.
 """
+import itertools
 import math
 import os
 import re
@@ -38,6 +39,31 @@ STILE_K = ("font", "size", "col", "al", "tr")
 
 class ErroreProgetto(ValueError):
     """dati di un progetto non validi: il messaggio è pensato per l'utente"""
+
+
+# ---------------------------------------------------------------- annidamento dei JSON
+MAX_ANNIDAMENTO = 64                     # livelli di [ e { in un JSON letto da fuori: un progetto o una richiesta ne usano meno di 10
+_APERTE = {str: ("[", "{"), bytes: (b"[", b"{")}
+_STRINGHE = {str: re.compile(r'"[^"\\]*(?:\\.[^"\\]*)*"', re.S), bytes: re.compile(rb'"[^"\\]*(?:\\.[^"\\]*)*"', re.S)}
+_ALTRO = {str: re.compile(r"[^\[\]{}]+"), bytes: re.compile(rb"[^\[\]{}]+")}
+_PASSO = [0] * 256                       # byte -> cambio di livello: +1 per [ e {, -1 per ] e }
+_PASSO[ord("[")] = _PASSO[ord("{")] = 1
+_PASSO[ord("]")] = _PASSO[ord("}")] = -1
+
+
+class JsonAnnidato(ValueError):
+    """JSON con più livelli di MAX_ANNIDAMENTO: si rifiuta prima di leggerlo"""
+
+
+def controlla_annidamento(dati, massimo=MAX_ANNIDAMENTO):
+    """JsonAnnidato se il JSON `dati` (str o bytes) apre più di `massimo` livelli di [ e { (le parentesi dentro le stringhe
+    non contano). Il limite è del programma: quello di json.loads dipende dalla pila del sistema (versione di Python,
+    ulimit), e con Python 3.14 su una pila grande un JSON di centomila livelli si legge e arriva al resto del programma"""
+    tipo = bytes if isinstance(dati, bytes) else str
+    if sum(dati.count(a) for a in _APERTE[tipo]) <= massimo: return              # meno parentesi aperte che livelli ammessi
+    parentesi = _ALTRO[tipo].sub(tipo(), _STRINGHE[tipo].sub(tipo(), dati))      # solo [ ] { } fuori dalle stringhe
+    if tipo is str: parentesi = parentesi.encode("ascii")
+    if max(itertools.accumulate(map(_PASSO.__getitem__, parentesi)), default=0) > massimo: raise JsonAnnidato(lingua.t("sistema.json_annidato"))
 
 
 def errore(dove, chiave, **param):

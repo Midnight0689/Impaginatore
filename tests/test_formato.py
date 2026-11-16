@@ -280,6 +280,31 @@ def test_album_json_illeggibile(tmp_path, testo, messaggio):
     with pytest.raises(validazione.ErroreProgetto, match=messaggio): formato.leggi_album(str(p))
 
 
+def test_annidamento_con_il_limite_del_programma(tmp_path, monkeypatch):
+    """i JSON da fuori (file di un progetto, richieste) si rifiutano oltre MAX_ANNIDAMENTO livelli con lo stesso messaggio su
+    ogni sistema: il limite di json.loads dipende dalla pila (versione di Python, ulimit) e con Python 3.14 su una pila
+    grande centomila livelli si leggono. Le parentesi dentro le stringhe non contano"""
+    from impaginatore import servizio
+    n = validazione.MAX_ANNIDAMENTO
+
+    def livelli(k, tipo=str): return tipo("[" * k + "]" * k) if tipo is str else b"[" * k + b"]" * k
+    for tipo in (str, bytes):
+        validazione.controlla_annidamento(livelli(n, tipo))
+        with pytest.raises(validazione.JsonAnnidato, match="JSON troppo annidato"): validazione.controlla_annidamento(livelli(n + 1, tipo))
+    assert servizio.leggi_json(livelli(n)) == json.loads(livelli(n)), "fino al limite si legge"
+    with pytest.raises(ValueError, match="JSON troppo annidato"): servizio.leggi_json(livelli(n + 1))          # json.loads lo leggerebbe ovunque
+    with pytest.raises(ValueError, match="JSON troppo annidato"): servizio.leggi_json(b"{" * (n + 1))         # non chiuso: conta lo stesso
+    largo = "[" + "[[]]," * 1000 + "[]]"; assert len(servizio.leggi_json(largo)) == 1001, "tante parentesi, pochi livelli"
+    for testo in ('["' + "[{" * 1000 + '"]', '"' + "[" * 1000 + '"', '["\\"' + "[" * 1000 + '\\\\", "]]]"]'):
+        validazione.controlla_annidamento(testo); validazione.controlla_annidamento(testo.encode()); servizio.leggi_json(testo)
+    p = tmp_path / "x.json"; p.write_text(json.dumps({"a": "[" * 100}) + " " * 10, encoding="utf-8")
+    assert formato.leggi_json(str(p)) == {"a": "[" * 100}
+    p.write_bytes(livelli(n + 1, bytes))
+    with pytest.raises(validazione.JsonAnnidato): formato.leggi_json(str(p))
+    (tmp_path / "album.json").write_bytes(b'{"formato": 2, "spread": ' + livelli(n, bytes) + b"}")
+    with pytest.raises(validazione.ErroreProgetto, match="album.json non è valido: JSON troppo annidato"): formato.leggi_album(str(tmp_path / "album.json"))
+
+
 def test_album_json_troppo_grande(tmp_path, monkeypatch):
     p = tmp_path / "album.json"; p.write_text(formato.album_vuoto(), encoding="utf-8")
     monkeypatch.setattr(formato, "MAX_ALBUM", 10)

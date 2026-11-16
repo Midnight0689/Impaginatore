@@ -17,7 +17,7 @@ from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__, lingua, risorse, sicurezza
+from . import __version__, lingua, risorse, sicurezza, validazione
 
 log = logging.getLogger("impaginatore.server")
 
@@ -215,9 +215,9 @@ def _decimale(s):
 def leggi_json(dati):
     """JSON che arriva da una richiesta (corpo o parametro): niente NaN, Infinity né numeri che diventerebbero infiniti
     (1e400). Sono valori che nessun progetto può salvare: si rifiutano qui, prima di arrivare allo stato (VER-001).
-    Errori: sempre ValueError"""
-    try: return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
-    except RecursionError: raise ValueError(lingua.t("sistema.json_annidato")) from None
+    Niente annidamenti oltre validazione.MAX_ANNIDAMENTO, con lo stesso limite su ogni sistema. Errori: sempre ValueError"""
+    validazione.controlla_annidamento(dati)
+    return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
 
 
 def numero(q, nome, predefinito, minimo, massimo, intero=False):
