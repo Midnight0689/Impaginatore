@@ -95,7 +95,7 @@ def test_elenco_delle_revoche(tmp_path, licenza, monkeypatch):
         f.write_text(testo, encoding="utf-8", errors="surrogateescape")
         with pytest.raises(Rifiutato, match="licenze revocate"): installazione.controlla_revoche(str(d))
     from impaginatore.licenze import chiave as K
-    monkeypatch.setattr(K, "CHIAVI_PUBBLICHE", licenza.pubbliche_vere)                    # copia di sviluppo: il segnaposto
+    monkeypatch.setattr(K, "CHIAVI_PUBBLICHE", {1: K.Pubblica(K.SEGNAPOSTO)})                # una copia con il segnaposto (le chiavi vere sono nel codice dal 16/11/2026)
     f.write_text(json.dumps(dict(licenza.chiavi.revoche([7]), seriali=[7, 8])), encoding="utf-8")
     assert K.problemi_per_il_rilascio() and installazione.controlla_revoche(str(d)) is True
 
