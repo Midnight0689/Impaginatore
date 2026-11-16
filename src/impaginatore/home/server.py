@@ -1,6 +1,8 @@
 """Schermata iniziale dei progetti (come quella di Smart Albums) + avvio dell'editor del progetto scelto.
 
-    impaginatore [--porta 8765] [--no-browser] [--progetti <cartella>]      (oppure: python -m impaginatore)
+    impaginatore [--porta 8765] [--browser | --no-browser] [--progetti <cartella>]      (oppure: python -m impaginatore)
+
+Si apre nella finestra del programma (desktop, pywebview) se c'è, altrimenti nel browser; --browser sceglie il browser.
 
 I nuovi progetti stanno in  <cartella dei progetti>/<nome>/  (progetto.json + album.json + Foto/ + _cache/); la cartella dei
 progetti è --progetti, IMPAGINATORE_PROGETTI, <checkout>/Progetti (come nelle 1.x) o Documenti/Impaginatore/Progetti.
@@ -19,6 +21,8 @@ from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, pe
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 from .. import licenze                         # T-202: licenza e prova gratuita, controllate su questo computer (docs/architettura/LICENZE.md)
+from .. import desktop                         # T-201: finestra del programma (pywebview si carica solo in desktop.motore())
+from ..desktop import dialoghi as desktop_dialoghi
 
 PORTA_PREDEFINITA = 8765
 PROGETTI = None                                # cartella dei progetti nuovi (configura)
@@ -28,6 +32,7 @@ AGGIORNAMENTI = aggiornamenti.NonDisponibili()
 LOCK = threading.Lock()
 EDITORS = {}                                   # percorso progetto -> (Popen, porta)
 SERVER = None                                  # server della schermata (crea_server): il suo gettone resta dopo un riavvio
+FINESTRA = False                               # la schermata è nella finestra del programma (desktop.esegui): dialoghi per gli editor, riavvio con la finestra
 RADICI = percorsi.Radici(lambda: [PROGETTI] + registro())      # cartelle che la pagina può nominare: progetti e cartelle scelte con le finestre di sistema
 log = logging.getLogger("impaginatore.home")
 
@@ -178,14 +183,15 @@ def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.js
 
 
 def riavvia_programma():
-    """dopo un aggiornamento: chiude gli editor, rilancia il programma sulla stessa porta (la pagina si ricarica da sola) ed esce"""
+    """dopo un aggiornamento: chiude gli editor, rilancia il programma sulla stessa porta (la pagina si ricarica da sola) ed esce.
+    Con la finestra del programma il rilancio apre una finestra nuova (questa si chiude con il processo)"""
     if os.environ.get("IMPAGINATORE_SENZA_RIAVVIO"): return                       # solo per le prove
     def riavvia():
         time.sleep(.6)
         for pr, _ in EDITORS.values():
             try: pr.terminate()
             except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
-        processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5,
+        processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI] + ([] if FINESTRA else ["--no-browser"]), 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
     threading.Thread(target=riavvia, daemon=True).start()
@@ -253,6 +259,9 @@ class H(Gestore):
                     raise ValueError("Solo i progetti creati qui si possono mettere nel Cestino")
                 azioni.cestina(p); self.send({"ok": True})
             elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel percorso")); self.send({"ok": True})
+            elif u.path == "/api/dialogo":                    # finestra di scelta chiesta da un editor, aperta nella finestra del programma (desktop.dialoghi.Ponte)
+                if not FINESTRA: raise ValueError("la finestra del programma non è aperta")
+                self.send({"percorsi": desktop_dialoghi.scegli(d.get("tipo"), d.get("messaggio"))})
             elif u.path == "/api/esci":
                 for pr, _ in EDITORS.values():                                   # prima di rispondere: chi riceve «ok» sa che gli editor sono già stati fermati
                     try: pr.terminate()
@@ -287,29 +296,37 @@ def apri_browser(indirizzo, ritardo=0.3):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="impaginatore", description="Impaginatore: schermata dei progetti (si apre nel browser)")
+    ap = argparse.ArgumentParser(prog="impaginatore", description="Impaginatore: schermata dei progetti (nella finestra del programma, o nel browser)")
     ap.add_argument("--porta", type=int, default=PORTA_PREDEFINITA, help="porta della schermata (default %(default)s)")
     ap.add_argument("--progetti", help="cartella dei progetti nuovi")
-    ap.add_argument("--no-browser", action="store_true", help="non aprire il browser")
-    ap.add_argument("--daemon", action="store_true", help="si stacca dal terminale/app che lo ha lanciato (Impaginatore.app sul Mac; non su Windows)")
+    ap.add_argument("--browser", action="store_true", help="si apre nel browser anche se la finestra del programma è disponibile")
+    ap.add_argument("--no-browser", action="store_true", help="non aprire niente (né finestra né browser)")
+    ap.add_argument("--daemon", action="store_true", help="si stacca dal terminale/app che lo ha lanciato (Impaginatore.app sul Mac; non su Windows). Si apre nel browser")
     ap.add_argument("--versione", action="version", version=f"Impaginatore {__version__}")
     args = ap.parse_args(argv)
+    finestra = not (args.no_browser or args.browser or args.daemon)          # T-201: la finestra del programma, se c'è (desktop.motore)
     if args.porta and not _porta_libera(args.porta):      # porta 0 = una libera qualsiasi
         indirizzo = f"http://127.0.0.1:{args.porta}/"
         if gia_aperto(args.porta):                         # già in funzione: basta aprire la pagina (con un indirizzo di avvio nuovo)
             print(f"Impaginatore è già aperto: {indirizzo}", flush=True)
-            if not args.no_browser: processi.apri_browser(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
+            if args.no_browser: return 0
+            a = sicurezza.indirizzo_avvio("home", args.porta)
+            m = desktop.motore() if finestra and a else None
+            if m: return desktop.ospite(m, a, args.porta)          # un'altra finestra sulla schermata in funzione
+            processi.apri_browser(a or indirizzo)
             return 0
         print(f"La porta {args.porta} è occupata da un altro programma: scegline un'altra con --porta", file=sys.stderr)
         return 1
     configura(args.progetti, args.porta)
     if args.daemon: processi.stacca(os.path.join(PROGETTI, "impaginatore.log"))       # doppio fork + nuova sessione: non muore quando l'app che l'ha lanciato si chiude
     giornale.configura("home")
+    m = desktop.motore() if finestra else None             # None: manca pywebview o il motore del sistema (motivo nel registro): il browser come prima
     fermo = threading.Event()
     threading.Thread(target=AGGIORNAMENTI.ciclo, args=(fermo,), daemon=True).start()
-    srv = crea_server(args.porta, sicurezza.gettone_del_processo())
+    srv = crea_server(args.porta, desktop.gettone() if m else sicurezza.gettone_del_processo())
     indirizzo = f"http://127.0.0.1:{PORTA}/"
     print(f"Impaginatore: {indirizzo}  | progetti: {PROGETTI}", flush=True)
+    if m: return desktop.esegui(m, srv, fermo)            # la finestra apre l'indirizzo di avvio dentro il processo; chiusa la finestra, si chiude tutto
     if not args.no_browser: apri_browser(srv.indirizzo_avvio())                    # anche con --daemon: l'indirizzo semplice che apre Impaginatore.app 1.x non basta più (SICUREZZA.md)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass

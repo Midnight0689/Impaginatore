@@ -1,6 +1,9 @@
 """Comando «impaginatore».
 
-    impaginatore [--porta 8765] [--no-browser] [--progetti CARTELLA] [--versione]    schermata dei progetti (nel browser)
+    impaginatore [--porta 8765] [--browser | --no-browser] [--progetti CARTELLA] [--versione]
+                                                                                      schermata dei progetti (nella finestra
+                                                                                      del programma; nel browser se la finestra
+                                                                                      non c'è o con --browser)
     impaginatore editor --progetto CARTELLA [--porta N] [--home URL]                  editor di un album (di solito lo apre la schermata)
 """
 import sys
