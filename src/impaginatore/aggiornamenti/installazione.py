@@ -6,9 +6,10 @@
                              in <dati>/programma/versioni/<versione>, si prova ad avviarla (importazioni in un processo a
                              parte, con questo Python e le sue dipendenze), poi il puntatore cambia in un colpo
                              (lanciatore.py). La base installata non si tocca: la precedente resta per tornare indietro
-    InstallazioneCompilata   programma compilato (T-302, sys.frozen): l'aggiornamento sostituisce l'applicazione intera
-                             (macOS: il bundle .app; Windows: l'installatore). Solo l'interfaccia: gli installatori non
-                             esistono ancora (cosa manca: docs/architettura/AGGIORNAMENTI.md)
+    InstallazioneCompilata   programma compilato (T-302): la versione nuova si installa a mano, intera, con il pacchetto
+                             del suo sistema, come la prima volta. Il programma controlla il manifesto firmato e avvisa;
+                             «Scarica la versione nuova» apre nel browser la pagina della release (manuale = True). Perché
+                             non si sostituisce da solo: docs/architettura/AGGIORNAMENTI.md, «Programma compilato»
 
 Estrazione sicura (estrai): solo i file elencati nel manifesto firmato, sotto impaginatore/, ognuno una volta, con lo
 sha256 del manifesto; niente collegamenti simbolici, file cifrati, percorsi fuori dalla cartella; limiti di numero e
@@ -35,6 +36,7 @@ MAX_FILE = 64 << 20                    # byte di un file estratto
 MAX_ESTRATTO = 512 << 20               # byte estratti in tutto
 TEMPO_PROVA = 300                      # secondi per la prova di avvio (importa editor e motore: numpy, OpenCV, Pillow)
 REVOCHE = "impaginatore/licenze/revoche.json"
+PAGINA_SCARICAMENTO = ""               # pagina dei download del programma compilato, con {versione}; vuota: la release su GitHub (sorgenti.REPOSITORY)
 PROVA = ("import sys; r = sys.argv[1]; sys.path.insert(0, r); import impaginatore, impaginatore.cli, impaginatore.home.server, impaginatore.editor.server; "
          "print('IMPAGINATORE ' + impaginatore.__version__ + ' ' + str(impaginatore.__file__.startswith(r)))")
 log = logging.getLogger("impaginatore.aggiornamenti")
@@ -45,6 +47,11 @@ class Installazione:
     disponibile = True
     motivo = None                      # chiave della tabella: perché non si aggiorna (se non disponibile)
     pacchetto = None                   # chiave del pacchetto in manifesto["pacchetti"]
+    manuale = False                    # True: la versione nuova si installa a mano (a_mano apre la pagina), niente scaricamento né riavvio
+
+    def a_mano(self, manifesto, sorgente):
+        """installazione a mano: apre la pagina della versione del manifesto; {pagina, versione}"""
+        raise NotImplementedError
 
     def precedente(self):
         """versione a cui si può tornare, o None"""
@@ -60,18 +67,51 @@ class Installazione:
 
 
 class InstallazioneCompilata(Installazione):
-    """programma compilato: si sostituisce l'applicazione intera con l'installatore del sistema (non ancora pronto)"""
-    disponibile = False
-    motivo = "sistema.agg_app_compilata"
+    """programma compilato: niente si scarica né si sostituisce da solo. a_mano() apre la pagina della release nel browser:
+    lo scaricamento passa dal browser, quindi il sistema fa sui file gli stessi controlli della prima installazione
+    (Gatekeeper, SmartScreen) e la guida di installazione vale uguale. Non c'è una versione precedente da qui: per tornare
+    indietro si reinstalla la precedente (stessa pagina)"""
+    manuale = True
+    motivo = "sistema.agg_compilato_a_mano"
+
+    def __init__(self, apri=None, pagina=None):
+        from ..piattaforma import processi
+        self.apri = apri or processi.apri_browser
+        self.pagina = PAGINA_SCARICAMENTO if pagina is None else pagina
 
     @property
     def pacchetto(self):
-        from .. import piattaforma
-        return piattaforma.sistema()             # «mac», «windows», «linux»: un pacchetto per sistema nel manifesto
+        return chiave_pacchetto()
+
+    def indirizzo(self, manifesto, sorgente):
+        """pagina dove si scarica la versione del manifesto: quella scelta per il prodotto (PAGINA_SCARICAMENTO, con
+        {versione}), altrimenti la release su GitHub con l'etichetta v<versione>. La versione viene dal manifesto firmato e il
+        repository è quello che il programma ha già controllato"""
+        v = manifesto["versione"]
+        if self.pagina: return self.pagina.format(versione=v)
+        return f"https://github.com/{sorgente.repository}/releases/tag/v{v}"
+
+    def a_mano(self, manifesto, sorgente):
+        u = self.indirizzo(manifesto, sorgente)
+        if not self.apri(u): raise Rifiutato("sistema.agg_pagina_non_aperta", indirizzo=u)
+        log.info("pagina della versione %s aperta nel browser", manifesto["versione"])
+        return dict(pagina=u, versione=manifesto["versione"])
 
     def installa(self, manifesto, pacchetto): raise Rifiutato(self.motivo)
 
     def torna(self, versione): raise Rifiutato(self.motivo)
+
+
+def chiave_pacchetto(sistema=None, macchina=None):
+    """chiave del pacchetto di questo computer in manifesto["pacchetti"] (e nel nome dei file della release, compila.py):
+    mac-arm64 (Apple Silicon), mac-x86_64 (Intel), windows, linux"""
+    import platform
+
+    from .. import piattaforma
+    s = sistema or piattaforma.sistema()
+    if s != "mac": return s
+    m = (macchina or platform.machine()).lower()
+    return "mac-arm64" if m in ("arm64", "aarch64") else "mac-x86_64"
 
 
 # ---------------------------------------------------------------- estrazione e prova

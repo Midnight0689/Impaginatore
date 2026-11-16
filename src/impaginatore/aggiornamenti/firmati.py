@@ -16,7 +16,8 @@ Passi (PacchettiFirmati):
                pacchetto da soli
 2. aggiorna    solo su richiesta dell'utente dalla pagina (gettone): si scarica il pacchetto (limite = la misura firmata),
                si controllano misura e sha256 del manifesto, poi l'installazione (installazione.py) estrae solo i file
-               elencati, ognuno con il suo sha256, prova ad avviarli e cambia il puntatore in un colpo; poi riavvia()
+               elencati, ognuno con il suo sha256, prova ad avviarli e cambia il puntatore in un colpo; poi riavvia().
+               Un'installazione «manuale» (il programma compilato) apre invece la pagina della release e basta
 3. ripristina  torna alla versione precedente (resta installata accanto) e riavvia
 Il controllo automatico (all'avvio, poi al massimo una volta al giorno) si spegne dalla schermata (aggiornamenti.automatico).
 """
@@ -184,7 +185,7 @@ class PacchettiFirmati(Aggiornamenti):
 
     def stato(self):
         s = dict(self.agg, disponibile=True, motivo=None, attuale=dict(self._info(__version__), titolo=lingua.t("sistema.agg_versione_installata")),
-                 precedente=self.installazione.precedente(), annuncio=self.annuncio)
+                 precedente=self.installazione.precedente(), annuncio=self.annuncio, manuale=self.installazione.manuale)
         if self.nuovo: s["novita"] = self._novita(self.nuovo)       # nella lingua in uso, anche se è cambiata dopo il controllo
         m = self.motivo()
         if m: s.update(disponibile=False, motivo=m, da_aggiornare=False)
@@ -230,6 +231,7 @@ class PacchettiFirmati(Aggiornamenti):
         try:
             if not self.nuovo: self.controlla()
             if not self.nuovo: raise Rifiutato("sistema.agg_nessuna_nuova")
+            if self.installazione.manuale: return self.installazione.a_mano(self.nuovo, self.sorgente)        # programma compilato: la pagina dei download, nessun riavvio
             self._installa(self.nuovo)
         finally: self._lock.release()
         self.riavvia()

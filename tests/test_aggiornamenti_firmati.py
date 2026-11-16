@@ -1,5 +1,6 @@
 """Aggiornamenti firmati (T-207, SEC-007): manifesto e firma Ed25519, controllo, scaricamento, installazione, ritorno alla
 versione precedente, annuncio dopo il riavvio. Le release sono cartelle finte (SorgenteFinta): nessuna rete."""
+import hashlib
 import json
 import os
 import re
@@ -189,11 +190,40 @@ def test_non_disponibili_e_rifiuti(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="non è configurato"): g.aggiorna()
     assert g.ciclo(threading.Event()) is None and chiamate == []
     with pytest.raises(Rifiutato, match="solo alla versione"): g.ripristina("1.0.0")
-    c = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub("x/y"), installazione.InstallazioneCompilata())
-    assert "installatore" in c.stato()["motivo"] and c.versioni()[0]["attuale"]
-    for f in (c.aggiorna, lambda: c.ripristina("1.0.0")):
-        with pytest.raises(ValueError, match="installatore"): f()
+    c = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub("x/y"), installazione.InstallazioneCompilata(apri=lambda u: 1 / 0))
+    assert c.stato()["manuale"] is True and c.stato()["motivo"] is None and c.versioni()[0]["attuale"] and len(c.versioni()) == 1
+    with pytest.raises(Rifiutato, match="installatore"): c.ripristina("1.0.0")
     assert chiamate == []
+    monkeypatch.setattr(sorgenti.APRI_RETE, "open", lambda *a, **k: chiamate.append(a[0].full_url) or (_ for _ in ()).throw(OSError("rete finta")))
+    with pytest.raises(Rifiutato, match="Non c'è una versione più nuova"): c.aggiorna()           # il controllo non è riuscito: niente da aprire
+    assert chiamate == ["https://api.github.com/repos/x/y/releases/latest"] and "rete finta" in c.stato()["errore"]
+
+
+def test_programma_compilato_apre_la_pagina(tmp_path, monkeypatch):
+    """T-302: il programma compilato controlla il manifesto firmato come gli altri, ma «aggiorna» apre la pagina della
+    release nel browser: niente scaricamento, niente installazione, niente riavvio"""
+    d = release(tmp_path / "rel"); riavvii, aperte = [], []
+    i = installazione.InstallazioneCompilata(apri=lambda u: aperte.append(u) or True)
+    p = _pf(d, riavvii, installa=i)
+    scaricati = []; monkeypatch.setattr(p.sorgente, "scarica", lambda *a: scaricati.append(a))
+    s = p.controlla()
+    assert s["da_aggiornare"] and s["manuale"] is True and s["ultima"]["n"] == "2.0.1" and s["novita"] == ["Novità della 2.0.1"]
+    assert p.aggiorna() == dict(pagina="https://github.com/prova/impaginatore/releases/tag/v2.0.1", versione="2.0.1")
+    assert aperte == ["https://github.com/prova/impaginatore/releases/tag/v2.0.1"] and scaricati == [] and riavvii == []
+    assert lanciatore.leggi() is None and not os.path.exists(os.path.join(lanciatore.cartella(), "scarichi")), "niente nella cartella dei dati"
+    assert p.stato()["da_aggiornare"], "l'avviso resta finché non si installa la versione nuova"
+
+
+def test_predefiniti_del_programma_compilato(tmp_path, monkeypatch):
+    """compilato: sempre InstallazioneCompilata e solo le chiavi vere, anche con una release finta (la chiave di prova mai)"""
+    monkeypatch.delenv("IMPAGINATORE_AGGIORNAMENTI", raising=False); monkeypatch.delenv(lanciatore.VAR_FINTI, raising=False)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    a = aggiornamenti.predefiniti()
+    assert isinstance(a.installazione, installazione.InstallazioneCompilata) and type(a.sorgente) is sorgenti.SorgenteGitHub and a.chiavi == firmati.CHIAVI_FIDATE
+    d = release(tmp_path / "rel"); monkeypatch.setenv(lanciatore.VAR_FINTI, d)
+    a = aggiornamenti.predefiniti()
+    assert isinstance(a.installazione, installazione.InstallazioneCompilata) and isinstance(a.sorgente, sorgenti.SorgenteFinta) and a.chiavi == firmati.CHIAVI_FIDATE
+    assert a.controlla()["errore"].startswith("La versione pubblicata non ha una firma valida"), "la release di prova non vale nel programma compilato"
 
 
 def test_aggiorna_rifiutato(tmp_path, monkeypatch):
@@ -217,7 +247,7 @@ def test_aggiorna_rifiutato(tmp_path, monkeypatch):
         return e.value.chiave
     assert prova(lambda m: m.update(python_minimo="3.99")) == "sistema.agg_python_vecchio"
     assert prova(lambda m: m["pacchetti"].update(python=dict(m["pacchetti"]["python"], nome="altro.whl"))) == "sistema.agg_release_incompleta"
-    assert prova(installa=types.SimpleNamespace(disponibile=True, pacchetto="mac", precedente=lambda: None)) == "sistema.agg_release_incompleta"
+    assert prova(installa=types.SimpleNamespace(disponibile=True, pacchetto="mac", precedente=lambda: None, manuale=False)) == "sistema.agg_release_incompleta"
     nome = "impaginatore-2.0.1-py3-none-any.whl"
     def digest(j):
         for a in j["assets"]:
@@ -335,6 +365,16 @@ def test_strumento_della_release(tmp_path):
     r = esegui("firma", pk, "--id", "2"); assert r.returncode != 0 and "genera-coppia" in r.stderr
     r = subprocess.run([sys.executable, s, "genera-coppia", "--dir", RADICE], capture_output=True, text=True, encoding="utf-8", timeout=120)
     assert r.returncode != 0 and "dentro il repository" in r.stderr
+    # T-302: i pacchetti del programma compilato nello stesso manifesto, ognuno con misura e impronta
+    (tmp_path / "dist" / "Impaginatore-2.0.1-linux.deb").write_bytes(b"deb"); (tmp_path / "dist" / "Impaginatore-2.0.1-windows.exe").write_bytes(b"exe!")
+    r = esegui("firma", pk, "--compilato", f"linux={tmp_path / 'dist' / 'Impaginatore-2.0.1-linux.deb'}", "--compilato", f"windows={tmp_path / 'dist' / 'Impaginatore-2.0.1-windows.exe'}")
+    assert r.returncode == 0 and "Impaginatore-2.0.1-linux.deb, Impaginatore-2.0.1-windows.exe" in r.stdout, r.stderr
+    with open(tmp_path / "dist" / "manifesto.json", encoding="utf-8") as f: m = json.load(f)
+    assert m["pacchetti"]["windows"] == dict(nome="Impaginatore-2.0.1-windows.exe", dimensione=4, sha256=hashlib.sha256(b"exe!").hexdigest()) and set(m["pacchetti"]) == {"python", "linux", "windows"}
+    r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode == 0 and "pacchetti linux, python, windows" in r.stdout, r.stderr
+    (tmp_path / "dist" / "Impaginatore-2.0.1-linux.deb").write_bytes(b"altro")
+    r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode != 0 and "(linux) non è quello del manifesto" in r.stderr
+    r = esegui("firma", pk, "--compilato", "android=x.apk"); assert r.returncode != 0 and "--compilato vuole chiave=file" in r.stderr
     r = esegui("finta", str(tmp_path / "finta"), "--versione", "2.0.3", "--seme", SEME.hex()); assert r.returncode == 0, r.stderr
     p = firmati.PacchettiFirmati(sorgenti.SorgenteFinta(tmp_path / "finta"), installazione.InstallazionePython(prova=lambda r, v: None), chiavi={0: PUB})
     assert p.controlla()["ultima"]["n"] == "2.0.3" and p.stato()["novita"] == ["Versione di prova 2.0.3"]

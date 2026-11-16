@@ -147,7 +147,7 @@
 </header>
 <main>
   <section class="agg-nuova" id="aggav" hidden aria-labelledby="aggav-t"><!-- T-207: versione nuova -->
-    <div class="tx"><b id="aggav-t"></b><ul id="aggav-l"></ul><span class="nota" data-t="home.agg_avviso_nota"></span></div>
+    <div class="tx"><b id="aggav-t"></b><ul id="aggav-l"></ul><span class="nota" id="aggav-n" data-t="home.agg_avviso_nota"></span></div>
     <div class="az"><button id="aggav-dopo" type="button" class="link" data-t="home.agg_piu_tardi"></button><button id="aggav-ok" type="button" class="primario" data-t="home.agg_ok"></button></div>
   </section>
   <div class="nuova" id="nuova">
@@ -526,12 +526,15 @@ $("altro").onclick = e => { e.stopPropagation(); apriMenu($("altro"), [
 
 // ---- versione e aggiornamenti
 async function checkUpd() { try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} }       // il pulsante «upd» resta nascosto: la versione in alto apre la finestra con «Aggiorna ora»
+let AGG_MANO = false;                                                            // T-302: programma compilato, la versione nuova si scarica dalla sua pagina e si installa a mano
 async function aggiorna() {
+  if (AGG_MANO) return aggiornaOra();
   const novita = ($("upd").dataset.n || "");
   const r = await chiedi(t("home.agg_titolo"), (novita ? t("home.agg_novita", { elenco: novita }) + "\n\n" : "") + t("home.agg_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.agg_ok"), ruolo: "primario" }]);
   if (r !== "ok") return; await aggiornaOra();
 }
 async function aggiornaOra() {                                                   // T-207: scarica, verifica, installa; poi il programma si riavvia e la pagina si riapre
+  if (AGG_MANO) { const x = (await api("/api/aggiorna", {})).ok || {}; avviso(t("home.agg_pagina_aperta", { versione: x.versione || "" }), "ok"); return; }
   attesa(t("home.aggiorno"));
   try { await api("/api/aggiorna", {}); schermataFinale(t("home.aggiornato")); riapriQuandoPronto(); } catch (e) { fineAttesa(); errore(e); }
 }
@@ -550,6 +553,7 @@ function avvisoAgg(r) {
   const v = r.ultima && r.ultima.n, vista = !!(r.da_aggiornare && v && !r.scartata && r.disponibile !== false && sessione(AGG_DOPO) !== String(v));
   $("aggav").hidden = !vista; if (!vista) return;
   $("aggav").dataset.v = v; $("aggav-t").textContent = t("home.agg_avviso", { versione: v });
+  $("aggav-ok").textContent = t(AGG_MANO ? "home.agg_scarica" : "home.agg_ok"); $("aggav-n").textContent = t(AGG_MANO ? "home.agg_avviso_nota_mano" : "home.agg_avviso_nota");
   const L = $("aggav-l"); L.textContent = "";
   (r.novita || []).slice(0, 5).forEach(x => { const li = document.createElement("li"); li.textContent = x; L.appendChild(li); });
 }
@@ -566,6 +570,7 @@ $("vauto").onchange = async () => {
 const nomeV = v => v.rel ? t("home.versione_build", { rel: v.rel, n: v.n }) : String(v.n), brev = v => v.rel || v.n;
 const fmtV = v => v ? `<b>${esc(t("home.versione_n", { n: nomeV(v) }))}</b>` + [v.data, v.titolo].filter(Boolean).map(x => ` · ${esc(x)}`).join("") + (v.codice ? ` <span class="tenue num">(${esc(v.codice)})</span>` : "") : "—";
 function showVer(r) {
+  AGG_MANO = r.manuale === true; $("vgo").textContent = t(AGG_MANO ? "home.agg_scarica" : "home.aggiorna_ora");
   const vb = $("verb"), spenti = r.disponibile === false; vb.className = spenti ? "" : r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
   const v = r.attuale ? brev(r.attuale) : "";
   $("vtxt").textContent = !r.attuale ? t("home.ver_ignota") : spenti ? t("home.ver_breve", { v }) : r.errore ? t("home.ver_non_controllo", { v }) : r.da_aggiornare ? t("home.ver_disponibile", { v, u: r.ultima ? brev(r.ultima) : t("home.ver_nuova") }) : t("home.ver_aggiornata", { v });

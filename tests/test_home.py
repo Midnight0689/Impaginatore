@@ -229,7 +229,7 @@ def test_aggiornamenti_spenti_e_predefiniti(monkeypatch, tmp_path):
     assert isinstance(a, firmati.PacchettiFirmati) and isinstance(a.sorgente, sorgenti.SorgenteGitHub) and isinstance(a.installazione, installazione.InstallazionePython)
     assert a.stato()["disponibile"] is False and "non è configurato" in a.stato()["motivo"], "pacchetto Python: i pacchetti firmati, finché il canale non c'è spenti"
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    c = aggiornamenti.predefiniti(); assert isinstance(c.installazione, installazione.InstallazioneCompilata) and "installatore" in c.stato()["motivo"]
+    c = aggiornamenti.predefiniti(); assert isinstance(c.installazione, installazione.InstallazioneCompilata) and c.stato()["manuale"] is True and "non è configurato" in c.stato()["motivo"]
     monkeypatch.delattr(sys, "frozen")
     monkeypatch.setattr(cartelle, "radice_checkout", lambda: "/repo")
     monkeypatch.setattr(aggiornamenti.shutil, "which", lambda n: "/usr/bin/git")

@@ -5,6 +5,7 @@ import json
 import os
 import stat
 import subprocess
+import types
 import zipfile
 
 import pytest
@@ -165,13 +166,27 @@ def test_togli(tmp_path, monkeypatch):
 
 
 def test_programma_compilato_e_interfaccia(monkeypatch):
-    c = InstallazioneCompilata()
-    assert not c.disponibile and c.motivo == "sistema.agg_app_compilata" and c.precedente() is None
-    from impaginatore import piattaforma
-    assert c.pacchetto == piattaforma.sistema()
+    """T-302: il programma compilato si aggiorna a mano: apre la pagina della release, non scarica né sostituisce niente"""
+    aperte = []
+    c = InstallazioneCompilata(apri=lambda u: aperte.append(u) or True)
+    assert c.disponibile and c.manuale and c.motivo == "sistema.agg_compilato_a_mano" and c.precedente() is None
+    assert c.pacchetto == installazione.chiave_pacchetto() and c.pagina == installazione.PAGINA_SCARICAMENTO == ""
     for f in (lambda: c.installa({}, ""), lambda: c.torna("1")):
-        with pytest.raises(Rifiutato, match="installatore"): f()
+        with pytest.raises(Rifiutato, match="installatore: scarica la versione nuova"): f()
+    s = types.SimpleNamespace(repository="studio/impaginatore")
+    assert c.a_mano({"versione": "2.0.1"}, s) == dict(pagina="https://github.com/studio/impaginatore/releases/tag/v2.0.1", versione="2.0.1")
+    assert aperte == ["https://github.com/studio/impaginatore/releases/tag/v2.0.1"]
+    p = InstallazioneCompilata(apri=lambda u: False, pagina="https://esempio.it/scarica?v={versione}")
+    with pytest.raises(Rifiutato, match=r"scarica la versione nuova da https://esempio.it/scarica\?v=2.0.2"): p.a_mano({"versione": "2.0.2"}, s)
+    from impaginatore.piattaforma import processi
+    assert InstallazioneCompilata().apri is processi.apri_browser
     b = installazione.Installazione()
-    assert b.precedente() is None and b.disponibile and b.pacchetto is None
-    for f in (lambda: b.installa({}, ""), lambda: b.torna("1")):
+    assert b.precedente() is None and b.disponibile and b.pacchetto is None and not b.manuale
+    for f in (lambda: b.installa({}, ""), lambda: b.torna("1"), lambda: b.a_mano({}, s)):
         with pytest.raises(NotImplementedError): f()
+
+
+@pytest.mark.parametrize("sistema, macchina, chiave", [("mac", "arm64", "mac-arm64"), ("mac", "AARCH64", "mac-arm64"), ("mac", "x86_64", "mac-x86_64"),
+                                                       ("windows", "AMD64", "windows"), ("linux", "x86_64", "linux")])
+def test_chiave_del_pacchetto(sistema, macchina, chiave):
+    assert installazione.chiave_pacchetto(sistema, macchina) == chiave
