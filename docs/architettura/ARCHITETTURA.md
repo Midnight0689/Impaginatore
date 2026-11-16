@@ -10,7 +10,7 @@ Dopo T-101 il formato dei progetti è `album.json` (solo dati): vedi «Formato d
 ```
 src/impaginatore/
 ├── __init__.py          __version__ (unico posto della versione: lo leggono pyproject, home, editor, aggiornamenti)
-├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...»
+├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...» o «impaginatore mcp»
 ├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1), Gestore (controlli di sicurezza di ogni richiesta), porta_libera()
 ├── sicurezza.py         gettone di sessione, URL di avvio monouso, file di sessione per i client locali (docs/architettura/SICUREZZA.md)
 ├── percorsi.py          radici consentite: i percorsi che arrivano dalla pagina restano nelle cartelle del progetto o scelte dall'utente
@@ -47,6 +47,11 @@ src/impaginatore/
 │   ├── navigazione.py   la finestra apre solo le pagine del programma; i siti vanno nel browser di sistema
 │   ├── geometria.py     misura e posizione ricordate in <dati>/finestra.json
 │   └── dialoghi.py      finestre di scelta di pywebview (schermata) e Ponte (editor → schermata, POST /api/dialogo)
+├── mcp/                 server MCP per gli assistenti AI (T-203; extra «mcp», SDK ufficiale): client locale del programma in funzione (MCP.md)
+│   ├── collegamento.py  trova schermata ed editor dai file di sessione, richieste con il gettone senza proxy, avvio del programma
+│   ├── strumenti.py     gli strumenti (Assistente): argomenti controllati, licenza, testi come dati, limiti; senza SDK
+│   ├── consenso.py      immagini all'assistente: spente di serie, --consenti-immagini o <dati>/assistente.json
+│   └── server.py        registrazione con l'SDK (schemi, annotazioni, risposte) e avvio su stdio
 └── risorse/             home.html, index.html (interfaccia), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
 tests/                   pytest; dati/progetto_152 = progetto salvato dalla 1.5.2 (riferimento di parità)
 legacy/macos/            Impaginatore.app (applet compilata), .command, setup.sh; «Editor Album/home.py» è un ponte per l'applet
@@ -166,9 +171,9 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **Licenze** (T-202): il punto d'ingresso unico è `cli.main` (e `home.server.main` / `editor.server.main`); le funzioni a
   pagamento passano tutte dalle richieste HTTP (`H.do_POST` di home ed editor) e dalle funzioni `run_export`, `esporta_progetto`:
   lì va il controllo della fascia (`docs/mercato/tier.json`).
-- **MCP** (T-203): le azioni esistono già come funzioni senza interfaccia: `home.server.nuovo`, `editor.server.inizializza`,
-  `do_import`, `do_op` (tutte le operazioni dell'editor, stesso formato JSON della pagina), `templates_for`, `save`,
-  `run_export`. Un server MCP può chiamarle nello stesso processo (un progetto per volta) oppure usare l'API HTTP dell'editor.
+- **MCP** (T-203, fatto): `impaginatore mcp` usa l'API HTTP della schermata e degli editor in funzione, come la pagina
+  (scelta e motivi in `MCP.md`). Uno strumento nuovo è un metodo di `mcp.strumenti.Assistente` con `@strumento` più la sua
+  registrazione in `mcp.server.crea`; le operazioni dell'editor che può chiamare sono quelle di `OPERAZIONI.md`.
   Le operazioni aggiunte per l'interfaccia nuova e per l'assistente (altra disposizione, sostituisci, controllo,
   «Sistema», bozza, annulla con nome, ricollega con prova, import a caldo) sono descritte in `OPERAZIONI.md`.
 - **Riavvio dell'editor**: `editor.server.riavvia_processo` (di serie `os.execv` con gli stessi argomenti) si può sostituire
