@@ -60,7 +60,7 @@ def test_ricollega(editor, tmp_path):
     assert c.codice("/api/ricollega", {"cartella": str(tmp_path / "spostate")}) == 403, "solo cartelle scelte con la finestra"
     dialoghi.imposta(Finti(str(tmp_path / "spostate")))
     r = c.post("/api/ricollega", {})
-    assert r == {"trovate": 3, "mancanti": [], "totale": 10} and c.get("/api/state")["mancanti"] == []
+    assert r == {"trovate": 3, "mancanti": [], "totale": 10, "diverse": [], "proposte": []} and c.get("/api/state")["mancanti"] == []
 
 
 def test_foto_modificate_si_aggiornano(editor):

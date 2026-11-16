@@ -1639,32 +1639,102 @@ def do_import(paths):
         with LOCK: CFG["foto_extra"] = list(dict.fromkeys(list(CFG.get("foto_extra", [])) + new)); save(backup=False)
     return n, skipped
 
-def ricollega(cartella):
-    """ricollega le foto mancanti: cerca per nome (anche nelle sottocartelle) nella cartella scelta e aggiorna i percorsi; non tocca le foto già trovate"""
+CARTELLE_PROGRAMMA = ("_cache", "_backup_editor")         # cartelle che il programma scrive in ogni progetto: dentro non ci sono originali (UX-004)
+USCITE_PROGETTO = ("Esportazioni", "PSD", "PSD_vecchi")   # uscite di un progetto (accanto a progetto.json)
+RICOLLEGA_MAX = 20000                                      # file guardati al massimo per proporre le foto rinominate
+
+
+def _cartella_interna(d, uscita):
+    """la cartella d (percorso reale) non va guardata da «Ricollega»: nascosta, del programma (_cache con le miniature da
+    1200 px, _backup_editor), uscita di un progetto (Esportazioni, PSD) o l'uscita dei PSD di questo progetto (A-23)"""
+    b = os.path.basename(d)
+    return b.startswith(".") or b in CARTELLE_PROGRAMMA or d == uscita or (b in USCITE_PROGETTO and os.path.isfile(os.path.join(os.path.dirname(d), "progetto.json")))
+
+
+def _dentro_interna(p, uscita):
+    """il file o la cartella p (percorso reale) sta dentro una cartella da non guardare, a qualunque livello?"""
+    d = os.path.dirname(p)
+    while os.path.dirname(d) != d:
+        if _cartella_interna(d, uscita): return True
+        d = os.path.dirname(d)
+    return False
+
+
+def _uguale(m, p):
+    """None se il file p può essere l'originale della foto m (stesse misure in pixel e, se la foto ha una data di scatto,
+    la stessa data), altrimenti il motivo"""
+    try: x = A._meta_one(p)
+    except A.ERRORI_FOTO: return "non si apre come foto"
+    if (x["w"], x["h"]) != (m.get("w"), m.get("h")): return f"misure diverse ({x['w']} × {x['h']} invece di {m.get('w')} × {m.get('h')})"
+    if not m.get("senza_data") and x["dt"] != m.get("dt"): return "data di scatto diversa"
+    return None
+
+
+def ricollega(cartella, prova=False, scelte=None):
+    """ricollega le foto mancanti cercandole per nome (anche nelle sottocartelle) nella cartella scelta; non tocca le foto già
+    trovate. Sicuro (UX-004, A-23): salta le cartelle del programma e le uscite dei progetti (mai una miniatura al posto di
+    un originale), le cartelle nascoste e riservate e i collegamenti che portano lì (VER-004); un file con lo stesso nome ma
+    misure o data di scatto diverse non si collega (va in «diverse»). Le foto rinominate (stesse misure e stessa data, nome
+    diverso) si propongono («proposte») e si collegano solo se passate in scelte = {nome foto: file proposto}.
+    prova=True: dice cosa farebbe senza cambiare niente. Restituisce {trovate, mancanti, totale, diverse, proposte}"""
     cartella = os.path.expanduser(cartella)
     if not os.path.isdir(cartella): raise ValueError("cartella non trovata")
-    idx = {}
-    for root, _, fs in os.walk(cartella):
-        for f in fs:
-            if f.lower().endswith(A.estensioni()) and not f.startswith("."): idx.setdefault(f.lower(), os.path.join(root, f))
+    if scelte is not None and not (isinstance(scelte, dict) and all(isinstance(v, str) for v in scelte.values())): raise ValueError("scelte non valide: {nome della foto: file proposto}")
+    uscita = percorsi.reale(CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")); radice = percorsi.reale(cartella)
+    if _cartella_interna(radice, uscita) or _dentro_interna(os.path.join(radice, "x"), uscita):
+        raise ValueError("Questa cartella è del programma (miniature, copie o esportazioni): scegli quella con le foto originali")
+    idx, tutti = {}, []
+    for root, dirs, fs in os.walk(cartella):
+        dirs[:] = sorted(d for d in dirs if not _cartella_interna(percorsi.reale(os.path.join(root, d)), uscita) and not percorsi.riservata(os.path.join(root, d)))
+        for f in sorted(fs):
+            p = os.path.join(root, f)
+            if not f.lower().endswith(A.estensioni()) or f.startswith("."): continue
+            if os.path.islink(p) and (percorsi.riservata(p) or _dentro_interna(percorsi.reale(p), uscita)): continue      # collegamento che porta in una cartella riservata o del programma
+            idx.setdefault(f.lower(), p); tutti.append(p)
     with LOCK:
-        trovate = 0; ancora = []; nuovi = {}
-        for m in A.M:
-            if os.path.exists(m.get("src", "")): continue
-            p = idx.get(m["n"].lower())
-            if p: m["src"] = p; nuovi[m["n"]] = p; trovate += 1
-            else: ancora.append(m["n"])
-        fd = CFG.get("foto", "")
-        if os.path.isdir(fd):                                  # la cartella della selezione è fatta di collegamenti: quelli rotti si rifanno puntando alla foto ritrovata
-            for f in os.listdir(fd):
-                p = os.path.join(fd, f)
-                if os.path.islink(p) and not os.path.exists(p) and f in nuovi:
-                    try: os.remove(p); os.symlink(nuovi[f], p)
-                    except OSError: pass
-        CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
-        CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
-        formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
-        return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
+        esito, nuovi = _esito_ricollega(idx, tutti, scelte)
+        if not prova: _applica_ricollega(nuovi)
+    return esito
+
+
+def _esito_ricollega(idx, tutti, scelte):
+    """(esito, {nome foto: file da collegare}) di ricollega, senza cambiare niente (con LOCK preso)"""
+    trovate = 0; ancora = []; nuovi = {}; diverse = []
+    for m in A.M:
+        if os.path.exists(m.get("src", "")): continue
+        p = idx.get(m["n"].lower()); motivo = _uguale(m, p) if p else None
+        if p and not motivo: nuovi[m["n"]] = p; trovate += 1
+        else:
+            ancora.append(m["n"])
+            if p: diverse.append(dict(n=m["n"], file=p, motivo=motivo))
+    proposte = []; usati = set(nuovi.values()); nomi_ancora = {n.lower() for n in ancora}
+    cerca = {(m.get("w"), m.get("h"), m["dt"]): m["n"] for m in A.M if m["n"] in ancora and not m.get("senza_data")}
+    for p in (tutti[:RICOLLEGA_MAX] if cerca else []):
+        if p in usati or os.path.basename(p).lower() in nomi_ancora: continue
+        try: x = A._meta_one(p)
+        except A.ERRORI_FOTO: continue
+        n = cerca.pop((x["w"], x["h"], x["dt"]), None)
+        if n: proposte.append(dict(n=n, file=p))
+    for n, p in (scelte or {}).items():
+        if dict(n=n, file=p) not in proposte: raise ValueError(f"{n}: «{os.path.basename(str(p))}» non è tra le foto proposte")
+        nuovi[n] = p; trovate += 1; ancora.remove(n); proposte.remove(dict(n=n, file=p))
+    return dict(trovate=trovate, mancanti=ancora, totale=len(A.M), diverse=diverse, proposte=proposte), nuovi
+
+
+def _applica_ricollega(nuovi):
+    """collega le foto ritrovate (con LOCK preso): elenco delle foto, collegamenti della selezione, foto_extra, salvataggio"""
+    for m in A.M:
+        if m["n"] in nuovi: m["src"] = nuovi[m["n"]]
+    fd = CFG.get("foto", "")
+    if os.path.isdir(fd):                                  # la cartella della selezione è fatta di collegamenti: quelli rotti si rifanno puntando alla foto ritrovata
+        for f in os.listdir(fd):
+            p = os.path.join(fd, f)
+            if os.path.islink(p) and not os.path.exists(p) and f in nuovi:
+                try: os.remove(p); os.symlink(nuovi[f], p)
+                except OSError: pass
+    CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
+    CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
+    formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
 
 def _scrivi_testo(p, testo):
     with open(p, "w", encoding="utf-8") as f: f.write(testo)
@@ -1851,7 +1921,7 @@ class H(Gestore):
             elif u.path == "/api/ricollega":
                 c = body.get("cartella") or (pick("folder") or [""])[0]
                 if not c: self.send({"annullato": True})
-                else: self.send(ricollega(RADICI.controlla(c, "quella cartella")))
+                else: self.send(ricollega(RADICI.controlla(c, "quella cartella"), bool(body.get("prova")), body.get("scelte")))
             elif u.path == "/api/prj_esporta":
                 d = body.get("dest") or (pick("folder") or [""])[0]
                 if not d: self.send({"annullato": True})
