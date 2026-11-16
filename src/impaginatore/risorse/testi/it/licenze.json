@@ -6,7 +6,7 @@
   "licenze.chiave_firma_non_corrisponde": "Questa chiave non è valida: il contenuto non corrisponde alla firma. Copiala di nuovo dall'email, per intero; se il problema resta, scrivi al supporto.",
   "licenze.chiave_firma_ritirata": "Questa chiave è stata firmata con una chiave di firma ritirata: scrivi al supporto, ti mandiamo gratis una chiave nuova.",
   "licenze.chiave_firma_sconosciuta": "Questa chiave è firmata con una chiave che questa versione di Impaginatore non conosce (n. {numero}): aggiorna il programma o scrivi al supporto.",
-  "licenze.chiave_incompleta": "La chiave è incompleta: forse manca un pezzo. Copiala di nuovo dall'email, per intero, oppure usa il pulsante «Attiva in Impaginatore» dell'email.",
+  "licenze.chiave_incompleta": "La chiave è incompleta: forse manca un pezzo. Copiala di nuovo dall'email, tutta, da «IMP1-» fino all'ultimo carattere, e incollala nella finestra «Licenza».",
   "licenze.chiave_licenza_sconosciuta": "Questa chiave è per una licenza che questa versione di Impaginatore non conosce: aggiorna il programma.",
   "licenze.chiave_non_di_impaginatore": "Questa non è una chiave di Impaginatore: la chiave inizia con IMP1-.",
   "licenze.chiave_non_vale": "La chiave salvata non vale. {motivo} {seguito}",

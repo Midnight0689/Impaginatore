@@ -255,6 +255,19 @@ def test_testo_della_chiave(licenza):
         with pytest.raises(K.ChiaveNonValida, match=msg): K.decodifica(testo)
 
 
+def test_chiave_incompleta_dice_cosa_fare(monkeypatch):
+    """la chiave a metà: il messaggio dice di copiarla tutta, da IMP1- alla fine, e di incollarla nella finestra della licenza
+    (quella che si apre dal programma), senza rimandare a un pulsante dell'email che l'email non ha"""
+    from impaginatore import risorse
+    with pytest.raises(K.ChiaveNonValida) as e: K.decodifica("IMP1-A")
+    it = str(e.value)
+    assert "«IMP1-»" in it and "fino all'ultimo carattere" in it and f"«{risorse.testi('it')['home.licenza_dlg']}»" in it and "pulsante" not in it, it
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    with pytest.raises(K.ChiaveNonValida) as e: K.decodifica("IMP1-A")
+    en = str(e.value)
+    assert "“IMP1-”" in en and "to the last character" in en and f"“{risorse.testi('en')['home.licenza_dlg']}”" in en and "button" not in en, en
+
+
 def test_contenuto_e_firma(licenza):
     c = licenza.chiavi
     info = K.decodifica(c.chiave(fascia="essenziale", seriale=70000, intestatario="Studio Àlfa", computer=1, flag=K.FLAG_BETA))
