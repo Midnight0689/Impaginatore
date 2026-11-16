@@ -67,6 +67,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-057` **aggiornamenti** — Il programma compilato avvisa della versione nuova e apre la pagina della release. _File:_ `src/impaginatore/aggiornamenti/`. _Rif:_ `T-302`.
 - `AGG-058` **motore** — Misura della varietà delle disposizioni: distanza fra due disposizioni (zero anche se specchiate), famiglia, schema, ordine vario delle proposte, penalità di ripetizione per la bozza. _File:_ `src/impaginatore/motore/varieta.py`, `tests/test_varieta.py`, `docs/architettura/VARIETA.md`.
 - `AGG-059` **editor** — 17 moduli di pagina adattivi: cornici con le proporzioni delle foto (3:2, 2:3) e lo spazio fra le foto su ogni formato; il formato del progetto non cambia. _File:_ `src/impaginatore/editor/server.py`.
+- `AGG-060` **installer** — Pacchetto Linux arm64 (`.deb`) costruito su una macchina ARM e provato con la finestra. _File:_ `.github/workflows/pacchetti.yml`, `strumenti/compila.py`, `src/impaginatore/aggiornamenti/installazione.py`. _Rif:_ `T-302`.
+- `AGG-061` **ci** — Prova del pacchetto Windows x64 su Windows 11 ARM e release di GitHub in bozza sui tag `v*`, con pacchetti, impronte e riepilogo delle verifiche (`contents: write` solo in quel job). _File:_ `.github/workflows/pacchetti.yml`, `strumenti/rilascio.py`. _Rif:_ `T-303`.
+- `AGG-062` **installer** — `rilascio.py pubblica`: scarica la bozza, ricontrolla impronte e prove, firma l'elenco delle versioni sul computer di chi pubblica e pubblica; con `--prova` non carica nulla. _File:_ `strumenti/rilascio.py`, `tests/test_strumenti_pacchetti.py`. _Rif:_ `T-303`.
 
 ### Modificato
 
@@ -100,6 +103,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-028` **editor** — Proposte e «Altra disposizione» in ordine di varietà (la prima resta la migliore fra i moduli di sempre); famiglia mostrata sotto le proposte; «disposizioni diverse» nel riepilogo della bozza. _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`, `src/impaginatore/risorse/testi/it/editor.json`, `src/impaginatore/risorse/testi/en/editor.json`.
 - `MOD-029` **motore** — La bozza non ripete lo stesso schema entro 8 spread e varia le famiglie senza aggiungere difetti (pagine vuote, foto sole piccole o divise, volti, ritaglio); foto a cavallo della piega solo se il prodotto non ha una zona della piega. _File:_ `src/impaginatore/motore/bozza.py`, `src/impaginatore/editor/server.py`.
 - `MOD-030` **mcp** — `proponi_bozza` dice la famiglia di ogni spread e quante disposizioni diverse usa; `cambia_disposizione` dice la famiglia. _File:_ `src/impaginatore/mcp/strumenti.py`, `docs/architettura/MCP.md`.
+- `MOD-031` **installer** — Versione minima di macOS esplicita (13.0 sui Mac con chip Apple, 14.0 sui Mac Intel), scritta in Info.plist e controllata su ogni binario; il registro di compilazione dice quali binari la fissano. _File:_ `strumenti/compila.py`, `strumenti/verifica_pacchetto.py`. _Rif:_ `T-302`.
+- `MOD-032` **ci** — Sui tag un test di macOS annullato per mancanza di macchine ferma solo i pacchetti Mac, non Linux e Windows; un test fallito ferma tutto. _File:_ `.github/workflows/pacchetti.yml`, `docs/architettura/DISTRIBUZIONE.md`. _Rif:_ `T-303`.
+- `MOD-033` **installer** — Note della release corte: pacchetti con dimensione e impronta, che cosa manca, come controllare l'impronta, guida di installazione; registro delle modifiche ripiegato. _File:_ `strumenti/rilascio.py`. _Rif:_ `T-303`.
 
 ### Corretto
 
@@ -149,6 +155,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-044` **editor** — Il menu del tasto destro chiuso subito dopo l'apertura non dà più un errore nella pagina. _File:_ `src/impaginatore/risorse/index.html`.
 - `COR-045` **desktop** — Su Windows la finestra del programma si apre: riceve l'icona `.ico` (con il PNG il sistema sollevava un'eccezione e il programma si chiudeva), anche nel pacchetto Python. _File:_ `src/impaginatore/desktop/finestra.py`, `src/impaginatore/risorse/icona.ico`. _Rif:_ `T-302`.
 - `COR-046` **installer** — Programma compilato in modalità UTF-8; installatore di Windows in UTF-8; il `.dmg` conserva la firma ad hoc; il rapporto di Nuitka si legge sempre come UTF-8. _File:_ `strumenti/compila.py`, `strumenti/compilazione/impaginatore.iss`. _Rif:_ `T-302`.
+- `COR-047` **installer** — `.sha256` e `SHA256SUMS` con fine riga `\n` anche su Windows (il controllo dell'impronta falliva). _File:_ `strumenti/compila.py`, `strumenti/rilascio.py`. _Rif:_ `T-302`.
+- `COR-048` **ci** — Controllo delle licenze su Windows: una libreria senza licenza nei metadati (MIT nel file) è controllata a mano, solo a quella versione. _File:_ `strumenti/controlli.py`, `tests/test_strumenti_pacchetti.py`. _Rif:_ `T-302`.
+- `COR-049` **installer** — La prova del pacchetto legge la versione minima di macOS dal programma installato. _File:_ `strumenti/verifica_pacchetto.py`. _Rif:_ `T-302`.
 
 ### Sicurezza
 
@@ -240,3 +249,4 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `DOC-051` **documenti** — Schermate 2.0 (italiano e inglese), avvio della beta e tre immagini del manuale rifatte con l'interfaccia di oggi, senza il nome dell'autore nel piede. _File:_ `docs/prodotto/ux/schermate/2.0/`, `docs/manuale/immagini/`.
 - `DOC-052` **brand** — Card prezzo dell'anteprima e stylebook senza «30 modelli d'autore» né «guide video». _File:_ `brand/strumenti/anteprima.modello.html`, `brand/anteprima.html`, `brand/STYLEBOOK.md`.
 - `DOC-053` **documenti** — Che cosa è provato su Linux, Windows e Mac Intel (Mac con chip Apple non provato per indisponibilità delle macchine di GitHub), tempi misurati, problemi trovati; nella guida la versione minima di macOS (14) e la domanda «reti locali». _File:_ `docs/architettura/DISTRIBUZIONE.md`, `docs/manuale/00-installazione.md`. _Rif:_ `T-302`.
+- `DOC-054` **documenti** — Sistemi e architetture, rilascio in due tempi passo per passo, guida d'installazione per Mac con chip Apple, PC ARM e Linux arm64. _File:_ `docs/architettura/DISTRIBUZIONE.md`, `docs/architettura/AGGIORNAMENTI.md`, `docs/manuale/00-installazione.md`. _Rif:_ `T-303`.
