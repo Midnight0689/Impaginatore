@@ -321,7 +321,7 @@ def cmd_pubblica(a):
         print("Niente pubblicato: la release resta in bozza."); return 1
     gh("release", "upload", a.tag, str(cartella / firmati.MANIFESTO), str(cartella / firmati.FIRMA), str(cartella / SOMME), "--clobber", repo=a.repo)
     gh("release", "edit", a.tag, "--notes-file", str(cartella / "NOTE.md"), "--draft=false", *(["--prerelease"] if pre else ["--prerelease=false", "--latest"]), repo=a.repo)
-    print(f"Pubblicata: {a.tag} ({come}). {info.get('url', '')}")
+    print(f"Pubblicata {a.tag} come {come}: {info.get('url', '')}")
     return 0
 
 
