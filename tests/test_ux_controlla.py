@@ -1,15 +1,14 @@
 """UX-014: controllo dell'album come elenco strutturato (blocca / guarda / info) e «Sistema» con un solo passo d'annulla;
 il calcolo degli spazi fra le foto è nel motore (motore/spazi.py) e dà lo stesso risultato della pagina."""
 import os
-import shutil
 
 import pytest
+from cdp import CHROME
 from aiuti import crea_foto
 
 from impaginatore.motore import album as A
 from impaginatore.motore import spazi
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 FULL = lambda i: dict(mode="I", module="FULL", mirror=False, photos=[i])
 ix = lambda n: A.IDX[n] - 1
 

@@ -1,13 +1,12 @@
 """Aggiornamenti nella schermata Album (T-207), provati in un Chrome vero: avviso discreto di una versione nuova con le
 novità («Aggiorna e riavvia», «Più tardi» per questa sessione), annuncio dopo il riavvio, interruttore del controllo
 automatico nella finestra della versione, piede con nome e versione."""
-import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import __version__, aggiornamenti
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 

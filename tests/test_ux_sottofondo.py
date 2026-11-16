@@ -4,10 +4,10 @@ miniatura non c'è; la stampa non ne è toccata (legge gli originali)."""
 import io
 import json
 import os
-import shutil
 import threading
 
 import pytest
+from cdp import CHROME
 from aiuti import attendi, crea_foto
 from PIL import Image
 
@@ -16,7 +16,6 @@ from impaginatore.motore import album as A
 from impaginatore.motore import album_libere as FL
 
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 @pytest.mark.browser

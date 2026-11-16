@@ -4,13 +4,12 @@ vuoti, tastiera, licenza spiegata prima, esportazione in corso visibile (i testi
 import json
 import os
 import re
-import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import risorse
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 PAGINA = os.path.join(os.path.dirname(risorse.__file__), "index.html")
 
 

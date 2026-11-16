@@ -7,11 +7,11 @@ import shutil
 import time
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import licenze
 from impaginatore.piattaforma import azioni
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 GIORNO = 86400

@@ -17,7 +17,21 @@ import subprocess
 import time
 import urllib.request
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
+
+
+def trova_chrome():
+    """Chrome o Chromium per i test del browser: IMPAGINATORE_CHROME se c'è, poi i comandi nel PATH (Linux), poi dove lo
+    installano Windows (Programmi, anche solo per l'utente) e macOS (Applicazioni), che non lo mettono nel PATH. None se manca"""
+    if os.environ.get("IMPAGINATORE_CHROME"): return os.environ["IMPAGINATORE_CHROME"]
+    for n in ("google-chrome", "chromium", "chromium-browser", "chrome"):
+        if shutil.which(n): return shutil.which(n)
+    posti = [os.path.join(os.environ[k], *parti) for k in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA") if os.environ.get(k)
+             for parti in (("Google", "Chrome", "Application", "chrome.exe"), ("Chromium", "Application", "chrome.exe"))]
+    posti += ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Chromium.app/Contents/MacOS/Chromium"]
+    return next((p for p in posti if os.path.isfile(p)), None)
+
+
+CHROME = trova_chrome()
 
 
 class _WebSocket:

@@ -1,13 +1,12 @@
 """Correzioni del passo 1 di PIANO-UX senza ridisegno: nome proposto dalla cartella «JPG» (A-01), messaggio di «Salva»
 (A-26), menu di «Correggi spazi» che restava aperto (A-30), contatore delle modifiche in /api/ping (per UX-009)."""
-import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import nomi
 from impaginatore.piattaforma import dialoghi
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 class Finti(dialoghi.Dialoghi):

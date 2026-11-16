@@ -2,11 +2,10 @@
 visibile, nessun errore in console; e in italiano i numeri restano con la virgola (i controlli sui testi fuori tabella
 sono in test_lingua.py)."""
 import re
-import shutil
 
 import pytest
+from cdp import CHROME
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 def album(c, n=3):

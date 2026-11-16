@@ -5,18 +5,17 @@ import base64
 import logging
 import os
 import re
-import shutil
 import threading
 import time
 import types
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import __version__, licenze, risorse
 from impaginatore.desktop import avvio
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 @pytest.mark.parametrize("st, atteso", [

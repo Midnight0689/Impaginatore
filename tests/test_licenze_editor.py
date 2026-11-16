@@ -2,16 +2,15 @@
 attivazione dalla schermata. Editor e schermata girano in questo processo (conftest), con la coppia di firma della sessione."""
 import json
 import os
-import shutil
 import time
 
 import pytest
+from cdp import CHROME
 from aiuti import attendi_log
 from impaginatore import licenze
 from impaginatore.piattaforma import dialoghi
 
 GIORNO = 86400
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 class Finti(dialoghi.Dialoghi):

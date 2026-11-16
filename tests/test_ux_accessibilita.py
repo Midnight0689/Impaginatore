@@ -2,11 +2,10 @@
 diversi: ruoli conosciuti, nome accessibile per ogni comando e per ogni finestra, bersagli di almeno 24 × 24 px
 (WCAG 2.5.8), contrasto dei gettoni dei testi sui fondi dell'applicazione nei due temi (4,5:1) e del contorno del
 fuoco (3:1). Non sostituisce uno strumento completo né una prova con un lettore di schermo (PIANO-UX: UX-019 resto, 2.1)."""
-import shutil
 
 import pytest
+from cdp import CHROME
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 CONTROLLO = r"""(() => {

@@ -4,11 +4,11 @@ import os
 import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import formato
 from impaginatore import laboratori as L
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 PRODOTTO = "generico/orizzontale-30x22"

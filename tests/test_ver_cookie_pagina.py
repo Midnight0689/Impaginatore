@@ -4,13 +4,12 @@ gettone, e le immagini: mai le API né un URL di avvio. Il gettone arriva alla s
 dell'URL di avvio, che lo lascia in sessionStorage (nessun server la riceve)."""
 import http.client
 import json
-import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import sicurezza
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 
 
 def _get(c, path, **h):

@@ -2,13 +2,12 @@
 nella lingua nuova (testi, numeri, attributo lang) e la scelta resta per tutto il programma; l'interruttore delle immagini
 dell'assistente c'è solo se la licenza comprende l'assistente, altrimenti la finestra dice perché."""
 import json
-import shutil
 
 import pytest
+from cdp import CHROME
 
 from impaginatore import __version__, lingua
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 VOCE = "[...document.querySelectorAll('#menu button')].find(b => b.textContent.startsWith(%s))"
