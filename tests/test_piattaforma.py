@@ -89,9 +89,12 @@ def test_cartelle_utente_e_volumi(sistema, casa, tmp_path, monkeypatch):
     assert cartelle.scrivania() == str(casa / "Desktop") and cartelle.documenti() == str(casa / "Documents")
     sistema("linux")
     cfg = casa / ".config"; cfg.mkdir(); (casa / "Scrivania").mkdir()
-    (cfg / "user-dirs.dirs").write_text('XDG_DESKTOP_DIR="$HOME/Scrivania"\nXDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_PICTURES_DIR="$HOME"\n', encoding="utf-8")
-    assert cartelle.scrivania() == str(casa / "Scrivania")
+    (cfg / "user-dirs.dirs").write_text('XDG_DESKTOP_DIR="$HOME//Scrivania/"\nXDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_PICTURES_DIR="$HOME"\n', encoding="utf-8")
+    assert cartelle.scrivania() == str(casa / "Scrivania"), "percorso normalizzato (barre doppie e finali)"
     assert dict(cartelle.cartelle_utente())["Immagini"] == str(casa / "Pictures"), "una voce uguale alla casa vale come assente"
+    for voce in ('"$HOME/"', '""'):
+        (cfg / "user-dirs.dirs").write_text(f"XDG_PICTURES_DIR={voce}\n", encoding="utf-8")
+        assert dict(cartelle.cartelle_utente())["Immagini"] == str(casa / "Pictures"), f"{voce}: come assente"
     media = tmp_path / "media"; (media / "DISCO").mkdir(parents=True); (media / ".nascosto").mkdir()
     assert cartelle._sottocartelle(str(media)) == [("DISCO", str(media / "DISCO"))] and cartelle._sottocartelle(str(tmp_path / "no")) == []
     assert isinstance(cartelle.volumi(), list)
