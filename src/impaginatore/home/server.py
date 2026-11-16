@@ -250,10 +250,10 @@ class H(Gestore):
                 azioni.cestina(p); self.send({"ok": True})
             elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel percorso")); self.send({"ok": True})
             elif u.path == "/api/esci":
-                self.send({"ok": True})
-                for pr, _ in EDITORS.values():
+                for pr, _ in EDITORS.values():                                   # prima di rispondere: chi riceve «ok» sa che gli editor sono già stati fermati
                     try: pr.terminate()
                     except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+                self.send({"ok": True})
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
