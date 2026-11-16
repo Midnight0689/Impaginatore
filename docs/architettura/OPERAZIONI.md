@@ -30,7 +30,7 @@ sé per spread e pagina: le pressioni di D di fila si annullano insieme.
 
 | `op` | Parametri | `esito` | Licenza | UX |
 |---|---|---|---|---|
-| `disposizione` | `s`, `passo` 1 o -1, `side` `"L"`/`"R"`/assente (tutto lo spread) | `{disposizione, di, taglia, a_mano, lato}`: la n-esima di quante, il ritaglio peggiore (1 = nessuno), se si partiva da una disposizione fatta a mano | — | UX-001 |
+| `disposizione` | `s`, `passo` 1 o -1, `side` `"L"`/`"R"`/assente (tutto lo spread) | `{disposizione, di, taglia, a_mano, lato, famiglia}`: la n-esima di quante (in ordine di varietà, VARIETA.md), il ritaglio peggiore (1 = nessuno), se si partiva da una disposizione fatta a mano, la famiglia della disposizione | — | UX-001 |
 | `sostituisci` | `at` `[s, side, idx]`, `photo` (nome senza estensione), `adatta` (di serie `true`) | `{scambiata_con, adattata, taglia, lato}`: lo spread da cui veniva la foto (se era già nell'album le due si scambiano), se la disposizione è stata riadattata (ritaglio oltre ×1,25: prima la pagina, poi lo spread) | — | UX-002 |
 | `spazi` | `s`, `modo` `std`/`freq`/`custom`, `cm` (con `custom`, fino a 10) | `{corretti, diversi}` | — | UX-014 |
 | `sistema` | `spread` (elenco di indici, assente = tutto l'album), `spazi` (di serie `true`), `tono` (`true`/`false`/assente), `modo`, `cm` | `{spazi, tono}`: quanti spread e quante foto ha corretto | spazi su più spread o su tutto l'album: `correzione_spaziature_album` (in Essenziale uno spread alla volta); tono: `uniformita_tono` (assente = se la licenza lo comprende) | UX-014 |
@@ -43,7 +43,7 @@ sé per spread e pagina: le pressioni di D di fila si annullano insieme.
 | Indirizzo | Funzione | Richiesta | Risposta | Licenza | UX |
 |---|---|---|---|---|---|
 | `POST /api/controlla` | `controlla(spreads, tono, modo, cm)` | `{spread?, tono?, modo?, cm?}` | `{problemi: [{livello, tipo, s, side, idx, foto, testo, sistema}], conta: {blocca, guarda, info}, sistema: {spazi, tono, restano}, pronto}` | nessuna (il tono solo se la licenza lo comprende) | UX-014 |
-| `POST /api/bozza` | `bozza(o)` | `{ritmo: alterna/piene/bianche, per_spread 1–8 \| spread (quanti), stelle, seme}` | `{spreads: [{L, R, foto, nomi, capitolo, inizio, ora, taglia}], capitoli, foto, per_spread}`; almeno 10 foto da usare | `impaginazione_automatica_album` | UX-018 |
+| `POST /api/bozza` | `bozza(o)` | `{ritmo: alterna/piene/bianche, per_spread 1–8 \| spread (quanti), stelle, seme}` | `{spreads: [{L, R, foto, nomi, capitolo, inizio, ora, taglia, fam, schema}], capitoli, foto, per_spread, schemi}`; `fam` e `schema` sono famiglia e geometria di ogni spread, `schemi` quante geometrie diverse (VARIETA.md); almeno 10 foto da usare | `impaginazione_automatica_album` | UX-018 |
 | `GET /img/bozza/<n>?k=` | `bozza_jpg(n, k)` | — | anteprima JPEG dello spread n dell'ultima proposta | `impaginazione_automatica_album` | UX-018 |
 | `POST /api/ricollega` | `ricollega(cartella, prova, scelte)` | `{cartella, prova?, scelte?: {foto: file}}` | `{trovate, mancanti, totale, diverse, proposte}`; con `prova` non cambia niente | — | UX-004 |
 | `POST /api/import` con `a_caldo: true` | `do_import` + `aggiungi_a_caldo()` | `{paths, a_caldo: true}` | `{importate, saltate, riavvio: false, aggiunte}`: niente riavvio, annulla e ripeti restano | come l'import | UX-012 |
@@ -57,8 +57,11 @@ volto tagliato o vicino alla piega, ritaglio oltre ×1,25, spazi diversi, pagina
 
 - `motore/spazi.py`: `stato(rett, G, PPI, modo, valore)` e `correggi(...)`, stessi risultati di `gapStat`/`gapFix`
   della pagina (provato da un test nel browser su tre spread e tre riferimenti).
-- `motore/bozza.py`: `capitoli`, `gruppi`, `punteggio`, `proposta(foto, opzioni, ritmo, per_spread, stelle, seme)`.
-- `editor.server.disposizioni(s, side)`: le disposizioni possibili per le foto dello spread o della pagina, in ordine.
+- `motore/bozza.py`: `capitoli`, `gruppi`, `punteggio`, `proposta(foto, opzioni, ritmo, per_spread, stelle, seme, piega)`.
+- `motore/varieta.py`: `descrivi`, `distanza`, `famiglia`, `ordina`, `ripetizioni`, `misura_proposte`, `misura_sequenza`
+  (VARIETA.md).
+- `editor.server.disposizioni(s, side)`: le disposizioni possibili per le foto dello spread o della pagina, in ordine di
+  varietà (`ordine_disposizioni`).
 - `motore/album.foto_rgb(i, originale, serve)`: la miniatura (o il riquadro grigio se non è pronta) oppure l'originale
   alla misura che serve; i JPG «Stampa · 300 dpi» si fanno dagli originali, con l'abbondanza (UX-011).
 
