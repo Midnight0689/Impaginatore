@@ -298,7 +298,7 @@ def test_riepilogo():
     t = CO.riepilogo("Sposi", pr, dict(verificato=False, verifica="il catalogo non è firmato"), ["a.jpg", "b.jpg"], 12, dict(blocca=1, guarda=2), True)
     for riga in ("Consegna dell'album «Sposi»", "Laboratorio: Lab", "Catalogo: Album di prova (lab-prova, 2026-11-01)", "Firma del catalogo: NON verificato (il catalogo non è firmato)",
                  "DA CONFERMARE", "Pagina: 30 × 22,5 cm (spread aperto 60 × 22,5 cm)", "Abbondanza: 0 mm per lato", "Risoluzione: 200 ppi · profilo colore sRGB incorporato",
-                 "File: JPG qualità 95, uno per spread · 4724 × 1772 px", "Spread nell'album: 12 (il prodotto ne vuole almeno 10)", "1 problemi che bloccano, 2 da guardare",
+                 "File: JPG qualità 95, uno per spread · 4724 × 1772 px", "Spread nell'album: 12 (il prodotto ne vuole almeno 10)", "1 problema che blocca, 2 da guardare",
                  "filigrana", "Copertina (da preparare a parte, Impaginatore non la esporta): Rigida in lino", "File (2):\n  a.jpg\n  b.jpg\n"):
         assert riga in t, riga
     q = dict(pr, stato="confermato", prodotto=C.prodotto(prodotto(spread_min=10, spread_max=30, consegna={"nome": "{pagina}", "file": "pagine"})))

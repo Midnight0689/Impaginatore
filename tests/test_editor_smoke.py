@@ -116,7 +116,7 @@ def test_esportazioni_ed_errori(editor, tmp_path):
     ok, L = _esporta(c, fmt="jpg", range="", dest=str(blocco / "sotto"), res="bozza"); assert not ok and L and L[0], L
     ok, L = _esporta(c, fmt="gif", range="", dest=dj); assert not ok, L
     f0 = os.path.join(proj, "Foto", names[0] + ".jpg"); os.rename(f0, f0 + ".spostata")
-    ok, L = _esporta(c, fmt="jpg", range="1", dest=dj, res="bozza"); assert not ok and "non si trovano" in " ".join(L) and names[0] in " ".join(L), L
+    ok, L = _esporta(c, fmt="jpg", range="1", dest=dj, res="bozza"); assert not ok and "1 foto di questi spread non si trova più" in " ".join(L) and names[0] in " ".join(L), L
     os.rename(f0 + ".spostata", f0)
 
 

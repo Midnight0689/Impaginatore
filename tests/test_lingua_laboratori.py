@@ -94,7 +94,7 @@ def test_compatibilita_e_riepilogo_in_inglese():
     t = CO.riepilogo("Wedding", pr, dict(verificato=False, verifica="the catalogue isn't signed"), ["a.jpg"], 12, dict(blocca=1, guarda=2), True)
     for atteso in ("Delivery of the album “Wedding”", "Prepared on ", "Lab: Lab", "Catalogue signature: NOT verified (the catalogue isn't signed)", "WARNING: the specifications in this catalogue are TO BE CONFIRMED",
                    "Page: 30 × 22.5 cm (open spread 60 × 22.5 cm)", "Bleed: 3 mm per side, included in the files", "Resolution: 200 ppi · sRGB colour profile embedded", "Files: JPG quality 95, one per spread",
-                   "Spreads in the album: 12 (the product wants at least 10 and at most 40)", "Album check: 1 problems that block, 2 to review", "Free trial: the files carry a watermark", "Cover (to be prepared separately", "Files (1):"):
+                   "Spreads in the album: 12 (the product wants at least 10 and at most 40)", "Album check: 1 problem that blocks, 2 to review", "Free trial: the files carry a watermark", "Cover (to be prepared separately", "Files (1):"):
         assert atteso in t, atteso
     q = dict(pr, stato="confermato", prodotto=CA.prodotto(prodotto(consegna={"nome": "{pagina}", "file": "pagine"}, spread_max=5)))
     t = CO.riepilogo("W", q, dict(verificato=True, verifica="ok"), [], 3, {}, False)

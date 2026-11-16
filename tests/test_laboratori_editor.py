@@ -281,7 +281,7 @@ def test_consegna_licenza_e_spread_saltati(editor, monkeypatch):
     rotto = E.A.render
     monkeypatch.setattr(E.A, "render", lambda tup, *a, **k: (_ for _ in ()).throw(MemoryError()) if tup == E.spread_tuple(1) else rotto(tup, *a, **k))
     c.post("/api/export", {"fmt": "consegna", "dest": d("a")}); L_ = attendi_log(c)
-    assert "SALTATO spread 2 -> memoria insufficiente: prova a esportare meno spread alla volta" in L_ and "ERRORE: 1 spread non esportati (vedi sopra)" in L_
+    assert "SALTATO spread 2 -> memoria insufficiente: prova a esportare meno spread alla volta" in L_ and "ERRORE: 1 spread non esportato (vedi sopra)" in L_
     assert "ESPORTATI 1 spread su 2" in L_ and sorted(os.listdir(d("a"))) == ["LAB_Prova_01.jpg", "Riepilogo consegna.txt"]
     scrivi = E._scrivi_img; monkeypatch.setattr(E, "_scrivi_img", lambda im, f, **kw: open(f, "wb").write(b"x"))
     c.post("/api/export", {"fmt": "consegna", "range": "1", "dest": d("b")}); L_ = attendi_log(c)

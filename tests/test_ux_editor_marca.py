@@ -166,7 +166,7 @@ def test_controlla_semaforo_e_sistema(editor, tmp_path):
         assert b.js("document.querySelectorAll('#insp .pb').length") == min(len(d["problemi"]), 200 * 3)
         if d["sistema"]["spazi"] + d["sistema"]["tono"]:
             b.js("document.getElementById('ctlsis').click()"); b.pausa(0.8)
-            assert stato(c)["annulla"]["nome"] == "Sistema album" and b.js("document.querySelector('#toast').textContent").startswith("Sistemati")
+            assert stato(c)["annulla"]["nome"] == "Sistema album" and b.js("document.querySelector('#toast').textContent").startswith("Sistemato: ")
             assert c.post("/api/controlla", {})["sistema"]["spazi"] == 0
         b.js("document.querySelector('#insp .pb').click()"); assert b.js("CTL.aperto") is True, "clic su un problema: il pannello resta"
         tasto(b, "Escape"); tasto(b, "Escape"); assert b.js("CTL.aperto") is False

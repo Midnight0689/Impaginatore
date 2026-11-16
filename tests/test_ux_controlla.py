@@ -128,6 +128,32 @@ def test_controlla_trova_i_problemi(piccolo, monkeypatch):
     assert ("blocca", "fuori_pagina", "H01") in tipi(c.post("/api/controlla", {"spread": [0], "tono": False})), "oltre l'abbondanza"
 
 
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_controlla_al_singolare(piccolo, tmp_path):
+    """un problema solo: «1 cosa blocca la stampa» e «1 blocca», non «1 cose bloccano»; la spiegazione di «Sistema» e il suo
+    esito nominano solo le correzioni che ci sono («gli spazi di 1 spread», niente «il tono di 0 foto»)"""
+    from cdp import Browser
+    c = piccolo
+    op(c, op="newspread", pos=0, L=FULL(ix("H01")), R=FULL(ix("H08")))
+    os.remove(os.path.join(c.progetto, "Foto", "H08.jpg"))
+    with Browser(tmp_path) as b:
+        b.apri(c.srv.indirizzo_avvio(), 1)
+        b.js("(async () => { apriControlla(true); for (let i = 0; i < 60 && !(CTL.d && $('ctlsis')); i++) await new Promise(r => setTimeout(r, 50)); })()")
+        d = b.js("CTL.d.conta"); assert d["blocca"] == 1 and d["guarda"] == 0, d
+        conta = b.js("[...document.querySelectorAll('#insp .conta span')].map(x => x.innerText)")
+        assert conta == ["1 blocca", "0 da guardare", f"{d['info']} note"], conta
+        assert b.js("$('ctlb').title").startswith("1 cosa blocca la stampa"), b.js("$('ctlb').title")
+        assert b.js("ctlSpiega({ spazi: 1, tono: 0, restano: 1 })") == "Sistema corregge da solo gli spazi di 1 spread. Si annulla in un passo. 1 cosa da guardare a mano: clic per andarci."
+        assert b.js("ctlSpiega({ spazi: 2, tono: 3, restano: 0 })") == "Sistema corregge da solo gli spazi di 2 spread e il tono di 3 foto. Si annulla in un passo."
+        assert b.js("ctlSpiega({ spazi: 0, tono: 0, restano: 2 })") == "2 cose da guardare a mano: clic su una per andarci."
+        assert b.js("ctlSpiega({ spazi: 0, tono: 0, restano: 0 })") == "Niente da correggere."
+        assert b.js("t('editor.ctl.sistemato', { cosa: ctlCorrezioni(0, 1) })") == "Sistemato: il tono di 1 foto"
+        assert b.js("[tn('editor.ctl.info', 1), tn('editor.ctl.pronto_guarda', 1), tn('editor.imp.fatto', 1), tn('editor.prj.mancanti_btn', 1)]") == [
+            "1 nota", "Si può stampare; 1 cosa da guardare", "1 foto aggiunta", "⚠ 1 foto mancante"]
+        assert not b.problemi(), b.problemi()
+
+
 def test_controlla_volti(piccolo, monkeypatch):
     c = piccolo; E = c.E
     op(c, op="newspread", pos=0, L=FULL(ix("H01")), R=FULL(ix("V03")))
@@ -152,6 +178,8 @@ def test_sistema_un_solo_passo(piccolo, monkeypatch):
     monkeypatch.setattr(E, "tono_spread", finto)
     assert E.stato_spazi(0)["diversi"]; prima = E.snap(); n = len(E.UNDO)
     r = c.post("/api/controlla", {}); assert r["sistema"]["spazi"] == 1 and r["sistema"]["tono"] >= 1
+    st0 = E.stato_spazi(0); spazi_ = [p["testo"] for p in r["problemi"] if p["tipo"] == "spazi"]
+    assert st0["diversi"] == 1 and spazi_ == [f"Spread 1: 1 stacco su {st0['n']} diverso da 0,25 cm"], (st0, spazi_)
     st = op(c, op="sistema"); assert st["esito"] == dict(spazi=1, tono=1) and st["annulla"] == {"nome": "Sistema album", "s": None}
     assert len(E.UNDO) == n + 1 and E.stato_spazi(0)["diversi"] == 0
     assert E.CFG["esposizione"]["per_foto"]["V04"] == 0.6 and E.CFG["ritocco"]["V04"] == {"omb": 10} and "Q05" not in E.CFG["esposizione"]["per_foto"]

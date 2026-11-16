@@ -1193,7 +1193,7 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                 if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", lingua.t("server.ctl_volto_piega", nome=n), e)
                 if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", lingua.t("server.ctl_ripetuta", nome=n, s=usi[i][0] + 1), e)
             sp = stato_spazi(s, modo, cm)
-            if sp["diversi"]: add("guarda", "spazi", lingua.t("server.ctl_spazi", diversi=sp["diversi"], n=sp["n"], cm=lingua.num(sp["ref"] / A.PPI * 2.54, 2, True)), sistema=True); conta_sistema["spazi"] += 1
+            if sp["diversi"]: add("guarda", "spazi", lingua.tn("server.ctl_spazi", sp["diversi"], tot=sp["n"], cm=lingua.num(sp["ref"] / A.PPI * 2.54, 2, True)), sistema=True); conta_sistema["spazi"] += 1
             if tono:
                 for t in tono_spread(s, light=True)["items"]:
                     if t["stato"] == "no":
@@ -1254,7 +1254,7 @@ def _foto_bozza(almeno=0):
     """foto da impaginare: non ancora nell'album e non tolte, in ordine di scatto (ValueError se sono meno di almeno)"""
     usate = used_set(); tolte = set(CFG.get("tolte", [])); stelle = set(CFG["stelle"])
     foto = [dict(i=i, dt=A.M[i]["dt"], ar=A.M[i]["ar"], stella=A.name(i) in stelle) for i in range(len(A.M)) if i not in usate and A.name(i) not in tolte]
-    if len(foto) < almeno: raise ValueError(lingua.t("server.bozza_poche_foto", almeno=almeno, ci_sono=len(foto)))
+    if len(foto) < almeno: raise ValueError(lingua.tn("server.bozza_poche_foto", len(foto), almeno=almeno))
     return sorted(foto, key=lambda f: (f["dt"] or "", A.name(f["i"])))
 
 
@@ -1307,7 +1307,7 @@ def _troppi_spread(n, liberi):
 def _problemi_prodotto(pr):
     """problemi dell'album intero rispetto al prodotto: numero di spread, formato e abbondanza"""
     out = []; n = len(SP)
-    if n < pr.get("spread_min", 0): out.append(lingua.t("server.prodotto_spread_min", n=n, prodotto=pr["nome"], minimo=pr["spread_min"]))
+    if n < pr.get("spread_min", 0): out.append(lingua.tn("server.prodotto_spread_min", n, prodotto=pr["nome"], minimo=pr["spread_min"]))
     if n > pr.get("spread_max", n): out.append(lingua.t("server.prodotto_spread_max", n=n, prodotto=pr["nome"], massimo=pr["spread_max"]))
     m = LAB.incompatibile(CFG, pr)
     if m: out.append(m)
@@ -1985,9 +1985,9 @@ def preflight(o, nums, dest, fmt):
     if fuori: raise ValueError(lingua.t("server.spread_non_esiste", k=fuori[0], n=n))
     usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
-    if manca: raise ValueError(lingua.t("server.foto_non_si_trovano", n=len(manca), nomi=", ".join(manca[:4]) + ("…" if len(manca) > 4 else "")))
+    if manca: raise ValueError(lingua.tn("server.foto_non_si_trovano", len(manca), nomi=", ".join(manca[:4]) + ("…" if len(manca) > 4 else "")))
     rotte = [m["n"] for ix, m in enumerate(A.M) if ix in usati and m["n"] in A.DANNEGGIATE]
-    if rotte: raise ValueError(lingua.t("server.foto_danneggiate", n=len(rotte), nomi=", ".join(rotte[:4]) + ("…" if len(rotte) > 4 else "")))
+    if rotte: raise ValueError(lingua.tn("server.foto_danneggiate", len(rotte), nomi=", ".join(rotte[:4]) + ("…" if len(rotte) > 4 else "")))
     try:
         t = os.path.join(dest, ".prova_scrittura")
         with open(t, "w", encoding="utf-8") as f: f.write("x")

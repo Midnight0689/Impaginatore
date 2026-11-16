@@ -91,6 +91,13 @@ def test_bozza_proposta_e_applicata(editor):
     ok, r = c.prova("/api/bozza", {"seme": 3}); assert not ok and r["errore"].endswith("ce ne sono 0")
 
 
+def test_bozza_con_una_foto_sola(editor):
+    """una foto ancora da usare: «ce n'è 1», non «ce ne sono 1»"""
+    c = editor
+    op(c, op="newspreadsel", names=["H01", "H02", "V03", "V04"], pos=0); op(c, op="newspreadsel", names=["Q05", "H06", "V07", "H08", "Q09"], pos=1)
+    ok, r = c.prova("/api/bozza", {}); assert not ok and r["errore"] == "Per la bozza servono almeno 10 foto ancora da usare: ce n'è 1"
+
+
 def test_bozza_dopo_gli_spread_esistenti(editor):
     c = editor; E = c.E
     op(c, op="newspreadsel", names=["H01"], pos=0); prima = [list(sp) for sp in E.SP]
