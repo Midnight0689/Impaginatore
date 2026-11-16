@@ -65,6 +65,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-055` **installer** — Compilazione con Nuitka e pacchetti per Linux (`.deb`), macOS (`.dmg`, Apple Silicon e Intel) e Windows (installatore per utente), non firmati con certificati; prova automatica del pacchetto compilato; controllo pre-rilascio e manifesto firmato con le impronte; pipeline `pacchetti.yml` su tag e sui rami `pacchetti/**`. _File:_ `strumenti/compila.py`, `strumenti/verifica_pacchetto.py`, `strumenti/rilascio.py`, `.github/workflows/pacchetti.yml`. _Rif:_ `T-302`, `T-303`.
 - `AGG-056` **pacchetto** — Il programma compilato lancia se stesso per editor, PSD, finestre di scelta, riavvio e schermata di avvio (sottocomandi interni). _File:_ `src/impaginatore/compilato.py`. _Rif:_ `T-302`.
 - `AGG-057` **aggiornamenti** — Il programma compilato avvisa della versione nuova e apre la pagina della release. _File:_ `src/impaginatore/aggiornamenti/`. _Rif:_ `T-302`.
+- `AGG-058` **motore** — Misura della varietà delle disposizioni: distanza fra due disposizioni (zero anche se specchiate), famiglia, schema, ordine vario delle proposte, penalità di ripetizione per la bozza. _File:_ `src/impaginatore/motore/varieta.py`, `tests/test_varieta.py`, `docs/architettura/VARIETA.md`.
+- `AGG-059` **editor** — 17 moduli di pagina adattivi: cornici con le proporzioni delle foto (3:2, 2:3) e lo spazio fra le foto su ogni formato; il formato del progetto non cambia. _File:_ `src/impaginatore/editor/server.py`.
 
 ### Modificato
 
@@ -95,6 +97,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-025` **installer** — La prova del pacchetto controlla la finestra vera su tutti i sistemi, va avanti dopo un errore con la diagnosi, scrive il riepilogo per la pipeline e su Windows lavora fuori da AppData. _File:_ `strumenti/verifica_pacchetto.py`. _Rif:_ `T-302`.
 - `MOD-026` **ci** — `pacchetti.yml`: un pacchetto per ramo `pacchetti/<chiave>` (`pacchetti/prova` e `pacchetti/tutti` li fanno tutti e quattro), giri superati annullati, cache di Nuitka, tempi massimi per sistema, artefatti con solo pacchetto e verifica; test di macOS su macchine Intel finché quelle arm64 non sono disponibili. _File:_ `.github/workflows/pacchetti.yml`, `.github/workflows/ci.yml`, `tests/test_interfaccia.py`. _Rif:_ `T-302`.
 - `MOD-027` **piattaforma** — All'avvio dei suoi server il programma non chiede più al sistema il nome di 127.0.0.1: non risolve nessun nome. _File:_ `src/impaginatore/servizio.py`, `tests/test_sicurezza_server.py`.
+- `MOD-028` **editor** — Proposte e «Altra disposizione» in ordine di varietà (la prima resta la migliore fra i moduli di sempre); famiglia mostrata sotto le proposte; «disposizioni diverse» nel riepilogo della bozza. _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`, `src/impaginatore/risorse/testi/it/editor.json`, `src/impaginatore/risorse/testi/en/editor.json`.
+- `MOD-029` **motore** — La bozza non ripete lo stesso schema entro 8 spread e varia le famiglie senza aggiungere difetti (pagine vuote, foto sole piccole o divise, volti, ritaglio); foto a cavallo della piega solo se il prodotto non ha una zona della piega. _File:_ `src/impaginatore/motore/bozza.py`, `src/impaginatore/editor/server.py`.
+- `MOD-030` **mcp** — `proponi_bozza` dice la famiglia di ogni spread e quante disposizioni diverse usa; `cambia_disposizione` dice la famiglia. _File:_ `src/impaginatore/mcp/strumenti.py`, `docs/architettura/MCP.md`.
 
 ### Corretto
 
