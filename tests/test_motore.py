@@ -11,10 +11,13 @@ import pytest
 from aiuti import come_script
 
 from impaginatore import formato
+from impaginatore.piattaforma import processi
 from impaginatore.motore import album, genera_psd_angolo
 
 def _script(nome, *args, cwd=None, env=None):
-    return subprocess.run([sys.executable, "-m", f"impaginatore.motore.{nome}", *args], capture_output=True, text=True, encoding="utf-8", cwd=cwd, env=env)
+    """lo script come lo lancia il programma (editor/server.py): ambiente dei figli, con l'uscita in UTF-8 anche su Windows
+    (lì Python scrive in cp1252 quando l'uscita va in una pipe)"""
+    return subprocess.run([sys.executable, "-m", f"impaginatore.motore.{nome}", *args], capture_output=True, text=True, encoding="utf-8", cwd=cwd, env=processi.ambiente_figli(env))
 
 
 def test_parti_di_genera_psd_angolo():
