@@ -11,7 +11,7 @@ Dopo T-101 il formato dei progetti è `album.json` (solo dati): vedi «Formato d
 src/impaginatore/
 ├── __init__.py          __version__ (unico posto della versione: lo leggono pyproject, home, editor, aggiornamenti)
 ├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...» o «impaginatore mcp»
-├── compilato.py        programma compilato con Nuitka (T-302, DISTRIBUZIONE.md): attivo(), riga di comando dei processi, sottocomandi _psd/_dialogo/_rilancia
+├── compilato.py        programma compilato con Nuitka (T-302, DISTRIBUZIONE.md): attivo(), riga di comando dei processi, sottocomandi _psd/_dialogo/_rilancia/_avvio
 ├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1), Gestore (controlli di sicurezza di ogni richiesta), porta_libera()
 ├── sicurezza.py         gettone di sessione, URL di avvio monouso, file di sessione per i client locali (docs/architettura/SICUREZZA.md)
 ├── percorsi.py          radici consentite: i percorsi che arrivano dalla pagina restano nelle cartelle del progetto o scelte dall'utente

@@ -54,6 +54,12 @@ UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra
 - `risorse/motore_1x/*.txt`: i sorgenti di `album_libere.py` e `testo.py` che «Esporta per la 1.x» copia nel progetto
   accanto allo `spec.py` scritto dall'album, perché la 1.x li esegue (`formato_1x.sorgente_motore`). Sono leggibili: è
   codice che finisce in chiaro in ogni progetto esportato per la 1.x, quindi compilarlo non lo proteggerebbe.
+- File che Nuitka non vede da solo e `compila.py` aggiunge: i due modelli di OpenCV per i volti
+  (`cv2/data/haarcascade_*.xml`, `compila.CASCATE_OPENCV`: senza, l'apertura di un album nel sottocomando dei PSD si ferma
+  con un errore di OpenCV e l'editor non trova volti senza dirlo), il modulo che l'SDK MCP carica per nome
+  (`DA_INCLUDERE`) e, su Linux, i moduli della libreria standard che il PyGObject del sistema importa e il programma no
+  (`PER_GI_DEL_SISTEMA`: senza `optparse` la finestra non parte e si apre il browser). Un test confronta ciascun elenco
+  con il codice (o con il `gi` del sistema, se c'è).
 - `licenze-terze-parti/`: il testo di licenza di ogni componente incluso e `componenti.json` (macOS: dentro
   `Impaginatore.app/Contents/Resources`). Lo scrive `compila.scrivi_licenze` dal rapporto di Nuitka
   (`build/compila/<chiave>/compilazione.xml`): solo le distribuzioni davvero incluse, più Python e le librerie native.
@@ -85,6 +91,7 @@ separato. `compilato.py` decide la riga di comando (`compilato.comando`):
 | server MCP che avvia il programma | `python -m impaginatore …` | `impaginatore …` |
 | PSD (Photoshop) | `python -m impaginatore.motore.genera_psd_angolo …` | `impaginatore _psd …` |
 | finestra di scelta tkinter (Windows senza WebView2) | `python -c …` | `impaginatore _dialogo …` |
+| pagina della schermata di avvio, per la prova del programma installato | `python -m impaginatore _avvio` | `impaginatore _avvio` |
 
 I sottocomandi che iniziano con `_` sono interni (`compilato.INTERNI`): non mostrano la schermata di avvio e non contano
 come avvii per il ritorno automatico alla versione precedente.
@@ -164,10 +171,17 @@ il bundle notarizzato (macOS): `InstallazioneCompilata` è il solo punto da camb
   (`linux`, `mac-arm64`, `mac-x86_64`, `windows`) e la wheel.
 - Ogni job di pacchetto: licenze delle dipendenze di quel sistema (macOS e Windows ne hanno di proprie: pyobjc,
   pythonnet…; `sicurezza.yml` controlla quelle di Linux), ambiente di compilazione, `compila.py`, installazione come la
-  farebbe un utente (`apt install ./….deb`; installatore silenzioso per l'utente con `/CURRENTUSER`; DMG montato in sola
+  farebbe un utente (`apt install ./….deb`; installatore silenzioso, che si installa per l'utente; DMG montato in sola
   lettura con `codesign --verify`), `verifica_pacchetto.py` sul programma installato, disinstallazione (Windows).
-- La prova della finestra blocca solo su Linux (xvfb). Su macOS e Windows dipende dalla sessione grafica del runner e
-  non blocca: il risultato è nel suo rapporto JSON.
+- La schermata di avvio si prova su tutti i sistemi con `impaginatore _avvio` (la stessa pagina della finestra): versione,
+  «Prova gratuita · 30 giorni», «Free trial · 30 days left» e «Sola lettura» dopo una prova finita. «Beta privata» vuole
+  una chiave firmata con la chiave vera e si prova nei test (`tests/test_avvio.py`).
+- La prova della finestra blocca solo su Linux (xvfb). Lì fotografa la schermata di avvio (`avvio-finestra.png`
+  nell'artefatto, non bloccante: dura un secondo) e poi la finestra del programma (`finestra-programma.png`), che deve
+  vedersi. Su macOS e Windows dipende dalla sessione grafica del runner e non blocca: il risultato è nel suo rapporto
+  JSON.
+- Il controllo dei PSD lancia il sottocomando `_psd` su un album vero: carica l'album (volti compresi, con OpenCV) e,
+  senza Photoshop, deve fermarsi con il suo messaggio e non con un errore.
 - Costo: stima nella testa del workflow (circa 8 $ a esecuzione, quasi tutto macOS; il Mac Intel è il job più caro). Da
   rifare con i tempi della prima esecuzione.
 
@@ -181,8 +195,11 @@ python strumenti/rilascio.py prepara <artefatti scaricati> --novita-it "…" --n
 `prepara` cerca la wheel e i pacchetti `Impaginatore-<v>-<chiave>.<dmg|exe|deb>` negli artefatti della pipeline, li
 copia in `dist/rilascio-<v>`, firma il manifesto con la chiave privata dei rilasci (`strumenti/aggiornamento.py firma
 --compilato chiave=file`, la chiave non entra mai nella pipeline), lo verifica, scrive `SHA256SUMS` e `NOTE.md` (dal
-registro, con le impronte). Se `controlla` trova problemi si ferma; con `--prova` va avanti e `NOTE.md` dice in testa
-«PROVA: NON PUBBLICARE». La release si pubblica a mano su GitHub (`AGGIORNAMENTI.md`, «Come si pubblica»).
+registro, con le impronte). Se `controlla` trova problemi, o se la chiave privata usata non è quella di `CHIAVI_FIDATE`
+(i programmi installati rifiuterebbero la release), si ferma; con `--prova` va avanti e `NOTE.md` dice in testa
+«PROVA: NON PUBBLICARE». Le chiavi pubbliche vere di licenze e aggiornamenti sono nel codice dal 16/11/2026: `controlla`
+passa su questo punto e si ferma solo se qualcuno rimette i segnaposto. La release si pubblica a mano su GitHub
+(`AGGIORNAMENTI.md`, «Come si pubblica»).
 
 L'elenco delle revoche delle licenze (`licenze/revoche.json`) entra nel pacchetto Python al momento del rilascio
 (`LICENZE.md`), ma il programma compilato si costruisce nella pipeline dal repository: per averlo anche nei pacchetti
@@ -212,14 +229,33 @@ compilati il file va messo nel repository sul tag del rilascio (è firmato e non
 | | Linux | macOS | Windows |
 |---|---|---|---|
 | Compilazione e pacchetto | provati su questo computer (Ubuntu 24.04, Python 3.12.9 di python-build-standalone) | solo scritti | solo scritti |
-| Installazione come un utente | `.deb` estratto e installato | solo scritto (DMG montato nella pipeline) | solo scritto (installatore silenzioso nella pipeline) |
-| Programma installato: schermata, editor, JPG e PDF, progetto 1.x, MCP, chiusura | provato | da provare nella pipeline | da provare nella pipeline |
-| Finestra | provata sotto Xvfb (WebKitGTK del sistema) | non provata | non provata |
+| Installazione come un utente | `.deb` estratto (`dpkg-deb -x`, senza amministratore non si installa) e lanciato da un collegamento come `/usr/bin/impaginatore` | solo scritto (DMG montato nella pipeline) | solo scritto (installatore silenzioso nella pipeline) |
+| Programma installato: schermata di avvio (prova, inglese, sola lettura), schermata, editor, JPG e PDF, progetto 1.x, PSD fino a Photoshop, MCP, chiusura | provato | da provare nella pipeline | da provare nella pipeline |
+| Finestra: schermata di avvio con versione e licenza, poi la finestra del programma | provata e fotografata sotto Xvfb (WebKitGTK del sistema) | non provata | non provata |
 | Avvisi del sistema (Gatekeeper, SmartScreen) e testi della guida | — | da provare su un Mac vero | da provare su un PC vero |
 | Pipeline su GitHub | mai eseguita | mai eseguita | mai eseguita |
 
-Tempi e misure della prova su Linux: nel rapporto della consegna di T-302 e, dalla prima esecuzione, nel riepilogo della
-pipeline.
+Misure su Linux (16/11/2026, Ubuntu 24.04.5, 12 core, gcc 13 senza ccache, Nuitka 4.3.5, Python 3.12.9):
+
+| | |
+|---|---|
+| Compilazione e pacchetto | 15 min 43 s (114 min di CPU); i file più lunghi sono `editor/server.c` (circa 12 min) e `bottle.c` |
+| Pacchetto `.deb` | 93,2 MB |
+| Programma installato | 382,4 MB su disco, 196 file, eseguibile 96,3 MB, 34 componenti di terze parti |
+| Prova completa con la finestra | 14 s |
+| Versione / porta della schermata / editor pronto | 0,17 s / 0,13 s / 0,52 s |
+| Esportazione JPG / PDF di uno spread | 0,27 s / 0,27 s |
+
+Dalla prima esecuzione della pipeline le misure dei tre sistemi sono nel suo riepilogo (`verifica-<chiave>.json`).
+
+Problemi che la prova del programma compilato ha trovato, e che i test sul sorgente non vedevano:
+
+- l'eseguibile non può chiamarsi come la cartella dei dati del pacchetto (`impaginatore`): Nuitka si ferma (sopra);
+- Nuitka 4 mette in `sys.executable` un `python` che non esiste: l'editor non partiva (`compilato.prepara` lo corregge);
+- i modelli di OpenCV per i volti e `optparse` per il `gi` del sistema mancavano (sopra, «Cosa c'è»);
+- su Linux la finestra del programma, creata nascosta per la schermata di avvio, non si mostrava mai: pywebview 6 su
+  GTK la rinasconde se resta segnata come nascosta (anche dal sorgente; `desktop/avvio.py`). La prova della finestra
+  vera (`tests/prova_finestra.py`) ora lo controlla, ma gira solo con un Python che vede il PyGObject del sistema.
 
 ## Decisioni per il titolare
 

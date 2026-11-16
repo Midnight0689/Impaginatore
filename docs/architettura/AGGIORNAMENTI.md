@@ -159,7 +159,7 @@ non valida»). Per ripartire: cancellare `<dati>/programma/`.
 | Avviso nella schermata Album, annuncio, interruttore, ricarica della pagina dopo il riavvio | vero, provato in Chrome (`test_ux_aggiornamenti.py`) |
 | Sorgente GitHub | scritta sull'API documentata (`X-GitHub-Api-Version: 2026-03-10`), provata con una rete finta: **mai una richiesta vera** |
 | Release | finte, in una cartella (`SorgenteFinta`) |
-| Chiave pubblica dei rilasci | segnaposto |
+| Chiave pubblica dei rilasci | vera, id 1 (sotto, «Stato delle chiavi»); `strumenti/rilascio.py prepara` controlla che la privata usata sia la sua |
 | Repository delle release | vuoto |
 | Programma compilato (`InstallazioneCompilata`) | aggiornamento a mano: controllo e avviso veri, il pulsante apre la pagina della release (provato con test e nel programma compilato su Linux) |
 
