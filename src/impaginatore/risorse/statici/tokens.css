@@ -1,0 +1,227 @@
+/* Impaginatore — design token. Generato da strumenti/genera_token.py: non modificare a mano. */
+/* Font: Newsreader, Instrument Sans, IBM Plex Mono (SIL OFL 1.1) — file in brand/font/. */
+
+:root {
+  /* Primitivi: colori (OKLCH con HEX di riserva) */
+  --imp-carta-0: #FDFCF9; /* Bianco carta */
+  --imp-carta-50: #F6F3EC; /* Carta */
+  --imp-carta-100: #EDE9E1; /* Velina */
+  --imp-carta-200: #DEDAD2; /* Cartoncino */
+  --imp-carta-300: #C7C4BC; /* Feltro */
+  --imp-carta-400: #A19E98; /* Cenere */
+  --imp-carta-500: #6B6964; /* Piombo */
+  --imp-carta-600: #54524E; /* Ardesia */
+  --imp-carta-700: #3E3D3A; /* Grafite */
+  --imp-carta-800: #292725; /* Fumo */
+  --imp-carta-900: #181715; /* Inchiostro */
+  --imp-carta-950: #0F0E0C; /* Nero seppia */
+  --imp-verde-50: #ECF9F0; /* Verde velina */
+  --imp-verde-100: #D3F0DD;
+  --imp-verde-200: #AFE3C2;
+  --imp-verde-300: #7BCC9C; /* Verde Bottega chiaro */
+  --imp-verde-400: #5AB481;
+  --imp-verde-500: #378E60;
+  --imp-verde-600: #236743; /* Verde Bottega */
+  --imp-verde-700: #195436;
+  --imp-verde-800: #123F28;
+  --imp-verde-900: #0B2B1A; /* Verde profondo */
+  --imp-ocra-50: #FBF3E1;
+  --imp-ocra-300: #EABC6E;
+  --imp-ocra-500: #C78B28; /* Ocra */
+  --imp-ocra-600: #845A0F; /* Ocra scura */
+  --imp-cinabro-50: #FFEDEA;
+  --imp-cinabro-300: #F2897C;
+  --imp-cinabro-600: #B6322B; /* Cinabro */
+  --imp-blu-50: #ECF5FD;
+  --imp-blu-300: #88B9EC;
+  --imp-blu-600: #2A669F; /* Blu di Prussia */
+  --imp-grigio-50: #F5F5F5;
+  --imp-grigio-100: #E8E8E8;
+  --imp-grigio-200: #D4D4D4;
+  --imp-grigio-300: #B7B7B7;
+  --imp-grigio-400: #989898;
+  --imp-grigio-500: #747474; /* Grigio medio */
+  --imp-grigio-600: #5B5B5B;
+  --imp-grigio-700: #424242;
+  --imp-grigio-800: #303030;
+  --imp-grigio-850: #262626;
+  --imp-grigio-900: #1E1E1E;
+  --imp-grigio-950: #141414;
+  --imp-bianco: #FFFFFF;
+
+  /* Font */
+  --imp-font-titoli: Newsreader, "Iowan Old Style", Georgia, serif;
+  --imp-font-testo: "Instrument Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --imp-font-numeri: "IBM Plex Mono", SFMono-Regular, Consolas, monospace;
+
+  /* Scala tipografica: dimensione / interlinea / peso / spaziatura */
+  --imp-tipo-display-dimensione: 4.5rem; --imp-tipo-display-interlinea: 1.02; --imp-tipo-display-peso: 480; --imp-tipo-display-spaziatura: -0.022em;
+  --imp-tipo-titolo-1-dimensione: 3.25rem; --imp-tipo-titolo-1-interlinea: 1.06; --imp-tipo-titolo-1-peso: 480; --imp-tipo-titolo-1-spaziatura: -0.018em;
+  --imp-tipo-titolo-2-dimensione: 2.375rem; --imp-tipo-titolo-2-interlinea: 1.12; --imp-tipo-titolo-2-peso: 500; --imp-tipo-titolo-2-spaziatura: -0.012em;
+  --imp-tipo-titolo-3-dimensione: 1.75rem; --imp-tipo-titolo-3-interlinea: 1.2; --imp-tipo-titolo-3-peso: 500; --imp-tipo-titolo-3-spaziatura: -0.008em;
+  --imp-tipo-titolo-4-dimensione: 1.25rem; --imp-tipo-titolo-4-interlinea: 1.3; --imp-tipo-titolo-4-peso: 600; --imp-tipo-titolo-4-spaziatura: -0.006em;
+  --imp-tipo-attacco-dimensione: 1.1875rem; --imp-tipo-attacco-interlinea: 1.5; --imp-tipo-attacco-peso: 400; --imp-tipo-attacco-spaziatura: -0.004em;
+  --imp-tipo-testo-dimensione: 1rem; --imp-tipo-testo-interlinea: 1.6; --imp-tipo-testo-peso: 400; --imp-tipo-testo-spaziatura: 0em;
+  --imp-tipo-testo-piccolo-dimensione: 0.875rem; --imp-tipo-testo-piccolo-interlinea: 1.5; --imp-tipo-testo-piccolo-peso: 400; --imp-tipo-testo-piccolo-spaziatura: 0em;
+  --imp-tipo-didascalia-dimensione: 0.78125rem; --imp-tipo-didascalia-interlinea: 1.4; --imp-tipo-didascalia-peso: 400; --imp-tipo-didascalia-spaziatura: 0.004em;
+  --imp-tipo-etichetta-dimensione: 0.71875rem; --imp-tipo-etichetta-interlinea: 1.3; --imp-tipo-etichetta-peso: 500; --imp-tipo-etichetta-spaziatura: 0.06em;
+  --imp-tipo-misura-dimensione: 0.8125rem; --imp-tipo-misura-interlinea: 1.3; --imp-tipo-misura-peso: 400; --imp-tipo-misura-spaziatura: 0em;
+  --imp-tipo-app-testo-dimensione: 0.8125rem; --imp-tipo-app-testo-interlinea: 1.4; --imp-tipo-app-testo-peso: 400; --imp-tipo-app-testo-spaziatura: 0em;
+  --imp-tipo-app-etichetta-dimensione: 0.6875rem; --imp-tipo-app-etichetta-interlinea: 1.3; --imp-tipo-app-etichetta-peso: 600; --imp-tipo-app-etichetta-spaziatura: 0.02em;
+  --imp-tipo-app-misura-dimensione: 0.75rem; --imp-tipo-app-misura-interlinea: 1.3; --imp-tipo-app-misura-peso: 400; --imp-tipo-app-misura-spaziatura: 0em;
+
+  /* Spazi (base 4 px), raggi, bordi */
+  --imp-spazio-0: 0px; --imp-spazio-1: 2px; --imp-spazio-2: 4px; --imp-spazio-3: 8px; --imp-spazio-4: 12px; --imp-spazio-5: 16px; --imp-spazio-6: 24px; --imp-spazio-7: 32px; --imp-spazio-8: 48px; --imp-spazio-9: 64px; --imp-spazio-10: 96px; --imp-spazio-11: 128px;
+  --imp-raggio-nessuno: 0px; --imp-raggio-piccolo: 2px; --imp-raggio-medio: 4px; --imp-raggio-grande: 8px; --imp-raggio-pillola: 999px;
+  --imp-bordo-sottile: 1px; --imp-bordo-fuoco: 2px;
+
+  /* Movimento */
+  --imp-durata-istante: 90ms; --imp-durata-breve: 160ms; --imp-durata-medio: 240ms; --imp-durata-lungo: 400ms;
+  --imp-curva-esce: cubic-bezier(0.2, 0, 0, 1); --imp-curva-entra: cubic-bezier(0.4, 0, 1, 1); --imp-curva-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Griglia */
+  --imp-griglia-colonne: 12; --imp-griglia-larghezza: 1200px; --imp-griglia-canale: 24px; --imp-griglia-margine: clamp(16px, 5vw, 64px); --imp-linea-di-base: 8px;
+
+  /* Tema chiaro (predefinito) */
+  color-scheme: light;
+  --imp-fondo: var(--imp-carta-50);
+  --imp-fondo-tenue: var(--imp-carta-100);
+  --imp-superficie: var(--imp-carta-0);
+  --imp-testo: var(--imp-carta-900);
+  --imp-testo-secondario: var(--imp-carta-600);
+  --imp-testo-tenue: var(--imp-carta-500);
+  --imp-filetto: var(--imp-carta-200);
+  --imp-bordo-campo: var(--imp-carta-500);
+  --imp-accento: var(--imp-verde-600);
+  --imp-accento-fondo: var(--imp-verde-600);
+  --imp-accento-fondo-premuto: var(--imp-verde-700);
+  --imp-su-accento: var(--imp-carta-50);
+  --imp-accento-tenue: var(--imp-verde-50);
+  --imp-successo: var(--imp-verde-600);
+  --imp-attenzione: var(--imp-ocra-600);
+  --imp-attenzione-segno: var(--imp-ocra-500);
+  --imp-errore: var(--imp-cinabro-600);
+  --imp-info: var(--imp-blu-600);
+  --imp-inverso-fondo: var(--imp-carta-900);
+  --imp-inverso-testo: var(--imp-carta-50);
+  --imp-app-tela: var(--imp-grigio-100);
+  --imp-app-pannello: var(--imp-grigio-50);
+  --imp-app-barra: var(--imp-bianco);
+  --imp-app-sollevato: var(--imp-bianco);
+  --imp-app-bordo: var(--imp-grigio-200);
+  --imp-app-testo: var(--imp-carta-900);
+  --imp-app-testo-tenue: var(--imp-grigio-600);
+  --imp-app-selezione: var(--imp-carta-900);
+  --imp-app-accento: var(--imp-verde-600);
+  --imp-ombra-appoggio: 0 1px 2px rgb(21 20 18 / .06), 0 4px 12px -4px rgb(21 20 18 / .08);
+  --imp-ombra-sollevato: 0 2px 6px rgb(21 20 18 / .08), 0 16px 40px -12px rgb(21 20 18 / .22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --imp-fondo: var(--imp-carta-900);
+    --imp-fondo-tenue: var(--imp-carta-950);
+    --imp-superficie: var(--imp-carta-800);
+    --imp-testo: var(--imp-carta-50);
+    --imp-testo-secondario: var(--imp-carta-300);
+    --imp-testo-tenue: var(--imp-carta-400);
+    --imp-filetto: var(--imp-carta-700);
+    --imp-bordo-campo: var(--imp-carta-400);
+    --imp-accento: var(--imp-verde-300);
+    --imp-accento-fondo: var(--imp-verde-400);
+    --imp-accento-fondo-premuto: var(--imp-verde-300);
+    --imp-su-accento: var(--imp-carta-950);
+    --imp-accento-tenue: var(--imp-verde-900);
+    --imp-successo: var(--imp-verde-300);
+    --imp-attenzione: var(--imp-ocra-300);
+    --imp-attenzione-segno: var(--imp-ocra-300);
+    --imp-errore: var(--imp-cinabro-300);
+    --imp-info: var(--imp-blu-300);
+    --imp-inverso-fondo: var(--imp-carta-50);
+    --imp-inverso-testo: var(--imp-carta-900);
+    --imp-app-tela: var(--imp-grigio-900);
+    --imp-app-pannello: var(--imp-grigio-850);
+    --imp-app-barra: var(--imp-grigio-950);
+    --imp-app-sollevato: var(--imp-grigio-800);
+    --imp-app-bordo: var(--imp-grigio-700);
+    --imp-app-testo: var(--imp-grigio-50);
+    --imp-app-testo-tenue: var(--imp-grigio-400);
+    --imp-app-selezione: var(--imp-bianco);
+    --imp-app-accento: var(--imp-verde-300);
+    --imp-ombra-appoggio: 0 0 0 1px rgb(255 255 255 / .06), 0 1px 2px rgb(0 0 0 / .4);
+    --imp-ombra-sollevato: 0 0 0 1px rgb(255 255 255 / .08), 0 16px 40px -12px rgb(0 0 0 / .6);
+  }
+}
+
+:root[data-theme="dark"], [data-theme="dark"] {
+  color-scheme: dark;
+  --imp-fondo: var(--imp-carta-900);
+  --imp-fondo-tenue: var(--imp-carta-950);
+  --imp-superficie: var(--imp-carta-800);
+  --imp-testo: var(--imp-carta-50);
+  --imp-testo-secondario: var(--imp-carta-300);
+  --imp-testo-tenue: var(--imp-carta-400);
+  --imp-filetto: var(--imp-carta-700);
+  --imp-bordo-campo: var(--imp-carta-400);
+  --imp-accento: var(--imp-verde-300);
+  --imp-accento-fondo: var(--imp-verde-400);
+  --imp-accento-fondo-premuto: var(--imp-verde-300);
+  --imp-su-accento: var(--imp-carta-950);
+  --imp-accento-tenue: var(--imp-verde-900);
+  --imp-successo: var(--imp-verde-300);
+  --imp-attenzione: var(--imp-ocra-300);
+  --imp-attenzione-segno: var(--imp-ocra-300);
+  --imp-errore: var(--imp-cinabro-300);
+  --imp-info: var(--imp-blu-300);
+  --imp-inverso-fondo: var(--imp-carta-50);
+  --imp-inverso-testo: var(--imp-carta-900);
+  --imp-app-tela: var(--imp-grigio-900);
+  --imp-app-pannello: var(--imp-grigio-850);
+  --imp-app-barra: var(--imp-grigio-950);
+  --imp-app-sollevato: var(--imp-grigio-800);
+  --imp-app-bordo: var(--imp-grigio-700);
+  --imp-app-testo: var(--imp-grigio-50);
+  --imp-app-testo-tenue: var(--imp-grigio-400);
+  --imp-app-selezione: var(--imp-bianco);
+  --imp-app-accento: var(--imp-verde-300);
+  --imp-ombra-appoggio: 0 0 0 1px rgb(255 255 255 / .06), 0 1px 2px rgb(0 0 0 / .4);
+  --imp-ombra-sollevato: 0 0 0 1px rgb(255 255 255 / .08), 0 16px 40px -12px rgb(0 0 0 / .6);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --imp-fondo: var(--imp-carta-50);
+  --imp-fondo-tenue: var(--imp-carta-100);
+  --imp-superficie: var(--imp-carta-0);
+  --imp-testo: var(--imp-carta-900);
+  --imp-testo-secondario: var(--imp-carta-600);
+  --imp-testo-tenue: var(--imp-carta-500);
+  --imp-filetto: var(--imp-carta-200);
+  --imp-bordo-campo: var(--imp-carta-500);
+  --imp-accento: var(--imp-verde-600);
+  --imp-accento-fondo: var(--imp-verde-600);
+  --imp-accento-fondo-premuto: var(--imp-verde-700);
+  --imp-su-accento: var(--imp-carta-50);
+  --imp-accento-tenue: var(--imp-verde-50);
+  --imp-successo: var(--imp-verde-600);
+  --imp-attenzione: var(--imp-ocra-600);
+  --imp-attenzione-segno: var(--imp-ocra-500);
+  --imp-errore: var(--imp-cinabro-600);
+  --imp-info: var(--imp-blu-600);
+  --imp-inverso-fondo: var(--imp-carta-900);
+  --imp-inverso-testo: var(--imp-carta-50);
+  --imp-app-tela: var(--imp-grigio-100);
+  --imp-app-pannello: var(--imp-grigio-50);
+  --imp-app-barra: var(--imp-bianco);
+  --imp-app-sollevato: var(--imp-bianco);
+  --imp-app-bordo: var(--imp-grigio-200);
+  --imp-app-testo: var(--imp-carta-900);
+  --imp-app-testo-tenue: var(--imp-grigio-600);
+  --imp-app-selezione: var(--imp-carta-900);
+  --imp-app-accento: var(--imp-verde-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --imp-durata-istante: 0ms; --imp-durata-breve: 0ms; --imp-durata-medio: 0ms; --imp-durata-lungo: 0ms; }
+}

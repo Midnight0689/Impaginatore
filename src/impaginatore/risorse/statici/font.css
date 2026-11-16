@@ -1,0 +1,6 @@
+/* Impaginatore — caratteri dell'interfaccia (SIL Open Font License 1.1: OFL-*.txt accanto a questo file).
+   Gli stessi file di brand/font/ in formato woff2, senza modifiche ai glifi né ai nomi; nessuna chiamata a servizi esterni. */
+@font-face { font-family: "Newsreader"; src: url("Newsreader.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("InstrumentSans.woff2") format("woff2"); font-weight: 400 700; font-stretch: 75% 100%; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("IBMPlexMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("IBMPlexMono-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }

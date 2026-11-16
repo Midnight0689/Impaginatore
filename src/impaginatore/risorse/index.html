@@ -539,6 +539,8 @@
 <div id="toast"></div>
 
 <script nonce="__NONCE__">
+const TESTI = __TESTI__;                                                          // testi dell'interfaccia (risorse/testi): li mette il server (T-206: altre lingue)
+const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] ?? m) : s; };
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
 const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)

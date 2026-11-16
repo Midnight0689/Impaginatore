@@ -127,6 +127,8 @@
 <div class="veil" id="vwait"><div class="dlg" style="text-align:center;width:300px"><div class="spin"></div><div id="wmsg">Apro il progetto…</div></div></div>
 
 <script nonce="__NONCE__">
+const TESTI = __TESTI__;                                                          // testi dell'interfaccia (risorse/testi): li mette il server (T-206: altre lingue)
+const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] ?? m) : s; };
 const $ = id => document.getElementById(id);
 const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
 if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 -apple-system,Segoe UI,sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p>Questa scheda non è collegata al programma.</p><p>Apri Impaginatore dal suo collegamento (o un progetto dalla schermata dei progetti): l\'indirizzo che si apre da lì vale una volta sola e collega questa scheda.</p></div>'; throw new Error("scheda non collegata"); }

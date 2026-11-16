@@ -1031,6 +1031,17 @@ def stato_spazi(s, modo="std", cm=None):
     m, v = _riferimento_spazi(modo, cm); return SPAZI.stato(_rett_spread(s), A.G, A.PPI, m, v)
 
 
+def spazi_spread(s, modo="std", cm=None):
+    """stacchi fra le foto dello spread s per la pagina (tasto «Spaziature»): {ref, n, ok, diversi, coppie: [{ax, da, a,
+    at, g, ok}]} in pixel della vista. È il calcolo del motore (motore.spazi): la pagina non lo rifà"""
+    try: m, v = _riferimento_spazi(modo, cm)
+    except ValueError as e: raise RichiestaNonValida(str(e)) from None
+    with LOCK: R = _rett_spread(s) if 0 <= s < len(SP) else None
+    if R is None: raise RichiestaNonValida("spread inesistente")
+    cp = SPAZI.coppie(R, A.G, A.PPI, m, v)
+    return dict(SPAZI.stato(R, A.G, A.PPI, m, v), coppie=[dict(ax=p["ax"], da=p["da"], a=p["a_"], at=p["at"], g=p["g"], ok=p["ok"]) for p in cp])
+
+
 def correggi_spazi(s, modo="std", cm=None):
     """porta gli stacchi fra le foto dello spread s al riferimento, come faceva la pagina («Correggi spazi»); quante modifiche"""
     m, v = _riferimento_spazi(modo, cm); R, ch = SPAZI.correggi(_rett_spread(s), A.G, A.PPI, m, v)
@@ -1365,13 +1376,26 @@ def photo_list():
 
 def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("src", ""))]
 
+FUNZIONI_PAGINA = ("editor_completo", "export_jpg", "export_pdf", "export_psd_livelli", "impaginazione_automatica_album",
+                   "correzione_spaziature_album", "uniformita_tono", "modelli_personali")
+
+
+def licenza_pagina():
+    """la licenza come la mostra l'editor (T-205): stato, giorni di prova rimasti, sola lettura e, per le funzioni di
+    fascia, se ci sono e la frase che spiega dove si trovano (così la pagina lo dice prima, non con un 403)"""
+    st = licenze.stato(); f = {k: licenze.consentita(k, st) for k in FUNZIONI_PAGINA}
+    return dict(stato=st["stato"], sola_lettura=st["sola_lettura"], filigrana=st["filigrana"], nome_fascia=st["nome_fascia"],
+                giorni=st["prova"]["giorni_rimasti"] if st["stato"] in ("prova", "non valida") else None, messaggio=st["messaggio"],
+                funzioni=f, motivi={k: licenze.motivo(k, st) for k, v in f.items() if not v})
+
+
 def state():
     with LOCK:
         return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO), **passi(),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
-                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato())
+                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato(), licenza=licenza_pagina())
 
 TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
@@ -2236,6 +2260,7 @@ class H(Gestore):
             elif u.path == "/img/bruc": self.send(bruc_img(int(q["s"][0]), q["side"][0], int(q["idx"][0])), "image/png")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
+            elif u.path == "/api/spazi": self.send(spazi_spread(numero(q, "s", 0, -1, 10 ** 6, True), q.get("modo", ["std"])[0], numero(q, "cm", 0, 0, 100) if q.get("cm") else None))
             elif u.path.startswith("/api/info/"):
                 n = unquote(u.path.rsplit("/", 1)[1])                              # nomi con spazi, accenti, %, #, ?, + (BUG-002)
                 if n in A.IDX: self.send(photo_info(n))
@@ -2438,7 +2463,8 @@ def main(argv=None):
     ap.add_argument("--progetto", required=True, help="cartella con progetto.json e album.json")
     ap.add_argument("--porta", type=int, default=8765)
     ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
-    ap.add_argument("--sottofondo", action="store_true", help="apre subito: miniature e volti si preparano mentre si lavora (UX-012)")
+    ap.add_argument("--sottofondo", action=argparse.BooleanOptionalAction, default=True,
+                    help="apre subito: miniature e volti si preparano mentre si lavora (UX-012; predefinito). --no-sottofondo: li prepara prima di aprire")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
     args = ap.parse_args(argv)
     giornale.configura("editor")
