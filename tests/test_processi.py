@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 import pytest
-from aiuti import Client, attendi
+from aiuti import Client, attendi, stato_processo
 
 from impaginatore import __version__, sicurezza
 
@@ -30,7 +30,9 @@ def test_programma_completo(tmp_path, foto_campione):
         p = h.post("/api/nuovo", {"nome": "Vero", "w": 30, "h": 30})["path"]
         for f in sorted(os.listdir(foto_campione))[:4]: shutil.copy(os.path.join(foto_campione, f), os.path.join(p, "Foto", f))
         ep = h.post("/api/apri", {"path": p})["porta"]
-        attendi(lambda: h.get(f"/api/pronto?porta={ep}")["pronto"], 120)
+        log = os.path.join(str(progetti), "editor.log")
+        def stato(): return stato_processo("editor", ep, log)
+        attendi(lambda: h.get(f"/api/pronto?porta={ep}")["pronto"], 120, spiega=stato)
         assert h.post("/api/apri", {"path": p})["porta"] == ep, "un solo editor per progetto"
         e = Client(ep, sicurezza.gettone_di("editor", ep)); st = e.get("/api/state"); assert len(st["photos"]) == 4 and st["home"] == f"http://127.0.0.1:{hp}"
         assert e.get("/api/ping")["path"] == p
@@ -43,14 +45,14 @@ def test_programma_completo(tmp_path, foto_campione):
         def riavviato():
             visti.append((h.get("/api/progetti")["progetti"][0]["aperto"], h.post("/api/apri", {"path": p})["porta"]))
             return e.get("/api/ping")["boot"] != st["boot"]
-        attendi(riavviato, 120, 0.05)                                            # riavviato con lo stesso gettone (variabile d'ambiente, non argomenti)
-        assert visti and set(visti) == {(True, ep)}, visti
+        attendi(riavviato, 120, 0.05, spiega=lambda: f"visti (ultimi): {visti[-5:]}\n{stato()}")    # riavviato con lo stesso gettone (variabile d'ambiente, non argomenti)
+        assert visti and set(visti) == {(True, ep)}, (visti, stato())
         assert len(e.get("/api/state")["photos"]) == 5
         el = h.get("/api/progetti")["progetti"]; assert el[0]["aperto"] and el[0]["foto"] == 5
-        with open(os.path.join(str(progetti), "editor.log"), encoding="utf-8") as f: assert "Editor album" in f.read()
+        with open(log, encoding="utf-8") as f: assert "Editor album" in f.read()
         assert h.post("/api/esci") == {"ok": True}
         home.wait(20)
-        attendi(lambda: _chiusa(ep), 20)
+        attendi(lambda: _chiusa(ep), 20, spiega=stato)
     finally:
         if home.poll() is None: home.terminate(); home.wait(10)
 

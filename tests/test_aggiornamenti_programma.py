@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from aiuti import Client, attendi
+from aiuti import Client, attendi, stato_processo
 from aiuti_aggiornamenti import SEME, SRC, ambiente_senza_coverage
 
 from impaginatore import __version__, sicurezza
@@ -43,14 +43,14 @@ def test_aggiorna_e_torna_indietro_davvero(tmp_path):
         assert s["da_aggiornare"] and s["ultima"]["n"] == "2.0.1" and s["novita"] == ["Prova del giro completo"] and s["errore"] == "", s
         assert c.post("/api/aggiorna") == {"ok": True}
         assert p.wait(60) == 0, "il programma di prima si chiude"
-        attendi(lambda: c.get("/api/aggiornamento", timeout=5)["attuale"]["n"] == "2.0.1", 180, 0.5)
+        attendi(lambda: c.get("/api/aggiornamento", timeout=5)["attuale"]["n"] == "2.0.1", 180, 0.5, spiega=lambda: stato_processo("home", porta))
         s = c.get("/api/aggiornamento")
         assert s["annuncio"]["tipo"] == "aggiornato" and s["annuncio"]["versione"] == "2.0.1" and s["precedente"] == __version__
         with open(os.path.join(os.environ["IMPAGINATORE_DATI"], "programma", "attuale.json"), encoding="utf-8") as f: punt = json.load(f)
         assert punt["versione"] == "2.0.1" and punt["confermata"] is True, "la versione nuova è partita e si è confermata"
         assert c.get("/api/versioni")["versioni"][1]["n"] == __version__
         assert c.post("/api/ripristina", {"codice": __version__}) == {"n": __version__, "caricato": True}
-        attendi(lambda: c.get("/api/aggiornamento", timeout=5)["attuale"]["n"] == __version__, 180, 0.5)
+        attendi(lambda: c.get("/api/aggiornamento", timeout=5)["attuale"]["n"] == __version__, 180, 0.5, spiega=lambda: stato_processo("home", porta))
         s = c.get("/api/aggiornamento")
         assert s["annuncio"]["tipo"] == "tornato" and s["da_aggiornare"] is False and s["precedente"] is None
         s = c.post("/api/controlla")
