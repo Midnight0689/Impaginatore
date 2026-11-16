@@ -79,7 +79,7 @@
   .prova { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: var(--imp-app-barra); border-top: 1px solid var(--imp-app-bordo); }
   .prova span { color: var(--imp-attenzione); font-weight: 500; }
   body.con-prova main { padding-bottom: 80px; }
-  #credit { position: fixed; right: 18px; bottom: 12px; z-index: 6; font-size: 12px; color: var(--imp-app-testo-tenue); pointer-events: none; user-select: none; } #credit b { color: inherit; font-weight: 600; }
+  #credit { position: fixed; right: 18px; bottom: 12px; z-index: 6; font: 400 12px/1.3 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); pointer-events: none; user-select: none; }
 
   /* menu */
   #menu { position: fixed; z-index: 20; display: none; min-width: 200px; padding: 4px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-grande); background: var(--imp-app-sollevato); box-shadow: var(--imp-ombra-sollevato); }
@@ -229,9 +229,10 @@
 
 <div class="velo" id="vwait"><div class="dlg attesa" role="status"><div class="spin"></div><div id="wmsg"></div></div></div>
 
-<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
+<div id="credit"></div>
 <script nonce="__NONCE__">
 const TESTI = __TESTI__, LINGUA = "__LINGUA__", LOCALE = "__LOCALE__";           // testi nella lingua in uso, lingua e codice per Intl: li mette il server (T-206, lingua.py)
+const VERSIONE = "__VERSIONE__";                                                 // __version__ del programma in uso (servizio.pagina)
 const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFractionDigits: 2 } : { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);      // numeri secondo la lingua: 22,5 / 22.5
 const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] == null ? m : typeof p[x] === "number" ? fN(p[x]) : String(p[x])) : s; };      // testo semplice (textContent, title)
 const tn = (k, n, p) => t(k + (n === 1 ? "_1" : "_n"), Object.assign({ n }, p));                  // plurale: chiave_1 / chiave_n
@@ -254,6 +255,7 @@ function applicaTema(v) {
 }
 function temaSalvato() { try { const v = localStorage.getItem(TEMA_CHIAVE); return v === "light" || v === "dark" ? v : "dark"; } catch (e) { return "dark"; } }
 applicaTema(temaSalvato());
+$("credit").textContent = "Impaginatore v" + VERSIONE;                           // non tradotto: nome del programma e numero di versione
 $("tema").onclick = () => { const n = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; try { localStorage.setItem(TEMA_CHIAVE, n); } catch (e) {} applicaTema(n); };
 
 const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
