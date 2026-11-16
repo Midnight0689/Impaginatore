@@ -423,7 +423,8 @@ jobs:
           path: |
             dist/verifica/verifica-windows-arm64.json
             dist/verifica/*.png
-          if-no-files-found: error
+          # se la prova non è partita il job è già in errore, e senza rapporto la release in bozza dice che la prova manca
+          if-no-files-found: warn
           retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
   wheel:
