@@ -1920,9 +1920,9 @@ $("wrap").ondrop = e => {
 };
 
 // ---- pannelli comprimibili e tutto schermo
-function setPanels(list, side, pool) { document.body.classList.toggle("nolist", !list); document.body.classList.toggle("noside", !side); document.body.classList.remove("nopool");
+function setPanels(list, side, pool, ricorda = true) { document.body.classList.toggle("nolist", !list); document.body.classList.toggle("noside", !side); document.body.classList.remove("nopool");
    const sb = $("sideb"); if (sb) { sb.classList.toggle("on", !!side); sb.setAttribute("aria-pressed", String(!!side)); }       // Galleria/Tono non spariscono mai: al massimo restano chiuse in basso
-   try { localStorage.setItem("pan", [list, side, pool].map(x => +x).join("")); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
+   if (ricorda) try { localStorage.setItem("pan", [list, side, pool].map(x => +x).join("")); } catch (e) {} setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); }
 const panels = () => [!document.body.classList.contains("nolist"), !document.body.classList.contains("noside"), !document.body.classList.contains("nopool")];
 $("tlist").onclick = () => { const [l, s_, p_] = panels(); setPanels(!l, s_, p_); };
 $("tside").onclick = () => { const [l, s_, p_] = panels(); setPanels(l, !s_, p_); };
@@ -1932,7 +1932,10 @@ $("tfull").onclick = () => { const [l, s_] = panels(), all = l || s_ || !poolFol
   document.body.classList.toggle("pfold", poolFold); try { localStorage.setItem("poolFold", poolFold ? "1" : "0"); } catch (e) {} };
 const FOGLIO = matchMedia("(max-width: 1279.98px)");                                           // sotto i 1280 px il pannello di destra è un foglio (UX-016)
 const foglioAperto = () => FOGLIO.matches && !document.body.classList.contains("noside") && !document.body.classList.contains("foto");
-try { const pn0 = localStorage.getItem("pan"); if (pn0 === null && FOGLIO.matches) { setPanels(true, false, true); localStorage.removeItem("pan"); } } catch (e) {}      // finestra stretta: il foglio parte chiuso
+try { if (localStorage.getItem("pan") === null && FOGLIO.matches) setPanels(true, false, true, false); } catch (e) {}      // finestra stretta: il foglio parte chiuso
+let FOGLIO_RIAPRI = false;                                     // la finestra si stringe: il pannello aperto si chiude (non coprirebbe la tela); si riapre quando torna larga
+FOGLIO.addEventListener("change", e => { const [l, s_, p_] = panels();
+  if (e.matches && s_) { FOGLIO_RIAPRI = true; setPanels(l, false, p_, false); } else if (!e.matches && FOGLIO_RIAPRI) { FOGLIO_RIAPRI = false; if (!s_) setPanels(l, true, p_, false); } });
 try { const pn = localStorage.getItem("pan"); if (pn && pn.length === 3) setPanels(pn[0] === "1", pn[1] === "1", pn[2] === "1"); } catch (e) {}
 
 // ---- libreria foto: seleziona le foto e compaiono i modelli per quel numero di foto

@@ -310,6 +310,10 @@ def test_tela_grande_e_foglio_sotto_i_1280(editor, tmp_path):
         b.apri(c.srv.indirizzo_avvio(), 2)
         assert b.js("panels()") == [True, True, True] and b.js(TELA) >= 24, b.js(TELA)
         assert b.js("document.getElementById('sideb').getBoundingClientRect().width") == 0, "a 1280 px il pannello sta al suo posto"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False); b.pausa(0.3)
+        assert b.js("panels()") == [True, False, True], "la finestra si stringe: il pannello aperto si chiude"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False); b.pausa(0.3)
+        assert b.js("panels()") == [True, True, True] and b.js("localStorage.getItem('pan')") is None, "torna larga: si riapre, e non è una scelta da ricordare"
         b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False)
         b.apri(c.srv.indirizzo_avvio(), 2)
         assert b.js("panels()") == [True, False, True], "finestra stretta: il foglio parte chiuso, la colonna degli spread resta"
