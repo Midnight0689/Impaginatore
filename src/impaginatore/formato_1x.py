@@ -36,6 +36,11 @@ MAX_PROFONDITA = 60
 MAX_LISTA = 200_000                        # elementi di un elenco costruito con + / append / extend
 MAX_TESTO = 1_000_000                      # caratteri di un testo costruito con +
 MAX_NUMERO = 1e12
+MAX_TESTI_COSTRUITI = 8_000_000            # caratteri di TUTTI i testi costruiti con + (VER-005: i limiti sopra valgono per un testo o un elenco solo)
+MAX_ELEMENTI_COSTRUITI = 1_000_000         # elementi di TUTTI gli elenchi costruiti (scritti, +, append, extend): più dei nodi possibili, meno di 10 MB
+MAX_ELEMENTI_ALBUM = 100_000               # elementi di tutte le pagine (un album.json di 10 MB non ne contiene di più)
+MAX_TESTO_ALBUM = 4_000_000                # caratteri di tutti i livelli di testo dell'album
+_SEMPLICI = (str, int, float, bool, type(None))
 COSTRUTTORI = {"album": ("P", "FULL", "TXT", "I", "W", "DUO", "VLL", "V4", "G4", "CV", "SV", "PP", "COL2", "BAND2", "STRIP3"),
                "album_libere": ("FREE", "TXTF", "TEXT", "ROT", "STY")}
 _PAGINA = ("I", "W")                       # costruttori di pagina: gli altri danno un elemento o un elenco di elementi
@@ -99,6 +104,7 @@ def _finto(nome):
 class _Lettore:
     def __init__(self, funzioni):
         self.funzioni, self.nomi = funzioni, {}
+        self.caratteri = self.elementi = 0     # budget di tutto il file (VER-005)
 
     # ---- istruzioni
     def istruzione(self, n):
@@ -130,8 +136,8 @@ class _Lettore:
         v = self.valore(c.args[0], 0)
         if f.attr == "extend":
             if not isinstance(v, (list, tuple)): raise _NonRiconosciuto(c, "extend vuole un elenco")
-            self.misura(len(lst) + len(v), c); lst.extend(v)
-        else: self.misura(len(lst) + 1, c); lst.append(v)
+            self.misura(len(lst) + len(v), c); self.costo(c, elementi=len(v)); lst.extend(v)
+        else: self.misura(len(lst) + 1, c); self.costo(c, elementi=1); lst.append(v)
 
     def variabile(self, n):
         v = self.nomi.get(n.id)
@@ -176,6 +182,7 @@ class _Lettore:
                 out.extend(v)
             else: out.append(self.valore(e, prof + 1))
             self.misura(len(out), n)
+        self.costo(n, elementi=len(out))
         return out
 
     def operazione(self, n, prof):
@@ -190,12 +197,33 @@ class _Lettore:
         if _numero(a) and _numero(b): return self.numero(a + b, n)
         if isinstance(a, str) and isinstance(b, str):
             if len(a) + len(b) > MAX_TESTO: raise _NonRiconosciuto(n, "testo troppo lungo")
-            return a + b
-        if isinstance(a, (list, tuple)) and type(a) is type(b): self.misura(len(a) + len(b), n); return a + b
+            self.costo(n, caratteri=len(a) + len(b)); return a + b
+        if isinstance(a, (list, tuple)) and type(a) is type(b): self.misura(len(a) + len(b), n); self.costo(n, elementi=len(a) + len(b)); return a + b
         raise _NonRiconosciuto(n, "+ ammesso solo tra numeri, tra testi o tra elenchi")
 
     def misura(self, k, n):
         if k > MAX_LISTA: raise _NonRiconosciuto(n, "elenco troppo lungo")
+
+    def costo(self, n, caratteri=0, elementi=0):
+        """memoria usata da tutto il file: testi ed elenchi costruiti si sommano (un file piccolo non può chiedere gigabyte, VER-005)"""
+        self.caratteri += caratteri; self.elementi += elementi
+        if self.caratteri > MAX_TESTI_COSTRUITI: raise _NonRiconosciuto(n, "troppo testo costruito con + (il file chiederebbe troppa memoria)")
+        if self.elementi > MAX_ELEMENTI_COSTRUITI: raise _NonRiconosciuto(n, "elenchi troppo grandi (il file chiederebbe troppa memoria)")
+
+    def argomenti(self, nome, legati, n):
+        """tipi degli argomenti di un costruttore, controllati PRIMA di chiamarlo (VER-005): un elenco dove ci va un numero o
+        un testo diventerebbe, con str(), un testo di gigabyte. Ammessi: valori semplici; col, bd (e bw, z di DUO) piccoli
+        elenchi di valori semplici; it una foto; nelle pagine I e W al massimo MAX_ELEMENTI elementi"""
+        for k, v in legati.arguments.items():
+            if nome in _PAGINA:
+                if sum(len(x) if isinstance(x, list) else 1 for x in v) > MAX_ELEMENTI: raise _NonRiconosciuto(n, f"troppi elementi in una pagina (al massimo {MAX_ELEMENTI})")
+            elif k == "it":
+                if not isinstance(v, (dict, _Elemento)): raise _NonRiconosciuto(n, f"valori non validi per {nome}(…): il primo argomento deve essere una foto")
+            elif k in ("col", "bd") or (nome == "DUO" and k in ("bw", "z")):
+                if v is None and k == "bd": continue
+                if not isinstance(v, (list, tuple)) or len(v) > 4 or not all(isinstance(x, _SEMPLICI) for x in v): raise _NonRiconosciuto(n, f"valori non validi per {nome}(…): «{k}» deve essere un piccolo elenco di valori")
+                if k == "bd" and (len(v) != 2 or not isinstance(v[1], str)): raise _NonRiconosciuto(n, f'valori non validi per {nome}(…): «bd» deve essere (millimetri, "#rrggbb")')
+            elif not isinstance(v, _SEMPLICI) or (k == "tx" and not isinstance(v, str)): raise _NonRiconosciuto(n, f"valori non validi per {nome}(…): «{k}» deve essere " + ("un testo" if k == "tx" else "un numero o un testo"))
 
     def chiamata(self, n, prof):
         if not isinstance(n.func, ast.Name): raise _NonRiconosciuto(n, "chiamata non ammessa (solo i costruttori del motore, come P(…) o FREE(…))")
@@ -206,8 +234,9 @@ class _Lettore:
         for k in n.keywords:
             if k.arg is None: raise _NonRiconosciuto(k.value, "**argomenti non ammessi")
             kw[k.arg] = self.valore(k.value, prof + 1)
-        try: inspect.signature(fn).bind(*args, **kw)
+        try: legati = inspect.signature(fn).bind(*args, **kw)
         except TypeError as e: raise _NonRiconosciuto(n, f"argomenti non validi per {nome}(…): {e}") from None
+        self.argomenti(nome, legati, n)
         try: return fn(*args, **kw)
         except KeyError as e: raise _NonRiconosciuto(n, f"la foto «{e.args[0]}» non è nel progetto") from None
         except (TypeError, ValueError, AttributeError, IndexError, ZeroDivisionError, OverflowError) as e: raise _NonRiconosciuto(n, f"valori non validi per {nome}(…): {e}") from None
@@ -243,7 +272,7 @@ def leggi(testo, nome=SPEC, prova=False):
 def _struttura(sp, nome):
     if not isinstance(sp, (list, tuple)): raise ErroreProgetto(f"{nome}: SPREADS deve essere un elenco di spread [ … ]")
     if len(sp) > MAX_SPREAD: raise ErroreProgetto(f"{nome}: troppi spread (al massimo {MAX_SPREAD})")
-    out = []
+    out = []; elementi = caratteri = 0
     for k, s in enumerate(sp, 1):
         if not isinstance(s, (list, tuple)) or len(s) != 2: raise ErroreProgetto(f"{nome}, spread {k}: deve avere due pagine (sinistra, destra)")
         pagine = []
@@ -254,6 +283,10 @@ def _struttura(sp, nome):
             for j, it in enumerate(pg[1], 1):
                 if not (isinstance(it, _Elemento) or (isinstance(it, dict) and it.get("k") in ("p", "full", "f", "t"))):
                     raise ErroreProgetto(f"{nome}, spread {k}, pagina {lato}, elemento {j}: non è una foto né un testo")
+                caratteri += len(it["tx"]) if isinstance(it, dict) and isinstance(it.get("tx"), str) else 0
+            elementi += len(pg[1])                 # lo stesso elenco ripetuto in tanti spread costa ogni volta (VER-005)
+            if elementi > MAX_ELEMENTI_ALBUM: raise ErroreProgetto(f"{nome}: troppi elementi nell'album (al massimo {MAX_ELEMENTI_ALBUM})")
+            if caratteri > MAX_TESTO_ALBUM: raise ErroreProgetto(f"{nome}: troppo testo nell'album (al massimo {MAX_TESTO_ALBUM} caratteri)")
             pagine.append([pg[0], list(pg[1])])
         out.append(pagine)
     return out

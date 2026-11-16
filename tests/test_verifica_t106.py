@@ -95,7 +95,6 @@ except MemoryError: print("MemoryError")
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="RLIMIT_AS fa da tetto solo su Linux")
 @pytest.mark.parametrize("caso", list(SPEC_GRANDI))
-@xfail("VER-005", "spec.py nei limiti di formato_1x chiede decine di GB (MemoryError sotto un tetto di 1,5 GB)")
 def test_spec_py_nei_limiti_non_esaurisce_la_memoria(tmp_path, caso):
     prova, testo = SPEC_GRANDI[caso]
     p = tmp_path / "spec.py"; p.write_text(testo, encoding="utf-8")
