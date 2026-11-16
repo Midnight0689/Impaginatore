@@ -613,7 +613,7 @@ def test_ricollega_rifa_i_collegamenti(apri, tmp_path, sola_lettura):
     if sola_lettura: os.chmod(fd, 0o555)
     try:
         dialoghi.imposta(Finti(str(nuova)))
-        assert c.post("/api/ricollega", {}) == {"trovate": 9, "mancanti": ["Q09.jpg"], "totale": 10}
+        assert c.post("/api/ricollega", {}) == {"trovate": 9, "mancanti": ["Q09.jpg"], "totale": 10, "diverse": [], "proposte": []}
     finally: os.chmod(fd, 0o755)
     assert os.readlink(os.path.join(fd, "H01.jpg")) == (str(orig / "H01.jpg") if sola_lettura else str(nuova / "H01.jpg"))
     assert os.path.exists(os.path.join(fd, "H01.jpg")) != sola_lettura and not os.path.exists(os.path.join(fd, "Q09.jpg"))
@@ -631,7 +631,7 @@ def test_ricollega_senza_la_cartella_della_selezione(apri, tmp_path):
     c = apri(prepara=prepara); os.rename(sel, nuova)
     ok, r = c.prova("/api/ricollega", {"cartella": os.path.join(c.progetto, "non-esiste")}); assert not ok and r["errore"] == "cartella non trovata"
     dialoghi.imposta(Finti(str(nuova)))
-    assert c.post("/api/ricollega", {}) == {"trovate": 10, "mancanti": [], "totale": 10} and c.get("/api/state")["mancanti"] == []
+    assert c.post("/api/ricollega", {}) == {"trovate": 10, "mancanti": [], "totale": 10, "diverse": [], "proposte": []} and c.get("/api/state")["mancanti"] == []
 
 
 def test_esporta_progetto_con_foto_mancanti(apri, tmp_path):

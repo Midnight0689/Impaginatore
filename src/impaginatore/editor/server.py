@@ -19,6 +19,8 @@ from PIL import Image, ImageOps
 from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
+from ..motore import bozza as BZ                     # bozza dell'album (UX-018)
+from ..motore import spazi as SPAZI                  # spazi fra le foto (controllo e «Sistema»)
 from ..motore import testo as TX
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
 from ..piattaforma import azioni, cartelle, dialoghi, processi
@@ -196,7 +198,8 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
 SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
-UNDO, REDO = [], []
+UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, nome, s: spread toccato, gruppo, rev} (UX-003)
+ESITO = {}                                          # quello che un'operazione vuole dire a chi l'ha chiesta (disposizione scelta, foto scambiata...): va nella risposta
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
@@ -531,6 +534,11 @@ def apply(o):
             alt = [x for x in templates(s_)["items"] if not x["cur"]]
             if not alt: raise ValueError("nessun altro modello adatto a queste foto")
             apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
+    elif t == "disposizione": altra_disposizione(o["s"], o.get("passo", 1), o.get("side"))
+    elif t == "sostituisci": sostituisci(o["at"], o["photo"], o.get("adatta", True) is not False)
+    elif t == "bozza": applica_bozza(o)
+    elif t == "spazi": ESITO.update(corretti=correggi_spazi(o["s"], o.get("modo", "std"), o.get("cm")), diversi=stato_spazi(o["s"], o.get("modo", "std"), o.get("cm"))["diversi"])
+    elif t == "sistema": sistema(_elenco_spread(o.get("spread")), o.get("spazi", True) is not False, o.get("tono"), o.get("modo", "std"), o.get("cm"))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
@@ -773,6 +781,13 @@ def valida(o):
             d = o[side]
             if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or not isinstance(d.get("photos"), list): raise ValueError("modello non valido")
             for i in d["photos"]: _intero(i, len(A.M), "foto")
+    if t == "disposizione":
+        if "s" not in o: raise ValueError("manca lo spread")
+        if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError("passo non valido: 1 (avanti) o -1 (indietro)")
+    if t == "spazi" and "s" not in o: raise ValueError("manca lo spread")
+    if t == "bozza": _valida_bozza(o)
+    if t in ("spazi", "sistema"): _riferimento_spazi(o.get("modo", "std"), o.get("cm")); _elenco_spread(o.get("spread"))
+    if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError("servono la cornice (at) e la foto (photo)")
     if t == "rit" and o.get("copia") is not None:
         if not isinstance(o["copia"], dict) or any(k not in FL.RIT_KEYS or isinstance(v, bool) or not isinstance(v, (int, float)) or abs(v) > 100 for k, v in o["copia"].items()):
             raise ValueError("ritocco da copiare non valido")
@@ -789,6 +804,46 @@ def verifica():
                 if it["k"] != "t": _intero(it.get("i"), len(A.M), "foto")
 
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
+
+NOMI_OP = dict(                # nome di ogni operazione per «Annulla …» e «Ripeti …» (UX-003)
+    swap="Scambia foto", replace="Sostituisci foto", sostituisci="Sostituisci foto", set="Modifica cornice", ratio="Proporzioni cornice",
+    t2x="Cornice doppia", tscale="Misura del testo", gscale="Misura", snap="Allinea alla griglia", origar="Proporzioni originali",
+    orient="Gira cornice", copia="Copia", incolla="Incolla", equalize="Uguaglia cornici", align="Allinea", nudge="Sposta",
+    move="Sposta", frame="Ridimensiona cornice", free="Sposta cornice", addframe="Aggiungi cornice", delframe="Elimina cornice",
+    zorder="Porta avanti o indietro", crosspage="Sposta sull'altra pagina", putfree="Aggiungi foto", fullpage="Foto a tutta pagina",
+    guides="Linee guida", colore="Etichetta colore", stella="Stella", tolta="Togli foto", face="Centro del volto", pan="Inquadratura",
+    ev="Esposizione", evg="Esposizione dell'album", rit="Ritocco", tono="Tono", tono_escl="Tono", tono_fix="Uniforma il tono",
+    tono_L="Tono di riferimento", stile_applica="Stile del testo", stile_elimina="Elimina stile", stile_salva="Salva stile",
+    stile_scollega="Scollega stile", testo="Testo", settext="Modifica testo", addtext="Aggiungi testo", blank="Nuovo spread vuoto",
+    new="Nuovo spread", dup="Duplica spread", delete="Elimina spread", swappages="Inverti pagine", newspread="Nuovo spread",
+    newspreadsel="Nuovo spread", addtospread="Aggiungi foto allo spread", template="Cambia disposizione", setrects="Disposizione a mano",
+    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", spazi="Correggi spazi", sistema="Sistema album", bozza="Bozza dell'album")
+
+
+def _intero_o_none(x): return x if isinstance(x, int) and not isinstance(x, bool) else None
+
+
+def spread_op(o):
+    """spread che un'operazione tocca (per andarci dopo un annulla), o None se non tocca uno spread (stelle, colori...)"""
+    if o["op"] in ("new", "dup") and _intero_o_none(o.get("s")) is not None: return o["s"] + 1
+    for k in ("s", "pos"):
+        if _intero_o_none(o.get(k)) is not None: return o[k]
+    at = o.get("at")
+    return _intero_o_none(at[0]) if isinstance(at, (list, tuple)) and at else None
+
+
+def _passo(p): return dict(nome=p["nome"], s=p["s"]) if p else None
+
+
+def _gruppo(g):
+    """gruppo d'annulla di un'operazione: le operazioni di fila con lo stesso gruppo diventano un passo solo (UX-001, UX-003)"""
+    if g is not None and not (isinstance(g, str) and 0 < len(g) <= 100): raise ValueError("gruppo non valido: un testo di al massimo 100 caratteri")
+    return g
+
+
+def passi():
+    """{annulla, ripeti}: cosa farebbero adesso «Annulla» e «Ripeti» ({nome, s} o None)"""
+    return dict(annulla=_passo(UNDO[-1] if UNDO else None), ripeti=_passo(REDO[-1] if REDO else None))
 
 def controlla_stato():
     """lo stato dopo un'operazione si può salvare, riaprire e mostrare? Impaginazione e impostazioni passano dagli stessi
@@ -813,18 +868,22 @@ def do_op(o):
         cid, rev = o.pop("cid", None), o.pop("rev", None)
         if cid and rev is not None and cid != LASTC and rev != REV and LASTC is not None:
             raise ValueError("Questo progetto è stato modificato da un'altra scheda: ho ricaricato lo stato, riprova.")
-        before = snap()
-        if o["op"] == "undo":
-            if UNDO: REDO.append(snap()); restore(UNDO.pop()); REV += 1; LASTC = cid
-            return state()
-        if o["op"] == "redo":
-            if REDO: UNDO.append(snap()); restore(REDO.pop()); REV += 1; LASTC = cid
-            return state()
-        valida(o)
+        before = snap(); gruppo = _gruppo(o.pop("gruppo", None))
+        if o["op"] in ("undo", "redo"):
+            da, a = (UNDO, REDO) if o["op"] == "undo" else (REDO, UNDO); p = da.pop() if da else None
+            if p: a.append(dict(p, snap=before)); restore(p["snap"]); REV += 1; LASTC = cid
+            return dict(state(), **{"annullato" if o["op"] == "undo" else "ripetuto": _passo(p)})
+        valida(o); ESITO.clear()
+        if o["op"] == "disposizione" and gruppo is None: gruppo = f"disposizione:{o['s']}:{o.get('side') or ''}"      # le pressioni di D di fila: un solo passo (UX-001)
         try: apply(o); verifica(); st = controlla_stato()
         except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001, VER-001, VER-003)
         LAST["op"] = time.time()
-        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False)
+        if snap() != before:
+            ultimo = UNDO[-1] if UNDO else None
+            if gruppo and ultimo and ultimo["gruppo"] == gruppo and ultimo["rev"] == REV: ultimo["rev"] = REV + 1       # stesso gruppo subito dopo: resta un solo passo, con lo stato di prima del primo
+            else: UNDO.append(dict(snap=before, nome=NOMI_OP.get(o["op"], "Modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1)); del UNDO[:-200]
+            REDO.clear(); REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False, **passi())
+        if ESITO: st["esito"] = dict(ESITO)
         return st
 
 # ------------------------------------------------------------------ vista
@@ -876,6 +935,291 @@ def locked_sides(s):
     for side, pg in zip("LR", SP[s]):
         if any(old_text(it) for it in pg[1]) or (any(it["k"] == "t" for it in pg[1]) and not any(it["k"] != "t" for it in pg[1])): out.append(side)
     return out
+
+TOLL_PROPORZIONI = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
+RITAGLIO_MAX = 1.25           # oltre questo ritaglio una foto va guardata (la stessa soglia di anteprima.py)
+
+
+def _chiave_cornici(t): return tuple(sorted((round(f["x"]), round(f["y"]), round(f["w"]), round(f["h"])) for f in t["frames"]))
+
+
+def foto_della_pagina(s, sides="LR"):
+    """indici delle foto dello spread s nelle pagine sides, nell'ordine di lettura dello spread"""
+    return [it["i"] for k, x in enumerate("LR") if x in sides for it in SP[s][k][1] if it["k"] != "t"]
+
+
+def cornici_attuali(s, sides="LR"):
+    return sorted((round(e["x"]), round(e["y"]), e["w"], e["h"]) for e in spread_view(s)["items"] if e["k"] != "t" and e["side"] in sides)
+
+
+DISP = {}                      # ultima serie di «Altra disposizione»: spread e pagina, rev dopo l'ultima pressione, ordine delle foto della prima
+
+
+def disposizioni(s, side=None):
+    """(disposizioni, indice di quella attuale o None, pagina) per le foto dello spread s o della sola pagina side, in un
+    ordine che non cambia mentre le si scorre (UX-001): prima quelle che rispettano le foto, dal costo minore, poi quelle
+    che tagliano di più. Le pressioni di fila tengono l'ordine delle foto della prima"""
+    lk = locked_sides(s)
+    if len(lk) == 2: raise ValueError("Le due pagine sono di solo testo: non ci sono foto da disporre")
+    if side in lk: raise ValueError("Questa pagina è di solo testo: non ci sono foto da disporre")
+    if side is None and lk: side = next(x for x in "LR" if x not in lk)
+    sides = "LR" if side is None else side; photos = foto_della_pagina(s, sides)
+    if DISP.get("chiave") == (s, side) and DISP.get("rev") == REV and sorted(DISP["foto"]) == sorted(photos): photos = DISP["foto"]
+    if not photos: raise ValueError("Non ci sono foto da disporre")
+    d = tpl_options(photos, cornici_attuali(s, sides), side, s); visti = {}
+    for t in d["items"] + d["piu"]:
+        k = _chiave_cornici(t)
+        if k not in visti or t["cost"] < visti[k]["cost"]: visti[k] = t
+    ordine = sorted(visti.values(), key=lambda t: (t["worst"] > TOLL_PROPORZIONI, t["worst"] if t["worst"] > TOLL_PROPORZIONI else 0, t["cost"], _chiave_cornici(t)))
+    DISP.update(chiave=(s, side), foto=photos)
+    return ordine, next((k for k, t in enumerate(ordine) if t["cur"]), None), side
+
+
+def _metti_disposizione(s, t):
+    apply(dict(op="template", s=s, **{k: t[k] for k in "LR" if k in t}))
+
+
+def altra_disposizione(s, passo=1, side=None):
+    """D: sullo spread s (o sulla pagina side) la disposizione successiva (passo 1) o precedente (-1) per le stesse foto (UX-001)"""
+    import math
+    ordine, k, side = disposizioni(s, side)
+    if not ordine or (len(ordine) == 1 and k == 0): raise ValueError("Non ci sono altre disposizioni per queste foto")
+    n = (k + passo) % len(ordine) if k is not None else (0 if passo > 0 else len(ordine) - 1)
+    _metti_disposizione(s, ordine[n]); DISP["rev"] = REV + 1
+    ESITO.update(disposizione=n + 1, di=len(ordine), taglia=round(math.exp(ordine[n]["worst"]), 2), a_mano=k is None, lato=side)
+
+
+def _ritaglio(s, side, idx):
+    """quanto la cornice (s, side, idx) taglia la sua foto per le sole proporzioni (1 = per niente, 2 = metà)"""
+    e = next(e for e in spread_view(s)["items"] if e["side"] == side and e["idx"] == idx)
+    fa = e["w"] / e["h"]; return max(fa / e["ar"], e["ar"] / fa)
+
+
+def sostituisci(at, photo, adatta=True):
+    """sostituisce la foto della cornice at con photo (se photo è già in un altro punto dell'album le due si scambiano) e,
+    se la nuova foto è tagliata oltre ×1,25, riadatta: prima la sola pagina, tenendo l'altra com'è, poi tutto lo spread;
+    tiene l'ordine di lettura e sceglie la disposizione meno costosa che rispetta le foto (UX-002)"""
+    import math
+    s, side, idx = at; n = A.IDX[photo] - 1; altrove = find_use(n)
+    apply(dict(op="replace", at=at, photo=photo))
+    ESITO.update(scambiata_con=altrove[0] if altrove and altrove[0] != s else None, adattata=False)
+    prima = _ritaglio(s, side, idx); ESITO.update(taglia=round(prima, 2))
+    if not adatta or prima <= RITAGLIO_MAX or side in locked_sides(s): return
+    for lato in (side, None):
+        if lato is None and locked_sides(s): break
+        sides = "LR" if lato is None else lato; photos = foto_della_pagina(s, sides)
+        opz = [t for t in tpl_options(photos, cornici_attuali(s, sides), lato, s)["items"] if not t["cur"]]
+        buone = sorted((t for t in opz if math.exp(t["worst"]) <= RITAGLIO_MAX), key=lambda t: t["cost"])
+        if buone: _metti_disposizione(s, buone[0]); ESITO.update(adattata=True, taglia=round(math.exp(buone[0]["worst"]), 2), lato=lato); return
+
+
+# ------------------------------------------------------------------ controllo e «Sistema» (UX-014)
+def _rett_spread(s):
+    """foto dello spread s come rettangoli in pixel della vista (per motore.spazi), con pagina e posizione"""
+    return [dict(x=e["x"], y=e["y"], w=e["w"], h=e["h"], side=e["side"], idx=e["idx"]) for e in spread_view(s)["items"] if e["k"] != "t"]
+
+
+def _riferimento_spazi(modo="std", cm=None):
+    """(modo, valore in px) del riferimento per gli spazi, controllati: std, freq o custom con cm > 0"""
+    if modo not in ("std", "freq", "custom"): raise ValueError("modo degli spazi non valido: std, freq o custom")
+    if modo != "custom": return modo, 0
+    if isinstance(cm, bool) or not isinstance(cm, (int, float)) or not 0 < cm <= 10: raise ValueError("scrivi lo stacco in cm (più di 0, al massimo 10)")
+    return modo, cm / 2.54 * A.PPI
+
+
+def stato_spazi(s, modo="std", cm=None):
+    m, v = _riferimento_spazi(modo, cm); return SPAZI.stato(_rett_spread(s), A.G, A.PPI, m, v)
+
+
+def correggi_spazi(s, modo="std", cm=None):
+    """porta gli stacchi fra le foto dello spread s al riferimento, come faceva la pagina («Correggi spazi»); quante modifiche"""
+    m, v = _riferimento_spazi(modo, cm); R, ch = SPAZI.correggi(_rett_spread(s), A.G, A.PPI, m, v)
+    if ch:
+        for r in R: _put_px(s, r["side"], r["idx"], r["x"] + BL, r["y"] + BL, r["w"], r["h"])
+    return ch
+
+
+RIS_BLOCCA, RIS_GUARDA = 150, 200          # ppi effettivi: sotto il primo la stampa si vede sgranata, fra i due va guardata
+PIEGA_CM = 1.0                             # un volto più vicino di così alla piega finisce nella rilegatura
+
+
+def _volti_visibili(e):
+    """volti trovati nella foto della cornice e (riquadri in pixel della vista), con la parte che il ritaglio lascia fuori"""
+    l_, t_, r_, b_ = e["box"]; out = []
+    if e["name"] in A.FACE_FIX or r_ <= l_ or b_ <= t_: return out
+    for fl, ft, fr, fb in A.F.get(A.M[A.IDX[e["name"]] - 1]["n"], []):
+        area = max((fr - fl) * (fb - ft), 1e-9); dentro = max(0.0, min(fr, r_) - max(fl, l_)) * max(0.0, min(fb, b_) - max(ft, t_))
+        if dentro <= 0: continue
+        px = lambda u, a0, a1, p0, dim: p0 + (u - a0) / (a1 - a0) * dim
+        out.append(dict(fuori=1 - dentro / area, x0=px(max(fl, l_), l_, r_, e["x"], e["w"]), x1=px(min(fr, r_), l_, r_, e["x"], e["w"])))
+    return out
+
+
+def _cancello(funzione):
+    """NonConsentita (403) se la licenza di questo computer non comprende la funzione (chiave di tier.json)"""
+    st = licenze.stato()
+    if not licenze.consentita(funzione, st): raise licenze.NonConsentita(licenze.motivo(funzione, st))
+
+
+def _con_tono(tono):
+    """il tono entra nel controllo e in «Sistema»? None: se la licenza comprende il pannello del tono; True: la licenza lo
+    deve comprendere (altrimenti 403, come /api/tono); False: no"""
+    if tono is None: return licenze.consentita("uniformita_tono")
+    if not isinstance(tono, bool): raise ValueError("tono: true, false o niente")
+    if tono: _cancello("uniformita_tono")
+    return tono
+
+
+def controlla(spreads=None, tono=None, modo="std", cm=None):
+    """controllo dell'album prima della consegna (UX-014): elenco strutturato dei problemi, dal più grave.
+    livello «blocca» (foto mancante o danneggiata, sotto 150 ppi, fuori dalla pagina), «guarda» (fra 150 e 200 ppi, volto
+    vicino alla piega o tagliato, ritaglio oltre ×1,25, spazi diversi, pagina vuota, foto fuori tono, foto ripetuta),
+    «info» (foto non usate, foto ★ non usate). Ogni problema: {livello, tipo, s, side, idx, foto, testo, sistema}; sistema
+    = True se «Sistema» lo corregge da solo (spazi, tono). spreads: solo quelli (indici); tono: vedi _con_tono.
+    Il controllo è di tutte le fasce (PROPOSTE.md, UX-014: prevenire un errore di stampa non è un extra)"""
+    tono = _con_tono(tono)
+    with LOCK:
+        P = []; usi = {}; mancanti = set(foto_mancanti()); tutti = range(len(SP)) if spreads is None else spreads
+        piega = A.FOLD - BL; cm1 = PIEGA_CM / 2.54 * A.PPI; conta_sistema = dict(spazi=0, tono=0)
+        for s in range(len(SP)):
+            for pg in SP[s]:
+                for it in pg[1]:
+                    if it["k"] != "t": usi.setdefault(it["i"], []).append(s)
+        for s in tutti:
+            v = spread_view(s); nome_s = f"Spread {s + 1}"
+            add = lambda liv, tipo, testo, e=None, foto=None, sistema=False: P.append(dict(livello=liv, tipo=tipo, s=s, side=e["side"] if e else None, idx=e["idx"] if e else None, foto=foto or (e or {}).get("name"), testo=f"{nome_s}: {testo}", sistema=sistema))
+            for side, pg in zip("LR", SP[s]):
+                if not pg[1]: add("guarda", "pagina_vuota", f"la pagina {'sinistra' if side == 'L' else 'destra'} è vuota")
+            for e in v["items"]:
+                fuori = e["x"] < -BL - 1 or e["y"] < -BL - 1 or e["x"] + e["w"] > VW + BL + 1 or e["y"] + e["h"] > VH + BL + 1
+                if e["k"] == "t":
+                    if is_txt(e) and (e["x"] < 0 or e["y"] < 0 or e["x"] + e["w"] > VW or e["y"] + e["h"] > VH): add("blocca", "fuori_pagina", "un testo esce dalla pagina e si taglia in stampa", e)
+                    continue
+                n = e["name"]; i = A.IDX[n] - 1; m = A.M[i]
+                if m["n"] in mancanti: add("blocca", "mancante", f"la foto {n} non si trova: ricollegala", e)
+                elif m["n"] in A.DANNEGGIATE: add("blocca", "danneggiata", f"la foto {n} è danneggiata e non si stampa", e)
+                elif e["ppi"] < RIS_BLOCCA: add("blocca", "risoluzione", f"{n} è troppo piccola per questa cornice ({e['ppi']} ppi, ne servono almeno {RIS_BLOCCA})", e)
+                elif e["ppi"] < RIS_GUARDA: add("guarda", "risoluzione", f"{n} è al limite per questa cornice ({e['ppi']} ppi)", e)
+                if fuori: add("blocca", "fuori_pagina", f"{n} esce dalla pagina oltre l'abbondanza", e)
+                if e["crop"] / max(e["z"], 1e-9) > RITAGLIO_MAX: add("guarda", "ritaglio", f"{n} è tagliata molto (×{e['crop'] / max(e['z'], 1e-9):.2f}) per stare nella cornice", e)
+                volti = _volti_visibili(e)
+                if any(f["fuori"] > 0.15 for f in volti): add("guarda", "volto_tagliato", f"un volto di {n} è tagliato dal ritaglio", e)
+                if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", f"un volto di {n} è vicino alla piega", e)
+                if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", f"{n} è già nello spread {usi[i][0] + 1}", e)
+            sp = stato_spazi(s, modo, cm)
+            if sp["diversi"]: add("guarda", "spazi", f"{sp['diversi']} stacchi su {sp['n']} diversi da {sp['ref'] / A.PPI * 2.54:.2f} cm", sistema=True); conta_sistema["spazi"] += 1
+            if tono:
+                for t in tono_spread(s, light=True)["items"]:
+                    if t["stato"] == "no":
+                        e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
+                        add("guarda", "tono", f"{t['name']} è {'più chiara' if t['d'] > 0 else 'più scura'} del resto dell'album", e, sistema=True); conta_sistema["tono"] += 1
+        if spreads is None:
+            stelle = set(CFG["stelle"]); tolte = set(CFG.get("tolte", []))
+            for n in unused():
+                if n in tolte: continue
+                stella = n in stelle
+                P.append(dict(livello="info", tipo="stella_non_usata" if stella else "non_usata", s=None, side=None, idx=None, foto=n, sistema=False,
+                              testo=f"{n} {'ha la stella ma ' if stella else ''}non è nell'album"))
+        ordine = ("blocca", "guarda", "info"); P.sort(key=lambda p: ordine.index(p["livello"]))
+        conta = {k: sum(1 for p in P if p["livello"] == k) for k in ordine}
+        return dict(problemi=P, conta=conta, sistema=dict(conta_sistema, restano=sum(1 for p in P if p["livello"] != "info" and not p["sistema"])),
+                    pronto=conta["blocca"] == 0)
+
+
+def sistema(spreads=None, spazi=True, tono=None, modo="std", cm=None):
+    """«Sistema»: le correzioni sicure in un colpo solo (con do_op: un solo passo d'annulla). Spazi come «Correggi spazi»,
+    tono delle foto fuori tono con la correzione completa del pannello Tono. Non cambia disposizioni né foto scelte e non
+    tocca i volti (UX-014). Mette in ESITO quanti spread e quante foto ha corretto. Licenza: gli spazi di più spread insieme
+    sono «correzione_spaziature_album» (in Essenziale si sistema uno spread alla volta), il tono «uniformita_tono»"""
+    if spazi and (spreads is None or len(spreads) > 1): _cancello("correzione_spaziature_album")
+    tono = _con_tono(tono); n_sp = n_tono = 0; correzioni = []
+    for s in (range(len(SP)) if spreads is None else spreads):
+        if spazi and correggi_spazi(s, modo, cm): n_sp += 1
+        if tono:
+            for t in tono_spread(s)["items"]:
+                c = t.get("compl")
+                if t["stato"] == "no" and c and not any(x["photo"] == t["name"] for x in correzioni): correzioni.append(dict(photo=t["name"], ev=c["ev"], rit=c["rit"]))
+    if correzioni: apply(dict(op="tono_fix", items=correzioni)); n_tono = len(correzioni)
+    ESITO.update(spazi=n_sp, tono=n_tono)
+
+
+# ------------------------------------------------------------------ bozza dell'album (UX-018)
+BOZZA = {}                                          # ultima proposta, per le anteprime del foglio «Bozza dell'album»
+
+
+def _opzioni_bozza(o):
+    """(ritmo, foto per spread, stelle da sole, seme) dalla richiesta, controllati; spread = quanti spread si vogliono"""
+    ritmo = o.get("ritmo", "alterna"); stelle = o.get("stelle", True); seme = o.get("seme", 0)
+    if ritmo not in BZ.RITMI: raise ValueError("ritmo non valido: alterna, piene o bianche")
+    if not isinstance(stelle, bool): raise ValueError("stelle: true o false")
+    if type(seme) is not int or not 0 <= seme < 2 ** 31: raise ValueError("seme non valido: un intero da 0")
+    per = o.get("per_spread")
+    if per is not None and (isinstance(per, bool) or not isinstance(per, (int, float)) or not 1 <= per <= BZ.MAX_GRUPPO): raise ValueError(f"foto per spread: da 1 a {BZ.MAX_GRUPPO}")
+    if o.get("spread") is not None:
+        n = o["spread"]
+        if type(n) is not int or not 1 <= n <= 1000: raise ValueError("numero di spread non valido")
+        per = min(max(len(_foto_bozza()) / n, 1), BZ.MAX_GRUPPO)
+    return ritmo, per or BZ.PER_SPREAD, stelle, seme
+
+
+def _foto_bozza(almeno=0):
+    """foto da impaginare: non ancora nell'album e non tolte, in ordine di scatto (ValueError se sono meno di almeno)"""
+    usate = used_set(); tolte = set(CFG.get("tolte", [])); stelle = set(CFG["stelle"])
+    foto = [dict(i=i, dt=A.M[i]["dt"], ar=A.M[i]["ar"], stella=A.name(i) in stelle) for i in range(len(A.M)) if i not in usate and A.name(i) not in tolte]
+    if len(foto) < almeno: raise ValueError(f"Per la bozza servono almeno {almeno} foto ancora da usare: ce ne sono {len(foto)}")
+    return sorted(foto, key=lambda f: (f["dt"] or "", A.name(f["i"])))
+
+
+def bozza(o):
+    """proposta di bozza per le foto da usare (non tocca l'album): {spreads: [{L, R, foto, nomi, capitolo, inizio, ora,
+    taglia}], capitoli, foto, per_spread}. Le anteprime: /img/bozza/<n>. Licenza: impaginazione_automatica_album"""
+    _cancello("impaginazione_automatica_album")
+    with LOCK:
+        ritmo, per, stelle, seme = _opzioni_bozza(o); foto = _foto_bozza(BZ.MIN_FOTO)
+        p = BZ.proposta(foto, tpl_options, ritmo, per, stelle, seme)
+        for s in p["spreads"]: s["nomi"] = [A.name(i) for i in s["foto"]]
+        BOZZA.clear(); BOZZA.update(spreads=p["spreads"])
+        return p
+
+
+def applica_bozza(o):
+    """operazione «bozza»: gli spread della proposta (o["spreads"], come li ha mostrati il foglio; altrimenti una proposta
+    nuova con le stesse opzioni) dopo quelli che ci sono (o nel punto pos); gli spread esistenti non si toccano"""
+    _cancello("impaginazione_automatica_album")
+    spreads = o.get("spreads") or bozza(o)["spreads"]; pos = o["pos"]
+    for k, s in enumerate(spreads): apply(dict(op="newspread", pos=pos + k, L=s["L"], R=s["R"]))
+    ESITO.update(spread=len(spreads), foto=sum(len(s["L"]["photos"]) + len(s["R"]["photos"]) for s in spreads), da=pos)
+
+
+def _valida_bozza(o):
+    o.setdefault("pos", len(SP)); _intero(o["pos"], len(SP) + 1, "posizione")
+    if o.get("spreads") is None: _opzioni_bozza(o); return
+    if not isinstance(o["spreads"], list) or not 1 <= len(o["spreads"]) <= 1000: raise ValueError("spread della bozza non validi")
+    for s in o["spreads"]:
+        for side in "LR":
+            d = s.get(side) if isinstance(s, dict) else None
+            if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or d.get("module") not in NPH or not isinstance(d.get("photos"), list) or len(d["photos"]) != NPH[d["module"]]:
+                raise ValueError("spread della bozza non valido: modo, modulo e foto di ogni pagina")
+            for i in d["photos"]: _intero(i, len(A.M), "foto")
+
+
+def bozza_jpg(n, K):
+    """anteprima dello spread n dell'ultima proposta (senza abbondanza), come le immagini degli spread"""
+    _cancello("impaginazione_automatica_album")
+    sp = BOZZA.get("spreads") or []
+    if not 0 <= n < len(sp): raise RichiestaNonValida("spread della bozza inesistente")
+    with LOCK: tup = tuple((sp[n][side]["mode"], [dict(x) for x in BUILD[sp[n][side]["module"]]([i + 1 for i in sp[n][side]["photos"]], bool(sp[n][side]["mirror"]))]) for side in "LR")
+    im = A.render(tup, K, True); b = round(A.B * K)
+    if b: im = im.crop((b, b, im.width - b, im.height - b))
+    buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); return buf.getvalue()
+
+
+def _elenco_spread(x):
+    if x is None: return None
+    if not isinstance(x, list) or len(x) > 10000: raise ValueError("spread non validi: un elenco di numeri")
+    for s in x: _intero(s, len(SP), "spread")
+    return sorted(set(x))
+
 
 def tpl_options(photos, cur=None, side=None, s=None):
     """modelli di spread per queste foto, con le foto già assegnate alle cornici (come «Rearrange» di Smart Albums); in più i modelli salvati dall'utente con lo stesso numero di foto.
@@ -935,7 +1279,7 @@ def tpl_options(photos, cur=None, side=None, s=None):
         for a in LAYS:
             if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a))
     out.sort(key=lambda t: (not t["cur"], t["cost"]))
-    TOLL = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
+    TOLL = TOLL_PROPORZIONI
     buoni = [t for t in out if t["cur"] or t["worst"] <= TOLL]
     if not any(not t["cur"] for t in buoni): buoni = buoni + sorted((t for t in out if not t["cur"]), key=lambda t: (t["worst"], t["cost"]))[:3]       # nessuna alternativa rispetta le foto: solo i meno peggio
     piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
@@ -1023,11 +1367,11 @@ def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("sr
 
 def state():
     with LOCK:
-        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
+        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO), **passi(),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
-                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE))
+                    sistema=piattaforma.sistema(), scartate=list(A.SCARTATE), prep=prep_stato())
 
 TONO_C = {}; TONO_IM = {}
 TONO_L0 = 52.0                                                       # riferimento standard: L* medio (grigio al 18% = L* 50; ritratti e bambini leggermente sopra)
@@ -1042,7 +1386,7 @@ def _tono_img(L):
     i = L["i"]; l, t, r, b = A.crop(i, L["W"], L["H"], 1.0); key = (i, round(l, 4), round(t, 4), round(r, 4), round(b, 4), PV.get(A.name(i), 0))
     if key not in TONO_IM:
         if len(TONO_IM) > 400: TONO_IM.clear()
-        with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+        im = A.foto_rgb(i)                                              # la miniatura, o il riquadro grigio se non è ancora pronta (UX-012)
         W, H = im.size; bw_, bh_ = max(1.0, (r - l) * W), max(1.0, (b - t) * H)
         sm = im.resize((112, max(16, round(112 * bh_ / bw_))), Image.LANCZOS, box=(l * W, t * H, r * W, b * H)); import numpy as np
         a = np.asarray(sm); w, h = sm.size; x0, x1, y0, y1 = 0, w, 0, h                  # bordo bianco (o nero) della foto stessa: non fa parte del tono
@@ -1234,7 +1578,7 @@ def corr_thumb(n, w, over):
             if "ev" in over:
                 if abs(float(over["ev"])) >= 0.005: E[n] = float(over["ev"])
                 else: E.pop(n, None)
-            with Image.open(os.path.join(A.THUMBS, A.M[i]["n"])) as im0: im = im0.convert("RGB")
+            im = A.foto_rgb(i)
             im.thumbnail((w, w)); FL._CUR[0] = i
             im = A.apply_ev(im, A.ev_for(i), A.WB.get(n))
         finally:
@@ -1338,9 +1682,9 @@ TH = {}
 def thumb_jpg(n, w):
     key = (n, w); v = da_cache(TH, key)
     if v is None:
-        with Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"])) as im0:
-            im = im0.convert("RGB")
-        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = in_cache(TH, key, buf.getvalue(), TH_VOCI, TH_BYTE)
+        i = A.IDX[n] - 1; pronta = os.path.exists(os.path.join(A.THUMBS, A.M[i]["n"])); im = A.foto_rgb(i)
+        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = buf.getvalue()
+        if pronta: v = in_cache(TH, key, v, TH_VOCI, TH_BYTE)            # il riquadro grigio di una miniatura in preparazione non si tiene
     return v
 
 INFO = {}
@@ -1514,13 +1858,13 @@ def run_export(o):
         try:
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
             if fmt == "jpg":
-                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = qualita; icc = srgb_icc()
+                stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
                 fatti = []
                 for k in nums:
                     try:
                         with LOCK: tup = spread_tuple(k - 1)
-                        im = A.render(tup, K, True); b = round(A.B * K)
-                        if b: im = im.crop((b, b, im.width - b, im.height - b))
+                        im = A.render(tup, K, True, originale=stampa); b = round(A.B * K)          # stampa (UX-011): foto dagli originali e abbondanza nel file, come nei PSD
+                        if b and not stampa: im = im.crop((b, b, im.width - b, im.height - b))
                         if con_filigrana: im = licenze.applica_filigrana(im)
                         f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); _scrivi_img(im, f, quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
                         if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
@@ -1646,32 +1990,102 @@ def do_import(paths):
         with LOCK: CFG["foto_extra"] = list(dict.fromkeys(list(CFG.get("foto_extra", [])) + new)); save(backup=False)
     return n, skipped
 
-def ricollega(cartella):
-    """ricollega le foto mancanti: cerca per nome (anche nelle sottocartelle) nella cartella scelta e aggiorna i percorsi; non tocca le foto già trovate"""
+CARTELLE_PROGRAMMA = ("_cache", "_backup_editor")         # cartelle che il programma scrive in ogni progetto: dentro non ci sono originali (UX-004)
+USCITE_PROGETTO = ("Esportazioni", "PSD", "PSD_vecchi")   # uscite di un progetto (accanto a progetto.json)
+RICOLLEGA_MAX = 20000                                      # file guardati al massimo per proporre le foto rinominate
+
+
+def _cartella_interna(d, uscita):
+    """la cartella d (percorso reale) non va guardata da «Ricollega»: nascosta, del programma (_cache con le miniature da
+    1200 px, _backup_editor), uscita di un progetto (Esportazioni, PSD) o l'uscita dei PSD di questo progetto (A-23)"""
+    b = os.path.basename(d)
+    return b.startswith(".") or b in CARTELLE_PROGRAMMA or d == uscita or (b in USCITE_PROGETTO and os.path.isfile(os.path.join(os.path.dirname(d), "progetto.json")))
+
+
+def _dentro_interna(p, uscita):
+    """il file o la cartella p (percorso reale) sta dentro una cartella da non guardare, a qualunque livello?"""
+    d = os.path.dirname(p)
+    while os.path.dirname(d) != d:
+        if _cartella_interna(d, uscita): return True
+        d = os.path.dirname(d)
+    return False
+
+
+def _uguale(m, p):
+    """None se il file p può essere l'originale della foto m (stesse misure in pixel e, se la foto ha una data di scatto,
+    la stessa data), altrimenti il motivo"""
+    try: x = A._meta_one(p)
+    except A.ERRORI_FOTO: return "non si apre come foto"
+    if (x["w"], x["h"]) != (m.get("w"), m.get("h")): return f"misure diverse ({x['w']} × {x['h']} invece di {m.get('w')} × {m.get('h')})"
+    if not m.get("senza_data") and x["dt"] != m.get("dt"): return "data di scatto diversa"
+    return None
+
+
+def ricollega(cartella, prova=False, scelte=None):
+    """ricollega le foto mancanti cercandole per nome (anche nelle sottocartelle) nella cartella scelta; non tocca le foto già
+    trovate. Sicuro (UX-004, A-23): salta le cartelle del programma e le uscite dei progetti (mai una miniatura al posto di
+    un originale), le cartelle nascoste e riservate e i collegamenti che portano lì (VER-004); un file con lo stesso nome ma
+    misure o data di scatto diverse non si collega (va in «diverse»). Le foto rinominate (stesse misure e stessa data, nome
+    diverso) si propongono («proposte») e si collegano solo se passate in scelte = {nome foto: file proposto}.
+    prova=True: dice cosa farebbe senza cambiare niente. Restituisce {trovate, mancanti, totale, diverse, proposte}"""
     cartella = os.path.expanduser(cartella)
     if not os.path.isdir(cartella): raise ValueError("cartella non trovata")
-    idx = {}
-    for root, _, fs in os.walk(cartella):
-        for f in fs:
-            if f.lower().endswith(A.estensioni()) and not f.startswith("."): idx.setdefault(f.lower(), os.path.join(root, f))
+    if scelte is not None and not (isinstance(scelte, dict) and all(isinstance(v, str) for v in scelte.values())): raise ValueError("scelte non valide: {nome della foto: file proposto}")
+    uscita = percorsi.reale(CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")); radice = percorsi.reale(cartella)
+    if _cartella_interna(radice, uscita) or _dentro_interna(os.path.join(radice, "x"), uscita):
+        raise ValueError("Questa cartella è del programma (miniature, copie o esportazioni): scegli quella con le foto originali")
+    idx, tutti = {}, []
+    for root, dirs, fs in os.walk(cartella):
+        dirs[:] = sorted(d for d in dirs if not _cartella_interna(percorsi.reale(os.path.join(root, d)), uscita) and not percorsi.riservata(os.path.join(root, d)))
+        for f in sorted(fs):
+            p = os.path.join(root, f)
+            if not f.lower().endswith(A.estensioni()) or f.startswith("."): continue
+            if os.path.islink(p) and (percorsi.riservata(p) or _dentro_interna(percorsi.reale(p), uscita)): continue      # collegamento che porta in una cartella riservata o del programma
+            idx.setdefault(f.lower(), p); tutti.append(p)
     with LOCK:
-        trovate = 0; ancora = []; nuovi = {}
-        for m in A.M:
-            if os.path.exists(m.get("src", "")): continue
-            p = idx.get(m["n"].lower())
-            if p: m["src"] = p; nuovi[m["n"]] = p; trovate += 1
-            else: ancora.append(m["n"])
-        fd = CFG.get("foto", "")
-        if os.path.isdir(fd):                                  # la cartella della selezione è fatta di collegamenti: quelli rotti si rifanno puntando alla foto ritrovata
-            for f in os.listdir(fd):
-                p = os.path.join(fd, f)
-                if os.path.islink(p) and not os.path.exists(p) and f in nuovi:
-                    try: os.remove(p); os.symlink(nuovi[f], p)
-                    except OSError: pass
-        CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
-        CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
-        formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
-        return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
+        esito, nuovi = _esito_ricollega(idx, tutti, scelte)
+        if not prova: _applica_ricollega(nuovi)
+    return esito
+
+
+def _esito_ricollega(idx, tutti, scelte):
+    """(esito, {nome foto: file da collegare}) di ricollega, senza cambiare niente (con LOCK preso)"""
+    trovate = 0; ancora = []; nuovi = {}; diverse = []
+    for m in A.M:
+        if os.path.exists(m.get("src", "")): continue
+        p = idx.get(m["n"].lower()); motivo = _uguale(m, p) if p else None
+        if p and not motivo: nuovi[m["n"]] = p; trovate += 1
+        else:
+            ancora.append(m["n"])
+            if p: diverse.append(dict(n=m["n"], file=p, motivo=motivo))
+    proposte = []; usati = set(nuovi.values()); nomi_ancora = {n.lower() for n in ancora}
+    cerca = {(m.get("w"), m.get("h"), m["dt"]): m["n"] for m in A.M if m["n"] in ancora and not m.get("senza_data")}
+    for p in (tutti[:RICOLLEGA_MAX] if cerca else []):
+        if p in usati or os.path.basename(p).lower() in nomi_ancora: continue
+        try: x = A._meta_one(p)
+        except A.ERRORI_FOTO: continue
+        n = cerca.pop((x["w"], x["h"], x["dt"]), None)
+        if n: proposte.append(dict(n=n, file=p))
+    for n, p in (scelte or {}).items():
+        if dict(n=n, file=p) not in proposte: raise ValueError(f"{n}: «{os.path.basename(str(p))}» non è tra le foto proposte")
+        nuovi[n] = p; trovate += 1; ancora.remove(n); proposte.remove(dict(n=n, file=p))
+    return dict(trovate=trovate, mancanti=ancora, totale=len(A.M), diverse=diverse, proposte=proposte), nuovi
+
+
+def _applica_ricollega(nuovi):
+    """collega le foto ritrovate (con LOCK preso): elenco delle foto, collegamenti della selezione, foto_extra, salvataggio"""
+    for m in A.M:
+        if m["n"] in nuovi: m["src"] = nuovi[m["n"]]
+    fd = CFG.get("foto", "")
+    if os.path.isdir(fd):                                  # la cartella della selezione è fatta di collegamenti: quelli rotti si rifanno puntando alla foto ritrovata
+        for f in os.listdir(fd):
+            p = os.path.join(fd, f)
+            if os.path.islink(p) and not os.path.exists(p) and f in nuovi:
+                try: os.remove(p); os.symlink(nuovi[f], p)
+                except OSError: pass
+    CFG["foto_extra"] = [nuovi.get(os.path.basename(p), p) if not os.path.exists(p) else p for p in CFG.get("foto_extra", [])]
+    CFG["foto_extra"] += [p for p in nuovi.values() if p not in CFG["foto_extra"]]          # la cartella scelta resta un luogo del progetto (VER-004)
+    formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
 
 def _scrivi_testo(p, testo):
     with open(p, "w", encoding="utf-8") as f: f.write(testo)
@@ -1827,11 +2241,12 @@ class H(Gestore):
                 if n in A.IDX: self.send(photo_info(n))
                 else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
-            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
+            elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"]})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
+            elif u.path.startswith("/img/bozza/"): self.send(bozza_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.12, 0.02, 0.5)), "image/jpeg")
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.2, 0.02, 1.0), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
                 n = unquote(u.path.rsplit("/", 1)[1]); w = round(numero(q, "w", 260, 16, 1200)); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
@@ -1849,18 +2264,24 @@ class H(Gestore):
             body = self.corpo()
             if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
+            elif u.path == "/api/bozza": self.send(bozza(body))
+            elif u.path == "/api/controlla":
+                _riferimento_spazi(body.get("modo", "std"), body.get("cm"))
+                self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono"), body.get("modo", "std"), body.get("cm")))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
                 n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
-                if n: restart()
-                self.send({"importate": n, "saltate": sk, "riavvio": n > 0})
+                if body.get("a_caldo") is True: self.send({"importate": n, "saltate": sk, "riavvio": False, "aggiunte": aggiungi_a_caldo() if n else 0})
+                else:
+                    if n: restart()
+                    self.send({"importate": n, "saltate": sk, "riavvio": n > 0})
             elif u.path == "/api/modelli": modelli(body); self.send({"ok": True})
             elif u.path == "/api/aggiorna_foto":
                 ok, ars, ko = aggiorna_foto(foto_cambiate()); self.send(dict(aggiornate=ok, proporzioni=ars, errori=ko))
             elif u.path == "/api/ricollega":
                 c = body.get("cartella") or (pick("folder") or [""])[0]
                 if not c: self.send({"annullato": True})
-                else: self.send(ricollega(RADICI.controlla(c, "quella cartella")))
+                else: self.send(ricollega(RADICI.controlla(c, "quella cartella"), bool(body.get("prova")), body.get("scelte")))
             elif u.path == "/api/prj_esporta":
                 d = body.get("dest") or (pick("folder") or [""])[0]
                 if not d: self.send({"annullato": True})
@@ -1877,15 +2298,17 @@ class H(Gestore):
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio
-def inizializza(progetto, home=""):
+def inizializza(progetto, home="", sottofondo=False):
     """apre il progetto: ripara i percorsi, carica motore, foto e impaginazione, azzera annulla/ripeti e le cache.
-    Si può richiamare per passare a un altro progetto (uno alla volta per processo)."""
+    Si può richiamare per passare a un altro progetto (uno alla volta per processo). sottofondo=True (UX-012): l'editor è
+    pronto con i soli metadati; miniature e volti si preparano mentre si lavora (prepara_in_sottofondo)"""
+    ferma_preparazione()
     global PROJ, HOME, CFG, UT_FILE, SP, GD, UNDO, REDO, CLIP, LOG, SAVED, REV, LASTC, BL, VW, VH, BOOT, TONO_C, TONO_IM, CACHE, PV, AGG, TH, INFO, FT
     with LOCK:
         PROJ = os.path.abspath(progetto); HOME = home or ""
         _ripara_percorsi()
         _raccogli_foto()
-        A.carica_progetto(PROJ)                              # carica progetto.json, foto, miniature, volti
+        A.carica_progetto(PROJ, sottofondo)                  # carica progetto.json, foto, miniature, volti
         CFG = A.CFG
         CFG.setdefault("esposizione", {}).setdefault("per_foto", {})
         CFG.setdefault("centri_volto", {})
@@ -1902,6 +2325,90 @@ def inizializza(progetto, home=""):
         TONO_C, TONO_IM, CACHE, PV, TH, INFO, FT = {}, {}, {}, {}, {}, {}, {}
         AGG = dict(n=0, t=0, nomi=[], ar=[])
         LAST.update(op=0.0, backup=0.0); SAVE_ERR[0] = ""; LASTDIR[0] = None
+        PREP.update(fatte=0, totale=0, volti=True, attivo=False)
+    if sottofondo: prepara_in_sottofondo()
+
+
+# ------------------------------------------------------------------ foto preparate in sottofondo e import a caldo (UX-012)
+PREP = dict(gen=0, fatte=0, totale=0, volti=True, attivo=False)          # avanzamento: miniature fatte su quante, volti pronti
+PREP_FILO = [None]                                                       # il filo che prepara (uno alla volta)
+
+
+def prep_stato(): return {k: PREP[k] for k in ("fatte", "totale", "volti", "attivo")}
+
+
+def ferma_preparazione():
+    """ferma la preparazione in corso (cambio di progetto, chiusura) e aspetta che finisca la foto che sta facendo"""
+    with LOCK: PREP["gen"] += 1
+    t = PREP_FILO[0]
+    if t is not None and t is not threading.current_thread(): t.join(60)
+    PREP_FILO[0] = None
+
+
+def prepara_in_sottofondo():
+    """prepara le miniature che mancano (in ordine di scatto, su tutti i core meno uno) e poi i volti, mentre si lavora.
+    Ogni miniatura pronta si vede subito: cambia la versione della foto (PV) e le anteprime si rifanno. I volti arrivano
+    alla fine e centrano i ritagli delle foto che l'utente non ha già centrato a mano (FACE_FIX ha la precedenza)"""
+    ferma_preparazione()
+    with LOCK:
+        mini, volti = A.da_preparare(); gen = PREP["gen"]; cartella = A.THUMBS
+        PREP.update(fatte=0, totale=len(mini), volti=not volti, attivo=bool(mini or volti))
+    if not (mini or volti): return
+    PREP_FILO[0] = threading.Thread(target=_prepara, args=(gen, mini, volti, cartella), daemon=True, name="prepara-foto"); PREP_FILO[0].start()
+
+
+def _prepara(gen, mini, volti, cartella):
+    try: trovati = _prepara_foto(gen, mini, volti, cartella)
+    except Exception as ex:                                             # disco pieno, cartella sparita…: si smette, l'editor resta com'è
+        trovati = None; LOG.append(f"preparazione delle foto interrotta: {ex}")
+    with LOCK:
+        if PREP["gen"] == gen:
+            if trovati is None: PREP["attivo"] = False
+            else: _volti_pronti(trovati)
+
+
+def _prepara_foto(gen, mini, volti, cartella):
+    """miniature (pubblicate una per una) e poi volti, su un gruppo di fili: {nome: volti}; {} se intanto il progetto è cambiato"""
+    from concurrent.futures import ThreadPoolExecutor
+    n = max(1, (os.cpu_count() or 2) - 1); ex = ThreadPoolExecutor(n, thread_name_prefix="prepara")
+    try:
+        lavori = [ex.submit(A.prepara_miniatura, m, cartella) for m in mini]
+        tutte = all(_pubblica(gen, m, f.result()) for m, f in zip(mini, lavori))       # all() si ferma alla prima non pubblicata
+        parti = [volti[k::n] for k in range(n) if volti[k::n]]
+        return {k: v for d in ex.map(A._build_faces, parti) for k, v in d.items()} if tutte and PREP["gen"] == gen else {}
+    finally: ex.shutdown(wait=True, cancel_futures=True)                # quelle non ancora cominciate non servono più
+
+
+def _volti_pronti(trovati):
+    """(con LOCK preso) volti trovati in sottofondo: nel motore e in faces.json; le foto con volti nuovi si ridisegnano"""
+    A.F.update(trovati); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
+    for k in trovati:
+        if trovati[k]: n = k.rsplit(".", 1)[0]; PV[n] = PV.get(n, 0) + 1          # il ritaglio si centra sui volti: anteprime da rifare
+    PREP.update(volti=True, attivo=False)
+
+
+def _pubblica(gen, m, errore):
+    """miniatura pronta (o foto che non si legge): si vede subito. False se intanto il progetto è cambiato"""
+    with LOCK:
+        uguale = PREP["gen"] == gen
+        if uguale:
+            if errore is not None: A.segna_danneggiata(m)
+            n = m["n"].rsplit(".", 1)[0]; PV[n] = PV.get(n, 0) + 1; PREP["fatte"] += 1
+    return uguale
+
+
+def aggiungi_a_caldo():
+    """import senza riavvio (UX-012): le foto aggiunte a foto_extra entrano in coda all'elenco con i soli metadati (la
+    numerazione non cambia), annulla e ripeti restano; miniature e volti si preparano in sottofondo. Quante sono entrate"""
+    with LOCK:
+        A._togli_riservate(CFG)                                         # come alla riapertura (VER-004)
+        nuove = A._nuove(CFG.get("foto_extra", []), A.M)
+        A.SCARTATE[:] = list({(x["n"], x["motivo"]): x for x in A.SCARTATE}.values())        # un doppione già segnalato non si ripete
+        if nuove:
+            A.M.extend(nuove); A.IDX.update({m["n"].rsplit(".", 1)[0]: len(A.M) - len(nuove) + k + 1 for k, m in enumerate(nuove)})
+            formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M)
+    if nuove: prepara_in_sottofondo()
+    return len(nuove)
 
 
 def crea_server(porta=0, gettone=None):
@@ -1921,8 +2428,9 @@ def avvia_cicli():
 
 
 def ferma():
-    """ferma i cicli di sottofondo (il server si chiude con shutdown()/server_close())"""
+    """ferma i cicli di sottofondo e la preparazione delle foto (il server si chiude con shutdown()/server_close())"""
     while _FERMI: _FERMI.pop().set()
+    ferma_preparazione()
 
 
 def main(argv=None):
@@ -1930,10 +2438,11 @@ def main(argv=None):
     ap.add_argument("--progetto", required=True, help="cartella con progetto.json e album.json")
     ap.add_argument("--porta", type=int, default=8765)
     ap.add_argument("--home", default="", help="indirizzo della schermata dei progetti")
+    ap.add_argument("--sottofondo", action="store_true", help="apre subito: miniature e volti si preparano mentre si lavora (UX-012)")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
     args = ap.parse_args(argv)
     giornale.configura("editor")
-    inizializza(args.progetto, args.home)
+    inizializza(args.progetto, args.home, args.sottofondo)
     avvia_cicli()
     srv = crea_server(args.porta, sicurezza.gettone_del_processo())          # stesso gettone dopo un riavvio (os.execv): la pagina resta collegata
     print(f"Editor album: http://127.0.0.1:{srv.server_address[1]}  | progetto: {PROJ}", flush=True)

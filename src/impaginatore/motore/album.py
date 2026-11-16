@@ -13,7 +13,7 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import io, logging, os, struct, sys, time
+import contextlib, io, logging, math, os, struct, sys, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -45,9 +45,12 @@ def progetto_da_argv(argv=None):
     raise SystemExit("Progetto non trovato: passa --progetto <cartella con progetto.json> o imposta ALBUM_PROGETTO")
 
 
-def carica_progetto(cartella):
+def carica_progetto(cartella, sottofondo=False):
     """legge progetto.json, aggiorna l'elenco delle foto (metadati, miniature, volti) e prepara geometria, correzioni e testi.
-    Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo)."""
+    Restituisce il modulo stesso. Si può richiamare per passare a un altro progetto (un progetto alla volta per processo).
+    sottofondo=True (UX-012): solo i metadati, che si leggono dall'intestazione dei file in millisecondi; miniature e volti
+    che mancano li prepara chi apre il progetto (da_preparare, prepara_miniatura, _build_faces), mentre si lavora. Una foto
+    nuova che si apre ma non si decodifica non resta fuori: diventa danneggiata quando si prova a farne la miniatura"""
     global PROJ, CFG, SRC, CACHE, THUMBS, CW, CH, PPI, B, G, MG, FOLD, TW, TH, M, F, IDX, ORIGINE, FACE_FIX, _ESP, WB, TXTCFG, TITLE, INK, SERIF_FILE, SANS_FILE
     Image.MAX_IMAGE_PIXELS = limite_pixel(); SCARTATE.clear(); DANNEGGIATE.clear()
     PROJ = os.path.abspath(cartella)
@@ -66,17 +69,17 @@ def carica_progetto(cartella):
     new = _nuove(_cerca_foto(SRC), M)
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
     new += _nuove(CFG.get("foto_extra", []), M + new)
-    rotte = set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
+    rotte = set() if sottofondo else set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
     SCARTATE.extend(dict(n=m["n"], motivo=DANNEGGIATA) for m in new if m["n"] in rotte)
     new = [m for m in new if m["n"] not in rotte]
     if new:
         first = not M
         M += sorted(new, key=lambda x: x["dt"]) if first else new
         _scrivi_json(mp, M)
-    _build_thumbs(M)
+    if not sottofondo: _build_thumbs(M)
     F = _cache_valida(fp, _V.volti, {})
     missing = [m for m in M if m["n"] not in F]
-    if missing: F.update(_build_faces(missing)); _scrivi_json(fp, F)
+    if missing and not sottofondo: F.update(_build_faces(missing)); _scrivi_json(fp, F)
     IDX = {m["n"].rsplit(".", 1)[0]: k + 1 for k, m in enumerate(M)}      # nome file senza estensione -> numero foto
     # origine di ogni foto (cartella completa da cui viene): scritta da abbina.py, serve per le correzioni per capitolo
     ORIGINE = {}
@@ -272,20 +275,45 @@ def _build_thumbs(meta, segnaposto=True):
     quelle che esistono ma non si decodificano vanno in DANNEGGIATE e SCARTATE"""
     rotte = []
     for m in meta:
-        p = os.path.join(THUMBS, m["n"])
-        if os.path.exists(p): continue
-        try:
-            with apri_foto(m["src"]) as im0:
-                im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
-            im.thumbnail((1200, 1200)); im.save(p, "JPEG", quality=85)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
-        except ERRORI_FOTO as e:
-            rotte.append(m["n"]); log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
-            if not segnaposto: continue
-            w, h = m.get("w") or 3, m.get("h") or 2; f = 300 / max(w, h)
-            Image.new("RGB", (max(1, round(w * f)), max(1, round(h * f))), GRIGIO_SEGNAPOSTO).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
-            if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
-                DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+        e = prepara_miniatura(m)
+        if e is None: continue
+        rotte.append(m["n"])
+        if segnaposto: segna_danneggiata(m)
     return rotte
+
+
+def prepara_miniatura(m, cartella=None):
+    """fa la miniatura della foto m se manca (1200 px, JPEG). None se c'è, altrimenti l'errore della foto che non si legge.
+    Il file si scrive accanto e poi si rinomina: chi legge le miniature mentre si preparano (UX-012) non ne trova mai una a metà.
+    cartella: quella delle miniature (di serie THUMBS; in sottofondo quella del progetto di quando è partita la preparazione)"""
+    cartella = cartella or THUMBS; p = os.path.join(cartella, m["n"])
+    if os.path.exists(p): return None
+    try:
+        with apri_foto(m["src"]) as im0:
+            im0.draft("RGB", (1200, 1200)); im = in_srgb(ImageOps.exif_transpose(im0))
+        im.thumbnail((1200, 1200)); t = os.path.join(cartella, f".{m['n']}.{os.urandom(4).hex()}.tmp")
+        try: im.save(t, "JPEG", quality=85); os.replace(t, p)          # sempre JPEG (anche da PNG o TIFF): si servono come image/jpeg
+        finally:
+            with contextlib.suppress(FileNotFoundError): os.remove(t)
+    except ERRORI_FOTO as e:
+        log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
+        return e
+    return None
+
+
+def segna_danneggiata(m):
+    """la foto m (già del progetto) non si legge: riquadro grigio con data 0 al posto della miniatura, così resta dov'è e,
+    appena il file torna buono (o si ricollega), l'editor la vede cambiata e la rifà; se il file c'è va tra le danneggiate"""
+    p = os.path.join(THUMBS, m["n"])
+    riquadro_grigio(m).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
+    if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
+        DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+
+
+def da_preparare():
+    """(foto senza miniatura in ordine di scatto, foto senza volti): il lavoro che resta dopo un'apertura in sottofondo"""
+    mini = sorted((m for m in M if not os.path.exists(os.path.join(THUMBS, m["n"]))), key=lambda m: m["dt"])
+    return mini, [m for m in M if m["n"] not in F]
 def _build_faces(meta):
     import cv2
     d = cv2.data.haarcascades
@@ -409,18 +437,60 @@ def leggi_rgb(p):
     return im
 
 
-def _photo(it, K, corrected=False):
-    im = leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"]))
-    if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
-    l, t, r, b = zcrop(it)
-    out = im.resize((max(1, round(it["W"] * K)), max(1, round(it["H"] * K))), Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))
+def riquadro_grigio(m):
+    """riquadro grigio con le proporzioni della foto: al posto della miniatura che non c'è ancora (preparazione in sottofondo)"""
+    w, h = m.get("w") or 3, m.get("h") or 2; f = 300 / max(w, h)
+    return Image.new("RGB", (max(1, round(w * f)), max(1, round(h * f))), GRIGIO_SEGNAPOSTO)
+
+
+def foto_rgb(i, originale=False, serve=None):
+    """la foto i in RGB. Di serie la miniatura (anteprime a schermo; un riquadro grigio se non è ancora pronta). Con
+    originale=True il file originale (stampa, UX-011): letto con il limite di pixel (apri_foto), decodificato alla misura
+    più piccola che basta a `serve` (larghezza, altezza in pixel della foto intera; i JPEG si riducono già in decodifica),
+    raddrizzato dall'EXIF e portato in sRGB come la miniatura. Un originale che manca o è danneggiato (VER-002): ValueError"""
+    m = M[i]
+    if not originale:
+        p = os.path.join(THUMBS, m["n"])
+        return leggi_rgb(p) if os.path.exists(p) else riquadro_grigio(m)
+    src = m.get("src") or ""
+    if m["n"] in DANNEGGIATE: raise ValueError(f"{m['n']}: {DANNEGGIATA}")
+    if not os.path.isfile(src): raise ValueError(f"{m['n']}: l'originale non si trova (ricollega la foto)")
+    with apri_foto(src) as im0:
+        if serve:
+            w, h = (serve[1], serve[0]) if im0.getexif().get(274) in (5, 6, 7, 8) else serve      # la decodifica lavora sul file com'è, prima della rotazione
+            im0.draft("RGB", (max(1, math.ceil(w)), max(1, math.ceil(h))))
+        im = in_srgb(ImageOps.exif_transpose(im0))
+    return im
+
+
+def margine_filtro(scala):
+    """pixel attorno al riquadro che il ricampionamento (LANCZOS, BICUBIC) legge ancora: ritagliando con questo margine il
+    risultato è lo stesso di quello fatto sulla foto intera"""
+    return math.ceil(3 * max(1.0, scala)) + 2
+
+
+def _photo(it, K, corrected=False, originale=False):
+    l, t, r, b = zcrop(it); size = (max(1, round(it["W"] * K)), max(1, round(it["H"] * K)))
+    if originale:          # stampa (UX-011): dall'originale, ricampionato una volta sola; le correzioni (pixel per pixel) solo sulla parte che serve
+        im = foto_rgb(it["i"], True, (size[0] / max(r - l, 1e-6), size[1] / max(b - t, 1e-6)))
+        box = (l * im.width, t * im.height, r * im.width, b * im.height); mg = margine_filtro((box[2] - box[0]) / size[0])
+        x0, y0 = max(0, math.floor(box[0]) - mg), max(0, math.floor(box[1]) - mg)
+        im = im.crop((x0, y0, min(im.width, math.ceil(box[2]) + mg), min(im.height, math.ceil(box[3]) + mg)))
+        if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
+        out = im.resize(size, Image.LANCZOS, box=(box[0] - x0, box[1] - y0, box[2] - x0, box[3] - y0))
+    else:
+        im = foto_rgb(it["i"])
+        if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
+        out = im.resize(size, Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))
     return ImageOps.grayscale(out).convert("RGB") if it.get("bw") else out
-def render(spread, K, corrected=True):
+def render(spread, K, corrected=True, originale=False):
+    """lo spread disegnato alla scala K (1 = pixel del documento, con l'abbondanza). originale=True legge le foto dagli
+    originali (stampa); altrimenti dalle miniature (anteprime)"""
     S = Image.new("RGB", (round(CW * K), round(CH * K)), "white")
     for it in layout(spread):
         pos = (round(it["x"] * K), round(it["y"] * K))
         if it["k"] == "t": t = _text(it, K); S.paste(t, pos, t)
-        else: S.paste(_photo(it, K, corrected), pos)
+        else: S.paste(_photo(it, K, corrected, originale=originale), pos)
     return S
 
 def load_spec(modname="spec"):
