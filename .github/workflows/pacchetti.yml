@@ -64,6 +64,9 @@ env:
   HOMEBREW_NO_INSTALL_CLEANUP: "1"
   HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
   CCACHE_MAXSIZE: 2G
+  # compila.py e la prova scrivono UTF-8 anche su Windows (senza, nel registro «non è» diventa «non �»). Il programma
+  # compilato non legge le variabili PYTHON*: la modalità UTF-8 la prende da Nuitka (compila.argomenti_nuitka)
+  PYTHONUTF8: "1"
 
 defaults:
   run:
