@@ -119,3 +119,13 @@ def test_foto_corrente_per_thread():
     FL._CUR[0] = 3; visto = []
     t = threading.Thread(target=lambda: (visto.append(FL._CUR[0]), FL._CUR.__setitem__(0, 9), visto.append(FL._CUR[0]))); t.start(); t.join()
     assert visto == [None, 9] and FL._CUR[0] == 3
+
+
+def test_stampa_in_prova_con_la_filigrana(stampa, licenza, monkeypatch):
+    """la stampa dagli originali resta sotto il cancello delle esportazioni: in prova, con la filigrana su tutto il file"""
+    from impaginatore import licenze
+    c = stampa; chiamate = []; vera = licenze.applica_filigrana
+    monkeypatch.setattr(licenze, "applica_filigrana", lambda im: chiamate.append(im.size) or vera(im))
+    licenza.usa(None)
+    c.post("/api/export", {"fmt": "jpg", "res": "stampa", "range": "1"}); L = attendi_log(c)
+    assert "ESPORTATI 1 spread su 1" in L and chiamate == [(A.CW, A.CH)], (L, chiamate)
