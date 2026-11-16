@@ -32,7 +32,9 @@ File sul computer dell'utente, in `<dati dell'utente>/licenza/` (cartella 0700, 
 - `chiave.txt`: il testo della chiave attivata. Resta anche se si reinstalla il programma;
 - `prova.json`: `{"formato": 1, "inizio": …, "visto": …}`, inizio della prova e ultima ora vista, in secondi.
 
-Nient'altro: nessun identificativo del computer, nessuna impronta dell'hardware, nessun dato che esca.
+Nient'altro: nessun identificativo del computer, nessuna impronta dell'hardware, nessun dato che esca per la licenza.
+Le statistiche d'uso della beta privata (sotto, «Beta privata») sono un'altra cosa: hanno la loro cartella, partono solo
+dal «sì» del tester e sono descritte in `STATISTICHE.md`.
 
 ## Stati
 
@@ -54,6 +56,23 @@ si esportano JPG, PDF o PSD.
 
 Ogni stato ha un messaggio per l'utente in `stato()["messaggio"]`, e i rifiuti dicono perché e dove si trova la funzione
 («Il PSD a livelli non fa parte della prova gratuita: c'è nelle licenze Pro e Studio.»).
+
+### Beta privata
+
+Una chiave con il bit `beta` (chiavi di `chiavi.py emetti-beta`: fascia Studio, formato 2 con scadenza,
+`FORMATO-CHIAVE.md`) è una licenza `attiva` come le altre fino all'ultimo giorno compreso, poi `scaduta` (sola lettura).
+`stato()` ha tre campi in più, presenti sempre:
+
+| Campo | Valore |
+|---|---|
+| `beta` | `true` se la chiave salvata ha il bit beta e la firma si verifica (anche se è scaduta o revocata) |
+| `etichetta_beta` | «Beta privata» (tradotta) per una chiave beta attiva, scaduta o revocata; altrimenti `null` |
+| `riga_beta` | la riga breve da mostrare accanto al nome: «Beta privata · scade il 31/01/2027», dopo la scadenza «Beta privata · finita il 31/01/2027», revocata o senza scadenza solo «Beta privata»; `null` se la chiave non è beta o non si verifica |
+
+Il messaggio dice fino a quando valgono le funzioni e che dopo gli album restano apribili in sola lettura; dopo la
+scadenza «La beta privata è finita il …». La schermata Album mostra `riga_beta` al posto del nome della licenza, l'editor
+nel distintivo accanto al titolo (`licb`). Solo con una chiave beta valida la schermata Album chiede, al primo avvio, se
+condividere le statistiche d'uso (`STATISTICHE.md`).
 
 ## Dove si controlla
 

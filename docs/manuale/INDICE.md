@@ -22,6 +22,7 @@ con foto di prova.
 11. [Prova gratuita e licenza](11-prova-licenza.md)
 12. [Scorciatoie da tastiera](12-scorciatoie.md)
 13. [Domande frequenti e se qualcosa non va](13-domande.md)
+14. [Beta privata e statistiche d'uso](14-beta-e-statistiche.md) *(solo per chi partecipa alla beta privata)*
 
 Guida a parte: [L'assistente AI (Claude) collegato a Impaginatore](assistente/INDICE.md).
 
