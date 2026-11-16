@@ -33,6 +33,7 @@ import subprocess  # nosec B404  # lancia il programma da provare, con argomenti
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -79,7 +80,9 @@ class Client:
     def _r(self, path, body=None, timeout=120):
         h = {"Content-Type": "application/json", "X-Impaginatore-Gettone": self.gettone}
         r = urllib.request.Request(f"http://127.0.0.1:{self.porta}{path}", None if body is None else json.dumps(body).encode(), h)
-        with urllib.request.urlopen(r, timeout=timeout) as f: return f.read()  # nosec B310  # solo 127.0.0.1
+        try:
+            with urllib.request.urlopen(r, timeout=timeout) as f: return f.read()  # nosec B310  # solo 127.0.0.1
+        except urllib.error.HTTPError as e: raise NonVa(f"{path}: {e.code} {e.read()[:500].decode('utf-8', 'replace')}") from None
 
     def get(self, path, **k): return json.loads(self._r(path, **k))
 
