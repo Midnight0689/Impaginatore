@@ -36,8 +36,7 @@
   button.danger:hover:not(:disabled) { color: var(--danger); }
   button.piatto { background: transparent; }
   button.ico { width: 28px; padding: 0; }
-  button.lock::after { content: ""; width: 10px; height: 10px; margin-left: 2px; background: currentColor; opacity: .7; -webkit-mask: var(--lucchetto) center/contain no-repeat; mask: var(--lucchetto) center/contain no-repeat; }
-  :root { --lucchetto: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 11V8a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z'/%3E%3C/svg%3E"); }
+  button.lock::after { content: ""; width: 10px; height: 10px; margin-left: 2px; background: currentColor; opacity: .7; -webkit-mask: url("/risorse/lucchetto.svg") center/contain no-repeat; mask: url("/risorse/lucchetto.svg") center/contain no-repeat; }   /* lucchetto: file statico del programma (la CSP, img-src 'self', blocca i data:) */
   :focus { outline: none; }
   :focus-visible { outline: var(--imp-bordo-fuoco) solid var(--accent); outline-offset: 1px; }
   input, select, textarea { font: inherit; color: var(--text); background: var(--bar); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 8px; }

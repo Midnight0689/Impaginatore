@@ -42,6 +42,20 @@ def _senza_iniezioni(b):
     assert b.js("document.body.dataset.xss || null") is None
 
 
+def test_ogni_blocco_della_csp_fa_fallire_il_test(home_srv, tmp_path):
+    """controllo generale dei test nel browser (cdp.Browser): una risorsa bloccata dalla CSP fa fallire il test all'uscita,
+    anche se il test non guarda problemi()"""
+    from cdp import Browser
+    with pytest.raises(AssertionError, match="Content-Security-Policy.*img-src"):
+        with Browser(tmp_path / "a") as b:
+            b.apri(home_srv.srv.indirizzo_avvio(), 1)
+            b.js("document.body.insertAdjacentHTML('beforeend', '<i style=\"display:block;width:9px;height:9px;background:url(data:image/gif;base64,R0lGODlhAQABAAAAACw=)\"></i>')")
+            b.pausa(0.5)
+    with Browser(tmp_path / "b") as b:                                  # senza blocchi: nessun errore all'uscita
+        b.apri(home_srv.srv.indirizzo_avvio(), 1)
+        assert b.violazioni_csp() == []
+
+
 def test_xss_da_nomi_ed_exif(home_srv, apri_editor, tmp_path):
     """SEC-006: nome del progetto, nome del file e data EXIF di una foto del cliente arrivano nella pagina come testo"""
     from cdp import Browser

@@ -27,7 +27,17 @@ def test_statici_sono_quelli_della_marca():
         assert f'url("{nome}")' in risorse.leggi("statici/font.css").decode("utf-8")
     for f in ("OFL-Newsreader.txt", "OFL-InstrumentSans.txt", "OFL-IBMPlexMono.txt"):
         assert risorse.leggi(f"statici/{f}") == _brand("font", f), "ogni carattere viaggia con la sua licenza (OFL)"
-    assert st["tokens.css"].startswith("text/css") and set(os.path.splitext(n)[1] for n in st) == {".css", ".woff2", ".txt"}
+    assert st["tokens.css"].startswith("text/css") and set(os.path.splitext(n)[1] for n in st) == {".css", ".woff2", ".txt", ".svg"}
+    assert st["lucchetto.svg"] == "image/svg+xml" and risorse.leggi("statici/lucchetto.svg").startswith(b'<svg xmlns="http://www.w3.org/2000/svg"')
+
+
+def test_niente_indirizzi_data_nelle_pagine():
+    """la CSP delle pagine ha img-src 'self' (niente data:): un'immagine di una pagina o di un foglio di stile è un file
+    statico del programma, mai un indirizzo data: che il browser bloccherebbe (il lucchetto dei comandi della licenza)"""
+    for nome in ("home.html", "index.html") + tuple("statici/" + n for n in risorse.statici() if n.endswith((".css", ".svg"))):
+        testo = risorse.leggi(nome).decode("utf-8")
+        assert not re.search(r"url\(\s*[\"']?data:", testo) and "data:image" not in testo, nome
+    assert 'url("/risorse/lucchetto.svg")' in risorse.leggi("index.html").decode("utf-8")
 
 
 @pytest.mark.parametrize("server", ["home_srv", "editor"])
@@ -42,6 +52,9 @@ def test_statici_dai_due_server(server, request):
     with urllib.request.urlopen(urllib.request.Request(c.url("/risorse/Newsreader.woff2"), headers={"X-Impaginatore-Gettone": c.gettone})) as r:
         et = r.headers["ETag"]; assert r.headers["Content-Type"] == "font/woff2" and r.headers["Cache-Control"] == "no-cache" and r.headers["Content-Security-Policy"]
     assert c.codice("/risorse/Newsreader.woff2", **{"If-None-Match": et}) == 304, "non cambiato: non si riscarica"
+    with urllib.request.urlopen(urllib.request.Request(c.url("/risorse/lucchetto.svg"), headers=cookie)) as r:
+        assert r.headers["Content-Type"] == "image/svg+xml" and "script-src 'none'" in r.headers["Content-Security-Policy"], "l'icona: basta il cookie, nessuno script"
+        assert r.read() == risorse.leggi("statici/lucchetto.svg")
     for p in ("/risorse/__init__.py", "/risorse/../risorse/__init__.py", "/risorse/testi/it/comune.json", "/risorse/testi/en/comune.json", "/risorse/", "/risorse/vib_lut.npz", "/risorse/%2e%2e%2f__init__.py"):
         assert c.codice(p) == 404, p
 
