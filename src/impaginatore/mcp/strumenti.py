@@ -37,7 +37,7 @@ MAX_NOME = 160                    # caratteri al massimo di un nome che viene da
 MAX_IMMAGINE = 2 * 2**20          # byte al massimo di un'immagine
 ATTESA_APERTURA = 50              # secondi di attesa dell'editor dopo «apri» (poi: «in apertura», si richiama)
 ATTESA_ESPORTAZIONE = 45          # secondi di attesa della fine di un'esportazione (poi: «in corso», stato_esportazione)
-ATTESA_INIZIO = 10                # secondi in cui un registro ancora vuoto vuol dire «esportazione appena partita»
+ATTESA_INIZIO = 10                # secondi in cui un esito ancora vuoto vuol dire «esportazione appena partita»
 ATTESA_SCELTA = 900               # secondi per una finestra di scelta aperta all'utente
 PROPOSTE = 8                      # proposte di bozza tenute in memoria (le più recenti)
 LATI = {"sinistra": "L", "destra": "R"}
@@ -538,25 +538,20 @@ class Assistente:
         return dict(self._esito(ed, base, lavoro), progetto=progetto)
 
     def _esito(self, ed, base, lavoro):
-        """esito di un'esportazione dal registro dell'editor (/api/log): spread fatti, saltati, errori, cartella. Il registro
-        è uno per editor e ogni esportazione lo ricomincia (anche una chiesta dalla pagina, anche una rifiutata): se non comincia
-        più con questa esportazione, il suo esito non si sa più (finita per quanto ci riguarda: i file sono nella cartella)"""
-        righe = ed.chiedi("/api/log"); fatti = saltati = 0; errori = []; filigrana = licenze.stato()["filigrana"]
-        inizio = next((r for r in righe if r.startswith("Esporto ")), None)
-        if inizio: nostra = inizio.endswith("→ " + lavoro["cartella"])
-        elif lavoro.get("vista"): nostra = len(righe) >= 200               # registro lungo: la prima riga è uscita dalle ultime 200
-        else: nostra = not righe and time.monotonic() - lavoro["t"] < ATTESA_INIZIO     # appena chiesta: il registro comincia tra un attimo
-        if nostra and inizio: lavoro["vista"] = True
+        """esito di un'esportazione dall'esito strutturato dell'editor (/api/esito: numeri e motivi, uguale in ogni lingua).
+        L'esito è uno per editor e ogni esportazione lo ricomincia (anche una chiesta dalla pagina, anche una rifiutata): se non
+        è più quello della nostra cartella, il suo esito non si sa più (finita per quanto ci riguarda: i file sono nella cartella)"""
+        e = ed.chiedi("/api/esito"); filigrana = licenze.stato()["filigrana"]
+        if e.get("dest"): nostra = os.path.normpath(e["dest"]) == os.path.normpath(lavoro["cartella"]); lavoro["vista"] = lavoro.get("vista") or nostra
+        else: nostra = not lavoro.get("vista") and time.monotonic() - lavoro["t"] < ATTESA_INIZIO      # appena chiesta: l'esportazione parte tra un attimo
         if not nostra:
             return dict(formato=lavoro["formato"], finita=True, stato="non_seguibile", cartella=dato(os.path.relpath(lavoro["cartella"], base), 300), dati_utente=dati_utente(),
                         messaggio=lingua.t("mcp.non_seguibile"))
-        for r in righe:
-            if re.match(r"\s+spread \d+", r): fatti += 1
-            elif r.startswith("SALTATO"): saltati += 1; errori.append(_ripulisci(r, base))
-            elif r.startswith("ERRORE:"): errori.append(_ripulisci(r[7:].strip(), base))
-        finita = "[finito]" in righe
-        return dict(formato=lavoro["formato"], finita=finita, stato="finita" if finita else "in_corso", spread_esportati=fatti, spread_saltati=saltati, errori=errori[:20],
-                    cartella=dato(os.path.relpath(lavoro["cartella"], base), 300), **({"filigrana": lingua.t("mcp.filigrana_prova")} if filigrana else {}),
+        saltati = e.get("saltati") or []
+        errori = [_ripulisci(lingua.t("server.log_saltato", k=x.get("spread"), motivo=x.get("motivo")), base) for x in saltati] + [_ripulisci(x, base) for x in e.get("errori") or []]
+        finita = bool(e.get("finito"))
+        return dict(formato=lavoro["formato"], finita=finita, stato="finita" if finita else "in_corso", spread_esportati=int(e.get("fatti") or 0), spread_saltati=len(saltati),
+                    errori=errori[:20], cartella=dato(os.path.relpath(lavoro["cartella"], base), 300), **({"filigrana": lingua.t("mcp.filigrana_prova")} if filigrana else {}),
                     **({} if finita else {"messaggio": lingua.t("mcp.esportazione_continua")}), dati_utente=dati_utente())
 
     # ------------------------------------------------------------ immagini (solo con il consenso)

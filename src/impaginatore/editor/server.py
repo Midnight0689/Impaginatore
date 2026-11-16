@@ -2152,7 +2152,7 @@ def ls_dir(path):
     """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e foto), solo dentro le radici (SEC-005):
     le altre cartelle si aggiungono con «Altra cartella…», cioè con la finestra di sistema"""
     radici = RADICI.tutte()
-    if path: path = RADICI.controlla(path, "quella cartella")
+    if path: path = RADICI.controlla(path, "cartella")
     else: path = next((p for p in (LASTDIR[0], os.path.dirname(str(CFG.get("foto", "")).rstrip("/\\")), CFG.get("foto")) if p and RADICI.contiene(p) and os.path.isdir(p)), radici[0] if radici else PROJ)
     while not os.path.isdir(path) and os.path.dirname(path) != path: path = os.path.dirname(path)          # la cartella esistente più vicina (dentro la radice, che esiste)
     LASTDIR[0] = path; dirs, files = [], []
@@ -2169,7 +2169,7 @@ def ls_dir(path):
 
 FT = {}
 def file_thumb(path, w):
-    path = RADICI.controlla(path, "quella foto")
+    path = RADICI.controlla(path, "foto")
     if not path.lower().endswith(A.estensioni()) or not os.path.isfile(path): raise ValueError(lingua.t("server.non_una_foto"))
     k = (path, w, os.path.getmtime(path))
     if k not in FT:
@@ -2487,7 +2487,7 @@ class H(Gestore):
                 self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono"), body.get("modo", "std"), body.get("cm")))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
-                n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])  # non tradotto: frammento della frase di percorsi.py, che dà il testo
+                n, sk = do_import([RADICI.controlla(p, "foto_o_cartella") for p in body["paths"]])
                 if body.get("a_caldo") is True: self.send({"importate": n, "saltate": sk, "riavvio": False, "aggiunte": aggiungi_a_caldo() if n else 0})
                 else:
                     if n: restart()
@@ -2498,17 +2498,17 @@ class H(Gestore):
             elif u.path == "/api/ricollega":
                 c = body.get("cartella") or (pick("folder") or [""])[0]
                 if not c: self.send({"annullato": True})
-                else: self.send(ricollega(RADICI.controlla(c, "quella cartella"), bool(body.get("prova")), body.get("scelte")))
+                else: self.send(ricollega(RADICI.controlla(c, "cartella"), bool(body.get("prova")), body.get("scelte")))
             elif u.path == "/api/prj_esporta":
                 d = body.get("dest") or (pick("folder") or [""])[0]
                 if not d: self.send({"annullato": True})
-                else: self.send({"cartella": esporta_progetto(dict(body, dest=RADICI.controlla(d, "quella cartella")))})
+                else: self.send({"cartella": esporta_progetto(dict(body, dest=RADICI.controlla(d, "cartella")))})
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
             elif u.path == "/api/export":
-                if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "quella cartella")
+                if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "cartella")
                 azzera_registro(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
+            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel_percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
             else: self.send({"errore": lingua.t("server.non_trovato")}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)

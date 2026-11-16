@@ -178,22 +178,28 @@ def test_esporta_in_una_cartella_nuova(editor, a, monkeypatch):
     assert attendi(lambda: a.stato_esportazione(p)["finita"]) is True
 
 
-def test_esito_esportazione_dal_registro(editor, a, monkeypatch):
-    """il registro dell'editor è uno solo e ogni esportazione lo ricomincia: l'esito si legge solo finché è della nostra"""
-    p = pid(editor); base = editor.progetto; cartella = os.path.join(base, "Esportazioni", "JPG", "Assistente x"); registro = []
-    monkeypatch.setattr(C.Server, "chiedi", lambda self, percorso, *x, **k: list(registro))
-    a._esportazioni[p] = lavoro = dict(formato="jpg", cartella=cartella, t=time.monotonic())
-    assert a.stato_esportazione(p)["stato"] == "in_corso", "appena chiesta: il registro è ancora vuoto"
-    registro[:] = [f"Esporto 2 spread in JPG → {cartella}", "  spread 1: x.jpg", f"SALTATO spread 2 -> non posso scrivere in {base}/Esportazioni", "ERRORE: disco pieno", "[finito]"]
+def test_esito_esportazione_strutturato(editor, a, monkeypatch):
+    """l'esito dell'editor (/api/esito) è uno solo e ogni esportazione lo ricomincia: si legge solo finché è quello della
+    nostra cartella. È fatto di numeri e motivi, quindi vale in ogni lingua (nessuna riga del registro da interpretare)"""
+    p = pid(editor); base = editor.progetto; cartella = os.path.join(base, "Esportazioni", "JPG", "Assistente x")
+    esito = dict(dest="", formato="", totale=0, fatti=0, saltati=[], errori=[], risultato=None, finito=False)
+    monkeypatch.setattr(C.Server, "chiedi", lambda self, percorso, *x, **k: json.loads(json.dumps(esito)))
+    a._esportazioni[p] = dict(formato="jpg", cartella=cartella, t=time.monotonic())
+    assert a.stato_esportazione(p)["stato"] == "in_corso", "appena chiesta: l'esportazione non è ancora partita"
+    esito.update(dest=cartella, formato="jpg", totale=2, fatti=1)
+    r = a.stato_esportazione(p); assert (r["stato"], r["spread_esportati"], r["finita"]) == ("in_corso", 1, False)
+    esito.update(saltati=[{"spread": 2, "motivo": f"non posso scrivere in {base}/Esportazioni"}], errori=["disco pieno"], finito=True)
     r = a.stato_esportazione(p)
-    assert r["stato"] == "finita" and r["spread_esportati"] == 1 and r["spread_saltati"] == 1 and lavoro["vista"] is True
+    assert r["stato"] == "finita" and r["spread_esportati"] == 1 and r["spread_saltati"] == 1
     assert r["errori"] == ["SALTATO spread 2 -> non posso scrivere in <progetto>/Esportazioni", "disco pieno"] and r["cartella"] == os.path.join("Esportazioni", "JPG", "Assistente x")
-    registro[:] = ["  spread %d: x.jpg" % k for k in range(1, 201)]
-    assert a.stato_esportazione(p)["spread_esportati"] == 200, "registro lungo: la prima riga è uscita dalle ultime 200, ma è ancora la nostra"
-    for altro in ([], ["autosalvataggio non riuscito: disco pieno"], [f"Esporto 1 spread in PDF → {base}/Esportazioni/PDF", "  spread 1"]):
-        registro[:] = altro; r = a.stato_esportazione(p)
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    assert a.stato_esportazione(p)["spread_esportati"] == 1, "in inglese l'esito si legge allo stesso modo"
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
+    for altro in (dict(dest=os.path.join(base, "Esportazioni", "PDF"), finito=False), dict(dest=os.path.join(base, "copia - progetto"), formato="progetto")):
+        esito.update(altro); r = a.stato_esportazione(p)
         assert r["stato"] == "non_seguibile" and r["finita"] is True and "spread_esportati" not in r, altro
-    a._esportazioni[p] = dict(formato="jpg", cartella=cartella, t=time.monotonic() - S.ATTESA_INIZIO - 1); registro[:] = []
+    esito.update(dest=""); assert a.stato_esportazione(p)["stato"] == "non_seguibile", "vista e poi ricominciata (anche da una richiesta rifiutata)"
+    a._esportazioni[p] = dict(formato="jpg", cartella=cartella, t=time.monotonic() - S.ATTESA_INIZIO - 1)
     assert a.stato_esportazione(p)["stato"] == "non_seguibile", "vuoto da troppo tempo: un'altra richiesta l'ha ricominciato"
 
 
