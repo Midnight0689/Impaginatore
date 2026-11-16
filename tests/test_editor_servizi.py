@@ -470,7 +470,7 @@ def test_spiegazioni_degli_errori():
     assert E._spiega(OSError(errno.ENOSPC, "No space left on device")) == "il disco è pieno: libera spazio o scegli un altro disco"
     assert E._spiega(FileNotFoundError(2, "No such file", "/x/foto.jpg")) == "file non trovato: /x/foto.jpg"
     assert E._spiega(MemoryError()) == "memoria insufficiente: prova a esportare meno spread alla volta"
-    assert E._spiega(ValueError("strano")) == "ValueError: strano"
+    assert E._spiega(ValueError("strano")) == "strano" and E._spiega(KeyError("x")) == "errore imprevisto (KeyError: 'x')"
 
 
 def test_pdf_con_il_profilo_del_sistema(monkeypatch, tmp_path):
@@ -512,7 +512,7 @@ def test_jpg_con_spread_non_scritti(apri, monkeypatch):
     monkeypatch.setattr(E, "_scrivi_img", scrivi)
     c.post("/api/export", {"fmt": "jpg", "res": "bozza"}); L = attendi_log(c)
     dest = os.path.join(c.progetto, "Esportazioni", "JPG")
-    assert L == [f"Esporto 2 spread in JPG → {dest}", "SALTATO spread 1 -> ValueError: file vuoto", "SALTATO spread 2 -> il disco è pieno: libera spazio o scegli un altro disco",
+    assert L == [f"Esporto 2 spread in JPG → {dest}", "SALTATO spread 1 -> file vuoto", "SALTATO spread 2 -> il disco è pieno: libera spazio o scegli un altro disco",
                  "ESPORTATI 0 spread su 2", "ERRORE: 2 spread non esportati (vedi sopra)", "[finito]"]
     assert scritti == ["Prova - Spread 01.jpg", "Prova - Spread 02.jpg"]
 
@@ -522,7 +522,7 @@ def test_pdf_rimasto_vuoto(apri, monkeypatch):
     c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
     monkeypatch.setattr(E, "write_pdf", lambda path, jpegs, dpi=150: open(path, "wb").close())
     c.post("/api/export", {"fmt": "pdf", "width": 400, "range": "1"}); L = attendi_log(c)
-    assert L[-2:] == ["ERRORE: ValueError: il PDF risulta vuoto", "[finito]"] and not any(x.startswith("RISULTATO:") for x in L)
+    assert L[-2:] == ["ERRORE: il PDF risulta vuoto", "[finito]"] and not any(x.startswith("RISULTATO:") for x in L)
 
 
 def _psd_finto(monkeypatch, dest, crea=(), righe=(), codice=0):

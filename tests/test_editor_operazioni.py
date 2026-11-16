@@ -398,10 +398,10 @@ def test_aggiungi_allo_spread_e_riorganizza(ed):
 
 # ---------------------------------------------------------------- cornici: griglia, libere, pagine
 def test_cornice_sulla_griglia(ed):
-    """«frame»: la cornice va sulle celle chieste (anche una libera, che perde angolo e stile), dentro la pagina e senza sovrapposizioni"""
+    """«frame»: la cornice va sulle celle chieste (anche una libera, che tiene angolo e stile), dentro la pagina e senza sovrapposizioni"""
     prima = E.snap()
     _op(op="frame", at=[3, "L", 1], c=6, r=0, w=6, h=8)
-    assert _el(3, "L", 1) == dict(k="p", i=_i("V04"), c=6, r=0, w=6, h=8, bw=False, z=1.0)
+    assert _el(3, "L", 1) == dict(k="p", i=_i("V04"), c=6, r=0, w=6, h=8, bw=False, z=1.0, a=7.5, bd=[3.0, "#ffffff"], sh=40, oc=80)
     _annulla(prima)
     _rifiutata(dict(op="frame", at=[1, "L", 1], c=0, r=0, w=2, h=2), "il testo non si ridimensiona")
     for c, r, w, h in ((10, 0, 4, 4), (0, 0, 0, 4), (-1, 0, 2, 2), (0, 5, 2, 4)): _rifiutata(dict(op="frame", at=[0, "R", 1], c=c, r=r, w=w, h=h), "la cornice esce dalla pagina")

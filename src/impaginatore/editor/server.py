@@ -507,8 +507,7 @@ def apply(o):
         names = list(o["names"]); ph = []
         for n in names:
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
-        if not 1 <= len(ph) <= 10: raise ValueError("per uno spread servono da 1 a 10 foto")
-        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto c'è sempre almeno un modello
+        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto (valida) c'è sempre almeno un modello
         gone = set(ph)
         for sp in SP:
             for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]       # le foto spostate escono dal vecchio spread (restano le altre e i testi)
@@ -545,7 +544,7 @@ def apply(o):
         if w < 1 or h < 1 or c < 0 or r < 0 or c + w > A.NC or r + h > A.NR: raise ValueError("la cornice esce dalla pagina")
         for j, other in enumerate(pg[1]):
             if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("si sovrappone a un'altra cornice")
-        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0))
+        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "free":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]
         x, y, w, h = (float(o[k]) for k in ("x", "y", "w", "h"))
@@ -575,7 +574,7 @@ def apply(o):
         w = max(n(gr["xe"], L["x"] - BL + L["W"]), c) - c + 1; h = max(n(gr["ye"], L["y"] - BL + L["H"]), r) - r + 1
         for j, other in enumerate(pg[1]):
             if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("agganciata alla griglia si sovrapporrebbe a un'altra cornice")
-        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0))
+        pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "addframe":
         s, side = o["s"], o["side"]; pg = SP[s][0 if side == "L" else 1]; rect = biggest_free(pg)
         if not rect: raise ValueError("la pagina è piena: riduci una cornice prima")
@@ -658,12 +657,13 @@ def apply(o):
         s_ = o["s"]
         SP.insert(s_ + 1, copy.deepcopy(SP[s_])); GD.insert(s_ + 1, copy.deepcopy(GD[s_]))
     elif t == "copia":                                    # appunti dell'editor (non cambiano il progetto): elementi scelti con la loro posizione
-        R = _rects(o["s"]); CLIP.clear()
+        R = _rects(o["s"]); nuovi = []
         for a in o["ats"]:
             key = (a[0], int(a[1])); L = R.get(key); it = SP[o["s"]][0 if key[0] == "L" else 1][1][key[1]]
             if L is None or (it["k"] == "t" and not is_txt(it)): continue
-            CLIP.append(dict(item=copy.deepcopy(it), x=L["x"], y=L["y"], W=L["W"], H=L["H"]))
-        if not CLIP: raise ValueError("niente da copiare: scegli foto o testi")
+            nuovi.append(dict(item=copy.deepcopy(it), x=L["x"], y=L["y"], W=L["W"], H=L["H"]))
+        if not nuovi: raise ValueError("niente da copiare: scegli foto o testi")           # gli appunti restano com'erano
+        CLIP[:] = nuovi
     elif t == "incolla":                                  # nello stesso spread con un piccolo scarto, in un altro spread nella stessa posizione
         s_ = o["s"]
         if not CLIP: raise ValueError("gli appunti sono vuoti: copia prima qualcosa")
@@ -762,6 +762,8 @@ def valida(o):
             for n in o[k]: _foto(n)
     if t == "tono_fix":
         for c in o.get("items") or []: _foto(c.get("photo") if isinstance(c, dict) else c)
+    if t == "newspreadsel" and not (isinstance(o.get("names"), list) and 1 <= len(set(o["names"])) <= 10):      # così next() in apply trova sempre un modello
+        raise ValueError("per uno spread servono da 1 a 10 foto")
     if t in ("newspread", "template"):
         for side in "LR":
             if side not in o: continue
@@ -1431,7 +1433,8 @@ def _spiega(e):
     if isinstance(e, OSError) and e.errno == errno.ENOSPC: return "il disco è pieno: libera spazio o scegli un altro disco"
     if isinstance(e, FileNotFoundError): return f"file non trovato: {e.filename or e}"
     if isinstance(e, MemoryError): return "memoria insufficiente: prova a esportare meno spread alla volta"
-    return f"{type(e).__name__}: {e}"
+    if isinstance(e, (ValueError, RuntimeError)) and str(e): return str(e)            # messaggi scritti per l'utente (preflight, Photoshop)
+    return f"errore imprevisto ({type(e).__name__}: {e})"
 
 def _scrivi_img(im, f, **kw):
     """salva l'immagine in un file temporaneo e poi la sposta: se l'export si interrompe non resta un file a metà né si perde quello vecchio"""
