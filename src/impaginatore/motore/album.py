@@ -201,7 +201,8 @@ def _nuove(files, meta):
         if r in radici: SCARTATE.append(dict(n=n, motivo=f"c'è già una foto che si chiama «{r}»")); continue
         try: out.append(_meta_one(f))
         except (OSError, ValueError) as e:
-            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto")); log.warning("foto scartata %s: %s", n, e); continue
+            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto"))
+            log.warning("una foto non si apre (%s)", type(e).__name__); log.debug("foto scartata %s: %s", n, e); continue          # nomi solo a DEBUG (VER-013)
         noti.add(n); radici.add(r)
     return out
 

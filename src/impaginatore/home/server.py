@@ -135,7 +135,7 @@ def apri(path):
         pt = gia_attivo(path)
         if pt: return pt
         pt = porta_libera(porta_stabile(path))
-        with open(os.path.join(PROGETTI, "editor.log"), "ab") as log:
+        with os.fdopen(giornale.riservato(os.path.join(PROGETTI, "editor.log")), "ab") as log:          # 0600: percorsi dei progetti (VER-013)
             proc = subprocess.Popen([sys.executable, "-m", "impaginatore.editor", "--progetto", path, "--porta", str(pt), "--home", f"http://127.0.0.1:{PORTA}"],
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli())
         EDITORS[path] = (proc, pt); return pt

@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 
+from .. import giornale
 from . import sistema
 
 
@@ -52,6 +53,6 @@ def stacca(registro):
     if os.fork(): os._exit(0)
     os.setsid()
     if os.fork(): os._exit(0)
-    fd = os.open(registro, os.O_WRONLY | os.O_CREAT | os.O_APPEND); dn = os.open(os.devnull, os.O_RDONLY)
+    fd = giornale.riservato(registro); dn = os.open(os.devnull, os.O_RDONLY)          # 0600: dentro ci sono percorsi e nomi (VER-013)
     os.dup2(dn, 0); os.dup2(fd, 1); os.dup2(fd, 2)
     return True

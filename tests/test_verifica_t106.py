@@ -199,7 +199,6 @@ def test_avvio_con_corpo_non_oggetto_risponde_400(home_srv):
 
 # ------------------------------------------------------------------ VER-013
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="permessi POSIX")
-@xfail("VER-013", "il registro nasce con i permessi dell'umask (0664/0644): leggibile da altri utenti")
 def test_registro_leggibile_solo_da_chi_usa_il_programma():
     import logging
 
