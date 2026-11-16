@@ -195,7 +195,8 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
 SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
-UNDO, REDO = [], []
+UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, nome, s: spread toccato, gruppo, rev} (UX-003)
+ESITO = {}                                          # quello che un'operazione vuole dire a chi l'ha chiesta (disposizione scelta, foto scambiata...): va nella risposta
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
 
@@ -530,6 +531,8 @@ def apply(o):
             alt = [x for x in templates(s_)["items"] if not x["cur"]]
             if not alt: raise ValueError("nessun altro modello adatto a queste foto")
             apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
+    elif t == "disposizione": altra_disposizione(o["s"], o.get("passo", 1), o.get("side"))
+    elif t == "sostituisci": sostituisci(o["at"], o["photo"], o.get("adatta", True) is not False)
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
@@ -772,6 +775,10 @@ def valida(o):
             d = o[side]
             if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or not isinstance(d.get("photos"), list): raise ValueError("modello non valido")
             for i in d["photos"]: _intero(i, len(A.M), "foto")
+    if t == "disposizione":
+        if "s" not in o: raise ValueError("manca lo spread")
+        if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError("passo non valido: 1 (avanti) o -1 (indietro)")
+    if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError("servono la cornice (at) e la foto (photo)")
     if t == "rit" and o.get("copia") is not None:
         if not isinstance(o["copia"], dict) or any(k not in FL.RIT_KEYS or isinstance(v, bool) or not isinstance(v, (int, float)) or abs(v) > 100 for k, v in o["copia"].items()):
             raise ValueError("ritocco da copiare non valido")
@@ -788,6 +795,46 @@ def verifica():
                 if it["k"] != "t": _intero(it.get("i"), len(A.M), "foto")
 
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
+
+NOMI_OP = dict(                # nome di ogni operazione per «Annulla …» e «Ripeti …» (UX-003)
+    swap="Scambia foto", replace="Sostituisci foto", sostituisci="Sostituisci foto", set="Modifica cornice", ratio="Proporzioni cornice",
+    t2x="Cornice doppia", tscale="Misura del testo", gscale="Misura", snap="Allinea alla griglia", origar="Proporzioni originali",
+    orient="Gira cornice", copia="Copia", incolla="Incolla", equalize="Uguaglia cornici", align="Allinea", nudge="Sposta",
+    move="Sposta", frame="Ridimensiona cornice", free="Sposta cornice", addframe="Aggiungi cornice", delframe="Elimina cornice",
+    zorder="Porta avanti o indietro", crosspage="Sposta sull'altra pagina", putfree="Aggiungi foto", fullpage="Foto a tutta pagina",
+    guides="Linee guida", colore="Etichetta colore", stella="Stella", tolta="Togli foto", face="Centro del volto", pan="Inquadratura",
+    ev="Esposizione", evg="Esposizione dell'album", rit="Ritocco", tono="Tono", tono_escl="Tono", tono_fix="Uniforma il tono",
+    tono_L="Tono di riferimento", stile_applica="Stile del testo", stile_elimina="Elimina stile", stile_salva="Salva stile",
+    stile_scollega="Scollega stile", testo="Testo", settext="Modifica testo", addtext="Aggiungi testo", blank="Nuovo spread vuoto",
+    new="Nuovo spread", dup="Duplica spread", delete="Elimina spread", swappages="Inverti pagine", newspread="Nuovo spread",
+    newspreadsel="Nuovo spread", addtospread="Aggiungi foto allo spread", template="Cambia disposizione", setrects="Disposizione a mano",
+    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", sistema="Sistema album", bozza="Bozza dell'album")
+
+
+def _intero_o_none(x): return x if isinstance(x, int) and not isinstance(x, bool) else None
+
+
+def spread_op(o):
+    """spread che un'operazione tocca (per andarci dopo un annulla), o None se non tocca uno spread (stelle, colori...)"""
+    if o["op"] in ("new", "dup") and _intero_o_none(o.get("s")) is not None: return o["s"] + 1
+    for k in ("s", "pos"):
+        if _intero_o_none(o.get(k)) is not None: return o[k]
+    at = o.get("at")
+    return _intero_o_none(at[0]) if isinstance(at, (list, tuple)) and at else None
+
+
+def _passo(p): return dict(nome=p["nome"], s=p["s"]) if p else None
+
+
+def _gruppo(g):
+    """gruppo d'annulla di un'operazione: le operazioni di fila con lo stesso gruppo diventano un passo solo (UX-001, UX-003)"""
+    if g is not None and not (isinstance(g, str) and 0 < len(g) <= 100): raise ValueError("gruppo non valido: un testo di al massimo 100 caratteri")
+    return g
+
+
+def passi():
+    """{annulla, ripeti}: cosa farebbero adesso «Annulla» e «Ripeti» ({nome, s} o None)"""
+    return dict(annulla=_passo(UNDO[-1] if UNDO else None), ripeti=_passo(REDO[-1] if REDO else None))
 
 def controlla_stato():
     """lo stato dopo un'operazione si può salvare, riaprire e mostrare? Impaginazione e impostazioni passano dagli stessi
@@ -811,18 +858,22 @@ def do_op(o):
         cid, rev = o.pop("cid", None), o.pop("rev", None)
         if cid and rev is not None and cid != LASTC and rev != REV and LASTC is not None:
             raise ValueError("Questo progetto è stato modificato da un'altra scheda: ho ricaricato lo stato, riprova.")
-        before = snap()
-        if o["op"] == "undo":
-            if UNDO: REDO.append(snap()); restore(UNDO.pop()); REV += 1; LASTC = cid
-            return state()
-        if o["op"] == "redo":
-            if REDO: UNDO.append(snap()); restore(REDO.pop()); REV += 1; LASTC = cid
-            return state()
-        valida(o)
+        before = snap(); gruppo = _gruppo(o.pop("gruppo", None))
+        if o["op"] in ("undo", "redo"):
+            da, a = (UNDO, REDO) if o["op"] == "undo" else (REDO, UNDO); p = da.pop() if da else None
+            if p: a.append(dict(p, snap=before)); restore(p["snap"]); REV += 1; LASTC = cid
+            return dict(state(), **{"annullato" if o["op"] == "undo" else "ripetuto": _passo(p)})
+        valida(o); ESITO.clear()
+        if o["op"] == "disposizione" and gruppo is None: gruppo = f"disposizione:{o['s']}:{o.get('side') or ''}"      # le pressioni di D di fila: un solo passo (UX-001)
         try: apply(o); verifica(); st = controlla_stato()
         except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001, VER-001, VER-003)
         LAST["op"] = time.time()
-        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False)
+        if snap() != before:
+            ultimo = UNDO[-1] if UNDO else None
+            if gruppo and ultimo and ultimo["gruppo"] == gruppo and ultimo["rev"] == REV: ultimo["rev"] = REV + 1       # stesso gruppo subito dopo: resta un solo passo, con lo stato di prima del primo
+            else: UNDO.append(dict(snap=before, nome=NOMI_OP.get(o["op"], "Modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1)); del UNDO[:-200]
+            REDO.clear(); REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False, **passi())
+        if ESITO: st["esito"] = dict(ESITO)
         return st
 
 # ------------------------------------------------------------------ vista
@@ -874,6 +925,83 @@ def locked_sides(s):
     for side, pg in zip("LR", SP[s]):
         if any(old_text(it) for it in pg[1]) or (any(it["k"] == "t" for it in pg[1]) and not any(it["k"] != "t" for it in pg[1])): out.append(side)
     return out
+
+TOLL_PROPORZIONI = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
+RITAGLIO_MAX = 1.25           # oltre questo ritaglio una foto va guardata (la stessa soglia di anteprima.py)
+
+
+def _chiave_cornici(t): return tuple(sorted((round(f["x"]), round(f["y"]), round(f["w"]), round(f["h"])) for f in t["frames"]))
+
+
+def foto_della_pagina(s, sides="LR"):
+    """indici delle foto dello spread s nelle pagine sides, nell'ordine di lettura dello spread"""
+    return [it["i"] for k, x in enumerate("LR") if x in sides for it in SP[s][k][1] if it["k"] != "t"]
+
+
+def cornici_attuali(s, sides="LR"):
+    return sorted((round(e["x"]), round(e["y"]), e["w"], e["h"]) for e in spread_view(s)["items"] if e["k"] != "t" and e["side"] in sides)
+
+
+DISP = {}                      # ultima serie di «Altra disposizione»: spread e pagina, rev dopo l'ultima pressione, ordine delle foto della prima
+
+
+def disposizioni(s, side=None):
+    """(disposizioni, indice di quella attuale o None, pagina) per le foto dello spread s o della sola pagina side, in un
+    ordine che non cambia mentre le si scorre (UX-001): prima quelle che rispettano le foto, dal costo minore, poi quelle
+    che tagliano di più. Le pressioni di fila tengono l'ordine delle foto della prima"""
+    lk = locked_sides(s)
+    if len(lk) == 2: raise ValueError("Le due pagine sono di solo testo: non ci sono foto da disporre")
+    if side in lk: raise ValueError("Questa pagina è di solo testo: non ci sono foto da disporre")
+    if side is None and lk: side = next(x for x in "LR" if x not in lk)
+    sides = "LR" if side is None else side; photos = foto_della_pagina(s, sides)
+    if DISP.get("chiave") == (s, side) and DISP.get("rev") == REV and sorted(DISP["foto"]) == sorted(photos): photos = DISP["foto"]
+    if not photos: raise ValueError("Non ci sono foto da disporre")
+    d = tpl_options(photos, cornici_attuali(s, sides), side, s); visti = {}
+    for t in d["items"] + d["piu"]:
+        k = _chiave_cornici(t)
+        if k not in visti or t["cost"] < visti[k]["cost"]: visti[k] = t
+    ordine = sorted(visti.values(), key=lambda t: (t["worst"] > TOLL_PROPORZIONI, t["worst"] if t["worst"] > TOLL_PROPORZIONI else 0, t["cost"], _chiave_cornici(t)))
+    DISP.update(chiave=(s, side), foto=photos)
+    return ordine, next((k for k, t in enumerate(ordine) if t["cur"]), None), side
+
+
+def _metti_disposizione(s, t):
+    apply(dict(op="template", s=s, **{k: t[k] for k in "LR" if k in t}))
+
+
+def altra_disposizione(s, passo=1, side=None):
+    """D: sullo spread s (o sulla pagina side) la disposizione successiva (passo 1) o precedente (-1) per le stesse foto (UX-001)"""
+    import math
+    ordine, k, side = disposizioni(s, side)
+    if not ordine or (len(ordine) == 1 and k == 0): raise ValueError("Non ci sono altre disposizioni per queste foto")
+    n = (k + passo) % len(ordine) if k is not None else (0 if passo > 0 else len(ordine) - 1)
+    _metti_disposizione(s, ordine[n]); DISP["rev"] = REV + 1
+    ESITO.update(disposizione=n + 1, di=len(ordine), taglia=round(math.exp(ordine[n]["worst"]), 2), a_mano=k is None, lato=side)
+
+
+def _ritaglio(s, side, idx):
+    """quanto la cornice (s, side, idx) taglia la sua foto per le sole proporzioni (1 = per niente, 2 = metà)"""
+    e = next(e for e in spread_view(s)["items"] if e["side"] == side and e["idx"] == idx)
+    fa = e["w"] / e["h"]; return max(fa / e["ar"], e["ar"] / fa)
+
+
+def sostituisci(at, photo, adatta=True):
+    """sostituisce la foto della cornice at con photo (se photo è già in un altro punto dell'album le due si scambiano) e,
+    se la nuova foto è tagliata oltre ×1,25, riadatta: prima la sola pagina, tenendo l'altra com'è, poi tutto lo spread;
+    tiene l'ordine di lettura e sceglie la disposizione meno costosa che rispetta le foto (UX-002)"""
+    import math
+    s, side, idx = at; n = A.IDX[photo] - 1; altrove = find_use(n)
+    apply(dict(op="replace", at=at, photo=photo))
+    ESITO.update(scambiata_con=altrove[0] if altrove and altrove[0] != s else None, adattata=False)
+    prima = _ritaglio(s, side, idx); ESITO.update(taglia=round(prima, 2))
+    if not adatta or prima <= RITAGLIO_MAX or side in locked_sides(s): return
+    for lato in (side, None):
+        if lato is None and locked_sides(s): break
+        sides = "LR" if lato is None else lato; photos = foto_della_pagina(s, sides)
+        opz = [t for t in tpl_options(photos, cornici_attuali(s, sides), lato, s)["items"] if not t["cur"]]
+        buone = sorted((t for t in opz if math.exp(t["worst"]) <= RITAGLIO_MAX), key=lambda t: t["cost"])
+        if buone: _metti_disposizione(s, buone[0]); ESITO.update(adattata=True, taglia=round(math.exp(buone[0]["worst"]), 2), lato=lato); return
+
 
 def tpl_options(photos, cur=None, side=None, s=None):
     """modelli di spread per queste foto, con le foto già assegnate alle cornici (come «Rearrange» di Smart Albums); in più i modelli salvati dall'utente con lo stesso numero di foto.
@@ -933,7 +1061,7 @@ def tpl_options(photos, cur=None, side=None, s=None):
         for a in LAYS:
             if N and NPH[a[0]] == N and a[0] != "BLANK": out.append(build(a))
     out.sort(key=lambda t: (not t["cur"], t["cost"]))
-    TOLL = 0.28       # oltre questa differenza di proporzioni (≈ 1/5 della foto tagliata) il modello non rispecchia le foto: si propone solo se non c'è di meglio
+    TOLL = TOLL_PROPORZIONI
     buoni = [t for t in out if t["cur"] or t["worst"] <= TOLL]
     if not any(not t["cur"] for t in buoni): buoni = buoni + sorted((t for t in out if not t["cur"]), key=lambda t: (t["worst"], t["cost"]))[:3]       # nessuna alternativa rispetta le foto: solo i meno peggio
     piu = sorted((t for t in out if t not in buoni and t["worst"] <= 0.55), key=lambda t: (t["worst"], t["cost"]))       # modelli che tagliano di più le foto: si mostrano solo se li chiedi
@@ -1020,7 +1148,7 @@ def foto_mancanti(): return [m["n"] for m in A.M if not os.path.exists(m.get("sr
 
 def state():
     with LOCK:
-        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO),
+        return dict(nome=CFG.get("nome", os.path.basename(PROJ)), W=VW, H=VH, testo=CFG['testo'], stili=CFG['stili'], fold=A.FOLD - BL, dirty=snap() != SAVED, saveerr=SAVE_ERR[0], rev=REV, canundo=bool(UNDO), canredo=bool(REDO), **passi(),
                     globale=CFG["esposizione"].get("globale", 0.0), spreads=[spread_view(s) for s in range(len(SP))],
                     photos=photo_list(), tono_escl=list(CFG["tono_escl"]), tono_L=_tono_L0(), tono_Z=_tono_Z(), home=HOME, boot=BOOT, unused=unused(), tolte=CFG.get("tolte", []),
                     modules={k: v for k, v in NPH.items()}, gap=A.G, ppi=A.PPI, mancanti=foto_mancanti(), agg=dict(AGG), ver=_ver_programma(),
