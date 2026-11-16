@@ -8,8 +8,8 @@ Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginator
 (IMPAGINATORE_DATI, IMPAGINATORE_CACHE, cartella dei progetti), con foto sintetiche create qui.
 
 Controlli, in ordine:
-    file          nessun .py del programma; schermata di avvio (avvio.html), copie del motore per la 1.x, licenze, file di
-                  OpenCV per i volti
+    file          nessun .py del programma; tutti i file di dati del pacchetto del sorgente (pagine, testi, statistiche,
+                  licenza beta…), copie del motore per la 1.x, licenze, file di OpenCV per i volti
     versione      «impaginatore --versione»
     avvio         la pagina della schermata di avvio («_avvio», la stessa della finestra) con versione e licenza: prova
                   gratuita, sola lettura dopo una prova finita, in italiano e in inglese
@@ -134,6 +134,13 @@ def programma_dir(exe):
     return exe.parent.parent if exe.parent.name == "MacOS" else exe.parent
 
 
+def dati_mancanti(sorgente, pacchetto):
+    """file di dati del pacchetto `impaginatore` del sorgente (tutto tranne il codice) che non sono nel programma, nella
+    cartella `pacchetto` (quella con risorse/)"""
+    return sorted(p.relative_to(sorgente).as_posix() for p in sorgente.rglob("*")
+                  if p.is_file() and p.suffix not in (".py", ".pyc") and "__pycache__" not in p.parts and not p.name.startswith(".") and not (pacchetto / p.relative_to(sorgente)).is_file())
+
+
 @controllo("file")
 def prova_file(exe):
     d = programma_dir(exe)
@@ -141,6 +148,8 @@ def prova_file(exe):
     deve(not sorgenti, f"file sorgente del programma nel pacchetto: {sorgenti[:5]}")
     for n in ("avvio.html", "home.html", "index.html", "album_libere.py.txt", "testo.py.txt", "componenti.json", "tier.json", "haarcascade_frontalface_default.xml", "haarcascade_profileface.xml"):
         deve(any(d.rglob(n)), f"manca {n}")
+    mancano = dati_mancanti(RADICE / "src" / "impaginatore", next(d.rglob("avvio.html")).parent.parent)
+    deve(not mancano, f"file di dati del pacchetto che mancano nel programma: {mancano[:5]}")
     RAPPORTO["misure"] = dict(programma_mb=round(sum(p.stat().st_size for p in d.rglob("*") if p.is_file()) / 1e6, 1),
                               file=sum(1 for p in d.rglob("*") if p.is_file()), eseguibile_mb=round(Path(exe).stat().st_size / 1e6, 1))
 

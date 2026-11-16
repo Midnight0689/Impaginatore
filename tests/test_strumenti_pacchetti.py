@@ -246,6 +246,17 @@ def test_trova_i_pacchetti(tmp_path):
     with pytest.raises(SystemExit, match="Più pacchetti linux"): rilascio.trova(tmp_path, "2.0.1")
 
 
+# ---------------------------------------------------------------- verifica_pacchetto.py
+def test_dati_del_pacchetto_nel_programma(tmp_path):
+    """ogni file di dati del sorgente (testi delle statistiche e della licenza beta compresi) deve essere nel programma"""
+    from pathlib import Path
+    sorgente = Path(RADICE) / "src" / "impaginatore"
+    tutti = verifica.dati_mancanti(sorgente, tmp_path)
+    assert "risorse/avvio.html" in tutti and "risorse/testi/it/statistiche.json" in tutti and not any(n.endswith(".py") for n in tutti)
+    for n in tutti[1:]: (tmp_path / n).parent.mkdir(parents=True, exist_ok=True); (tmp_path / n).write_bytes(b"x")
+    assert verifica.dati_mancanti(sorgente, tmp_path) == tutti[:1]
+
+
 # ---------------------------------------------------------------- verifica_pacchetto.py: fotografie sotto Xvfb
 def _xwd(punti, bit):
     """file XWD come lo scrive «xwd -root» su Xvfb: righe lunghe come a 32 bit anche quando i punti sono a 24"""
