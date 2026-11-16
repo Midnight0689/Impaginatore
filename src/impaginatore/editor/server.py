@@ -1263,11 +1263,12 @@ def _mt(p):
     except OSError: return None
 
 def foto_cambiate():
-    """indici delle foto il cui originale è più recente della miniatura nella cache (modificato dopo: Lightroom, Photoshop…)"""
+    """indici delle foto il cui originale è più recente della miniatura nella cache (modificato dopo: Lightroom, Photoshop…).
+    Una foto danneggiata (VER-002) si riprova solo quando il suo file cambia"""
     out = []
     for i, m in enumerate(A.M):
         s, t = _mt(m.get("src", "")), _mt(os.path.join(A.THUMBS, m["n"]))
-        if s is not None and t is not None and s > t + 1: out.append(i)
+        if s is not None and t is not None and s > t + 1 and A.DANNEGGIATE.get(m["n"]) != s: out.append(i)
     return out
 
 def aggiorna_foto(idx):
@@ -1282,7 +1283,8 @@ def aggiorna_foto(idx):
                 m.update(dt=new["dt"], w=new["w"], h=new["h"], ar=new["ar"])
                 tp = os.path.join(A.THUMBS, m["n"])
                 if os.path.exists(tp): os.remove(tp)
-                A._build_thumbs([m])
+                if A._build_thumbs([m]): raise ValueError(A.DANNEGGIATA)
+                A.DANNEGGIATE.pop(m["n"], None); A.SCARTATE[:] = [x for x in A.SCARTATE if x["n"] != m["n"]]          # tornata buona (VER-002)
                 try: A.F.update(A._build_faces([m])); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
                 except Exception as ex: LOG.append(f"volti di {m['n']} non rifatti: {ex}")
                 n = A.name(i); PV[n] = PV.get(n, 0) + 1; INFO.pop(n, None)
@@ -1450,6 +1452,8 @@ def preflight(o, nums, dest, fmt):
     usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
     if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
+    rotte = [m["n"] for ix, m in enumerate(A.M) if ix in usati and m["n"] in A.DANNEGGIATE]
+    if rotte: raise ValueError(f"{len(rotte)} foto di questi spread sono danneggiate o incomplete ({', '.join(rotte[:4])}{'…' if len(rotte) > 4 else ''}): ricopiale nella cartella delle foto")
     try:
         t = os.path.join(dest, ".prova_scrittura")
         with open(t, "w", encoding="utf-8") as f: f.write("x")

@@ -160,7 +160,6 @@ def test_programmi_esterni_senza_gettone(monkeypatch, tmp_path):
 
 
 # ------------------------------------------------------------------ VER-002
-@xfail("VER-002", "una foto troncata nella cartella fa morire l'editor all'apertura del progetto")
 def test_foto_troncata_non_blocca_il_progetto(home, apri_editor):
     p = home.nuovo({"nome": "Scheda piena", "w": "30", "h": "30"})
     crea_foto(os.path.join(p, "Foto"), [("H01", 600, 400, "2026:01:01 10:00:00"), ("H02", 600, 400, "2026:01:01 10:00:01")])
