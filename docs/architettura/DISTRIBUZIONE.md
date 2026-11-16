@@ -198,13 +198,18 @@ così la prova su Windows 11 ARM mostra un eseguibile `x86_64` su una macchina `
     `Info.plist` dice altro. Dichiarato e misurato vanno in `componenti.json` (`macos_minimo`, `macos_minimo_binari`);
     la pipeline stampa `lipo -archs`, `vtool -show-build` e `LSMinimumSystemVersion` dell'eseguibile del DMG montato, e la
     prova mette architettura e versione minima nel rapporto (`misure`).
-  - Letto sul Mac Intel nella pipeline (16/11/2026): `lipo -archs` `x86_64`, `LSMinimumSystemVersion` 14.0,
-    `macos_minimo` e `macos_minimo_binari` 14.0 in `componenti.json`. L'eseguibile stesso (`impaginatore-app`) ha
-    `minos 10.15` (`vtool -show-build`, `sdk 15.5`): Nuitka lo compila con la versione del Python che compila, non con
-    `MACOSX_DEPLOYMENT_TARGET`. Chiede meno del dichiarato, quindi il controllo passa, e la versione che conta è quella di
-    `Info.plist`: aperto dal Finder su un macOS più vecchio, il sistema dice che il programma non è compatibile. Lanciato
-    direttamente dal Terminale (per esempio `impaginatore-app mcp`) su un macOS più vecchio partirebbe e si fermerebbe
-    sulle librerie da 14.0: è fuori dai sistemi supportati e non è provato.
+  - **Il minimo vero è quello di `Info.plist`** (`LSMinimumSystemVersion`, cioè `compila.MACOS_MINIMO`). L'eseguibile
+    di Nuitka (`impaginatore-app`) chiede meno: Nuitka lo compila con la versione del Python che compila, non con
+    `MACOSX_DEPLOYMENT_TARGET` (sul Mac Intel `minos 10.15`, `sdk 15.5` con `vtool -show-build`). Le librerie incluse
+    arrivano esattamente al minimo di `Info.plist` e mai oltre: sono loro a fissarlo. Aperto dal Finder su un macOS più
+    vecchio, il sistema dice che il programma non è compatibile; lanciato direttamente dal Terminale (per esempio
+    `impaginatore-app mcp`) partirebbe e si fermerebbe sulle librerie: è fuori dai sistemi supportati e non è provato.
+  - Letto sul DMG del Mac Intel della pipeline (16/11/2026; estratto con `7z` e letto con `llvm-otool -l`, come fa
+    `compila.minimi_macos`): 58 binari Mach-O, 19 con `minos 14.0` (`cv2.so`, `_multiarray_umath.so` di numpy, `_rust.so`
+    di cryptography, `libaom`, `libavif`, `libdav1d`, `libvmaf`…), 3 con 10.15 (eseguibile compreso), 34 con 10.13, 2 con
+    10.12; `LSMinimumSystemVersion` 14.0; `lipo -archs` `x86_64`; `macos_minimo` e `macos_minimo_binari` 14.0 in
+    `componenti.json`. Dal 16/11/2026 `compila.py` scrive nel registro quanti binari chiedono ogni versione e quali
+    fissano il minimo.
   Non provato: l'avvio vero su macOS 13 o 14 (i runner sono macOS 15); quello che vale è il controllo sui binari.
 - Finestre di scelta: quelle del Finder (osascript), come nel pacchetto Python.
 
@@ -365,7 +370,10 @@ pipeline né in un segreto di GitHub. Per questo il rilascio va in due tempi:
    è `a`, `b` o `rc`). Dentro: i pacchetti che hanno passato la prova, con `.sha256` e `.componenti.json`, la wheel,
    `SHA256SUMS` (pacchetti e wheel) e `verifiche.json` (esito, sistema e architetture della prova di ogni pacchetto). Un
    pacchetto senza impronta giusta o senza prova passata non entra: le note della bozza lo dicono in testa e il job
-   finisce in errore. Rilanciando il job che mancava (`gh run rerun <id> --failed`) il job «release» rigira e completa
+   finisce in errore. Le note sono corte (le stesse, senza la testa della bozza, dopo `pubblica`): tabella dei pacchetti
+   con sistema, versione minima di macOS, dimensione e impronta SHA-256, cosa manca, come controllare l'impronta su ogni
+   sistema, il collegamento alla guida di installazione alla versione del tag e, ripiegate (`<details>`), le voci del
+   registro. Rilanciando il job che mancava (`gh run rerun <id> --failed`) il job «release» rigira e completa
    la stessa bozza; una release già pubblicata la pipeline non la tocca. Permesso `contents: write` solo in quel job,
    nessun segreto oltre `GITHUB_TOKEN`, azioni fissate per hash.
 2. **Computer di chi pubblica**: `strumenti/rilascio.py pubblica v<versione>` scarica la bozza con `gh`, ricontrolla
