@@ -206,6 +206,31 @@ def salva(cartella, spreads, nome_foto):
     return doc
 
 
+def testo_album_controllato(spreads, nome_foto):
+    """album.json come testo per l'impaginazione `spreads`, con i controlli della lettura (validazione.album). Un elemento
+    rotto (chiavi mancanti, tipi sbagliati) è un ErroreProgetto, non un'eccezione qualsiasi"""
+    try: doc = documento(spreads, nome_foto)
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e: raise ErroreProgetto(f"un elemento dell'impaginazione non è valido ({e!r})") from None
+    V.album(doc)
+    return testo_album(doc)
+
+
+def testo_progetto(cfg):
+    """progetto.json come testo, controllato come lo controlla leggi_progetto (dopo la scrittura e la rilettura): mai un
+    file che poi non si riapre (VER-001). Errori: ErroreProgetto"""
+    try: t = json.dumps(cfg, indent=2, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError, RecursionError) as e:
+        V.progetto(cfg)                           # NaN o infinito in una chiave nota: il messaggio dice quale
+        raise ErroreProgetto(f"{PROGETTO}: un valore non si può salvare ({e})") from None
+    V.progetto(json.loads(t))
+    return t
+
+
+def scrivi_progetto(cartella, cfg):
+    """scrive progetto.json in modo atomico, solo se si riapre (testo_progetto)"""
+    scrivi_atomico(os.path.join(cartella, PROGETTO), testo_progetto(cfg))
+
+
 def album_vuoto():
     """album.json di un progetto nuovo"""
     from . import __version__
@@ -317,7 +342,7 @@ def prepara_importato(cartella):
     cfg = leggi_progetto(cartella)
     controlla(cartella)
     cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""
-    scrivi_json(os.path.join(cartella, PROGETTO), cfg, indent=2, ensure_ascii=False)
+    scrivi_progetto(cartella, cfg)
     mp = os.path.join(cartella, "_cache", "meta.json")
     if os.path.exists(mp):
         try: m = V.meta(leggi_json(mp))

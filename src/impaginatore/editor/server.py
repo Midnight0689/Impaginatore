@@ -36,7 +36,7 @@ def _raccogli_foto():                                # foto importate in <proget
         pj = os.path.join(PROJ, "progetto.json"); c = formato.leggi_json(pj); d = os.path.join(PROJ, "Foto")
         if not os.path.isdir(d) or os.path.abspath(d) == os.path.abspath(c.get("foto", "")): return
         have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith(A.estensioni()) and not f.startswith(".") and os.path.join(d, f) not in have]
-        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
+        if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_progetto(PROJ, c)
     except Exception as e: print("raccogli foto:", e, flush=True)
 def _ripara_percorsi():
     """progetto spostato o copiato (altro Mac, disco esterno): ritrova da solo le cartelle e le foto che stanno dentro la cartella del progetto (…/Foto);
@@ -56,7 +56,7 @@ def _ripara_percorsi():
         if ex != c.get("foto_extra", []): c["foto_extra"] = ex; ch = True
         u = c.get("uscita_psd")
         if not u or not os.path.isdir(os.path.dirname(u.rstrip("/\\"))): c["uscita_psd"] = os.path.join(PROJ, "PSD"); ch = True
-        if ch: formato.scrivi_json(pj, c, indent=2, ensure_ascii=False)
+        if ch: formato.scrivi_progetto(PROJ, c)
         mp = os.path.join(PROJ, "_cache", "meta.json")
         if os.path.exists(mp):
             m = formato.leggi_json(mp); dirs = [d for d in (c.get("foto"), base) if d and os.path.isdir(d)]; mc = False
@@ -200,7 +200,7 @@ LOG = []
 def _ver_programma():       # numero di rilascio: serve a vedere quale versione sta girando
     return __version__
 
-def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"]})
+def snap(): return json.dumps({"sp": SP, "ev": CFG["esposizione"], "ff": CFG["centri_volto"], "gd": GD, "tn": CFG["tono"], "tl": CFG["tolte"], "cl": CFG["colori"], "rt": CFG["ritocco"], "sr": CFG["stelle"], "te": CFG["tono_escl"], "tx": CFG["testo"], "st": CFG["stili"], "tL": CFG.get("tono_L"), "tZ": CFG.get("tono_Z")})
 SAVED = None                                         # stato dell'ultimo salvataggio: serve a sapere se ci sono modifiche vere
 def restore(s):
     global SP, GD
@@ -209,6 +209,9 @@ def restore(s):
     CFG["centri_volto"].clear(); CFG["centri_volto"].update(d["ff"])
     A.FACE_FIX.clear(); A.FACE_FIX.update({k: tuple(v) for k, v in d["ff"].items()})
     CFG["tono"].clear(); CFG["tono"].update(d.get("tn", {})); CFG["tolte"][:] = d.get("tl", []); CFG["colori"].clear(); CFG["colori"].update(d.get("cl", {})); CFG["ritocco"].clear(); CFG["ritocco"].update(d.get("rt", {})); CFG["stelle"][:] = d.get("sr", []); CFG["tono_escl"][:] = d.get("te", []); CFG["testo"].clear(); CFG["testo"].update(d.get("tx", {})); CFG["stili"].clear(); CFG["stili"].update(d.get("st", {})); sync_testo()
+    for k, c in (("tono_L", "tL"), ("tono_Z", "tZ")):
+        if d.get(c) is None: CFG.pop(k, None)
+        else: CFG[k] = d[c]
 
 def sync_testo():                                     # il motore legge i testi una volta sola: li rimetto in A.TITLE
     t = CFG["testo"]; A.TITLE = (t.get("nome", ""), t.get("sottotitolo", ""), t.get("data", ""))
@@ -789,7 +792,23 @@ def verifica():
 
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
 
+def controlla_stato():
+    """lo stato dopo un'operazione si può salvare, riaprire e mostrare? Impaginazione e impostazioni passano dagli stessi
+    controlli della lettura (VER-001: niente progetti salvati che poi non si aprono), e lo stato per la pagina si deve
+    poter calcolare e scrivere in JSON senza NaN né infiniti (VER-003). Restituisce lo stato per la pagina; altrimenti
+    ValueError con il motivo"""
+    try:
+        formato.testo_album_controllato(SP, A.name)
+        formato.testo_progetto(_da_salvare(CFG))
+    except V.ErroreProgetto as e: raise ValueError(f"Operazione non valida: {e}") from None
+    st = state()
+    try: json.dumps(st, allow_nan=False)
+    except ValueError: raise ValueError("Operazione non valida: dà misure impossibili da mostrare") from None
+    return st
+
 def do_op(o):
+    """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
+    stato resta com'era. Restituisce lo stato per la pagina"""
     global REV, LASTC
     with LOCK:
         cid, rev = o.pop("cid", None), o.pop("rev", None)
@@ -798,15 +817,16 @@ def do_op(o):
         before = snap()
         if o["op"] == "undo":
             if UNDO: REDO.append(snap()); restore(UNDO.pop()); REV += 1; LASTC = cid
-            return
+            return state()
         if o["op"] == "redo":
             if REDO: UNDO.append(snap()); restore(REDO.pop()); REV += 1; LASTC = cid
-            return
+            return state()
         valida(o)
-        try: apply(o); verifica()
-        except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001)
+        try: apply(o); verifica(); st = controlla_stato()
+        except Exception: restore(before); raise                    # un'operazione non riuscita non lascia lo stato a metà (BUG-001, VER-001, VER-003)
         LAST["op"] = time.time()
-        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid
+        if snap() != before: UNDO.append(before); REDO.clear(); del UNDO[:-200]; REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False)
+        return st
 
 # ------------------------------------------------------------------ vista
 BL = VW = VH = None                                  # abbondanza e misura della vista in px (inizializza)
@@ -1335,6 +1355,19 @@ def _pota_backup(bk, tieni=200):
                 try: os.remove(os.path.join(bk, f"{t}_{f}"))
                 except OSError: pass
     except Exception as e: LOG.append(f"pulizia copie non riuscita: {e}")
+def _da_salvare(base):
+    """progetto.json da scrivere: `base` (quello sul disco) con le impostazioni che cambia l'editor"""
+    out = dict(base)
+    out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
+    out.pop("tono_rif", None)
+    for k_ in ("tono_L", "tono_Z"):
+        if k_ in CFG: out[k_] = CFG[k_]
+        else: out.pop(k_, None)
+    if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
+    if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
+    else: out.pop("guide", None)
+    return out
+
 def save(backup=True):
     global SAVED
     with LOCK:
@@ -1344,17 +1377,10 @@ def save(backup=True):
             for f in (formato.ALBUM, "progetto.json"):
                 p = os.path.join(PROJ, f)
                 if os.path.exists(p): formato.copia_atomica(p, os.path.join(bk, f"{ts}_{f}"))
-        formato.salva(PROJ, SP, A.name)                     # album.json, controllato prima di scriverlo (solo dati, mai codice)
-        out = {k: v for k, v in formato.leggi_json(os.path.join(PROJ, "progetto.json")).items()}
-        out["esposizione"] = CFG["esposizione"]; out["centri_volto"] = CFG["centri_volto"]; out["tono"] = CFG["tono"]; out["tolte"] = CFG["tolte"]; out["colori"] = CFG["colori"]; out["ritocco"] = CFG["ritocco"]; out["stelle"] = CFG["stelle"]; out["tono_escl"] = CFG["tono_escl"]; out["testo"] = CFG["testo"]; out["stili"] = CFG["stili"]; out["foto_extra"] = CFG.get("foto_extra", [])
-        out.pop("tono_rif", None)
-        for k_ in ("tono_L", "tono_Z"):
-            if k_ in CFG: out[k_] = CFG[k_]
-            else: out.pop(k_, None)
-        if CFG.get("uscita_psd"): out["uscita_psd"] = CFG["uscita_psd"]
-        if any(g["v"] or g["h"] for g in GD): out["guide"] = GD
-        else: out.pop("guide", None)
-        _scrivi(os.path.join(PROJ, "progetto.json"), json.dumps(out, indent=2, ensure_ascii=False))
+        ta = formato.testo_album_controllato(SP, A.name)    # album.json e progetto.json controllati entrambi PRIMA di scrivere (VER-001)
+        tp = formato.testo_progetto(_da_salvare(formato.leggi_json(os.path.join(PROJ, "progetto.json"))))
+        _scrivi(os.path.join(PROJ, formato.ALBUM), ta)      # solo dati, mai codice
+        _scrivi(os.path.join(PROJ, "progetto.json"), tp)
         SAVED = snap(); SAVE_ERR[0] = ""
         if backup: _pota_backup(bk)
         return ts
@@ -1451,7 +1477,7 @@ def run_export(o):
     preflight(o, nums, dest, fmt)
     nome = CFG.get("nome", "Album")
     with LOCK:
-        if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: apply(dict(op="evg", value=o["ev"]))
+        if o.get("ev") is not None and abs(float(o["ev"]) - CFG["esposizione"].get("globale", 0.0)) > 1e-6: do_op(dict(op="evg", value=o["ev"]))          # controllata come ogni operazione (VER-001)
         if fmt == "psd": CFG["uscita_psd"] = dest
         save(backup=False)
     def go():
@@ -1644,7 +1670,7 @@ def esporta_progetto(o):
                     if n % 10 == 0 or n == tot: LOG.append(f"  foto {n} / {tot}")
             formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
             cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""             # vuoti = quelli del progetto stesso (Foto, PSD), li riempie l'editor all'apertura
-            formato.scrivi_json(os.path.join(out, "progetto.json"), cfg, indent=2, ensure_ascii=False)
+            formato.scrivi_progetto(out, cfg)
             if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  modelli salvati copiati")
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
@@ -1701,7 +1727,7 @@ def ripristina(ts):
             cur = formato.leggi_json(os.path.join(PROJ, "progetto.json"))
             for k in ("foto", "foto_extra", "uscita_psd"):                       # i percorsi restano quelli di adesso
                 if k in cur: old[k] = cur[k]
-            formato.scrivi_json(os.path.join(PROJ, "progetto.json"), old, indent=2, ensure_ascii=False)
+            formato.scrivi_progetto(PROJ, old)
     def go(): time.sleep(.6); riavvia_processo()
     threading.Thread(target=go, daemon=True).start()
 
@@ -1776,7 +1802,7 @@ class H(Gestore):
         u = urlparse(self.path)
         try:
             body = self.corpo()
-            if u.path == "/api/op": do_op(body); self.send(state())
+            if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":

@@ -34,16 +34,13 @@ def _spread(c):
 
 
 # ------------------------------------------------------------------ VER-001
-_X001 = xfail("VER-001", "operazione accettata e salvata, poi progetto.json non si riapre (BUG-001 residuo)")
-
-
 @pytest.mark.parametrize("op", [
-    pytest.param(dict(op="tolta", photo=None), marks=_X001),
-    pytest.param(dict(op="evg", value=1e7), marks=_X001),
-    pytest.param(dict(op="testo", nome="Matrimonio " * 500), marks=_X001),
-    pytest.param(dict(op="face", photo="{foto}", x=1e7, y=0.5), marks=_X001),
-    pytest.param(dict(op="guides", s=0, v=[1e7], h=[]), marks=_X001),
-    dict(op="tono_L", value=float("nan")),                                    # NaN: rifiutato alla lettura del JSON (servizio.leggi_json)
+    dict(op="tolta", photo=None),
+    dict(op="evg", value=1e7),
+    dict(op="testo", nome="Matrimonio " * 500),
+    dict(op="face", photo="{foto}", x=1e7, y=0.5),
+    dict(op="guides", s=0, v=[1e7], h=[]),
+    dict(op="tono_L", value=float("nan")),
 ], ids=["tolta-null", "evg-1e7", "titolo-5500-caratteri", "face-1e7", "guide-1e7", "tono_L-NaN"])
 def test_operazione_accettata_lascia_il_progetto_riapribile(editor, op):
     """un'operazione o si rifiuta (400) o lascia un progetto che la schermata Progetti riapre"""
@@ -59,8 +56,8 @@ def test_operazione_accettata_lascia_il_progetto_riapribile(editor, op):
 
 # ------------------------------------------------------------------ VER-003
 @pytest.mark.parametrize("op", [
-    dict(op="free", at=[0, "L", 0], x=float("nan"), y=0.1, w=0.5, h=0.5),     # NaN: rifiutato alla lettura del JSON (servizio.leggi_json)
-    pytest.param(dict(op="ratio", s=0, r=1e7, ats=[["L", 0]]), marks=xfail("VER-003", "valori impossibili accettati: /api/state risponde 500 finché non si annulla")),
+    dict(op="free", at=[0, "L", 0], x=float("nan"), y=0.1, w=0.5, h=0.5),
+    dict(op="ratio", s=0, r=1e7, ats=[["L", 0]]),
     dict(op="nudge", s=0, ats=[["L", 0]], dx=float("nan"), dy=0),
 ], ids=["free-NaN", "ratio-1e7", "nudge-NaN"])
 def test_operazione_con_numeri_impossibili_non_rompe_lo_stato(editor, op):
@@ -72,7 +69,6 @@ def test_operazione_con_numeri_impossibili_non_rompe_lo_stato(editor, op):
 
 # ------------------------------------------------------------------ VER-010
 @pytest.mark.parametrize("campo,valore", [("spazio", "-5"), ("margine", "nan"), ("abb", "1e9")])
-@xfail("VER-010", "/api/nuovo crea un progetto con misure che poi la lettura rifiuta")
 def test_nuovo_non_crea_progetti_che_non_si_aprono(home, campo, valore):
     try: p = home.nuovo({"nome": "Misure", "w": "30", "h": "30", campo: valore})
     except ValueError: return

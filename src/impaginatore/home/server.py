@@ -87,12 +87,16 @@ def nuovo(d):
     else: base = PROGETTI
     p = os.path.join(base, cartella); k = 2
     while os.path.exists(p): p = os.path.join(base, f"{cartella} {k}"); k += 1
-    os.makedirs(p if fotodir else os.path.join(p, "Foto"))
-    mm = lambda key, dflt: float(str(d.get(key, dflt)).replace(",", ".") or dflt)
+    def mm(key, dflt):
+        try: return float(str(d.get(key, dflt)).replace(",", ".") or dflt)
+        except ValueError: raise ValueError(f"Misure non valide: «{d.get(key)}» non è un numero") from None
     cfg = dict(nome=nome, foto=fotodir or os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
                abbondanza_mm=mm("abb", 0), spazio_mm=mm("spazio", 2.5), margine_mm=mm("margine", 10), uscita_psd=os.path.join(p, "PSD"),
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
-    formato.scrivi_json(os.path.join(p, "progetto.json"), cfg, indent=2, ensure_ascii=False)
+    try: testo = formato.testo_progetto(cfg)                # misure controllate come all'apertura, PRIMA di creare la cartella (VER-010)
+    except formato.ErroreProgetto as e: raise ValueError(f"Misure non valide: {str(e).removeprefix('progetto.json, ')}") from None
+    os.makedirs(p if fotodir else os.path.join(p, "Foto"))
+    formato.scrivi_atomico(os.path.join(p, "progetto.json"), testo)
     if fotodir: salva_registro(registro() + [p])
     formato.scrivi_atomico(os.path.join(p, formato.ALBUM), formato.album_vuoto())
     return p
