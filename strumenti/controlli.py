@@ -78,6 +78,7 @@ LICENZE_AMMESSE = (
     "Zlib", "CC0-1.0",
     "HPND", "Historical Permission Notice and Disclaimer (HPND)",
     "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",       # numpy dalla 2.3
+    "MIT-0",                                                    # cffi dalla 2.1 (extra «desktop», solo su Windows: pythonnet)
 )
 
 
@@ -154,13 +155,16 @@ def dipendenze():
 
 
 def licenze():
-    """licenze delle dipendenze del programma (senza gli extra di sviluppo), installate in ambienti temporanei"""
+    """licenze delle dipendenze del programma (senza gli extra di sviluppo, con la finestra desktop), installate in
+    ambienti temporanei. Valgono quelle di questo sistema: pywebview su Linux porta bottle, proxy-tools e
+    typing-extensions; le dipendenze solo per macOS (pyobjc) e Windows (pythonnet, clr-loader, cffi) le controlla
+    chi esegue il controllo su quei sistemi"""
     ok = True
     with tempfile.TemporaryDirectory(prefix="controlli-") as tmp:
         for versione in PYTHON_LICENZE:
             ambiente = Path(tmp, "py" + versione)
             env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(ambiente))
-            if not esegui([uv(), "sync", "--locked", "--no-install-project", "--quiet", "--python", versione], env=env):
+            if not esegui([uv(), "sync", "--locked", "--no-install-project", "--extra", "desktop", "--quiet", "--python", versione], env=env):
                 ok = False
                 continue
             interprete = ambiente / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
