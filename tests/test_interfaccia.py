@@ -1,13 +1,12 @@
 """Le pagine si aprono davvero in un browser (Chrome/Chromium senza schermo) e mostrano i dati del server."""
 import json
 import os
-import shutil
 import subprocess
 
 import pytest
+from cdp import CHROME
 from aiuti import attendi, crea_foto
 
-CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 
@@ -18,9 +17,19 @@ def dom(url, tmp_path):
 
 
 def test_home_nel_browser(home_srv, tmp_path):
+    """l'indirizzo di avvio collega il browser (cookie) e apre la schermata; l'indirizzo nudo dà la pagina che spiega come
+    aprirla (401). Quella pagina si ricarica da sola ogni 5 secondi (meta refresh): si guarda con il protocollo di Chrome e
+    non con --dump-dom, perché con il tempo virtuale di --virtual-time-budget i Chrome recenti la ricaricano senza fine e
+    non escono più"""
+    from cdp import Browser
+    from impaginatore import lingua
     home_srv.post("/api/nuovo", {"nome": "Album Verdi", "w": 30, "h": 30})
     assert "Album Verdi" in dom(home_srv.srv.indirizzo_avvio(), tmp_path), "l'indirizzo di avvio collega il browser (cookie) e apre la pagina"
-    assert "Album Verdi" not in dom(home_srv.url("/"), tmp_path / "altro"), "senza: la pagina che spiega come aprirla"
+    with Browser(tmp_path / "altro") as b:
+        b.apri(home_srv.url("/"), 0)
+        testo = b.js("document.body.innerText")
+        assert lingua.t("comune.non_collegata_1") in testo and "Album Verdi" not in testo, "senza: la pagina che spiega come aprirla"
+        assert b.js("document.querySelector('meta[http-equiv=refresh]').content") == "5" and (401, home_srv.url("/")) in b.risposte()
 
 
 def test_editor_nel_browser(editor, tmp_path):
