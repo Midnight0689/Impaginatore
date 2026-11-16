@@ -162,8 +162,12 @@ def test_limiti_e_collegamento_in_inglese(inglese, monkeypatch):
 def test_spiegazione_delle_immagini_nelle_due_lingue(monkeypatch):
     it, en = consenso.spiegazione(), None
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); en = consenso.spiegazione()
-    for s, interruttore, schermata in ((it, "«L'assistente può vedere le immagini»", "schermata Album"), (en, "“The assistant can see images”", "Albums screen")):
-        assert interruttore in s and schermata in s and "--consenti-immagini" in s and "512" in s and "1200" in s
+    from impaginatore import risorse
+    for s, lg, (ap, ch), schermata in ((it, "it", "«»", "schermata Album"), (en, "en", "“”", "Albums screen")):
+        t = risorse.testi(lg)                       # le etichette vere della schermata: menu «⋯» › «Assistente AI…» e il suo interruttore
+        interruttore, menu = (f"{ap}{t[k]}{ch}" for k in ("home.assist_immagini", "home.assist_menu"))
+        assert interruttore in s and f"{ap}⋯{ch} › {menu}" in s and schermata in s and "--consenti-immagini" in s and "512" in s and "1200" in s
+    assert "(lo sono di serie)" in it and "(they are off by default)" in en, "le immagini sono spente di serie"
     assert "per spegnerle davvero togli anche l'opzione" in it and "remove the option too" in en
     assert "fuori dal tuo computer" in it and "outside your computer" in en
 
