@@ -434,7 +434,7 @@ def test_abbina(tmp_path, monkeypatch, capsys):
     _scatto(os.path.join(cap1, "A5.jpg"), 500, 300, (30, 120, 120))
     _scatto(os.path.join(cap2, "A6.jpg"), 900, 600, (10, 10, 10)); _scatto(os.path.join(cap2, ".A1.jpg"), 900, 600, (0, 0, 0))
     _scatto(os.path.join(dest, "A6.jpg"), 50, 50, (1, 2, 3)); gia = pathlib.Path(dest, "A6.jpg").read_bytes()
-    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", Image.MAX_IMAGE_PIXELS)          # lo script lo toglie (foto enormi): solo per lui
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", Image.MAX_IMAGE_PIXELS)          # lo script lo cambia (limite del progetto): solo per lui
     come_script(monkeypatch, "abbina", "--web", web, "--originali", cap1, cap2, "--dest", dest, "--lato-minimo", "800")
     out = capsys.readouterr().out.splitlines()
     assert out[0] == "selezione: 6 foto | pronte da copiare: 3 | da controllare: 5"

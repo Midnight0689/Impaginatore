@@ -24,7 +24,7 @@ from ..motore import album_libere as FL              # insegna al motore le corn
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..piattaforma import font as pfont
 from ..piattaforma import photoshop as pps
-from ..servizio import Gestore, ServerLocale
+from ..servizio import Gestore, RichiestaNonValida, ServerLocale, numero
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
@@ -1192,7 +1192,7 @@ def bruc_img(s, side, idx):
 def live_photo(q):
     """la foto della cornice (side, idx) dello spread s, in piccolo, con valori di prova al posto di quelli salvati (cursori in movimento): stessa pipeline dell'anteprima"""
     import io as _io
-    s = int(q["s"]); side, idx, K = q["side"], int(q["idx"]), min(max(float(q.get("k", "0.3")), 0.05), 0.8); over = json.loads(q.get("o", "{}"))
+    s = int(q["s"]); side, idx, K = q["side"], int(q["idx"]), numero({"k": [q.get("k", "0.3")]}, "k", 0.3, 0.05, 0.8); over = json.loads(q.get("o", "{}"))
     with LOCK:
         lay = sorted(A.layout(spread_tuple(s)), key=lambda L: L.get("_o", 0)); k = 0; L = it = None
         for sd, pg in zip("LR", SP[s]):
@@ -1238,14 +1238,36 @@ def corr_thumb(n, w, over):
                 else: D[n] = v
     b = io.BytesIO(); im.convert("RGB").save(b, "JPEG", quality=82); return b.getvalue()
 
-CACHE = {}
+CACHE = {}                                           # immagini degli spread: (impronta, scala, cornice nascosta) -> JPEG
+CACHE_VOCI, CACHE_BYTE = 400, 256 * 2**20            # al massimo 400 immagini e 256 MB (VER-014)
+TH_VOCI, TH_BYTE = 3000, 192 * 2**20                 # miniature: al massimo 3000 e 192 MB
+_CACHE_LOCK = threading.Lock()
+
+
+def in_cache(c, chiave, valore, voci, byte):
+    """mette valore (bytes) in c e toglie i meno usati di recente finché c ha al massimo voci elementi e byte byte (VER-014);
+    chi legge una voce la rimette in fondo (usata). Thread-safe: le miniature arrivano da più richieste insieme"""
+    with _CACHE_LOCK:
+        c.pop(chiave, None); c[chiave] = valore; tot = sum(len(v) for v in c.values())
+        while len(c) > 1 and (len(c) > voci or tot > byte): tot -= len(c.pop(next(iter(c))))
+    return valore
+
+
+def da_cache(c, chiave):
+    """valore in cache (e lo segna come usato) o None"""
+    with _CACHE_LOCK:
+        v = c.pop(chiave, None)
+        if v is not None: c[chiave] = v
+    return v
+
+
 PV = {}                                              # versione di ogni foto: sale quando l'originale cambia (es. riesportata da Lightroom), così anteprime e cache si rifanno
 AGG = dict(n=0, t=0, nomi=[], ar=[])               # ultimo aggiornamento automatico delle foto modificate
 def spread_jpg(s, K, hide=None):
     """immagine dello spread; hide = (side, idx) di una cornice libera da NON disegnare (serve mentre la si trascina)"""
     with LOCK:
-        key = (spread_hash(s), K, hide)
-        if key in CACHE: return CACHE[key]  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
+        key = (spread_hash(s), K, hide); v = da_cache(CACHE, key)
+        if v is not None: return v  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
         tup = spread_tuple(s)
         if hide:
             pi = 0 if hide[0] == "L" else 1; its = SP[s][pi][1]
@@ -1254,9 +1276,8 @@ def spread_jpg(s, K, hide=None):
         im = A.render(tup, K, True)
         b = round(A.B * K)
         if b: im = im.crop((b, b, im.width - b, im.height - b))
-        buf = io.BytesIO(); im.save(buf, "JPEG", quality=86); CACHE[key] = buf.getvalue()
-        if len(CACHE) > 400: CACHE.pop(next(iter(CACHE)))
-        return CACHE[key]
+        buf = io.BytesIO(); im.save(buf, "JPEG", quality=86)
+        return in_cache(CACHE, key, buf.getvalue(), CACHE_VOCI, CACHE_BYTE)
 
 def _mt(p):
     try: return os.stat(p).st_mtime
@@ -1288,7 +1309,8 @@ def aggiorna_foto(idx):
                 try: A.F.update(A._build_faces([m])); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
                 except Exception as ex: LOG.append(f"volti di {m['n']} non rifatti: {ex}")
                 n = A.name(i); PV[n] = PV.get(n, 0) + 1; INFO.pop(n, None)
-                for k in [k for k in TH if k[0] == n]: TH.pop(k)
+                with _CACHE_LOCK:
+                    for k in [k for k in TH if k[0] == n]: TH.pop(k)
                 ok.append(m["n"])
                 if abs(new["ar"] - old_ar) > 0.003: ars.append(m["n"])
             except Exception as ex: ko.append(m["n"]); LOG.append(f"{m['n']}: non aggiornata ({ex})")
@@ -1309,12 +1331,12 @@ def foto_watch_loop(fermo=None):
 
 TH = {}
 def thumb_jpg(n, w):
-    key = (n, w)
-    if key not in TH:
+    key = (n, w); v = da_cache(TH, key)
+    if v is None:
         with Image.open(os.path.join(A.THUMBS, n + ".jpg") if os.path.exists(os.path.join(A.THUMBS, n + ".jpg")) else os.path.join(A.THUMBS, A.M[A.IDX[n] - 1]["n"])) as im0:
             im = im0.convert("RGB")
-        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); TH[key] = buf.getvalue()
-    return TH[key]
+        im.thumbnail((w, w)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=82); v = in_cache(TH, key, buf.getvalue(), TH_VOCI, TH_BYTE)
+    return v
 
 INFO = {}
 def photo_info(n):
@@ -1472,6 +1494,8 @@ def run_export(o):
     dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", fmt.upper())
     dest = os.path.expanduser(o.get("dest") or dflt)
     if fmt not in ("jpg", "pdf", "psd"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    qualita = round(numero({"q": [str(o.get("q", 92 if fmt == "jpg" else 80))]}, "q", 92, 1, 100))                  # VER-014: qualità JPEG da 1 a 100
+    larghezza = round(numero({"width": [str(o.get("width", 2000))]}, "width", 2000, 500, 6000))                     # PDF: da 500 a 6000 px (la pagina offre 2000, 3500, 5000)
     try: os.makedirs(dest, exist_ok=True)
     except OSError as e: raise ValueError(f"Non riesco a creare la cartella «{dest}»: {e.strerror or e}")
     preflight(o, nums, dest, fmt)
@@ -1484,7 +1508,7 @@ def run_export(o):
         try:
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
             if fmt == "jpg":
-                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = int(o.get("q", 92)); icc = srgb_icc()
+                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = qualita; icc = srgb_icc()
                 fatti = []
                 for k in nums:
                     try:
@@ -1500,7 +1524,7 @@ def run_export(o):
                 if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
             elif fmt == "pdf":
                 from PIL import ImageDraw
-                Wp = int(o.get("width", 2000)); K = Wp / VW; pages = []
+                Wp = larghezza; K = Wp / VW; pages = []
                 font = pfont.pil_ripiego(max(14, Wp // 80))          # Helvetica sul Mac
                 for k in nums:
                     with LOCK: tup = spread_tuple(k - 1)
@@ -1512,7 +1536,7 @@ def run_export(o):
                     pages.append(pg); LOG.append(f"  spread {k}")
                 f = os.path.join(dest, f"{nome} - bozza.pdf"); jp = []
                 for pg in pages:
-                    bio = io.BytesIO(); pg.save(bio, "JPEG", quality=int(o.get("q", 80)), optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
+                    bio = io.BytesIO(); pg.save(bio, "JPEG", quality=qualita, optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
                 write_pdf(f + ".tmp", jp, 150); os.replace(f + ".tmp", f)
                 if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
@@ -1777,7 +1801,7 @@ class H(Gestore):
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono_all": self.send(tono_all())
             elif u.path == "/api/tono": self.send(tono_spread(int(q.get("s", ["0"])[0]), json.loads(q["o"][0]) if q.get("o") else None))
-            elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], min(int(q.get("w", ["500"])[0]), 1200), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
+            elif u.path == "/img/corr": self.send(corr_thumb(q["n"][0], round(numero(q, "w", 500, 16, 1200)), json.loads(q["o"][0]) if q.get("o") else {}), "image/jpeg")
             elif u.path == "/img/bruc": self.send(bruc_img(int(q["s"][0]), q["side"][0], int(q["idx"][0])), "image/png")
             elif u.path == "/img/live": self.send(live_photo({k: v[0] for k, v in q.items()}), "image/jpeg")
             elif u.path == "/api/templates": self.send(templates(int(q.get("s", ["0"])[0])))
@@ -1789,16 +1813,17 @@ class H(Gestore):
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ})
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
-            elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], min(int(q.get("w", ["200"])[0]), 600)), "image/jpeg")
+            elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
-            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
+            elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.2, 0.02, 1.0), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
-                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
+                n = unquote(u.path.rsplit("/", 1)[1]); w = round(numero(q, "w", 260, 16, 1200)); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
                 if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
                 elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
+        except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
         except Exception as e: self.send({"errore": str(e)}, code=500)
     def do_POST(self):
         u = urlparse(self.path)

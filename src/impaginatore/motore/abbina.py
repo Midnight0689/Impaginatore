@@ -18,7 +18,8 @@ from .. import formato
 
 
 if __name__ == "__main__":
-    Image.MAX_IMAGE_PIXELS = None
+    from .album import limite_pixel
+    Image.MAX_IMAGE_PIXELS = limite_pixel()          # come per le foto del progetto (VER-014): oltre, Pillow rifiuta il file
 
     ap = argparse.ArgumentParser(); ap.add_argument("--web", required=True); ap.add_argument("--originali", nargs="+", required=True)
     ap.add_argument("--dest", required=True); ap.add_argument("--lato-minimo", type=int, default=4000, help="lato lungo minimo in px per considerarla alta risoluzione")
