@@ -22,13 +22,22 @@ chiede, non farlo.
 
 | Sistema | Versione | File da scaricare |
 |---|---|---|
-| Mac con chip Apple (M1, M2, M3, M4…) | macOS 14 Sonoma o successivo *(da confermare con la prima beta)* | `Impaginatore-<versione>-mac-arm64.dmg` |
+| Mac con chip Apple (M1, M2, M3, M4 e successivi) | macOS 13 Ventura o successivo | `Impaginatore-<versione>-mac-arm64.dmg` |
 | Mac con processore Intel | macOS 14 Sonoma o successivo | `Impaginatore-<versione>-mac-x86_64.dmg` |
-| Windows | Windows 10 o 11, 64 bit | `Impaginatore-<versione>-windows.exe` |
-| Linux | Ubuntu 24.04 o una distribuzione basata su di lei (Linux Mint 22, Pop!_OS 24.04…), 64 bit | `Impaginatore-<versione>-linux.deb` |
+| Windows (PC con processore Intel o AMD) | Windows 10 o 11, 64 bit | `Impaginatore-<versione>-windows.exe` |
+| Windows su PC con processore ARM (Snapdragon X, Surface Pro con chip ARM…) | Windows 11 | lo stesso `Impaginatore-<versione>-windows.exe` |
+| Linux (PC con processore Intel o AMD) | Ubuntu 24.04 o una distribuzione basata su di lei (Linux Mint 22, Pop!_OS 24.04…), 64 bit | `Impaginatore-<versione>-linux.deb` |
+| Linux su processore ARM a 64 bit | Ubuntu 24.04 o derivate, arm64 | `Impaginatore-<versione>-linux-arm64.deb` |
 
 Che Mac hai: menu Apple (la mela in alto a sinistra) › «Informazioni su questo Mac». Se c'è la riga «Chip» con
-«Apple M…» è un Mac con chip Apple; se c'è «Processore» con «Intel» è un Mac Intel.
+«Apple M…» è un Mac con chip Apple; se c'è «Processore» con «Intel» è un Mac Intel. Ogni Mac con chip Apple può
+installare macOS 13 o successivo: se il tuo ha una versione più vecchia, aggiornalo da Impostazioni di Sistema ›
+Generali › Aggiornamento Software. Su un macOS troppo vecchio il Mac dice che Impaginatore non è compatibile con
+questa versione di macOS e non lo apre.
+
+Che PC hai: Impostazioni › Sistema › Informazioni › «Tipo di sistema». «Processore basato su x64» è un PC Intel o AMD;
+«Processore basato su ARM» è un PC ARM. Sui PC ARM Windows 11 esegue Impaginatore in emulazione (lo fa da solo, non
+devi fare niente): funziona come sugli altri PC, a volte un po' più lento ad aprirsi.
 
 Spazio su disco: circa 400 MB per il programma, più lo spazio dei tuoi album.
 
@@ -49,6 +58,9 @@ Apri il terminale e scrivi il comando del tuo sistema (cambia il nome del file c
   `Get-FileHash "$env:USERPROFILE\Downloads\Impaginatore-<versione>-windows.exe" -Algorithm SHA256`
 - **Linux** (Terminale):
   `sha256sum ~/Scaricati/Impaginatore-<versione>-linux.deb`
+
+Accanto a ogni file c'è anche il suo `.sha256` (per esempio `Impaginatore-<versione>-linux.deb.sha256`), con la stessa
+impronta.
 
 Confronta il risultato con la riga del file nell'elenco. Se è diversa, non installare: scarica di nuovo il file e, se
 resta diversa, scrivici.
@@ -74,8 +86,8 @@ resta diversa, scrivici.
 
    [SCHERMATA DA FARE: Privacy e sicurezza con «Apri comunque»]
 
-   Su macOS 14 Sonoma c'è anche una strada più breve: nel Finder, Ctrl-clic (o clic destro) su Impaginatore › «Apri» ›
-   «Apri». Da macOS 15 Sequoia questa strada non c'è più: si passa da Impostazioni.
+   Su macOS 13 Ventura e 14 Sonoma c'è anche una strada più breve: nel Finder, Ctrl-clic (o clic destro) su
+   Impaginatore › «Apri» › «Apri». Da macOS 15 Sequoia questa strada non c'è più: si passa da Impostazioni.
 5. Dalla seconda volta Impaginatore si apre con un doppio clic, senza avvisi.
 
 Al primo avvio macOS può chiedere anche **«Consentire a "Impaginatore" di trovare dispositivi sulle reti locali?»**
@@ -106,6 +118,8 @@ macOS potrebbe chiederlo di nuovo.
    avviare subito Impaginatore.
 4. Il programma è nel menu Start: «Impaginatore».
 
+Su un PC con processore ARM (Windows 11) i passi e gli avvisi sono gli stessi: il file è lo stesso.
+
 La finestra del programma usa **Microsoft Edge WebView2**, che c'è già in Windows 10 e 11 aggiornati. Se manca,
 l'installatore lo dice e Impaginatore si apre nel browser: funziona lo stesso. Per avere la finestra, scarica
 «WebView2 Runtime» dal sito di Microsoft (pagina «Microsoft Edge WebView2», versione «Evergreen»), installalo e riapri
@@ -116,9 +130,10 @@ programmi nuovi e senza firma a volte vengono scambiati per sospetti; lo segnali
 
 ## Linux (Ubuntu 24.04 e derivate)
 
-1. Scarica `Impaginatore-<versione>-linux.deb`.
+1. Scarica `Impaginatore-<versione>-linux.deb` (su un computer con processore ARM a 64 bit:
+   `Impaginatore-<versione>-linux-arm64.deb`; lo dice `dpkg --print-architecture`, che risponde `amd64` o `arm64`).
 2. Apri il Terminale nella cartella dove l'hai scaricato e scrivi:
-   `sudo apt install ./Impaginatore-<versione>-linux.deb`
+   `sudo apt install ./Impaginatore-<versione>-linux.deb` (o `…-linux-arm64.deb`)
    apt chiede la tua password e installa anche quello che serve alla finestra (GTK e WebKitGTK di Ubuntu).
 3. Apri Impaginatore dal menu delle applicazioni, o scrivi `impaginatore` nel Terminale.
 

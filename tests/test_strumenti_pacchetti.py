@@ -21,6 +21,7 @@ RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STRUMENTI = os.path.join(RADICE, "strumenti")
 sys.path.insert(0, STRUMENTI)
 import compila  # noqa: E402
+import controlli as controlli_ci  # noqa: E402
 import rilascio  # noqa: E402
 import verifica_pacchetto as verifica  # noqa: E402
 
@@ -43,16 +44,21 @@ def test_ordine_delle_versioni_debian_come_pep440():
 
 def test_nomi_dei_pacchetti():
     assert compila.nome_pacchetto("2.0.1", "linux") == "Impaginatore-2.0.1-linux.deb"
+    assert compila.nome_pacchetto("2.0.1", "linux-arm64") == "Impaginatore-2.0.1-linux-arm64.deb"
     assert compila.nome_pacchetto("2.0.1", "windows") == "Impaginatore-2.0.1-windows.exe"
     assert compila.nome_pacchetto("2.0.1", "mac-arm64") == "Impaginatore-2.0.1-mac-arm64.dmg"
     from impaginatore.aggiornamenti import sorgenti
     assert all(sorgenti._NOME.fullmatch(compila.nome_pacchetto("2.0.1rc1", k)) for k in rilascio.SISTEMI), "nomi che il programma accetta come asset"
     assert compila.chiave() in rilascio.SISTEMI and compila.sistema() in ("linux", "mac", "windows")
+    import aggiornamento
+    assert set(aggiornamento.CHIAVI_COMPILATI) == set(rilascio.SISTEMI) == set(rilascio.ESTENSIONI) == set(rilascio.DESCRIZIONI), "una chiave per pacchetto, ovunque"
+    assert set(compila.ARCHITETTURA_DEB) == {k for k in rilascio.SISTEMI if k.startswith("linux")} and set(compila.MACOS_MINIMO) == {k for k in rilascio.SISTEMI if k.startswith("mac")}
 
 
-@pytest.mark.parametrize("sis", ["linux", "mac", "windows"])
-def test_argomenti_di_nuitka(sis, tmp_path):
-    a = compila.argomenti_nuitka(sis, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
+@pytest.mark.parametrize("k", ["linux", "linux-arm64", "mac-arm64", "mac-x86_64", "windows"])
+def test_argomenti_di_nuitka(k, tmp_path):
+    sis = k.split("-")[0]
+    a = compila.argomenti_nuitka(k, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
     assert a[:5] == [sys.executable, "-X", "utf8", "-m", "nuitka"] and a[-1] == str(compila.ENTRATA), "Nuitka in modalità UTF-8: il programma compilato la eredita"
     assert ("--mode=app" in a) == (sis == "mac") and ("--mode=standalone" in a) == (sis != "mac")
     for o in ("--include-package=impaginatore", "--include-package-data=impaginatore", "--python-flag=no_docstrings", "--nofollow-import-to=gi", "--noinclude-data-files=webview/lib/*.jar",
@@ -64,6 +70,8 @@ def test_argomenti_di_nuitka(sis, tmp_path):
     assert ("--nofollow-import-to=tkinter" in a) == (sis != "windows") and ("--enable-plugin=tk-inter" in a) == (sis == "windows")
     if sis == "windows": assert "--file-version=2.0.1.0" in a and "--windows-console-mode=attach" in a
     if sis == "mac": assert f"--macos-signed-app-name={compila.ID_MAC}" in a and "--macos-app-version=2.0.1" in a
+    assert [x for x in a if x.startswith("--macos-app-macos-min-version=")] == ([f"--macos-app-macos-min-version={'13.0' if k == 'mac-arm64' else '14.0'}"] if sis == "mac" else []), \
+        "Info.plist dichiara la versione minima vera: 13.0 sui Mac con chip Apple, 14.0 sui Mac Intel"
     if sis == "linux": assert any(x.startswith("--linux-icon=") for x in a)
     assert f"--output-filename={'impaginatore' if sis == 'windows' else 'impaginatore-app'}" in a, "mai come la cartella dei dati impaginatore/ (Nuitka la rifiuta)"
     for x in a:
@@ -152,6 +160,23 @@ def test_licenza_dichiarata():
     assert compila.licenza_dichiarata(D()) == "vedi i file della licenza"
 
 
+def test_licenze_controllate_a_mano_alla_versione_del_lock(monkeypatch):
+    """controlli.py licenze: pip-licenses salta una dipendenza senza licenza nei metadati (clr-loader, solo Windows) solo
+    alla versione riletta a mano, che deve essere quella di uv.lock; con una versione nuova la licenza va riletta"""
+    import tomllib
+    with open(os.path.join(RADICE, "uv.lock"), "rb") as f: lock = tomllib.load(f)["package"]
+    for chiave, licenza in controlli_ci.LICENZE_CONTROLLATE_A_MANO.items():
+        nome, versione = chiave.split(":")
+        assert {p["version"] for p in lock if p["name"] == nome} == {versione}, f"{nome} in uv.lock non è più la {versione}: rileggere la sua licenza e aggiornare LICENZE_CONTROLLATE_A_MANO"
+        assert licenza in controlli_ci.LICENZE_AMMESSE
+    comandi = []
+    monkeypatch.setattr(controlli_ci, "uv", lambda: "uv")
+    monkeypatch.setattr(controlli_ci, "esegui", lambda cmd, env=None: comandi.append([str(c) for c in cmd]) or True)
+    assert controlli_ci.licenze()
+    pip = [c for c in comandi if "pip-licenses" in c]
+    assert len(pip) == len(controlli_ci.PYTHON_LICENZE) and all(c[c.index("--ignore-packages") + 1:] == list(controlli_ci.LICENZE_CONTROLLATE_A_MANO) for c in pip)
+
+
 def test_controllo_del_programma(tmp_path):
     prog = tmp_path / "P"; (prog / "impaginatore" / "risorse" / "motore_1x").mkdir(parents=True)
     with pytest.raises(SystemExit, match="motore per la 1.x"): compila.controlla_programma(prog)
@@ -196,6 +221,7 @@ def test_ripete_i_comandi_che_a_volte_non_vanno(monkeypatch):
 def test_testi_del_pacchetto_deb():
     c = compila.controllo_deb("2.0.0.dev0", 123456)
     assert "Version: 2.0.0~~dev0\n" in c and "Installed-Size: 123456\n" in c and "Depends: python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1\n" in c
+    assert "Architecture: amd64\n" in c and "Architecture: arm64\n" in compila.controllo_deb("2.0.0", 1, "linux-arm64")
     assert c.endswith("\n") and all(r.startswith(" ") or ":" in r for r in c.strip().splitlines()), "campi e righe di continuazione"
     v = compila.voce_desktop(); assert "Exec=impaginatore\n" in v and v.startswith("[Desktop Entry]\n")
     d = compila.definizioni_iss("C:\\P", "C:\\U", "2.0.1rc1")
@@ -206,13 +232,14 @@ def test_testi_del_pacchetto_deb():
 
 
 @pytest.mark.skipif(not shutil.which("dpkg-deb") or os.name == "nt", reason="serve dpkg-deb")
-def test_pacchetto_deb(tmp_path):
+@pytest.mark.parametrize("k, arch", [("linux", "amd64"), ("linux-arm64", "arm64")])
+def test_pacchetto_deb(tmp_path, k, arch):
     prog = tmp_path / "Impaginatore"; prog.mkdir()
     (prog / "impaginatore-app").write_bytes(b"#!/bin/sh\n"); (prog / "impaginatore-app").chmod(0o700); (prog / "libx.so").write_bytes(b"x")
-    out = compila.pacchetto_deb(prog, tmp_path, "2.0.1rc1")
-    assert out.name == "Impaginatore-2.0.1rc1-linux.deb"
+    out = compila.pacchetto_deb(prog, tmp_path, "2.0.1rc1", k)
+    assert out.name == f"Impaginatore-2.0.1rc1-{k}.deb"
     info = subprocess.run(["dpkg-deb", "-f", str(out), "Version", "Package", "Architecture"], capture_output=True, text=True).stdout
-    assert info.split() == ["Version:", "2.0.1~rc1", "Package:", "impaginatore", "Architecture:", "amd64"]
+    assert info.split() == ["Version:", "2.0.1~rc1", "Package:", "impaginatore", "Architecture:", arch]
     elenco = subprocess.run(["dpkg-deb", "-c", str(out)], capture_output=True, text=True).stdout
     assert re.search(r"-rwxr-xr-x root/root .* \./opt/impaginatore/impaginatore-app\n", elenco) and re.search(r"-rw-r--r-- root/root .* \./opt/impaginatore/libx\.so\n", elenco)
     assert "./usr/bin/impaginatore -> /opt/impaginatore/impaginatore-app" in elenco and "./usr/share/applications/impaginatore.desktop" in elenco
@@ -268,14 +295,207 @@ def test_prepara_una_release(tmp_path):
                                               "impaginatore-2.0.1-py3-none-any.whl", "manifesto.json", "manifesto.json.sig"])
     m = firmati.verifica((rel / "manifesto.json").read_bytes(), (rel / "manifesto.json.sig").read_bytes(), {1: pub})
     assert set(m["pacchetti"]) == {"python", "linux", "windows", "mac-arm64"} and m["novita"] == {"it": ["Pacchetti"], "en": ["Packages"]}
+    assert b"\r" not in (rel / "SHA256SUMS").read_bytes()
     for riga in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
     note = (rel / "NOTE.md").read_text(encoding="utf-8")
-    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "CHIAVI_FIDATE[1]" in note and "mac-x86_64" in note and "00-installazione.md" in note and (rel / "SHA256SUMS").read_text(encoding="utf-8").strip() in note
+    assert note.startswith("> **PROVA: NON PUBBLICARE.**") and "CHIAVI_FIDATE[1]" in note and "mac-x86_64" in note and "`docs/manuale/00-installazione.md`" in note
+    assert all(f"| `{nome}` | {rilascio.megabyte((rel / nome).stat().st_size)} | `{h}` |" in note for h, nome in (r.split("  ") for r in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines()) if nome.startswith("Impaginatore-"))
     r = esegui("prepara", str(art), "--uscita", str(rel), "--prova"); assert r.returncode != 0 and "non è vuota" in r.stderr
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel3"), "--prova", "--id", "2"); assert r.returncode != 0 and "Nessuna chiave dei rilasci 2" in r.stderr
     (art / "vecchio").mkdir(); (art / "vecchio" / "Impaginatore-2.0.0-linux.deb").write_bytes(b"x")
     r = esegui("prepara", str(art), "--uscita", str(tmp_path / "rel2"), "--prova"); assert r.returncode != 0 and "di un'altra versione" in r.stderr
+
+
+def test_pre_release_e_cosa_le_serve(tmp_path, licenza):
+    """una pre-release (a, b, rc) non arriva agli aggiornamenti (releases/latest): può uscire con il repository delle release
+    vuoto e senza la sezione della sua versione nel registro; le chiavi vere servono sempre"""
+    assert [rilascio.pre_release(v) for v in ("2.0.0b1", "2.0.1rc2", "2.1.0a1", "2.0.0", "2.0.0b1.dev2", "2.0.0.dev0")] == [True, True, True, False, False, False]
+    from impaginatore.licenze import chiave as K
+    buone = {1: K.Pubblica(ed25519.pubblica(bytes(32)).hex())}
+    c = _changelog(tmp_path, "2.0.0")
+    assert rilascio.problemi("2.0.0b1", c, {1: PUB_FINTA}, buone, "", pre=True) == []
+    assert rilascio.problemi("2.0.0", c, {1: PUB_FINTA}, buone, "", pre=True) == ["la versione 2.0.0 non è una pre-release (a, b o rc, senza .dev): una pre-release di GitHub vuole una versione così"]
+    p = rilascio.problemi("2.0.0b1", c, {1: PUB_FINTA}, buone, "")
+    assert len(p) == 3 and all(any(f in x for x in p) for f in ("REPOSITORY", "di sviluppo", "[2.0.0b1]")), "come versione finale no"
+    assert any("chiave degli aggiornamenti" in x for x in rilascio.problemi("2.0.0b1", c, {1: firmati.SEGNAPOSTO}, buone, "", pre=True))
+    for t in ("2.0.1", "vx", "v2.0"):
+        with pytest.raises(SystemExit, match="non è v<versione>"): rilascio.versione_del_tag(t)
+
+
+def _artefatti(cartella, versione, chiavi=rilascio.SISTEMI, arm="ok", esiti=None, rotte=()):
+    """gli artefatti di un giro della pipeline come li scarica actions/download-artifact: una cartella per artefatto"""
+    pacchetto(str(cartella / "wheel"), versione)
+    for k in chiavi:
+        d = cartella / f"pacchetto-{k}"; d.mkdir(parents=True)
+        f = d / compila.nome_pacchetto(versione, k); f.write_bytes(f"pacchetto {k} {versione}".encode() * 50)
+        (d / f"{f.name}.sha256").write_text(f"{'0' * 64 if k in rotte else hashlib.sha256(f.read_bytes()).hexdigest()}  {f.name}\n", encoding="utf-8")
+        (d / f"{f.name}.componenti.json").write_text(json.dumps(dict(sistema=k, **({"macos_minimo": compila.MACOS_MINIMO[k]} if k.startswith("mac") else {}))), encoding="utf-8")
+        esito = (esiti or {}).get(k, "ok")
+        (d / f"verifica-{k}.json").write_text(json.dumps(dict(esito=esito, sistema_descrizione=f"sistema {k}", controlli=[dict(nome="file", esito=esito)],
+                                                             misure=dict(macchina="arm64" if "arm" in k else "x86_64", eseguibile_architettura="arm64" if "arm" in k else "x86_64"))), encoding="utf-8")
+    if arm:
+        d = cartella / "verifica-windows-arm64"; d.mkdir(parents=True)
+        (d / "verifica-windows-arm64.json").write_text(json.dumps(dict(esito=arm, misure=dict(macchina="ARM64", eseguibile_architettura="x86_64"))), encoding="utf-8")
+    return cartella
+
+
+def _bozza(tmp_path, art, tag, nome="bozza"):
+    out = tmp_path / nome
+    a = ["bozza", str(art), "--tag", tag, "--uscita", str(out / "release"), "--note", str(out / "note.md"), "--esito", str(out / "esito.json"),
+         "--esecuzione", "https://github.com/studio/impaginatore/actions/runs/7", "--repository", "studio/impaginatore"]
+    assert rilascio.main(a) == 0
+    return out, json.loads((out / "esito.json").read_text(encoding="utf-8")), (out / "note.md").read_text(encoding="utf-8")
+
+
+def test_bozza_della_release(tmp_path, capsys):
+    """nella pipeline, senza chiavi: solo i pacchetti con impronta giusta e prova passata, e l'esito dice cosa manca"""
+    art = _artefatti(tmp_path / "art", "2.0.1rc1", rotte={"linux-arm64"}, esiti={"mac-x86_64": "no"})
+    out, esito, testo = _bozza(tmp_path, art, "v2.0.1rc1")
+    assert esito["versione"] == "2.0.1rc1" and esito["prerelease"] is True and esito["pacchetti"] == ["linux", "mac-arm64", "windows"]
+    assert [m.split(" ")[0] for m in esito["mancanti"]] == ["mac-x86_64", "linux-arm64"] and "impronta" in esito["mancanti"][1] and "prova" in esito["mancanti"][0]
+    nomi = sorted(os.listdir(out / "release"))
+    pk = [compila.nome_pacchetto("2.0.1rc1", k) for k in ("linux", "mac-arm64", "windows")]
+    assert nomi == sorted(["SHA256SUMS", "impaginatore-2.0.1rc1-py3-none-any.whl", "verifiche.json", *pk, *[p + ".sha256" for p in pk], *[p + ".componenti.json" for p in pk]])
+    somme = (out / "release" / "SHA256SUMS").read_text(encoding="utf-8")
+    assert b"\r" not in (out / "release" / "SHA256SUMS").read_bytes()
+    for riga in somme.splitlines():
+        h, nome = riga.split("  "); assert hashlib.sha256((out / "release" / nome).read_bytes()).hexdigest() == h
+    assert len(somme.splitlines()) == 4 and "impaginatore-2.0.1rc1-py3-none-any.whl" not in testo, "nella tabella i pacchetti, la wheel solo in SHA256SUMS"
+    for riga in somme.splitlines():
+        h, nome = riga.split("  "); assert nome.endswith(".whl") or f"| `{nome}` | {rilascio.megabyte((out / 'release' / nome).stat().st_size)} | `{h}` |" in testo
+    v = json.loads((out / "release" / "verifiche.json").read_text(encoding="utf-8"))
+    assert v["esecuzione"].endswith("/runs/7") and v["verifiche"]["windows-arm64"]["macchina"] == "ARM64" and v["verifiche"]["windows-arm64"]["eseguibile"] == "x86_64"
+    assert v["verifiche"]["mac-x86_64"]["esito"] == "no" and v["verifiche"]["linux"]["controlli"] == {"file": "ok"}
+    for frammento in ("Bozza preparata dalla pipeline", "(https://github.com/studio/impaginatore/actions/runs/7)", "rilascio.py pubblica v2.0.1rc1", "(come pre-release)",
+                      "**Incompleta.**", "> - mac-x86_64", "| Mac con chip Apple (M1 e successivi), macOS 13.0 o successivo | `Impaginatore-2.0.1rc1-mac-arm64.dmg` | 0,0 MB | `",
+                      "anche Windows 11 sui PC con processore ARM", "[guida di installazione](https://github.com/studio/impaginatore/blob/v2.0.1rc1/docs/manuale/00-installazione.md)",
+                      "`shasum -a 256 <file>`", "`Get-FileHash <file> -Algorithm SHA256`", "`sha256sum -c SHA256SUMS --ignore-missing`"):
+        assert frammento in testo, frammento
+    # le voci del registro solo nella sezione ripiegata, in fondo: le note restano corte
+    prima, _, ripiegata = testo.partition("<details>")
+    voce = re.compile(r"^- `[A-Z]{3}-\d+`", re.M)
+    assert not voce.search(prima) and voce.search(ripiegata) and ripiegata.rstrip().endswith("</details>") and "</summary>\n\n" in ripiegata
+    assert rilascio.megabyte(91993688) == "92,0 MB" and rilascio.indirizzo_guida(None, "v2.0.1") is None
+    assert "<details>" not in rilascio.note("2.0.1", [], [], [], changelog=_changelog(tmp_path, "2.0.0")), "senza voci per la versione, niente sezione"
+    assert "Bozza v2.0.1rc1: linux, mac-arm64, windows; mancano" in capsys.readouterr().out
+    # tutto: completa; il pacchetto Windows senza la prova su ARM non basta
+    _, esito, testo = _bozza(tmp_path, _artefatti(tmp_path / "art2", "2.0.1"), "v2.0.1", "b2")
+    assert esito["mancanti"] == [] and esito["prerelease"] is False and len(esito["pacchetti"]) == 5 and "Incompleta" not in testo and "pre-release" not in testo
+    _, esito, _ = _bozza(tmp_path, _artefatti(tmp_path / "art3", "2.0.1", chiavi=("windows",), arm=None), "v2.0.1", "b3")
+    assert esito["mancanti"][-1].startswith("windows-arm64 (") and len(esito["mancanti"]) == 5
+    _, esito, _ = _bozza(tmp_path, _artefatti(tmp_path / "art4", "2.0.1", chiavi=("windows",), arm="no"), "v2.0.1", "b4")
+    assert esito["mancanti"][-1].startswith("windows-arm64 (")
+    with pytest.raises(SystemExit, match=r"Serve la wheel della versione 2.0.2 del tag v2.0.2"): _bozza(tmp_path, art, "v2.0.2", "b5")
+    with pytest.raises(SystemExit, match="non è vuota"): _bozza(tmp_path, art, "v2.0.1rc1")
+    (art / "pacchetto-linux" / "verifica-linux.json").write_text("rotto", encoding="utf-8")
+    _, esito, _ = _bozza(tmp_path, art, "v2.0.1rc1", "b6")
+    assert "linux (la prova del programma installato non è passata)" in esito["mancanti"], "un rapporto illeggibile è una prova non passata"
+
+
+class GitHubFinto:
+    """«gh release …» su una release finta in una cartella: view, download, upload, edit"""
+    def __init__(self, cartella, url="https://github.com/studio/impaginatore/releases/tag/v"):
+        self.dir, self.bozza, self.chiamate, self.note, self.url = cartella, True, [], None, url
+
+    def __call__(self, *a, repo=None):
+        self.chiamate.append((a[:2], repo))
+        assert a[0] == "release"
+        if a[1] == "view": return json.dumps(dict(isDraft=self.bozza, isPrerelease=False, name="x", url=self.url + a[2][1:]))
+        if a[1] == "download":
+            dest = a[a.index("--dir") + 1]; os.makedirs(dest, exist_ok=True)
+            for f in os.listdir(self.dir): shutil.copy2(self.dir / f, os.path.join(dest, f))
+            return ""
+        if a[1] == "upload":
+            assert a[-1] == "--clobber"
+            for f in a[3:-1]: shutil.copy2(f, self.dir / os.path.basename(f))
+            return ""
+        assert a[1] == "edit"
+        self.note = open(a[a.index("--notes-file") + 1], encoding="utf-8").read(); self.modifiche = a[5:]
+        if "--draft=false" in a: self.bozza = False
+        return ""
+
+
+def _coppia(tmp_path, capsys):
+    import aggiornamento
+    negozio = tmp_path / "negozio"; assert aggiornamento.main(["genera-coppia", "--dir", str(negozio)]) == 0
+    return negozio, re.search(r'CHIAVI_FIDATE = \{1: "([0-9a-f]{64})"\}', capsys.readouterr().out).group(1)
+
+
+@pytest.mark.parametrize("versione, pre", [("2.0.1rc1", True), ("2.0.1", False)])
+def test_pubblica_la_bozza(monkeypatch, tmp_path, capsys, versione, pre):
+    """sul computer di chi pubblica: scarica la bozza, ricontrolla, firma con la chiave (qui una di prova, in una cartella
+    temporanea), carica manifesto, firma e SHA256SUMS completo e pubblica: pre-release per a/b/rc, ultima versione per le finali"""
+    out, _, _ = _bozza(tmp_path, _artefatti(tmp_path / "art", versione), f"v{versione}")
+    negozio, pub = _coppia(tmp_path, capsys)
+    monkeypatch.setattr(firmati, "CHIAVI_FIDATE", {1: pub})
+    monkeypatch.setattr(rilascio, "problemi", lambda v, pre=False: [])
+    g = GitHubFinto(out / "release"); monkeypatch.setattr(rilascio, "gh", g)
+    a = ["pubblica", f"v{versione}", "--dir", str(negozio), "--repo", "studio/impaginatore", "--novita-it", "Pacchetti", "--novita-en", "Packages"]
+    assert rilascio.main([*a, "--cartella", str(tmp_path / "p0"), "--prova"]) == 0
+    assert g.bozza and [c[0] for c in g.chiamate] == [("release", "view"), ("release", "download")] and "PROVA: niente caricato" in capsys.readouterr().out
+    monkeypatch.setattr("builtins.input", lambda domanda: "n")
+    assert rilascio.main([*a, "--cartella", str(tmp_path / "p1")]) == 1 and g.bozza, "senza conferma niente si carica"
+    assert rilascio.main([*a, "--cartella", str(tmp_path / "p2"), "--si"]) == 0
+    assert not g.bozza and all(r == "studio/impaginatore" for _, r in g.chiamate)
+    assert g.modifiche == (("--draft=false", "--prerelease") if pre else ("--draft=false", "--prerelease=false", "--latest")), "pre-release: non arriva agli aggiornamenti"
+    rel = out / "release"
+    m = firmati.verifica((rel / "manifesto.json").read_bytes(), (rel / "manifesto.json.sig").read_bytes(), {1: pub})
+    assert set(m["pacchetti"]) == {"python", *rilascio.SISTEMI} and m["versione"] == versione and m["novita"] == {"it": ["Pacchetti"], "en": ["Packages"]}
+    somme = (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+    assert len(somme) == 8 and any(r.endswith("  manifesto.json.sig") for r in somme)
+    for riga in somme:
+        h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
+    assert g.note.startswith(f"# Impaginatore {versione}\n"), "né «PROVA: NON PUBBLICARE» né la testa della bozza"
+    assert f"`{rilascio.SOMME}`" in g.note and "| Mac con processore Intel, macOS 14.0 o successivo | `Impaginatore-" in g.note and f"blob/v{versione}/docs/manuale/00-installazione.md)" in g.note
+    assert all(f"| `{nome}` | " in g.note and h in g.note for h, nome in (r.split("  ") for r in somme) if nome.startswith("Impaginatore-"))
+    with pytest.raises(SystemExit, match="non è una bozza"): rilascio.main([*a, "--cartella", str(tmp_path / "p3"), "--si"])
+
+
+def test_pubblica_si_ferma_se_manca_qualcosa(monkeypatch, tmp_path, capsys):
+    out, _, _ = _bozza(tmp_path, _artefatti(tmp_path / "art", "2.0.1rc1", chiavi=("linux", "windows", "mac-arm64"), arm="no"), "v2.0.1rc1")
+    negozio, pub = _coppia(tmp_path, capsys)
+    g = GitHubFinto(out / "release"); monkeypatch.setattr(rilascio, "gh", g)
+    a = ["pubblica", "v2.0.1rc1", "--dir", str(negozio), "--si"]
+    with pytest.raises(SystemExit, match="non si pubblica"): rilascio.main([*a, "--cartella", str(tmp_path / "p1")])
+    err = capsys.readouterr().err
+    for frammento in ("non è quella di CHIAVI_FIDATE[1]", "windows-arm64: il pacchetto Windows non risulta provato", "mac-x86_64: nessun pacchetto nella bozza (--senza mac-x86_64",
+                      "linux-arm64: nessun pacchetto"):
+        assert frammento in err, frammento
+    monkeypatch.setattr(firmati, "CHIAVI_FIDATE", {1: pub}); monkeypatch.setattr(rilascio, "problemi", lambda v, pre=False: [])
+    assert rilascio.main([*a, "--cartella", str(tmp_path / "p2"), "--senza", "mac-x86_64", "--senza", "linux-arm64", "--senza", "windows-arm64"]) == 0, "fatto apposta"
+    assert "Questa versione non ha il pacchetto per: mac-x86_64, linux-arm64." in g.note
+    # una bozza cambiata dopo la pipeline: impronte che non tornano, prova non passata, SHA256SUMS mancante
+    g.bozza = True
+    (out / "release" / "Impaginatore-2.0.1rc1-linux.deb").write_bytes(b"altro")
+    v = json.loads((out / "release" / "verifiche.json").read_text(encoding="utf-8")); v["verifiche"]["windows"]["esito"] = "no"
+    (out / "release" / "verifiche.json").write_text(json.dumps(v), encoding="utf-8")
+    (out / "release" / "SHA256SUMS").unlink()
+    with pytest.raises(SystemExit, match="non si pubblica"): rilascio.main([*a, "--cartella", str(tmp_path / "p3"), "--senza", "mac-x86_64", "--senza", "linux-arm64"])
+    err = capsys.readouterr().err
+    for frammento in ("la bozza non ha SHA256SUMS", "Impaginatore-2.0.1rc1-linux.deb: l'impronta non è quella di Impaginatore-2.0.1rc1-linux.deb.sha256",
+                      "windows: in verifiche.json la prova"):
+        assert frammento in err, frammento
+    (out / "release" / "SHA256SUMS").write_text(f"{'0' * 64}  verifiche.json\n{'0' * 64}  manca.deb\n", encoding="utf-8")
+    with pytest.raises(SystemExit): rilascio.main([*a, "--cartella", str(tmp_path / "p4"), "--senza", "mac-x86_64", "--senza", "linux-arm64"])
+    err = capsys.readouterr().err
+    assert "verifiche.json: l'impronta non è quella di SHA256SUMS" in err and "manca.deb: l'impronta" in err
+    (tmp_path / "piena").mkdir(); (tmp_path / "piena" / "x").write_text("x", encoding="utf-8")
+    with pytest.raises(SystemExit, match="non è vuota"): rilascio.main([*a, "--cartella", str(tmp_path / "piena")])
+
+
+def test_gh(monkeypatch):
+    """«gh» di chi pubblica: argomenti in lista, --repo se dato, errori chiari"""
+    visti = []
+    def run(cmd, **k):
+        visti.append(cmd); return types.SimpleNamespace(returncode=0 if cmd[1] == "ok" else 1, stdout="uscita", stderr="HTTP 404: Not Found")
+    monkeypatch.setattr(rilascio.subprocess, "run", run)
+    assert rilascio.gh("ok", "x", repo="studio/impaginatore") == "uscita" and visti[-1] == ["gh", "ok", "x", "--repo", "studio/impaginatore"]
+    assert rilascio.gh("ok") == "uscita" and visti[-1] == ["gh", "ok"]
+    with pytest.raises(SystemExit, match="«gh no release» non è andato: HTTP 404"): rilascio.gh("no", "release", "v1")
+    def manca(cmd, **k): raise FileNotFoundError(cmd[0])
+    monkeypatch.setattr(rilascio.subprocess, "run", manca)
+    with pytest.raises(SystemExit, match="Serve «gh»"): rilascio.gh("release", "view")
 
 
 def test_trova_i_pacchetti(tmp_path):
@@ -357,6 +577,68 @@ def test_versione_minima_di_macos():
     assert compila.minos(otool) == [(14, 0), (10, 13)], "solo macOS (platform 1), mai le versioni delle librerie"
 
 
+def _otool(minos):
+    return "\n".join(["Load command 9", "      cmd LC_BUILD_VERSION", " platform 1", f"    minos {minos}", "      sdk 15.2"])
+
+
+def _bundle(tmp_path, minimo, binari):
+    """un Impaginatore.app finto: Info.plist con LSMinimumSystemVersion e file Mach-O (solo la testa) con il loro minos"""
+    import plistlib
+    prog = tmp_path / "Impaginatore.app"; (prog / "Contents" / "MacOS").mkdir(parents=True)
+    with open(prog / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"CFBundleName": "Impaginatore", **({"LSMinimumSystemVersion": minimo} if minimo else {})}, f)
+    for n, testa in binari.items(): (prog / "Contents" / "MacOS" / n).write_bytes(testa + b"\0" * 8)
+    (prog / "Contents" / "MacOS" / "dati.xml").write_bytes(b"<xml/>")
+    (prog / "Contents" / "MacOS" / "collegamento").symlink_to("impaginatore-app") if os.name != "nt" else None
+    return prog
+
+
+def test_versione_minima_dichiarata_e_controllata(monkeypatch, tmp_path, capsys):
+    """macOS: Info.plist dichiara MACOS_MINIMO e nessun binario del bundle chiede di più (otool -l su ogni Mach-O); il
+    registro dice quanti binari per versione e quali fissano il minimo"""
+    minos = {"impaginatore-app": "11.0", "libnumpy.dylib": "11.0", "cv2.so": "13.0", "universale.so": None, "x": "14.0"}
+    prog = _bundle(tmp_path, "13.0", {"impaginatore-app": b"\xcf\xfa\xed\xfe", "libnumpy.dylib": b"\xcf\xfa\xed\xfe", "cv2.so": b"\xca\xfe\xba\xbe", "universale.so": b"\xcf\xfa\xed\xfe"})
+    letti = []
+    def otool(cmd, capture_output, text, check):
+        assert cmd[:2] == ["otool", "-l"]; n = os.path.basename(cmd[2]); letti.append(n)
+        return types.SimpleNamespace(stdout=_otool(minos[n]) if minos[n] else "Load command 1\n cmd LC_SEGMENT_64")
+    monkeypatch.setattr(compila.subprocess, "run", otool)
+    assert compila.controlla_macos(prog, "mac-arm64") == {"macos_minimo": "13.0", "macos_minimo_binari": "13.0"}
+    assert sorted(letti) == ["cv2.so", "impaginatore-app", "libnumpy.dylib", "universale.so"], "solo i Mach-O, non i dati né i collegamenti"
+    assert "per versione: 13.0: 1, 11.0: 2; chiedono 13.0: Contents/MacOS/cv2.so" in capsys.readouterr().out
+    minos["libnumpy.dylib"] = "14.0"
+    with pytest.raises(SystemExit, match=r"più di macOS 13.0: \{'Contents/MacOS/libnumpy.dylib': '14.0'\}"): compila.controlla_macos(prog, "mac-arm64")
+    assert compila.controlla_macos(_bundle(tmp_path / "intel", "14.0", {"x": b"\xcf\xfa\xed\xfe"}), "mac-x86_64")["macos_minimo"] == "14.0"
+    with pytest.raises(SystemExit, match="LSMinimumSystemVersion=11.0, non 13.0"): compila.controlla_macos(_bundle(tmp_path / "b", "11.0", {}), "mac-arm64")
+    with pytest.raises(SystemExit, match="Nessun binario Mach-O"): compila.controlla_macos(_bundle(tmp_path / "c", "13.0", {}), "mac-arm64")
+
+
+def test_obiettivo_di_macos_uguale_al_minimo_dichiarato():
+    compila.controlla_obiettivo_macos("mac-arm64", {}); compila.controlla_obiettivo_macos("mac-arm64", {"MACOSX_DEPLOYMENT_TARGET": "13.0"})
+    with pytest.raises(SystemExit, match="MACOSX_DEPLOYMENT_TARGET=14.0, ma il minimo dichiarato per mac-arm64 è 13.0"):
+        compila.controlla_obiettivo_macos("mac-arm64", {"MACOSX_DEPLOYMENT_TARGET": "14.0"})
+
+
+@pytest.mark.parametrize("k", ["linux", "linux-arm64", "mac-arm64", "windows"])
+def test_impacchetta(monkeypatch, tmp_path, k):
+    """il pacchetto del sistema giusto, con impronta ed elenco dei componenti accanto (su macOS con la versione minima)"""
+    fatti = []
+    monkeypatch.setattr(compila, "controlla_programma", lambda prog: fatti.append("controllo"))
+    monkeypatch.setattr(compila, "controlla_macos", lambda prog, k: dict(macos_minimo="13.0", macos_minimo_binari="13.0"))
+    monkeypatch.setattr(compila, "scrivi_licenze", lambda prog, sis, rapporto, altro=None: dict(componenti=[1, 2], sistema=k, **(altro or {})))
+    def finto(estensione):
+        def f(prog, uscita, versione, *chiave):
+            fatti.append((estensione, *chiave)); out = uscita / compila.nome_pacchetto(versione, k); out.write_bytes(b"pacchetto"); return out
+        return f
+    monkeypatch.setattr(compila, "pacchetto_deb", finto("deb")); monkeypatch.setattr(compila, "pacchetto_dmg", finto("dmg")); monkeypatch.setattr(compila, "pacchetto_exe", finto("exe"))
+    out = compila.impacchetta(tmp_path / "prog", k, tmp_path / "u", tmp_path / "r.xml")
+    assert out.name == compila.nome_pacchetto(__version__, k) and fatti[0] == "controllo"
+    assert fatti[1] == {"linux": ("deb", "linux"), "linux-arm64": ("deb", "linux-arm64"), "mac-arm64": ("dmg", "mac-arm64"), "windows": ("exe",)}[k]
+    # byte esatti, \n anche su Windows (con \r\n «sha256sum -c» non trova il file; ci.yml fa girare questo test su Windows)
+    assert (tmp_path / "u" / f"{out.name}.sha256").read_bytes() == f"{hashlib.sha256(b'pacchetto').hexdigest()}  {out.name}\n".encode()
+    c = json.loads((tmp_path / "u" / f"{out.name}.componenti.json").read_text(encoding="utf-8"))
+    assert c.get("macos_minimo") == ("13.0" if k.startswith("mac") else None)
+
+
 # ---------------------------------------------------------------- verifica_pacchetto.py: rapporto e finestra
 def test_un_errore_inatteso_e_un_controllo_che_non_va(monkeypatch):
     """un errore della prova (o una risposta inattesa del programma) non ferma la prova: il controllo risulta «no», con il
@@ -398,3 +680,30 @@ def test_comando_della_fotografia_dello_schermo(tmp_path):
     w = verifica.comando_foto("C:\\Prove\\l'album\\f.png", "win32")
     assert w[:4] == ["powershell", "-NoProfile", "-NonInteractive", "-Command"] and w[4].endswith("$b.Save('C:\\Prove\\l''album\\f.png')"), "apice raddoppiato per PowerShell"
     assert verifica.comando_foto(tmp_path / "f.png", "linux") is None and verifica.fotografa_schermo(None) == "nessuna cartella per le immagini"
+
+
+def test_architettura_dell_eseguibile(tmp_path):
+    """dalla testa del file: ELF (Linux), PE (Windows), Mach-O anche universale (macOS). Il pacchetto x64 su Windows ARM
+    gira in emulazione: la prova scrive l'architettura dell'eseguibile accanto a quella della macchina"""
+    import struct
+    def scrivi(nome, dati): p = tmp_path / nome; p.write_bytes(dati + b"\0" * 64); return p
+    elf = lambda m: b"\x7fELF\x02\x01\x01" + b"\0" * 11 + struct.pack("<H", m)
+    assert verifica.architetture(scrivi("a", elf(0x3E))) == ["x86_64"] and verifica.architetture(scrivi("b", elf(0xB7))) == ["arm64"]
+    assert verifica.architetture(scrivi("big", b"\x7fELF\x02\x02\x01" + b"\0" * 11 + struct.pack(">H", 0x2B))) == ["altra"]
+    pe = lambda m: b"MZ" + b"\0" * 58 + struct.pack("<I", 0x80) + b"\0" * 0x40 + b"PE\0\0" + struct.pack("<H", m)
+    assert [verifica.architetture(scrivi(f"pe{m}", pe(m))) for m in (0x8664, 0xAA64, 0x14C)] == [["x86_64"], ["arm64"], ["x86"]]
+    assert verifica.architetture(scrivi("dos", b"MZ" + b"\0" * 58 + struct.pack("<I", 0x80) + b"\0" * 0x44)) == [], "MZ senza PE"
+    assert verifica.architetture(scrivi("m", b"\xcf\xfa\xed\xfe" + struct.pack("<I", 0x0100000C))) == ["arm64"]
+    fat = b"\xca\xfe\xba\xbe" + struct.pack(">I", 2) + struct.pack(">5I", 0x01000007, 3, 4096, 10, 12) + struct.pack(">5I", 0x0100000C, 0, 8192, 10, 14)
+    assert verifica.architetture(scrivi("u", fat)) == ["x86_64", "arm64"] and verifica.architetture(scrivi("t", b"#!/bin/sh\n")) == []
+
+
+def test_versione_minima_dal_bundle(tmp_path):
+    """dalla cartella del programma installato (programma_dir dell'eseguibile), come fa prova_file: su macOS è
+    Impaginatore.app/Contents, e Info.plist sta lì"""
+    import plistlib
+    linux = tmp_path / "opt" / "impaginatore" / "impaginatore-app"; linux.parent.mkdir(parents=True); linux.write_bytes(b"x")
+    assert verifica.macos_minimo(verifica.programma_dir(linux)) is None, "fuori da macOS non c'è Info.plist"
+    exe = tmp_path / "Impaginatore.app" / "Contents" / "MacOS" / "impaginatore-app"; exe.parent.mkdir(parents=True); exe.write_bytes(b"x")
+    with open(tmp_path / "Impaginatore.app" / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"LSMinimumSystemVersion": "13.0"}, f)
+    assert verifica.macos_minimo(verifica.programma_dir(exe)) == "13.0"

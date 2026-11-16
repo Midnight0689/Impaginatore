@@ -5,8 +5,9 @@ Come e perché: docs/architettura/DISTRIBUZIONE.md. In breve: Nuitka traduce in 
 sue dipendenze (nessun file .py del programma nel pacchetto), poi il pacchetto del sistema:
 
     macOS     Impaginatore-<v>-mac-arm64.dmg / -mac-x86_64.dmg   Impaginatore.app (firma ad hoc, senza notarizzazione)
-    Windows   Impaginatore-<v>-windows.exe                        installatore Inno Setup per l'utente (senza firma)
-    Linux     Impaginatore-<v>-linux.deb                          /opt/impaginatore; usa GTK e WebKitGTK del sistema
+    Windows   Impaginatore-<v>-windows.exe                        installatore Inno Setup per l'utente (senza firma), x64:
+                                                                  anche per Windows su ARM, che lo esegue in emulazione
+    Linux     Impaginatore-<v>-linux.deb / -linux-arm64.deb       /opt/impaginatore; usa GTK e WebKitGTK del sistema
 
 Accanto a ogni pacchetto: <pacchetto>.sha256 (formato di sha256sum) e <pacchetto>.componenti.json (componenti di terze
 parti con versione e licenza; le licenze intere sono dentro il programma, cartella licenze-terze-parti).
@@ -28,6 +29,7 @@ import importlib.metadata as md
 import json
 import os
 import platform
+import plistlib
 import re
 import shutil
 import subprocess  # nosec B404  # strumenti di costruzione (Nuitka, dpkg-deb, hdiutil, iscc, codesign) con argomenti in lista
@@ -54,8 +56,16 @@ ICONE = RADICE / "brand" / "icona"
 ID_MAC = "it.impaginatore.Impaginatore"                      # identificativo del bundle: non cambia più dopo il primo rilascio (DISTRIBUZIONE.md)
 AUTORE = "Stefano Imperato"                                  # come in pyproject.toml
 DIPENDENZE_DEB = ("python3-gi", "gir1.2-gtk-3.0", "gir1.2-webkit2-4.1")
+ARCHITETTURA_DEB = {"linux": "amd64", "linux-arm64": "arm64"}                    # chiave del pacchetto -> Architecture di dpkg
 LICENZE = "licenze-terze-parti"
 PYTHON_LINUX = (3, 12)                                       # quello di Ubuntu 24.04: il PyGObject del sistema è compilato per lui
+# versione minima di macOS dichiarata (Info.plist, LSMinimumSystemVersion: sotto quella il Finder dice che il programma non
+# è compatibile) e controllata su ogni binario del bundle (otool -l). La decide la ruota più esigente: OpenCV 4.14 è
+# macosx_13_0_arm64 e macosx_14_0_x86_64. Sui Mac con chip Apple numpy ha anche la ruota macosx_11_0_arm64 (OpenBLAS)
+# accanto a quella 14.0 (Accelerate): la pipeline la sceglie con MACOSX_DEPLOYMENT_TARGET=13.0 e «uv sync
+# --python-platform» (DISTRIBUZIONE.md, «Versione minima di macOS»). Ogni Mac con chip Apple (M1 e successivi) arriva
+# almeno a macOS 13; i Mac Intel che arrivano a macOS 14 sono quelli dal 2018 circa
+MACOS_MINIMO = {"mac-arm64": "13.0", "mac-x86_64": "14.0"}
 
 # moduli che non entrano mai nel programma: strumenti di sviluppo, e quelli che il programma prende dal sistema o non usa
 ESCLUSI_SEMPRE = ("pytest", "_pytest", "coverage", "ruff", "nuitka", "setuptools", "pip", "IPython", "pillow_heif", "readline", "pydoc", "doctest", "unittest")
@@ -111,11 +121,14 @@ def versione_debian(versione):
 
 
 # ---------------------------------------------------------------- compilazione
-def argomenti_nuitka(sis, versione, uscita, rapporto, motore_1x):
-    """riga di comando di Nuitka per il sistema sis ("linux", "mac", "windows"). Nuitka gira in modalità UTF-8 («-X utf8»)
-    perché il programma compilato la eredita da lui: il compilato non legge PYTHONUTF8 (Nuitka ignora le variabili PYTHON*)
-    e senza su Windows scriverebbe in cp1252 nei tubi e nei registri, mentre il pacchetto Python dà UTF-8 a ogni processo
-    figlio (processi.ambiente_figli)"""
+def argomenti_nuitka(k, versione, uscita, rapporto, motore_1x):
+    """riga di comando di Nuitka per il pacchetto k ("linux", "linux-arm64", "mac-arm64", "mac-x86_64", "windows"). Nuitka
+    gira in modalità UTF-8 («-X utf8») perché il programma compilato la eredita da lui: il compilato non legge PYTHONUTF8
+    (Nuitka ignora le variabili PYTHON*) e senza su Windows scriverebbe in cp1252 nei tubi e nei registri, mentre il
+    pacchetto Python dà UTF-8 a ogni processo figlio (processi.ambiente_figli). Su macOS la versione minima del bundle è
+    quella di MACOS_MINIMO (Nuitka di serie scriverebbe quella del Python che compila, più bassa di quella che chiedono
+    le librerie)"""
+    sis = k.split("-")[0]
     a = [sys.executable, "-X", "utf8", "-m", "nuitka", "--mode=app" if sis == "mac" else "--mode=standalone", f"--output-dir={uscita}",
          f"--output-filename={ESEGUIBILE[sis]}", "--include-package=impaginatore", "--include-package-data=impaginatore",
          f"--include-data-files={motore_1x}{os.sep}*.txt=impaginatore/risorse/{CARTELLA_MOTORE_1X}/", "--noinclude-data-files=webview/lib/*.jar",
@@ -132,8 +145,17 @@ def argomenti_nuitka(sis, versione, uscita, rapporto, motore_1x):
               f"--file-version={vw}", f"--product-version={vw}"]
     else:
         a += [f"--macos-app-icon={ICONE / 'icona.icns'}", f"--macos-app-name={NOME}", f"--macos-signed-app-name={ID_MAC}",
-              f"--macos-app-version={'.'.join(_parti(versione)[:3])}", "--macos-app-mode=gui"]
+              f"--macos-app-version={'.'.join(_parti(versione)[:3])}", "--macos-app-mode=gui", f"--macos-app-macos-min-version={MACOS_MINIMO[k]}"]
     return a + [str(ENTRATA)]
+
+
+def controlla_obiettivo_macos(k, env=None):
+    """MACOSX_DEPLOYMENT_TARGET, se c'è, deve essere il minimo dichiarato: con quello uv sceglie le ruote (pipeline) e una
+    libreria costruita qui dal sorgente (cryptography sul Mac Intel) lo scrive nei suoi binari"""
+    env = os.environ if env is None else env
+    v = env.get("MACOSX_DEPLOYMENT_TARGET")
+    if v and v != MACOS_MINIMO[k]:
+        raise SystemExit(f"MACOSX_DEPLOYMENT_TARGET={v}, ma il minimo dichiarato per {k} è {MACOS_MINIMO[k]} (compila.MACOS_MINIMO): vanno tenuti uguali")
 
 
 def cartella_cascate():
@@ -154,14 +176,16 @@ def programma(costruzione, sis):
     return costruzione / (f"{NOME}.app" if sis == "mac" else NOME)
 
 
-def compila(costruzione, sis):
+def compila(costruzione, k):
+    sis = k.split("-")[0]
     if sis == "linux" and sys.version_info[:2] != PYTHON_LINUX:
         raise SystemExit(f"Su Linux si compila con Python {'.'.join(map(str, PYTHON_LINUX))} (questo è {platform.python_version()}): la finestra usa il PyGObject del sistema")
+    if sis == "mac": controlla_obiettivo_macos(k)
     shutil.rmtree(costruzione, ignore_errors=True); costruzione.mkdir(parents=True)
     m1x = prepara_motore_1x(costruzione / "motore_1x")
     inizio = time.time()
     env = dict(os.environ, PATH=os.pathsep.join([str(Path(sys.executable).parent), os.environ.get("PATH", "")]))          # patchelf dell'ambiente (extra «compilazione»)
-    subprocess.run(argomenti_nuitka(sis, __version__, costruzione, costruzione / "compilazione.xml", m1x), check=True, cwd=RADICE, env=env)  # nosec B603  # Nuitka di questo ambiente, argomenti in lista
+    subprocess.run(argomenti_nuitka(k, __version__, costruzione, costruzione / "compilazione.xml", m1x), check=True, cwd=RADICE, env=env)  # nosec B603  # Nuitka di questo ambiente, argomenti in lista
     fatto = costruzione / ("avvio_impaginatore.app" if sis == "mac" else "avvio_impaginatore.dist")
     dest = programma(costruzione, sis); fatto.rename(dest)
     print(f"Compilato in {time.time() - inizio:.0f} s: {dest}")
@@ -220,8 +244,9 @@ def librerie_native(prog):
     return sorted(str(p.relative_to(prog)).replace("\\", "/") for p in prog.rglob("*") if p.is_file() and re.search(r"\.(so(\.\d+)*|dylib|dll|pyd)$", p.name))
 
 
-def scrivi_licenze(prog, sis, rapporto):
-    """licenze intere in <programma>/licenze-terze-parti/<distribuzione>/ e l'elenco dei componenti (componenti.json)"""
+def scrivi_licenze(prog, sis, rapporto, altro=None):
+    """licenze intere in <programma>/licenze-terze-parti/<distribuzione>/ e l'elenco dei componenti (componenti.json), con
+    i campi di `altro` (macOS: versione minima)"""
     base = prog / "Contents" / "Resources" if sis == "mac" else prog
     dest = base / LICENZE; shutil.rmtree(dest, ignore_errors=True); dest.mkdir(parents=True)
     componenti = []
@@ -235,7 +260,7 @@ def scrivi_licenze(prog, sis, rapporto):
             shutil.copyfile(p, cart / n); copiati.append(n)
         componenti.append(dict(nome=d.metadata["Name"], versione=d.version, licenza=licenza_dichiarata(d), file=[f"{cart.name}/{n}" for n in copiati]))
     elenco = dict(programma=NOME, versione=__version__, sistema=chiave(), python=platform.python_version(), componenti=componenti,
-                  librerie_native=librerie_native(prog))
+                  librerie_native=librerie_native(prog), **(altro or {}))
     (dest / "componenti.json").write_text(json.dumps(elenco, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     senza = [c["nome"] for c in componenti if not c["file"]]
     if senza: print(f"Attenzione: nessun file di licenza per {', '.join(senza)}: controllare a mano (DISTRIBUZIONE.md)")
@@ -254,9 +279,9 @@ def controlla_programma(prog):
 
 
 # ---------------------------------------------------------------- pacchetti
-def controllo_deb(versione, installata_kb):
+def controllo_deb(versione, installata_kb, k="linux"):
     return "\n".join([
-        f"Package: {COMANDO}", f"Version: {versione_debian(versione)}", "Section: graphics", "Priority: optional", "Architecture: amd64",
+        f"Package: {COMANDO}", f"Version: {versione_debian(versione)}", "Section: graphics", "Priority: optional", f"Architecture: {ARCHITETTURA_DEB[k]}",
         f"Maintainer: {NOME} <supporto@impaginatore.example>", f"Installed-Size: {installata_kb}", f"Depends: {', '.join(DIPENDENZE_DEB)}",
         "Recommends: zenity", "Homepage: https://impaginatore.example",
         "Description: Impaginare album fotografici",
@@ -269,7 +294,7 @@ def voce_desktop():
                       f"Exec={COMANDO}", f"Icon={COMANDO}", "Terminal=false", "Categories=Graphics;Photography;", f"StartupWMClass={COMANDO}", ""])
 
 
-def pacchetto_deb(prog, uscita, versione):
+def pacchetto_deb(prog, uscita, versione, k="linux"):
     radice = prog.parent / "deb"; shutil.rmtree(radice, ignore_errors=True)
     opt = radice / "opt" / COMANDO; shutil.copytree(prog, opt, symlinks=True)
     for p in opt.rglob("*"):
@@ -284,10 +309,10 @@ def pacchetto_deb(prog, uscita, versione):
     (doc / "copyright").write_text(f"{NOME} {versione}: software proprietario, tutti i diritti riservati ({AUTORE}).\n"
                                    f"Componenti di terze parti e loro licenze: /opt/{COMANDO}/{LICENZE}/ (componenti.json).\n", encoding="utf-8")
     kb = sum(p.stat().st_size for p in radice.rglob("*") if p.is_file() and not p.is_symlink()) // 1024
-    (radice / "DEBIAN").mkdir(); (radice / "DEBIAN" / "control").write_text(controllo_deb(versione, kb), encoding="utf-8")
+    (radice / "DEBIAN").mkdir(); (radice / "DEBIAN" / "control").write_text(controllo_deb(versione, kb, k), encoding="utf-8")
     for p in [radice, *radice.rglob("*")]:
         if p.is_dir(): p.chmod(0o755)
-    out = uscita / nome_pacchetto(versione, "linux")
+    out = uscita / nome_pacchetto(versione, k)
     subprocess.run(["dpkg-deb", "--root-owner-group", "-Zxz", "--build", str(radice), str(out)], check=True)  # nosec B603, B607  # dpkg-deb del sistema di costruzione
     return out
 
@@ -358,27 +383,55 @@ def minos(testo_otool):
     return out
 
 
-def macos_minimo(prog):
-    """la versione di macOS più alta chiesta da un file del bundle: sotto quella il programma non parte"""
-    massimo = (0,)
-    for p in prog.rglob("*"):
+def minimi_macos(prog):
+    """{file del bundle: versione di macOS più alta che chiede} per ogni binario Mach-O (otool -l)"""
+    out = {}
+    for p in sorted(prog.rglob("*")):
         if not p.is_file() or p.is_symlink(): continue
         with open(p, "rb") as f: testa = f.read(4)
         if testa not in (b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe"): continue                     # Mach-O a 64 bit o universale
         r = subprocess.run(["otool", "-l", str(p)], capture_output=True, text=True, check=True)  # nosec B603, B607  # otool di Xcode, argomenti in lista
-        massimo = max([massimo, *minos(r.stdout)])
-    return ".".join(map(str, massimo))
+        v = minos(r.stdout)
+        if v: out[p.relative_to(prog).as_posix()] = max(v)
+    return out
 
 
-def impacchetta(prog, sis, uscita, rapporto):
-    elenco = scrivi_licenze(prog, sis, rapporto)
+def tupla(v):
+    return tuple(int(x) for x in v.split("."))
+
+
+def controlla_macos(prog, k):
+    """la versione minima di macOS del bundle è MACOS_MINIMO[k]: la dice Info.plist (LSMinimumSystemVersion) e nessun
+    binario del bundle chiede di più (se una libreria chiedesse di più, sui macOS fra i due il programma non partirebbe
+    invece di dire che non è compatibile). Restituisce le misure per componenti.json"""
+    dichiarato = MACOS_MINIMO[k]
+    with open(prog / "Contents" / "Info.plist", "rb") as f: info = plistlib.load(f)
+    if info.get("LSMinimumSystemVersion") != dichiarato:
+        raise SystemExit(f"Info.plist dichiara LSMinimumSystemVersion={info.get('LSMinimumSystemVersion')}, non {dichiarato} (compila.MACOS_MINIMO)")
+    minimi = minimi_macos(prog)
+    if not minimi: raise SystemExit("Nessun binario Mach-O con la versione minima di macOS nel bundle: otool non ha letto niente")
+    sopra = {n: ".".join(map(str, v)) for n, v in minimi.items() if v > tupla(dichiarato)}
+    if sopra: raise SystemExit(f"Binari che chiedono più di macOS {dichiarato}: {dict(list(sopra.items())[:10])}. Ruote scelte per un macOS più nuovo (MACOSX_DEPLOYMENT_TARGET e «uv sync --python-platform»)?")
+    alto = max(minimi.values()); binari = ".".join(map(str, alto))
+    print(f"macOS minimo: {dichiarato} (Info.plist); il binario più esigente chiede {binari} ({len(minimi)} binari Mach-O controllati)")
+    # nel registro: quanti binari per versione (l'eseguibile di Nuitka chiede quella del Python che compila, meno del
+    # dichiarato: vale Info.plist) e quali fissano il minimo
+    conta = {}
+    for v in sorted(minimi.values(), reverse=True): k = ".".join(map(str, v)); conta[k] = conta.get(k, 0) + 1
+    print("  per versione: " + ", ".join(f"{v}: {n}" for v, n in conta.items()) + f"; chiedono {binari}: {', '.join(n for n, v in minimi.items() if v == alto)}")
+    return dict(macos_minimo=dichiarato, macos_minimo_binari=binari)
+
+
+def impacchetta(prog, k, uscita, rapporto):
+    sis = k.split("-")[0]
     controlla_programma(prog)
-    if sis == "mac": elenco["macos_minimo"] = macos_minimo(prog); print(f"macOS minimo: {elenco['macos_minimo']}")
+    elenco = scrivi_licenze(prog, sis, rapporto, controlla_macos(prog, k) if sis == "mac" else None)
     uscita.mkdir(parents=True, exist_ok=True)
-    if sis == "linux": out = pacchetto_deb(prog, uscita, __version__)
-    elif sis == "mac": out = pacchetto_dmg(prog, uscita, __version__, chiave())
+    if sis == "linux": out = pacchetto_deb(prog, uscita, __version__, k)
+    elif sis == "mac": out = pacchetto_dmg(prog, uscita, __version__, k)
     else: out = pacchetto_exe(prog, uscita, __version__)
-    Path(f"{out}.sha256").write_text(f"{impronta(out)}  {out.name}\n", encoding="utf-8")
+    # fine riga \n anche su Windows: con \r\n «sha256sum -c» cerca un file che finisce con \r e non lo trova
+    Path(f"{out}.sha256").write_text(f"{impronta(out)}  {out.name}\n", encoding="utf-8", newline="\n")
     Path(f"{out}.componenti.json").write_text(json.dumps(elenco, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     mb = out.stat().st_size / 1e6
     print(f"Pacchetto: {out} ({mb:.1f} MB); programma {sum(p.stat().st_size for p in prog.rglob('*') if p.is_file()) / 1e6:.1f} MB su disco, {len(elenco['componenti'])} componenti")
@@ -390,9 +443,9 @@ def main(argv=None):
     ap.add_argument("--uscita", default=str(RADICE / "dist" / "pacchetti"))
     g = ap.add_mutually_exclusive_group(); g.add_argument("--solo-programma", action="store_true"); g.add_argument("--solo-pacchetto", action="store_true")
     a = ap.parse_args(argv)
-    sis = sistema(); costruzione = RADICE / "build" / "compila" / chiave()
-    prog = programma(costruzione, sis) if a.solo_pacchetto else compila(costruzione, sis)
-    if not a.solo_programma: impacchetta(prog, sis, Path(a.uscita).resolve(), costruzione / "compilazione.xml")
+    k = chiave(); costruzione = RADICE / "build" / "compila" / k
+    prog = programma(costruzione, sistema()) if a.solo_pacchetto else compila(costruzione, k)
+    if not a.solo_programma: impacchetta(prog, k, Path(a.uscita).resolve(), costruzione / "compilazione.xml")
     return 0
 
 

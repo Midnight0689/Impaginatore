@@ -1,10 +1,10 @@
 # Distribuzione: programma compilato e pacchetti di installazione (T-302)
 
-Stato al 16/11/2026: costruzione, pacchetto e prova scritti per i tre sistemi e provati nella pipeline di GitHub su
-Linux, Windows e Mac Intel, con il programma installato come lo installerebbe un utente e la sua finestra vera (sotto,
-«Cosa è provato»). Il pacchetto per i Mac con chip Apple non è ancora stato costruito: GitHub non ha trovato un runner
-macOS arm64 libero (sotto, «Pipeline»). Per la beta privata, senza certificati Apple e Microsoft, per scelta del
-titolare.
+Stato al 16/11/2026: costruzione, pacchetto e prova scritti per i tre sistemi e cinque pacchetti (Mac chip Apple, Mac
+Intel, Windows x64, Linux x86_64, Linux arm64), più la prova del pacchetto Windows sui PC ARM; provati nella pipeline di
+GitHub con il programma installato come lo installerebbe un utente e la sua finestra vera (sotto, «Cosa è provato»).
+Sui tag la pipeline crea anche la release di GitHub in bozza; firma e pubblicazione restano sul computer di chi
+pubblica (sotto, «Rilascio»). Per la beta privata, senza certificati Apple e Microsoft, per scelta del titolare.
 
 Guida per chi installa: `docs/manuale/00-installazione.md`. Aggiornamenti: `AGGIORNAMENTI.md`.
 
@@ -12,10 +12,15 @@ Guida per chi installa: `docs/manuale/00-installazione.md`. Aggiornamenti: `AGGI
 
 | Sistema | Pacchetto | Dove si installa | Firma |
 |---|---|---|---|
-| macOS chip Apple | `Impaginatore-<v>-mac-arm64.dmg` | `/Applications/Impaginatore.app` (trascinandolo) | ad hoc (`codesign --sign -`), senza notarizzazione |
-| macOS Intel | `Impaginatore-<v>-mac-x86_64.dmg` | come sopra | come sopra |
-| Windows 10/11 x64 | `Impaginatore-<v>-windows.exe` (Inno Setup 6) | `%LOCALAPPDATA%\Programs\Impaginatore`, senza amministratore | nessuna (niente Authenticode) |
-| Linux | `Impaginatore-<v>-linux.deb` (Ubuntu 24.04 e derivate) | `/opt/impaginatore`, comando `/usr/bin/impaginatore` | firma della release (sotto) |
+| macOS chip Apple (13.0 o successivo) | `Impaginatore-<v>-mac-arm64.dmg` | `/Applications/Impaginatore.app` (trascinandolo) | ad hoc (`codesign --sign -`), senza notarizzazione |
+| macOS Intel (14.0 o successivo) | `Impaginatore-<v>-mac-x86_64.dmg` | come sopra | come sopra |
+| Windows 10/11 x64, e Windows 11 su ARM (in emulazione) | `Impaginatore-<v>-windows.exe` (Inno Setup 6) | `%LOCALAPPDATA%\Programs\Impaginatore`, senza amministratore | nessuna (niente Authenticode) |
+| Linux x86_64 | `Impaginatore-<v>-linux.deb` (Ubuntu 24.04 e derivate) | `/opt/impaginatore`, comando `/usr/bin/impaginatore` | firma della release (sotto) |
+| Linux arm64 | `Impaginatore-<v>-linux-arm64.deb` (Ubuntu 24.04 e derivate) | come sopra | come sopra |
+
+La chiave del pacchetto (`mac-arm64`, `mac-x86_64`, `windows`, `linux`, `linux-arm64`) è quella di
+`installazione.chiave_pacchetto()`, del nome del file e del manifesto degli aggiornamenti. Su Windows è sempre
+`windows`: anche su un PC ARM il programma è quello x64 (sotto, «Sistemi e architetture»).
 
 L'eseguibile si chiama `impaginatore.exe` su Windows e `impaginatore-app` su macOS e Linux: lì non può chiamarsi
 `impaginatore`, perché accanto c'è la cartella dei dati del pacchetto (`impaginatore/risorse/…`); Nuitka lo rifiuta e il
@@ -35,6 +40,15 @@ sistema restano e la guida li spiega.
 UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
 .venv-compilazione/bin/python strumenti/compila.py                 # programma + pacchetto in dist/pacchetti
 .venv-compilazione/bin/python strumenti/verifica_pacchetto.py build/compila/linux/Impaginatore/impaginatore-app --finestra
+```
+
+Su un Mac, prima del `uv sync`, la versione minima di macOS (sotto, «macOS»), e il programma è dentro il bundle:
+
+```
+export MACOSX_DEPLOYMENT_TARGET=13.0    # Mac con chip Apple; 14.0 su un Mac Intel
+UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione --python-platform aarch64-apple-darwin
+.venv-compilazione/bin/python strumenti/compila.py
+.venv-compilazione/bin/python strumenti/verifica_pacchetto.py build/compila/mac-arm64/Impaginatore.app/Contents/MacOS/impaginatore-app --finestra --architettura arm64
 ```
 
 - `strumenti/compila.py` (stesso comando sui tre sistemi, costruisce per quello su cui gira): Nuitka in modalità
@@ -117,6 +131,23 @@ Due adattamenti del codice per Nuitka, provati dai test anche nel pacchetto Pyth
 più `__code__` alle funzioni del motore se Nuitka non lo permette (usa `functools.partial`), e `formato_1x` legge le
 copie del motore dalle risorse quando i `.py` non ci sono.
 
+## Sistemi e architetture
+
+| Computer | Pacchetto | Costruito su | Provato su | Come |
+|---|---|---|---|---|
+| Mac con chip Apple (M1 e successivi), macOS 13.0+ | `mac-arm64.dmg` | `macos-15` (arm64) | `macos-15` | nativo arm64 |
+| Mac Intel, macOS 14.0+ | `mac-x86_64.dmg` | `macos-15-intel` | `macos-15-intel` | nativo x86_64 |
+| PC Windows 10/11 x64 | `windows.exe` | `windows-2025` | `windows-2025` | nativo x64 |
+| PC Windows 11 ARM (Snapdragon X…) | lo stesso `windows.exe` | — | `windows-11-arm` | x64 in emulazione (Prism) |
+| PC Windows 10 ARM | — | — | — | non supportato: Windows 10 su ARM non esegue programmi x64 |
+| Linux x86_64 (Ubuntu 24.04 e derivate) | `linux.deb` | `ubuntu-24.04` | `ubuntu-24.04` | nativo amd64 |
+| Linux arm64 (Ubuntu 24.04 e derivate) | `linux-arm64.deb` | `ubuntu-24.04-arm` | `ubuntu-24.04-arm` | nativo arm64 |
+
+Ogni pacchetto si costruisce sul sistema e sull'architettura per cui è: Nuitka non compila per un'altra architettura
+(«macOS»). La prova (`verifica_pacchetto.py --architettura`) legge l'architettura dell'eseguibile installato (ELF,
+PE, Mach-O) e si ferma se non è quella attesa; il rapporto dice anche l'architettura della macchina (`misure.macchina`):
+così la prova su Windows 11 ARM mostra un eseguibile `x86_64` su una macchina `ARM64`.
+
 ## Sistema per sistema
 
 ### macOS
@@ -132,9 +163,15 @@ copie del motore dalle risorse quando i `.py` non ci sono.
   scaricato e l'utente lo apre da Impostazioni › Privacy e sicurezza › «Apri comunque» (macOS 15 ha tolto la scorciatoia
   Ctrl-clic › Apri). La guida lo spiega passo per passo.
 - `hdiutil create` sui Mac di GitHub a volte risponde «Resource busy»: `compila.ripeti` lo riprova fino a 4 volte.
-- Un DMG per architettura (`mac-arm64` su `macos-15`, `mac-x86_64` su `macos-15-intel`): Nuitka non fa binari universali
-  da un solo ambiente e le ruote di numpy/OpenCV sono per architettura. Il manifesto degli aggiornamenti ha una chiave
-  per ognuna.
+- Un DMG per architettura (`mac-arm64` su `macos-15`, `mac-x86_64` su `macos-15-intel`), e il pacchetto arm64 si
+  costruisce solo su un Mac con chip Apple. Provato il 16/11/2026 se si potesse farne a meno (i runner arm64 non
+  c'erano): Nuitka 4.3.5 rifiuta di compilare per arm64 da un Python x86_64 («Cannot cross compile from 'x86_64'
+  architecture Python to arm64 target. Please use an 'arm64' Python to create it.», `nuitka/options/Options.py`), e un
+  bundle universale (universal2, che Nuitka farebbe da un Python universal2) vorrebbe ruote universal2 di ogni
+  dipendenza con codice nativo: numpy, opencv-python-headless, Pillow, psd-tools, pydantic-core, rpds-py, cffi e
+  cryptography le pubblicano solo per architettura (le universal2 ci sono solo per pyobjc). Fonderle noi
+  (`delocate-merge`) vorrebbe dire distribuire librerie rimontate a mano, e il binario arm64 non si potrebbe provare su
+  un Mac Intel: non si fa. Il manifesto degli aggiornamenti ha una chiave per architettura.
 - Il bundle va nel DMG copiato con `ditto`: `codesign` firma i file di dati in `Contents/MacOS` con la firma negli
   attributi estesi, che `shutil.copytree` su macOS perde (sotto, «Problemi»). La firma si controlla sul bundle e sulla
   copia, e la pipeline la ricontrolla sul DMG montato.
@@ -143,11 +180,37 @@ copie del motore dalle risorse quando i `.py` non ci sono.
   dal sorgente con il Rust del runner e l'OpenSSL 3 di Homebrew collegato in modo statico (`OPENSSL_STATIC=1`).
   Provato nella pipeline: circa 3 minuti, e nell'elenco delle librerie native del programma non c'è nessuna libreria
   OpenSSL (né altre di Homebrew).
-- Versione minima di macOS: la decide la libreria che chiede la versione più alta; `compila.macos_minimo` la legge da
-  tutti i binari del bundle (`otool -l`) e la scrive in `componenti.json`, nel registro della costruzione e nel rapporto
-  della prova (`misure.macos_minimo`). Sul Mac Intel è **14.0** (pipeline, 16/11/2026; Nuitka da solo direbbe 10.15, ma
-  numpy e OpenCV vogliono 14). Sul Mac con chip Apple ci si aspetta lo stesso (numpy 2.5.4 `macosx_14_0_arm64`): da
-  misurare.
+- Versione minima di macOS, esplicita (`compila.MACOS_MINIMO`): **13.0 sui Mac con chip Apple, 14.0 sui Mac Intel**.
+  La decide la ruota più esigente: OpenCV 4.14 è `macosx_13_0_arm64` e `macosx_14_0_x86_64` (anche la 5.0 più recente
+  di PyPI, 16/11/2026). numpy ha per arm64 due ruote, `macosx_14_0_arm64` (Accelerate) e `macosx_11_0_arm64`
+  (OpenBLAS), e per x86_64 `macosx_14_0` e `macosx_10_13`; Pillow, cryptography, psd-tools e le altre sono 11.0 su arm64,
+  pyobjc 10.13 universal2, il Python di uv 11.0. Ogni Mac con chip Apple (M1 del 2020 compreso) può installare macOS 13 e
+  successivi; scendere sotto la 13 vorrebbe un OpenCV vecchio. Come si ottiene e si controlla:
+  - la pipeline imposta `MACOSX_DEPLOYMENT_TARGET` (13.0 o 14.0) e installa l'ambiente con `uv sync --python-platform
+    aarch64-apple-darwin` (o `x86_64-apple-darwin`): così uv sceglie le ruote per quella versione (numpy
+    `macosx_11_0_arm64` invece della 14.0, provato con uv 0.13.6) e la cryptography costruita dal sorgente sul Mac Intel
+    la scrive nei suoi binari. `compila.py` si ferma se `MACOSX_DEPLOYMENT_TARGET` non è quello di `MACOS_MINIMO`;
+  - Nuitka scrive la versione in `Info.plist` (`--macos-app-macos-min-version`, `LSMinimumSystemVersion`): su un macOS
+    più vecchio il Finder dice che il programma non è compatibile invece di lasciarlo fermarsi all'avvio. Senza, Nuitka
+    scriverebbe quella del Python che compila (11.0 su arm64, 10.15 su Intel), più bassa di quella delle librerie;
+  - `compila.controlla_macos` legge con `otool -l` la versione minima (`minos` di `LC_BUILD_VERSION`,
+    `LC_VERSION_MIN_MACOSX`) di **ogni** binario Mach-O del bundle e si ferma se uno chiede più del dichiarato, o se
+    `Info.plist` dice altro. Dichiarato e misurato vanno in `componenti.json` (`macos_minimo`, `macos_minimo_binari`);
+    la pipeline stampa `lipo -archs`, `vtool -show-build` e `LSMinimumSystemVersion` dell'eseguibile del DMG montato, e la
+    prova mette architettura e versione minima nel rapporto (`misure`).
+  - **Il minimo vero è quello di `Info.plist`** (`LSMinimumSystemVersion`, cioè `compila.MACOS_MINIMO`). L'eseguibile
+    di Nuitka (`impaginatore-app`) chiede meno: Nuitka lo compila con la versione del Python che compila, non con
+    `MACOSX_DEPLOYMENT_TARGET` (sul Mac Intel `minos 10.15`, `sdk 15.5` con `vtool -show-build`). Le librerie incluse
+    arrivano esattamente al minimo di `Info.plist` e mai oltre: sono loro a fissarlo. Aperto dal Finder su un macOS più
+    vecchio, il sistema dice che il programma non è compatibile; lanciato direttamente dal Terminale (per esempio
+    `impaginatore-app mcp`) partirebbe e si fermerebbe sulle librerie: è fuori dai sistemi supportati e non è provato.
+  - Letto sul DMG del Mac Intel della pipeline (16/11/2026; estratto con `7z` e letto con `llvm-otool -l`, come fa
+    `compila.minimi_macos`): 58 binari Mach-O, 19 con `minos 14.0` (`cv2.so`, `_multiarray_umath.so` di numpy, `_rust.so`
+    di cryptography, `libaom`, `libavif`, `libdav1d`, `libvmaf`…), 3 con 10.15 (eseguibile compreso), 34 con 10.13, 2 con
+    10.12; `LSMinimumSystemVersion` 14.0; `lipo -archs` `x86_64`; `macos_minimo` e `macos_minimo_binari` 14.0 in
+    `componenti.json`. Dal 16/11/2026 `compila.py` scrive nel registro quanti binari chiedono ogni versione e quali
+    fissano il minimo.
+  Non provato: l'avvio vero su macOS 13 o 14 (i runner sono macOS 15); quello che vale è il controllo sui binari.
 - Finestre di scelta: quelle del Finder (osascript), come nel pacchetto Python.
 
 ### Windows
@@ -173,11 +236,29 @@ copie del motore dalle risorse quando i `.py` non ci sono.
   la finestra non si apriva (sotto, «Problemi»).
 - Antivirus: i programmi compilati con Nuitka e non firmati a volte vengono segnalati per errore. Se succede, si manda il
   file al produttore dell'antivirus come falso positivo; la guida dice all'utente di non spegnere l'antivirus.
+- **PC con processore ARM** (Windows 11 su Snapdragon e simili): si installa lo stesso `Impaginatore-<v>-windows.exe`.
+  L'installatore accetta i PC ARM (`ArchitecturesAllowed=x64compatible`) e Windows 11 esegue il programma x64 in
+  emulazione; la finestra usa il WebView2 del sistema (nativo arm64) attraverso il suo caricatore x64. Il job
+  «windows-arm» della pipeline lo prova su `windows-11-arm`: installa il pacchetto x64 del giro come un utente e fa
+  tutta la prova, finestra compresa; il rapporto dice l'architettura dell'eseguibile (`x86_64`) e quella della macchina
+  (`ARM64`). Windows 10 su ARM non esegue programmi x64: non è supportato.
+- **Pacchetto nativo Windows arm64: non disponibile.** Mancano le ruote `win_arm64` di due dipendenze, controllato il
+  16/11/2026 sui file di PyPI e con `uv sync --locked --python-platform aarch64-pc-windows-msvc --no-build --dry-run`:
+  **opencv-python-headless** (né la 4.14.0.94 di `uv.lock` né la 5.0.0.93, l'ultima; ha solo `win32` e `win_amd64`;
+  serve al programma per i volti) e **cryptography** 50.0.2 (solo `win_amd64`; serve al server MCP). Le altre
+  (numpy, Pillow, psd-tools, pydantic-core, rpds-py, cffi, pywin32) le hanno; pythonnet, clr-loader e pywebview sono
+  Python puro. Costruirle dal sorgente per arm64 non si fa (OpenCV con FFmpeg, cryptography con Rust e OpenSSL: librerie
+  nostre da tenere aggiornate). Quando OpenCV e cryptography pubblicheranno ruote `win_arm64` basterà un job su
+  `windows-11-arm` con il Python arm64 di uv, Nuitka con MSVC arm64, un `.iss` con `ArchitecturesAllowed=arm64` e la
+  chiave `windows-arm64` in `chiave_pacchetto`.
 
 ### Linux
 
 - Pacchetto `.deb` per Ubuntu 24.04 e derivate (`dpkg-deb --root-owner-group -Zxz`): `/opt/impaginatore`, collegamento
-  `/usr/bin/impaginatore`, voce del menu, icone, `copyright` con le licenze.
+  `/usr/bin/impaginatore`, voce del menu, icone, `copyright` con le licenze. Due architetture: `linux` (amd64, su
+  `ubuntu-24.04`) e `linux-arm64` (arm64, su `ubuntu-24.04-arm`, il runner ARM gratuito dei repository pubblici); il
+  campo `Architecture` viene da `compila.ARCHITETTURA_DEB`. Tutte le dipendenze hanno ruote `manylinux` aarch64 e il
+  PyGObject di Ubuntu 24.04 arm64 è compilato per lo stesso Python 3.12: stesso codice, stessi passi.
 - La finestra usa **GTK e WebKitGTK del sistema** attraverso il PyGObject del sistema (`python3-gi`, `gir1.2-gtk-3.0`,
   `gir1.2-webkit2-4.1`, dipendenze del pacchetto: apt le installa). PyGObject non si può includere in modo affidabile
   (le librerie GTK e WebKit e i loro dati sono del sistema), quindi `compilato.SoloGi` carica solo `gi` e `cairo` dalla
@@ -202,34 +283,52 @@ il bundle notarizzato (macOS): `InstallazioneCompilata` è il solo punto da camb
 
 ## Pipeline (`.github/workflows/pacchetti.yml`)
 
-- Permessi in sola lettura, nessun segreto, nessuna release: i pacchetti restano come artefatti dell'esecuzione (30
-  giorni sui tag, 7 negli altri giri). Azioni fissate per hash come in `ci.yml`.
-- Il repository è pubblico, e con lui registri e artefatti dei giri: l'artefatto di ogni pacchetto contiene solo il
-  pacchetto (con `.sha256` e `.componenti.json`) e il riepilogo della verifica (`verifica-<chiave>.json` e le
-  fotografie della finestra). Il rapporto di Nuitka e la diagnosi di un controllo che non va non entrano
-  nell'artefatto: la diagnosi è nel registro del job.
-- Quali pacchetti, per non spendere minuti che non servono:
+- Permessi in sola lettura e nessun segreto; solo il job «release» (sui tag) ha `contents: write`, con il solo
+  `GITHUB_TOKEN`, per creare la release in bozza (sotto, «Rilascio»). Azioni fissate per hash come in `ci.yml`.
+- Artefatti di ogni giro, scaricabili dalla pagina dell'esecuzione (30 giorni sui tag, 7 negli altri giri):
+  `pacchetto-<chiave>` per ogni pacchetto (il pacchetto, `.sha256`, `.componenti.json`, `verifica-<chiave>.json` e le
+  fotografie della finestra), `verifica-windows-arm64` (rapporto e fotografia della prova su Windows 11 ARM) e, sui tag e
+  con l'avvio manuale, `wheel`. Il repository è pubblico, e con lui registri e artefatti: il rapporto di Nuitka e la
+  diagnosi di un controllo che non va non entrano negli artefatti, la diagnosi è nel registro del job.
+- Quali pacchetti (job «scelta», che passa l'elenco agli altri), per non spendere minuti che non servono:
 
   | Come parte | Pacchetti | Test e wheel |
   |---|---|---|
-  | tag `v*` (rilascio) | tutti e quattro | sì: test su Linux (copertura), macOS e Windows |
-  | avvio manuale (quando il file è sul ramo principale) | scelta: `linux` (di serie), `windows`, `mac-arm64`, `mac-x86_64`, `tre`, `tutti` | sì: Linux, più macOS o Windows se c'è il loro pacchetto |
-  | push su `pacchetti/<chiave>` | solo quello (`pacchetti/windows`, `pacchetti/mac-arm64`…); `pacchetti/tre` = Linux, Mac chip Apple, Windows; `pacchetti/tutti` e `pacchetti/prova` = tutti e quattro; ogni altro `pacchetti/**` = solo Linux | no (i test li fa `ci.yml` sui rami `prodotto/**`) |
+  | tag `v*` (rilascio) | tutti e cinque, più la prova su Windows ARM e la release in bozza | sì: test su Linux (copertura), macOS e Windows |
+  | avvio manuale (quando il file è sul ramo principale) | scelta: `linux` (di serie), `linux-arm64`, `windows`, `mac-arm64`, `mac-x86_64`, `arm`, `tre`, `tutti` | sì: Linux, più macOS o Windows se c'è il loro pacchetto |
+  | push su `pacchetti/<chiave>` | solo quello (`pacchetti/windows`, `pacchetti/linux-arm64`…); `pacchetti/arm` = Linux arm64, Mac chip Apple, Windows; `pacchetti/tre` = Linux, Mac chip Apple, Windows; `pacchetti/tutti` e `pacchetti/prova` = tutti; ogni altro `pacchetti/**` = solo Linux | no (i test li fa `ci.yml` sui rami `prodotto/**`) |
 
-  Un push nuovo sullo stesso ramo `pacchetti/**` annulla il giro precedente; sui tag no.
+  Ogni giro con il pacchetto Windows lo prova anche su Windows 11 ARM (job «windows-arm»). Un push nuovo sullo stesso
+  ramo `pacchetti/**` annulla il giro precedente; sui tag no.
+- Runner: `ubuntu-24.04` (linux), `ubuntu-24.04-arm` (linux-arm64), `windows-2025` (windows), `windows-11-arm` (prova
+  su ARM), `macos-15-intel` (mac-x86_64 e test macOS), `macos-15` (mac-arm64). Tutti standard e gratuiti per un
+  repository pubblico. I Mac dipendono dalla disponibilità delle macchine di GitHub (sotto, «Cosa è provato»): quando un
+  job resta senza runner GitHub lo annulla dopo circa 15 minuti («The job was not acquired by Runner of type hosted even
+  after multiple attempts») e si rilanciano i soli job annullati o falliti, `gh run rerun <id> --failed`.
+- Test prima dei pacchetti (tag e avvio manuale). Un test **fallito** ferma tutto: nessun pacchetto, nessuna wheel,
+  nessuna bozza. I test su macOS hanno un job loro («test-mac») perché le macchine macOS sono le sole che mancano: se
+  quel job è **annullato** (nessuna macchina libera, o tempo massimo superato) Linux, Linux arm64, Windows, la prova su
+  Windows ARM, la wheel e la bozza vanno avanti, mentre i job dei pacchetti Mac si fermano al primo passo («Test su
+  macOS passati?», su una macchina Linux, senza aspettare un Mac) e la bozza li elenca fra i mancanti. Un pacchetto Mac
+  non entra mai in una release senza i test macOS passati nello stesso giro. Prima del 16/11/2026 un solo job di test
+  per i tre sistemi: un test macOS annullato per mancanza di macchine fermava anche Linux e Windows.
+- Rilanciando i job falliti GitHub rifà anche quelli che dipendono da loro: dopo un test macOS annullato rifà test macOS,
+  tutti i pacchetti (con la cache di Nuitka, pochi minuti), la prova su ARM e la bozza. Gli artefatti si sostituiscono
+  (`overwrite: true`) e la bozza si aggiorna con i file dell'ultimo tentativo.
 - Ogni job di pacchetto: licenze delle dipendenze di quel sistema (macOS e Windows ne hanno di proprie: pyobjc,
   pythonnet…; `sicurezza.yml` controlla quelle di Linux; solo sui tag e con l'avvio manuale), ambiente di compilazione,
   `compila.py`, installazione come la farebbe un utente (`apt install ./….deb`; installatore silenzioso, che si installa
   per l'utente; DMG montato in sola lettura con `codesign --verify`), `verifica_pacchetto.py --finestra` sul programma
-  installato, disinstallazione (Windows). Ogni job ha un tempo massimo per sistema (Linux e Mac arm64 120 minuti, Mac
-  Intel 150, Windows 180), perché un blocco non tenga occupato un runner per ore.
+  installato con `--architettura` (quella attesa dell'eseguibile), disinstallazione (Windows). Su macOS prima
+  `MACOSX_DEPLOYMENT_TARGET` e `uv sync --python-platform` (sopra, «macOS»). Ogni job ha un tempo massimo per sistema
+  (Linux e Mac arm64 120 minuti, Mac Intel 150, Windows 180), perché un blocco non tenga occupato un runner per ore.
 - Cache: uv (con `enable-cache`; sul Mac Intel tiene anche la cryptography costruita dal sorgente) e Nuitka
   (`NUITKA_CACHE_DIR` in `actions/cache`, una chiave per esecuzione e si riparte dall'ultima). La cache di Nuitka si
   salva subito dopo la compilazione, anche quando dopo qualcosa non va.
 - La schermata di avvio si prova su tutti i sistemi con `impaginatore _avvio` (la stessa pagina della finestra): versione,
   «Prova gratuita · 30 giorni», «Free trial · 30 days left» e «Sola lettura» dopo una prova finita. «Beta privata» vuole
   una chiave firmata con la chiave vera e si prova nei test (`tests/test_avvio.py`).
-- La finestra vera si prova su tutti e tre i sistemi e blocca: la prova accende le statistiche d'uso nella sua cartella
+- La finestra vera si prova su tutti i sistemi e blocca: la prova accende le statistiche d'uso nella sua cartella
   dei dati (restano lì: il programma non ha un server a cui mandarle) e aspetta l'evento «finestra» che la schermata
   Album manda quando si carica, con la misura della pagina: così sa che la pagina gira **dentro** la finestra (WebKitGTK,
   WKWebView, WebView2), non in un browser. L'evento «avvio» dice che il motore della finestra è partito. Sotto Xvfb
@@ -261,21 +360,64 @@ e Windows 2 volte, sul piano da 2.000 minuti al mese: un giro dei quattro pacche
 fatturati) un tag ne costerebbe quindi circa 500 con la cache. I rami `pacchetti/<chiave>` servono a provare un
 sistema solo.
 
-## Rilascio (T-303, sul computer di chi pubblica)
+## Rilascio (T-303): bozza nella pipeline, firma e pubblicazione sul computer di chi pubblica
 
-```
-python strumenti/rilascio.py controlla                       # chiavi vere, repository, versione finale, CHANGELOG
-python strumenti/rilascio.py prepara <artefatti scaricati> --novita-it "…" --novita-en "…"
-```
+La chiave privata dei rilasci (Ed25519, `~/.impaginatore-negozio/` sul computer del titolare) non entra mai nella
+pipeline né in un segreto di GitHub. Per questo il rilascio va in due tempi:
 
-`prepara` cerca la wheel e i pacchetti `Impaginatore-<v>-<chiave>.<dmg|exe|deb>` negli artefatti della pipeline, li
-copia in `dist/rilascio-<v>`, firma il manifesto con la chiave privata dei rilasci (`strumenti/aggiornamento.py firma
---compilato chiave=file`, la chiave non entra mai nella pipeline), lo verifica, scrive `SHA256SUMS` e `NOTE.md` (dal
-registro, con le impronte). Se `controlla` trova problemi, o se la chiave privata usata non è quella di `CHIAVI_FIDATE`
-(i programmi installati rifiuterebbero la release), si ferma; con `--prova` va avanti e `NOTE.md` dice in testa
-«PROVA: NON PUBBLICARE». Le chiavi pubbliche vere di licenze e aggiornamenti sono nel codice dal 16/11/2026: `controlla`
-passa su questo punto e si ferma solo se qualcuno rimette i segnaposto. La release si pubblica a mano su GitHub
+1. **Pipeline** (tag `v*`): test, pacchetti costruiti e provati, prova del pacchetto Windows su Windows 11 ARM, wheel, poi
+   il job «release» con `strumenti/rilascio.py bozza` crea la release di GitHub **in bozza** (pre-release se la versione
+   è `a`, `b` o `rc`). Dentro: i pacchetti che hanno passato la prova, con `.sha256` e `.componenti.json`, la wheel,
+   `SHA256SUMS` (pacchetti e wheel) e `verifiche.json` (esito, sistema e architetture della prova di ogni pacchetto). Un
+   pacchetto senza impronta giusta o senza prova passata non entra: le note della bozza lo dicono in testa e il job
+   finisce in errore. Le note sono corte (le stesse, senza la testa della bozza, dopo `pubblica`): tabella dei pacchetti
+   con sistema, versione minima di macOS, dimensione e impronta SHA-256, cosa manca, come controllare l'impronta su ogni
+   sistema, il collegamento alla guida di installazione alla versione del tag e, ripiegate (`<details>`), le voci del
+   registro. Rilanciando il job che mancava (`gh run rerun <id> --failed`) il job «release» rigira e completa
+   la stessa bozza; una release già pubblicata la pipeline non la tocca. Permesso `contents: write` solo in quel job,
+   nessun segreto oltre `GITHUB_TOKEN`, azioni fissate per hash.
+2. **Computer di chi pubblica**: `strumenti/rilascio.py pubblica v<versione>` scarica la bozza con `gh`, ricontrolla
+   impronte (`SHA256SUMS` e ogni `.sha256`) e prove (`verifiche.json`, compresa quella su Windows ARM), controlla
+   versione, registro e chiavi (`controlla`), firma il manifesto degli aggiornamenti con tutti i pacchetti e la wheel,
+   lo verifica, carica `manifesto.json`, `manifesto.json.sig` e il `SHA256SUMS` completo, riscrive le note (novità dal
+   registro, file per sistema con la versione minima di macOS, impronte) e pubblica: come **pre-release** se la versione
+   è `a`/`b`/`rc` (non arriva agli aggiornamenti dei programmi installati, che leggono solo `releases/latest`), come
+   **ultima versione** se è finale.
+
+### Procedura per il titolare, passo per passo
+
+Una volta sola, sul proprio computer: `gh` (GitHub CLI) installato e autenticato (`gh auth login`) con un account che
+può scrivere sul repository; la chiave privata dei rilasci in `~/.impaginatore-negozio/aggiornamenti-privata-1.hex`
 (`AGGIORNAMENTI.md`, «Come si pubblica»).
+
+A ogni versione:
+
+1. Sul ramo da rilasciare: versione in `src/impaginatore/__init__.py`, sezione `## [<versione>]` in `CHANGELOG.md`
+   (per una pre-release basta `[Non rilasciato]`), `ruff check` e `pytest` verdi.
+2. `python strumenti/rilascio.py controlla`: per una versione finale deve dire «Pronta per il rilascio.» (oggi si ferma
+   anche perché `REPOSITORY` in `aggiornamenti/sorgenti.py` è vuoto: è voluto finché gli aggiornamenti restano spenti).
+3. Tag e push del tag: `git tag v<versione>` e `git push origin v<versione>`. La pipeline «Pacchetti» parte da sola.
+4. Aspettare la fine del giro (Actions › Pacchetti): la release in bozza compare in Releases. Se il job «release» è
+   rosso, le note della bozza dicono cosa manca (per esempio il Mac con chip Apple senza runner): rilanciare i job
+   falliti con `gh run rerun <id> --failed` finché la bozza è completa, a distanza di 20–30 minuti se mancano le
+   macchine macOS. Se invece un test è **fallito** non c'è bozza: si corregge, si cancella il tag (`git push origin
+   :refs/tags/v<versione>`) e si ricomincia dal punto 1. Se è fallito un pacchetto per un errore (non per mancanza di
+   macchine), la bozza c'è ma è incompleta e il rilancio non basta, perché il tag punta al codice con l'errore: si
+   corregge, si cancellano la bozza (`gh release delete v<versione> --yes`) e il tag, e si rifà il tag sul commit
+   corretto. L'indirizzo di una bozza è `…/releases/tag/untagged-…`: si apre dalla pagina Releases o con `gh release view
+   v<versione>`.
+5. Facoltativo: `python strumenti/rilascio.py pubblica v<versione> --prova` prepara tutto in
+   `dist/pubblica-<versione>` (scarica, ricontrolla, firma) senza caricare né pubblicare niente.
+6. `python strumenti/rilascio.py pubblica v<versione> --novita-it "…" --novita-en "…"` (una opzione per riga di
+   novità). Chiede conferma prima di caricare e pubblicare. Se manca di proposito un sistema, `--senza <chiave>` (per
+   esempio `--senza mac-arm64`) lo accetta e le note lo dicono.
+7. Controllare la pagina della release: file, impronte, note. Per una versione finale i programmi installati la trovano
+   al controllo successivo (solo quando `REPOSITORY` è impostato).
+
+`python strumenti/rilascio.py prepara <artefatti scaricati>` resta per preparare la stessa cartella da artefatti
+scaricati a mano (senza GitHub). Con `--prova` va avanti anche se trova problemi e `NOTE.md` dice in testa «PROVA: NON
+PUBBLICARE». Le chiavi pubbliche vere di licenze e aggiornamenti sono nel codice dal 16/11/2026: `controlla` passa su
+questo punto e si ferma solo se qualcuno rimette i segnaposto.
 
 L'elenco delle revoche delle licenze (`licenze/revoche.json`) entra nel pacchetto Python al momento del rilascio
 (`LICENZE.md`), ma il programma compilato si costruisce nella pipeline dal repository: per averlo anche nei pacchetti
@@ -294,8 +436,16 @@ compilati il file va messo nel repository sul tag del rilascio (è firmato e non
   riconoscono e il programma dice che non le apre (come il pacchetto Python senza l'extra `heic`).
 - Inno Setup e Nuitka sono strumenti di costruzione: non entrano nel programma.
 - Le licenze delle dipendenze Python passano da `strumenti/controlli.py licenze` (`LICENZE_AMMESSE`): in `sicurezza.yml`
-  per Linux, nella pipeline dei pacchetti per macOS e Windows. `compila.py` non le ricontrolla: copia i testi e scrive la
-  licenza dichiarata di ogni distribuzione inclusa, e avvisa se una non ha file di licenza.
+  per Linux, nella pipeline dei pacchetti per macOS e Windows (sui tag e con l'avvio manuale). `compila.py` non le
+  ricontrolla: copia i testi e scrive la licenza dichiarata di ogni distribuzione inclusa, e avvisa se una non ha file di
+  licenza.
+- Una dipendenza che non dichiara la licenza nei metadati va in `LICENZE_CONTROLLATE_A_MANO` (`controlli.py`) con nome e
+  versione, dopo aver letto il file di licenza della sua ruota: pip-licenses la salta solo a quella versione, e un test la
+  confronta con `uv.lock`. Oggi una sola: **clr-loader 0.3.1** (solo Windows, la usa pythonnet per la finestra), MIT nel
+  file `LICENSE` della ruota ma senza licenza nei metadati. Il 16/11/2026 ha fermato il pacchetto Windows al primo tag
+  (sui rami `pacchetti/**` il controllo non gira); provato in locale con le dipendenze di Windows (`uv pip install
+  --python-platform x86_64-pc-windows-msvc`) per Python 3.11, 3.12 e 3.14: senza la voce fallisce come nella pipeline,
+  con la voce passa.
 - `componenti.json` elenca anche i nomi delle librerie native che Nuitka ha messo nel programma. Quasi tutte vengono
   dalle ruote (e sono coperte dalle loro licenze, per esempio `cv2/LICENSE-3RD-PARTY.txt`); quelle che Nuitka prende dal
   sistema di costruzione vanno guardate a mano nell'elenco a ogni cambio di runner.
@@ -367,11 +517,17 @@ rispondere «Non consentire».
 - Identificativo del bundle macOS `it.impaginatore.Impaginatore` e indirizzo del sito nel pacchetto `.deb`
   (`impaginatore.example`, segnaposto): definitivi prima del primo rilascio.
 - Il Mac Intel nella pipeline: funziona (cryptography costruita dal sorgente, 3 minuti in più) e con il repository
-  pubblico non costa; se il repository tornasse privato è il job più caro. La versione minima di macOS è 14.0 (misurata
-  sul Mac Intel; sul Mac con chip Apple da misurare).
-- Mac con chip Apple: dal passaggio del repository a pubblico i runner macOS arm64 gratuiti non sono stati disponibili
-  (GitHub ha annullato i job dopo 15 minuti in coda, anche quelli di `ci.yml`). Se continua: riprovare in un altro
-  orario, o un runner a pagamento (`macos-15-xlarge`), o costruire il pacchetto su un Mac con chip Apple a mano con
-  gli stessi due comandi (sopra, «Come si costruisce»).
+  pubblico non costa; se il repository tornasse privato è il job più caro. Versione minima di macOS 14.0 sul Mac Intel e
+  13.0 sul Mac con chip Apple (sopra, «macOS»): scendere ancora vorrebbe un OpenCV più vecchio.
+- Mac con chip Apple: dal passaggio del repository a pubblico i runner macOS arm64 gratuiti sono stati disponibili poco
+  o niente (GitHub annulla i job dopo circa 15 minuti in coda, anche quelli di `ci.yml`; sotto «Cosa è provato» i
+  tentativi). Se continua: riprovare in un altro orario (`gh run rerun <id> --failed`), o un runner a pagamento
+  (`macos-15-xlarge`, cambiando `runs-on` del solo `mac-arm64`), o costruire il pacchetto su un Mac con chip Apple a mano
+  con gli stessi comandi (sopra, «Come si costruisce», con `MACOSX_DEPLOYMENT_TARGET=13.0`) e aggiungerlo alla bozza.
+  Un pacchetto arm64 costruito su un Mac Intel non si può fare (sopra, «macOS»).
+- Windows arm64 nativo: quando OpenCV e cryptography avranno ruote `win_arm64` (sopra, «Windows»). Fino ad allora i PC
+  ARM usano il pacchetto x64 in emulazione, provato nella pipeline.
+- Pubblicazione delle pre-release (`a`, `b`, `rc`) come «pre-release» di GitHub: non arrivano agli aggiornamenti dei
+  programmi installati, che leggono solo l'ultima versione pubblicata; i tester le scaricano dalla pagina.
 - Elenco delle revoche nel repository sul tag del rilascio.
 - AppImage per le distribuzioni che non sono Ubuntu 24.04.
