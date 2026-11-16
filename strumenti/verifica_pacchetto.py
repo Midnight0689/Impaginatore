@@ -197,9 +197,10 @@ def architetture(percorso):
 
 
 def macos_minimo(d):
-    """LSMinimumSystemVersion di Info.plist del bundle (None fuori da macOS)"""
+    """LSMinimumSystemVersion di Info.plist del bundle; d è programma_dir(), su macOS Impaginatore.app/Contents (None
+    fuori da macOS)"""
     import plistlib
-    info = d / "Contents" / "Info.plist"
+    info = d / "Info.plist"
     if not info.is_file(): return None
     with open(info, "rb") as f: return plistlib.load(f).get("LSMinimumSystemVersion")
 

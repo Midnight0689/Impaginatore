@@ -686,8 +686,11 @@ def test_architettura_dell_eseguibile(tmp_path):
 
 
 def test_versione_minima_dal_bundle(tmp_path):
+    """dalla cartella del programma installato (programma_dir dell'eseguibile), come fa prova_file: su macOS è
+    Impaginatore.app/Contents, e Info.plist sta lì"""
     import plistlib
-    assert verifica.macos_minimo(tmp_path) is None, "fuori da macOS non c'è Info.plist"
-    (tmp_path / "Contents").mkdir()
-    with open(tmp_path / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"LSMinimumSystemVersion": "13.0"}, f)
-    assert verifica.macos_minimo(tmp_path) == "13.0"
+    linux = tmp_path / "opt" / "impaginatore" / "impaginatore-app"; linux.parent.mkdir(parents=True); linux.write_bytes(b"x")
+    assert verifica.macos_minimo(verifica.programma_dir(linux)) is None, "fuori da macOS non c'è Info.plist"
+    exe = tmp_path / "Impaginatore.app" / "Contents" / "MacOS" / "impaginatore-app"; exe.parent.mkdir(parents=True); exe.write_bytes(b"x")
+    with open(tmp_path / "Impaginatore.app" / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"LSMinimumSystemVersion": "13.0"}, f)
+    assert verifica.macos_minimo(verifica.programma_dir(exe)) == "13.0"
