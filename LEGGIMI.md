@@ -9,15 +9,19 @@ Programma per impaginare album fotografici (spread, modelli, testi, correzioni) 
 
 ## Da terminale (macOS, Windows, Linux)
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"     # una volta (su Windows: .venv\Scripts\pip)
-.venv/bin/impaginatore                                         # schermata dei progetti nel browser (porta 8765)
-.venv/bin/impaginatore --porta 0 --no-browser --progetti ~/Album   # porta libera, senza browser, progetti altrove
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev,desktop]"   # una volta (su Windows: .venv\Scripts\pip); «desktop» = finestra propria
+.venv/bin/impaginatore                                         # schermata dei progetti nella finestra del programma (porta 8765)
+.venv/bin/impaginatore --browser                               # nel browser (anche senza l'extra «desktop» si apre lì)
+.venv/bin/impaginatore --porta 0 --no-browser --progetti ~/Album   # porta libera, senza finestra né browser, progetti altrove
 .venv/bin/impaginatore editor --progetto "<cartella>"          # solo l'editor di un progetto
 .venv/bin/python -m impaginatore.motore.anteprima --progetto "<cartella>" --nome v1   # script del motore
 .venv/bin/pytest                                               # test (quelli con Photoshop si saltano dove manca)
 .venv/bin/ruff check src tests
 ```
 I PSD si creano solo dove c'è Photoshop (macOS, Windows); su Linux JPG e PDF.
+La finestra del programma usa WebKit su macOS e WebView2 su Windows (già nel sistema). Su Linux servono PyGObject e
+WebKit2GTK del sistema (Debian/Ubuntu: `python3-gi gir1.2-webkit2-4.1`) e un ambiente creato con
+`python3 -m venv --system-site-packages .venv`; se manca qualcosa il programma lo scrive e apre il browser.
 
 ## Aggiornare
 Sul Mac secondario: doppio clic su **legacy/macos/Aggiorna.command**. Scarica le novità, aggiorna da solo l'ambiente e riavvia il programma.

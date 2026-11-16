@@ -58,8 +58,8 @@ client con il gettone (`POST /api/avvio`). Nessun percorso aperto dal cookie res
 - **Cookie senza `SameSite=Strict`**: scartato. Con `Strict` una pagina di un altro sito non può far partire una richiesta
   che porti il cookie, nemmeno con un link o un modulo; in più le API non accettano il cookie, solo l'intestazione.
 - **Finestra incorporata (pywebview, T-201)**: funziona allo stesso modo (la finestra apre l'URL di avvio e tiene il
-  cookie nel suo archivio); in più può aggiungere l'intestazione da sola. Il motore della finestra (WebKit su macOS,
-  WebView2 su Windows) gestisce `SameSite=Strict` e `HttpOnly` come un browser.
+  cookie nel suo archivio, la pagina tiene il gettone nella `sessionStorage`). Il motore della finestra (WebKit su macOS e
+  Linux, WebView2 su Windows) gestisce `SameSite=Strict` e `HttpOnly` come un browser. Vedi «Finestra del programma».
 
 Rischio residuo noto (VER-006): il cookie che arriva al server di un altro programma su `127.0.0.1` gli apre ancora la
 pagina (che non contiene segreti) e **le immagini** (miniature, spread, copertine, `/api/fthumb` dentro le radici) finché
@@ -68,9 +68,10 @@ indirizzo di immagine (vedi sopra, scartato per ora): decisione aperta.
 
 Rischio residuo noto: su Linux (e dove `ps` mostra gli argomenti degli altri utenti) il **codice** di avvio compare per un
 attimo sulla riga di comando del browser lanciato da `webbrowser.open`. Un altro utente che lo legge e lo usa prima del
-browser ottiene il cookie; il browser dell'utente vedrebbe allora «Questa scheda non è collegata». Passo successivo:
-aprire il browser su un file HTML temporaneo 0600 che rimanda all'URL di avvio (il codice non tocca più la riga di
-comando), oppure la finestra incorporata, dove l'URL non passa da nessun processo esterno.
+browser ottiene il cookie; il browser dell'utente vedrebbe allora «Questa scheda non è collegata». Con la finestra del
+programma (T-201) il rischio non c'è più: l'URL di avvio passa a WebKit/WebView2 dentro il processo, non su una riga di
+comando. Resta per chi usa `--browser` o non ha la finestra; lì il passo successivo è aprire il browser su un file HTML
+temporaneo 0600 che rimanda all'URL di avvio.
 
 ### Controlli su ogni richiesta (`servizio.Gestore.controlla`)
 
@@ -129,6 +130,46 @@ Passo successivo: spostare gli stili dei modelli in classi o in `elemento.style`
   `--home`). Prima la pagina dell'editor chiamava la schermata direttamente grazie a `Access-Control-Allow-Origin: *`.
 - **Un'istanza sola**: `impaginatore` con la porta occupata usa `home-<porta>.json` per riconoscere la propria schermata e
   apre un URL di avvio nuovo.
+
+## Finestra del programma (T-201)
+
+Codice: `desktop/`; prove: `tests/test_desktop.py` (pywebview finto) e `test_finestra_vera` (WebKitGTK sotto Xvfb).
+
+- **URL di avvio dentro il processo.** La finestra apre `srv.indirizzo_avvio()` con `create_window(url=...)`: nessuna
+  riga di comando, nessun browser. Il secondo avvio del comando apre un'altra finestra con un URL di avvio nuovo.
+- **Gettone fuori dall'ambiente.** Con la finestra la schermata prende il gettone con `desktop.gettone()`, che lo toglie
+  da `os.environ` (se arriva da un rilancio) invece di scriverlo: i processi del motore (WebKitWebProcess, msedgewebview2)
+  e il browser aperto per i link esterni non lo ereditano (provato con WebKitGTK leggendo `/proc/<pid>/environ`). La
+  schermata non si riavvia con `os.execv`; il rilancio dopo un aggiornamento passa il gettone in modo esplicito come prima.
+- **Solo le pagine del programma.** La finestra apre solo `http://127.0.0.1:<porta della schermata o di un editor in
+  funzione>` (porte dai file di sessione, rilette a ogni navigazione), più `about:blank`. Un sito `http`/`https` si apre
+  nel browser di sistema (`processi.apri_browser`, senza gettone); `file:`, `data:`, `javascript:`, `blob:`, indirizzi
+  con utente e password e gli altri servizi di questo computer (`localhost`, `127.x`, `::1`, `0.0.0.0` su altre porte)
+  non si aprono da nessuna parte. Due difese: il filtro del motore prima della navigazione (WebKitGTK «decide-policy»,
+  WebView2 `NavigationStarting`; finestre nuove sempre rifiutate) e il controllo dopo ogni caricamento, che lascia una
+  pagina fuori dal programma e torna all'ultima del programma. Su macOS pywebview non permette un filtro: c'è solo il
+  controllo dopo il caricamento, quindi la richiesta della pagina esterna parte prima di essere lasciata. Le nostre
+  pagine non hanno link esterni né `window.open`: il filtro è una difesa in più contro una pagina compromessa (che
+  potrebbe comunque usare `fetch`, limitato dalla CSP a `connect-src 'self'`).
+- **Nessuna API JavaScript → Python.** pywebview parte senza `js_api` e senza `expose`. Resta il ponte interno di
+  pywebview, caricato in ogni pagina (`window.pywebview`): muovere la finestra senza bordi, eventi DOM registrati da
+  Python (nessuno), stato condiviso (vuoto), `alert` di pywebview. Rischio residuo: una pagina compromessa può chiamare
+  queste funzioni interne (non leggono né scrivono file, non lanciano processi); va rivisto a ogni versione di pywebview
+  (fissata `>=6.2,<7`).
+- **Impostazioni.** `ALLOW_FILE_URLS`, `ALLOW_DOWNLOADS`, `IGNORE_SSL_ERRORS` spenti, `REMOTE_DEBUGGING_PORT` nessuna,
+  strumenti di sviluppo solo con `IMPAGINATORE_FINESTRA_SVILUPPO=1` e mai in un programma impacchettato (`sys.frozen`).
+  Motori ammessi: WebKitGTK, WebView2, WKWebView; mai Internet Explorer (`mshtml`), con cui si apre il browser.
+- **Archivio della finestra.** `private_mode=False`, `storage_path=<dati dell'utente>/finestra`: cookie (valgono la
+  sessione: il server ne cambia il valore a ogni avvio), `localStorage` dell'editor (preferenze), cache. Le immagini che
+  il server lascia tenere in cache (copertine della schermata `max-age=600`, immagini dell'editor `no-cache` con ETag o
+  `max-age=3600`) finiscono nella cache del motore come oggi in quella del browser: restano su questo computer, nella
+  cartella dei dati dell'utente.
+- **Finestre di scelta.** Nella finestra (GTK, macOS) le apre pywebview; l'editor, che è un altro processo, le chiede
+  alla schermata con `POST /api/dialogo` (gettone della schermata dal file di sessione, come `/api/vai_progetti`), che
+  risponde solo se la finestra è aperta e solo per `cartella`, `zip`, `foto`. Il percorso scelto diventa una radice
+  consentita come prima, nel processo che l'ha chiesto. Su Windows restano quelle di tkinter (non provate con pywebview).
+- **Foto trascinate sulla finestra**: non attivate (ARCHITETTURA.md, «Finestra desktop»); i percorsi che pywebview
+  offrirebbe alla pagina sono in parte scrivibili dalla pagina stessa.
 
 ### Come un client locale fidato (server MCP, T-203) ottiene il gettone
 
@@ -248,7 +289,9 @@ sha256 del pacchetto, niente ritorni a versioni vecchie, installazione solo su r
   dell'applet compilata (`main.scpt`), non provato su un Mac. Correzione proposta:
   ricompilare `main.scpt` (serve un Mac, `osacompile`) perché esegua solo `home.py --porta 8765 --daemon`, che pensa da
   sé a un'istanza sola e all'apertura del browser. Non si è aperta un'eccezione al gettone per `/api/ping`.
-- Il codice di avvio sulla riga di comando del browser (vedi sopra).
+- Il codice di avvio sulla riga di comando del browser, solo senza la finestra del programma (vedi sopra).
 - `'unsafe-inline'` negli stili (vedi sopra).
+- Finestra del programma: filtro di navigazione e finestre di scelta provati con WebKitGTK; WebView2 e WKWebView no
+  (vedi «Finestra del programma»); ponte interno di pywebview in ogni pagina.
 - Provato su Linux. Su macOS e Windows le parti di sistema (osascript, PowerShell, permessi dei file) sono provate
   simulando il sistema e intercettando i comandi; vanno provate su macchine reali.
