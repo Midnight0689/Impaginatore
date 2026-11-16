@@ -1,0 +1,329 @@
+{
+  "valuta": "EUR",
+  "versione_listino": "2026-11-15d",
+  "aliquota_iva_riferimento": 0.22,
+  "nota_iva": "prezzo_ivato calcolato con IVA italiana 22%; il Merchant of Record applica l'IVA del paese dell'acquirente (B2C UE) o il reverse charge (B2B UE con partita IVA valida).",
+  "semantica_funzioni": "true = inclusa (per le funzioni con limite numerico significa tutti/illimitati); false = esclusa; numero intero = limite massimo. Le chiavi sono stabili: non rinominarle, aggiungerne di nuove.",
+  "tiers": [
+    {
+      "id": "essenziale",
+      "nome": "Essenziale",
+      "prezzo_netto": 49,
+      "prezzo_ivato": 59.78,
+      "prezzo_lancio": 39,
+      "prezzo_lancio_ivato": 47.58,
+      "attivazioni": 1,
+      "consigliato": false,
+      "aggiornamenti": {
+        "versione_maggiore_inclusa": true,
+        "upgrade_maggiore_incluso": false,
+        "sconto_upgrade_maggiore_pct": 50
+      },
+      "supporto": {
+        "canale": "ore_prepagate",
+        "incluso": "documentazione, guide video, correzione dei difetti",
+        "ore_assistenza_incluse": 0
+      },
+      "funzioni": {
+        "editor_completo": true,
+        "modelli_autore": 30,
+        "modelli_personali": 5,
+        "export_jpg": true,
+        "export_pdf": true,
+        "export_psd_livelli": false,
+        "impaginazione_automatica_album": false,
+        "correzione_spaziature_album": false,
+        "uniformita_tono": false,
+        "testo_stili": true,
+        "versioni_backup": true,
+        "import_export_progetto": true,
+        "server_mcp": false,
+        "preset_laboratori": true,
+        "computer": 1,
+        "uso_commerciale_multipostazione": false,
+        "supporto_prioritario": false
+      }
+    },
+    {
+      "id": "pro",
+      "nome": "Pro",
+      "prezzo_netto": 99,
+      "prezzo_ivato": 120.78,
+      "prezzo_lancio": 79,
+      "prezzo_lancio_ivato": 96.38,
+      "attivazioni": 2,
+      "consigliato": true,
+      "aggiornamenti": {
+        "versione_maggiore_inclusa": true,
+        "upgrade_maggiore_incluso": false,
+        "sconto_upgrade_maggiore_pct": 50
+      },
+      "supporto": {
+        "canale": "ore_prepagate",
+        "incluso": "documentazione, guide video, correzione dei difetti",
+        "ore_assistenza_incluse": 0
+      },
+      "funzioni": {
+        "editor_completo": true,
+        "modelli_autore": true,
+        "modelli_personali": true,
+        "export_jpg": true,
+        "export_pdf": true,
+        "export_psd_livelli": true,
+        "impaginazione_automatica_album": true,
+        "correzione_spaziature_album": true,
+        "uniformita_tono": true,
+        "testo_stili": true,
+        "versioni_backup": true,
+        "import_export_progetto": true,
+        "server_mcp": true,
+        "preset_laboratori": true,
+        "computer": 2,
+        "uso_commerciale_multipostazione": false,
+        "supporto_prioritario": false
+      }
+    },
+    {
+      "id": "studio",
+      "nome": "Studio",
+      "prezzo_netto": 149,
+      "prezzo_ivato": 181.78,
+      "prezzo_lancio": 119,
+      "prezzo_lancio_ivato": 145.18,
+      "attivazioni": 5,
+      "consigliato": false,
+      "aggiornamenti": {
+        "versione_maggiore_inclusa": true,
+        "upgrade_maggiore_incluso": true,
+        "sconto_upgrade_maggiore_pct": 50
+      },
+      "supporto": {
+        "canale": "ore_prepagate",
+        "incluso": "documentazione, guide video, correzione dei difetti",
+        "ore_assistenza_incluse": 1
+      },
+      "funzioni": {
+        "editor_completo": true,
+        "modelli_autore": true,
+        "modelli_personali": true,
+        "export_jpg": true,
+        "export_pdf": true,
+        "export_psd_livelli": true,
+        "impaginazione_automatica_album": true,
+        "correzione_spaziature_album": true,
+        "uniformita_tono": true,
+        "testo_stili": true,
+        "versioni_backup": true,
+        "import_export_progetto": true,
+        "server_mcp": true,
+        "preset_laboratori": true,
+        "computer": 5,
+        "uso_commerciale_multipostazione": true,
+        "supporto_prioritario": false
+      }
+    }
+  ],
+  "upgrade_tier_netto": {
+    "essenziale_pro": 50,
+    "pro_studio": 50,
+    "essenziale_studio": 100
+  },
+  "politica_aggiornamenti": {
+    "mesi_minimi_tra_versioni_maggiori": 18,
+    "giorni_finestra_upgrade_gratuito": 90,
+    "licenza_scade": false,
+    "attivazione_online_una_tantum_per_computer": false,
+    "nota_attivazione": "Decisione 15/11/2026: nessun server di attivazione. La chiave è firmata, verificata in locale e intestata all'acquirente (nome mostrato nell'app). Il numero di computer è un limite contrattuale, non tecnico."
+  },
+  "lancio": {
+    "sconto_indicativo_pct": 20,
+    "durata_giorni": 60,
+    "max_licenze": 300
+  },
+  "garanzia_rimborso_giorni": 30,
+  "prova": {
+    "giorni": 30,
+    "funzioni_come_tier": "pro",
+    "carta_richiesta": false,
+    "limite_spread": null,
+    "filigrana_export": true,
+    "dopo_scadenza": "sola_lettura",
+    "funzioni": {
+      "editor_completo": true,
+      "modelli_autore": true,
+      "modelli_personali": true,
+      "export_jpg": true,
+      "export_pdf": true,
+      "export_psd_livelli": false,
+      "impaginazione_automatica_album": true,
+      "correzione_spaziature_album": true,
+      "uniformita_tono": true,
+      "testo_stili": true,
+      "versioni_backup": true,
+      "import_export_progetto": true,
+      "server_mcp": true,
+      "preset_laboratori": true,
+      "computer": 1,
+      "uso_commerciale_multipostazione": false,
+      "supporto_prioritario": false
+    }
+  },
+  "laboratorio": {
+    "descrizione": "Edizione white-label/OEM con catalogo del laboratorio (formati, copertine, abbondanze, profili ICC, controlli prestampa) e marchio del laboratorio. Prezzi IVA esclusa; intervalli = ipotesi motivate da validare nei piloti. Dal listino 2026-11-15b le licenze a volume costano meno del Pro al dettaglio (sconto a volume sul Pro, mai sotto 39 € a licenza: con il Pro a 99 € del listino 2026-11-15d è il 39% del suo listino; sconti 40/51/61%): il valore dell'edizione sta nel setup, nella manutenzione del catalogo e nell'assistenza allo staff del laboratorio. Contratti fatturati direttamente al laboratorio, senza Merchant of Record.",
+    "riferimento_prezzo_licenze": "pro",
+    "fatturazione": "diretta_b2b",
+    "funzioni_come_tier": "pro",
+    "funzioni": {
+      "editor_completo": true,
+      "modelli_autore": true,
+      "modelli_personali": true,
+      "export_jpg": true,
+      "export_pdf": true,
+      "export_psd_livelli": true,
+      "impaginazione_automatica_album": true,
+      "correzione_spaziature_album": true,
+      "uniformita_tono": true,
+      "testo_stili": true,
+      "versioni_backup": true,
+      "import_export_progetto": true,
+      "server_mcp": true,
+      "preset_laboratori": true,
+      "computer": 2,
+      "uso_commerciale_multipostazione": false,
+      "supporto_prioritario": false
+    },
+    "modelli": [
+      {
+        "id": "setup_volume",
+        "nome": "Setup + licenze a volume",
+        "setup_eur": [
+          3000,
+          9000
+        ],
+        "licenze": [
+          {
+            "quantita_min": 50,
+            "prezzo_unitario_eur": 59,
+            "sconto_su_pro_pct": 40
+          },
+          {
+            "quantita_min": 200,
+            "prezzo_unitario_eur": 49,
+            "sconto_su_pro_pct": 51
+          },
+          {
+            "quantita_min": 500,
+            "prezzo_unitario_eur": 39,
+            "sconto_su_pro_pct": 61
+          }
+        ],
+        "manutenzione_catalogo_anno_eur": [
+          1800,
+          4800
+        ],
+        "manutenzione_obbligatoria": true,
+        "manutenzione_include": [
+          "aggiornamenti_catalogo",
+          "verifica_compatibilita_nuove_versioni",
+          "ore_assistenza_staff"
+        ],
+        "ore_assistenza_staff_incluse_anno": [
+          10,
+          25
+        ],
+        "setup_include": [
+          "import_catalogo",
+          "regole_prestampa",
+          "marchio",
+          "test_di_stampa",
+          "formazione_staff"
+        ]
+      },
+      {
+        "id": "revenue_share",
+        "nome": "Revenue share per album",
+        "setup_eur": [
+          1500,
+          3000
+        ],
+        "per_album_eur": [
+          2,
+          5
+        ],
+        "alternativa_pct_valore_ordine": [
+          2,
+          4
+        ],
+        "minimo_annuo_eur": 2400,
+        "vincoli": {
+          "export_solo_formati_laboratorio": true
+        }
+      },
+      {
+        "id": "licenza_sito",
+        "nome": "Licenza di sito annuale",
+        "fasce": [
+          {
+            "fotografi_attivi_max": 300,
+            "canone_anno_eur": [
+              6000,
+              12000
+            ]
+          },
+          {
+            "fotografi_attivi_max": 1500,
+            "canone_anno_eur": [
+              12000,
+              30000
+            ]
+          },
+          {
+            "fotografi_attivi_max": null,
+            "canone_anno_eur_da": 30000
+          }
+        ],
+        "include": [
+          "setup",
+          "aggiornamenti_catalogo",
+          "supporto_secondo_livello"
+        ]
+      }
+    ],
+    "assistenza": {
+      "descrizione": "Ore di assistenza che il laboratorio compra per il suo staff o regala ai suoi fotografi, oltre a quelle incluse nella manutenzione. Stesse regole dell'assistenza a ore al dettaglio: pagate in anticipo, valide 12 mesi, unità minima 30 minuti.",
+      "prezzo_ora_netto": 45,
+      "pacchetto_minimo_ore": 20
+    },
+    "pilota": {
+      "giorni": 90,
+      "fotografi": [
+        10,
+        20
+      ],
+      "setup_gratuito_primi_laboratori": 3,
+      "sconto_setup_successivi_pct": 50
+    }
+  },
+  "nota_listino": "Listino ribassato per decisione del titolare (15/11/2026): prezzo d'impulso, così basso che comprare conviene più che cercare una copia pirata. L'assistenza personale non è inclusa: si compra a ore, in anticipo.",
+  "assistenza": {
+    "descrizione": "Assistenza personale in videochiamata o da remoto, pagata in anticipo a ore. Le ore non scadono per 12 mesi. La correzione dei difetti del programma resta gratuita.",
+    "unita_minima_minuti": 30,
+    "pacchetti": [
+      {
+        "id": "ora_1",
+        "ore": 1,
+        "prezzo_netto": 49
+      },
+      {
+        "id": "ore_5",
+        "ore": 5,
+        "prezzo_netto": 249
+      },
+      {
+        "id": "ore_10",
+        "ore": 10,
+        "prezzo_netto": 499
+      }
+    ]
+  }
+}

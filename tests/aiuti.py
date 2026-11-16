@@ -105,3 +105,40 @@ def riduci(st):
     return dict(nome=st["nome"], W=st["W"], H=st["H"], fold=st["fold"], gap=st["gap"], ppi=st["ppi"], globale=st["globale"], tolte=st["tolte"], unused=st["unused"],
                 modules=st["modules"], photos=st["photos"],
                 spreads=[dict(L=s["L"], R=s["R"], items=[{k: it.get(k) for k in chiavi} for it in s["items"] if it["k"] != "t"]) for s in st["spreads"]])
+
+
+class Chiavi:
+    """coppia di chiavi di firma delle licenze per una sessione di test (la privata nasce qui e sparisce con i test: quella di
+    produzione non entra mai nel repository) e licenze IMP1- firmate con quella, nel formato di licenze/chiave.py"""
+
+    def __init__(self, seme):
+        from impaginatore import ed25519
+        self.seme, self.pubblica = seme, ed25519.pubblica(seme)
+        self.studio = self.chiave()
+
+    def payload(self, fascia="studio", versione=2, computer=5, seriale=1, emessa="2026-11-01", intestatario="Studio Prova", flag=0, scadenza=None, id_firma=1, formato=None):
+        import datetime as dt
+        from impaginatore.licenze import chiave as K
+        giorni = lambda d: (dt.date.fromisoformat(d) - K.EPOCA).days
+        codice = {v: k for k, v in K.FASCE.items()}.get(fascia, fascia)
+        nome = intestatario.encode("utf-8")
+        coda = b"" if scadenza is None else giorni(scadenza).to_bytes(2, "big")
+        formato = formato if formato is not None else (2 if scadenza is not None else 1)
+        return bytes([formato, id_firma, codice, versione, computer, flag]) + seriale.to_bytes(4, "big") + giorni(emessa).to_bytes(2, "big") + bytes([len(nome)]) + nome + coda
+
+    def firma(self, payload, seme=None):
+        """testo IMP1- del payload firmato (con un altro seme: una firma che il programma non riconosce)"""
+        from impaginatore import ed25519
+        from impaginatore.licenze import chiave as K
+        return K.in_testo(payload + ed25519.firma(seme or self.seme, K.DOMINIO_LICENZA + payload))
+
+    def chiave(self, seme=None, **campi):
+        return self.firma(self.payload(**campi), seme)
+
+    def revoche(self, seriali, id_firma=1, seme=None, emessa="2026-11-16T10:00:00+00:00"):
+        """elenco delle revoche firmato come lo scrive chiavi.py"""
+        from impaginatore import ed25519
+        from impaginatore.licenze import chiave as K
+        corpo = {"formato": 1, "id_firma": id_firma, "emessa": emessa, "seriali": list(seriali)}
+        corpo["firma"] = ed25519.firma(seme or self.seme, K.DOMINIO_REVOCHE + K.canonico(corpo)).hex()
+        return corpo

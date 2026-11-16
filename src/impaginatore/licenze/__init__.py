@@ -1,0 +1,358 @@
+"""Licenze, fasce e prova gratuita (T-202): tutto si decide sul computer dell'utente, senza rete e senza server.
+
+Documento: docs/architettura/LICENZE.md (come funziona, modello di minaccia, cosa non si fa).
+
+stato() dice in che condizione è il programma:
+    prova       nessuna chiave, prova gratuita in corso: funzioni di «prova» in tier.json, esportazioni con la filigrana
+    attiva      chiave valida: funzioni della sua fascia
+    scaduta     prova finita, oppure chiave a scadenza (laboratori) oltre l'ultimo giorno: sola lettura
+    revocata    chiave nell'elenco firmato delle revoche, che arriva con gli aggiornamenti del programma: sola lettura
+    non valida  chiave salvata che non si verifica o è di un'altra versione maggiore: come senza chiave (prova o sola lettura)
+Sola lettura (LICENZA-USO.md 5.3, sito, email di fine prova): i progetti si aprono e si guardano, si esportano come
+progetto (cartella o ZIP) e si ripristinano le versioni; non si modificano e non si esportano JPG, PDF e PSD.
+
+consentita(funzione) è l'unica domanda che il resto del programma fa sulle fasce. Le funzioni sono le chiavi di «funzioni»
+in tier.json (copia in questa cartella, uguale a docs/mercato/tier.json: lo controlla un test). I cancelli dell'editor
+(controlla_operazione, controlla_esportazione, controlla_modelli, controlla_lettura) rifiutano con NonConsentita, che ha
+un messaggio per l'utente.
+
+File, nella cartella dei dati dell'utente (cartella(); 0700, file 0600): chiave.txt (il testo della chiave) e prova.json
+(inizio della prova e ultima ora vista, contro l'orologio spostato indietro). Importare il modulo non legge né scrive niente.
+"""
+import datetime as dt
+import json
+import logging
+import math
+import os
+import secrets
+import threading
+import time
+
+from .. import __version__
+from ..piattaforma import cartelle
+from . import chiave as K
+from .chiave import ChiaveNonValida  # noqa: F401  (si usa come licenze.ChiaveNonValida)
+
+log = logging.getLogger("impaginatore.licenze")
+
+STATI = ("prova", "attiva", "scaduta", "revocata", "non valida")
+QUI = os.path.dirname(os.path.abspath(__file__))
+FILE_TIER = os.path.join(QUI, "tier.json")
+FILE_REVOCHE = os.path.join(QUI, "revoche.json")      # elenco firmato delle revoche: lo aggiunge il rilascio (LICENZE.md); manca = nessuna revoca
+FILE_CHIAVE, FILE_PROVA = "chiave.txt", "prova.json"
+VERSIONE_MAGGIORE = int(__version__.split(".")[0])
+SEMPRE = ("import_export_progetto", "versioni_backup")  # anche in sola lettura: il lavoro fatto non si perde mai
+GIORNO = 86400
+TOLLERANZA_OROLOGIO = 6 * 3600                          # orologio indietro di meno (fuso, ora legale, sincronizzazione): non si segnala
+AGGIORNA_VISTO = 600                                    # l'ultima ora vista si riscrive al massimo ogni 10 minuti
+
+_LOCK = threading.Lock()
+_VERIFICHE = {}                                         # (testo, chiavi pubbliche) -> contenuto della chiave o messaggio d'errore
+_TIER = {}
+_REVOCHE = {}
+
+
+class NonConsentita(ValueError):
+    """funzione che la licenza non comprende, o programma in sola lettura: il messaggio è per l'utente"""
+
+
+def cartella():
+    """cartella dei file della licenza, dentro i dati dell'utente (non la crea)"""
+    return os.path.join(cartelle.dati_utente(), "licenza")
+
+
+def orologio():
+    """ora attuale (secondi): le prove la sostituiscono"""
+    return time.time()
+
+
+# ---------------------------------------------------------------- tier.json
+def tier():
+    """tier.json (fasce, prova, laboratorio), letto una volta"""
+    if not _TIER:
+        with open(FILE_TIER, encoding="utf-8") as f: _TIER.update(json.load(f))
+    return _TIER
+
+
+def funzioni_di(fascia):
+    """funzioni di una fascia («essenziale», «pro», «studio», «laboratorio») o della prova («prova»)"""
+    t = tier()
+    if fascia in ("prova", "laboratorio"): return dict(t[fascia]["funzioni"])
+    return dict(next(x for x in t["tiers"] if x["id"] == fascia)["funzioni"])
+
+
+def funzioni_sola_lettura():
+    return {k: k in SEMPRE for k in funzioni_di("prova")}
+
+
+def nome_fascia(fascia):
+    if fascia == "laboratorio": return "Laboratorio"
+    return next(x["nome"] for x in tier()["tiers"] if x["id"] == fascia)
+
+
+def fasce_con(funzione, senza_limite=False):
+    """nomi delle fasce in vendita che comprendono la funzione (senza_limite: solo quelle dove non ha un tetto), es. «Pro e Studio»"""
+    nomi = [x["nome"] for x in tier()["tiers"] if (x["funzioni"].get(funzione) is True if senza_limite else x["funzioni"].get(funzione) not in (False, 0, None))]
+    return " e ".join([", ".join(nomi[:-1]), nomi[-1]] if len(nomi) > 1 else nomi)
+
+
+# ---------------------------------------------------------------- file
+def _scrivi_riservato(path, testo):
+    """scrive un file che legge solo l'utente (0600, cartella 0700), in modo atomico"""
+    d = os.path.dirname(path)
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    try: os.chmod(d, 0o700)
+    except OSError as e: log.warning("permessi della cartella della licenza non impostati: %s", e.strerror)
+    tmp = f"{path}.{secrets.token_hex(6)}.tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f: f.write(testo); f.flush(); os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def chiave_salvata():
+    """testo della chiave salvata su questo computer, o None"""
+    try:
+        with open(os.path.join(cartella(), FILE_CHIAVE), encoding="utf-8", errors="replace") as f: t = f.read(K.MAX_TESTO + 1)
+    except FileNotFoundError: return None
+    except OSError as e: log.warning("chiave di licenza non letta: %s", e.strerror); return None
+    return t.strip() or None
+
+
+def _verifica(testo):
+    """contenuto della chiave (firma verificata una volta per testo e per chiavi pubbliche); ChiaveNonValida altrimenti"""
+    k = (testo, tuple(sorted(K.CHIAVI_PUBBLICHE.items())))
+    with _LOCK:
+        if k not in _VERIFICHE:
+            if len(_VERIFICHE) > 64: _VERIFICHE.clear()
+            try: _VERIFICHE[k] = K.decodifica(testo)
+            except K.ChiaveNonValida as e: _VERIFICHE[k] = str(e)
+        r = _VERIFICHE[k]
+    if isinstance(r, str): raise K.ChiaveNonValida(r)
+    return dict(r)
+
+
+def revocate():
+    """seriali dell'elenco firmato delle revoche che arriva con il programma; vuoto se manca, non si legge o la firma non
+    è valida (in quei casi non succede niente: FORMATO-CHIAVE.md, § 4)"""
+    try: st = os.stat(FILE_REVOCHE)
+    except OSError: return frozenset()
+    k = (FILE_REVOCHE, st.st_mtime_ns, st.st_size, tuple(sorted(K.CHIAVI_PUBBLICHE.items())))
+    with _LOCK:
+        if _REVOCHE.get("k") != k:
+            try:
+                with open(FILE_REVOCHE, "rb") as f: corpo = json.loads(f.read(4 * 2**20).decode("utf-8"))
+                seriali = frozenset(K.revoche(corpo)[0])
+            except (OSError, ValueError) as e:
+                log.warning("elenco delle revoche ignorato: %s", e); seriali = frozenset()
+            _REVOCHE.update(k=k, seriali=seriali)
+        return _REVOCHE["seriali"]
+
+
+# ---------------------------------------------------------------- prova gratuita
+def _leggi_prova(path):
+    try:
+        with open(path, encoding="utf-8") as f: d = json.load(f)
+    except FileNotFoundError: return None
+    except (OSError, ValueError) as e: log.warning("dati della prova illeggibili (%s): la prova riparte", type(e).__name__); return None
+    v = [d.get(k) for k in ("inizio", "visto")] if isinstance(d, dict) else []
+    if len(v) == 2 and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in v) and v[0] <= v[1]: return dict(inizio=float(v[0]), visto=float(v[1]))
+    log.warning("dati della prova non validi: la prova riparte"); return None
+
+
+def _data(t):
+    return dt.datetime.fromtimestamp(t).date()
+
+
+def _it(giorno):
+    """data per l'utente: 16/12/2026"""
+    return dt.date.fromisoformat(giorno).strftime("%d/%m/%Y") if isinstance(giorno, str) else giorno.strftime("%d/%m/%Y")
+
+
+def prova(adesso=None):
+    """stato della prova gratuita; alla prima apertura del programma la fa partire. L'ora che conta non torna mai indietro:
+    è la più recente tra l'orologio e l'ultima vista (prova.json), così spostare indietro la data non allunga la prova"""
+    adesso = orologio() if adesso is None else adesso
+    path = os.path.join(cartella(), FILE_PROVA)
+    d = _leggi_prova(path); nuova = d is None
+    if nuova: d = dict(inizio=adesso, visto=adesso)
+    efficace = max(adesso, d["visto"])
+    if nuova or adesso > d["visto"] + AGGIORNA_VISTO:
+        d["visto"] = efficace
+        try: _scrivi_riservato(path, json.dumps(dict(formato=1, inizio=d["inizio"], visto=d["visto"])))
+        except OSError as e: log.warning("dati della prova non salvati: %s", e.strerror)
+    giorni = tier()["prova"]["giorni"]; fine = d["inizio"] + giorni * GIORNO
+    return dict(inizio=_data(d["inizio"]).isoformat(), fine=_data(fine).isoformat(), giorni=giorni, giorni_rimasti=max(0, math.ceil((fine - efficace) / GIORNO)),
+                in_corso=efficace < fine, orologio_indietro=adesso < d["visto"] - TOLLERANZA_OROLOGIO)
+
+
+# ---------------------------------------------------------------- stato
+MSG_SOLA_LETTURA = ("I progetti si aprono in sola lettura: puoi guardarli ed esportarli come progetto (cartella o ZIP), "
+                    "non modificarli né esportare JPG, PDF o PSD.")
+MSG_REVOCATA = ("Questa licenza non è più attiva, di solito dopo un rimborso o un passaggio a un'altra licenza. I tuoi progetti "
+                "restano apribili in sola lettura. Se pensi che sia un errore, scrivici.")
+
+
+def _problema(info, adesso):
+    """(stato, motivo) se la chiave, pur firmata, non vale su questo programma oggi; None se vale"""
+    v = info["versione_maggiore"]
+    if v > VERSIONE_MAGGIORE: return "non valida", f"Questa chiave è per Impaginatore {v}: aggiorna il programma per usarla."
+    if v < VERSIONE_MAGGIORE:
+        return "non valida", f"Questa chiave è per Impaginatore {v}. Per Impaginatore {VERSIONE_MAGGIORE} serve l'aggiornamento della licenza: trovi il prezzo scontato sul sito."
+    if info["seriale"] in revocate(): return "revocata", MSG_REVOCATA
+    if info["scade"] and _data(adesso).isoformat() > info["scade"]:
+        chi = f" intestata a «{info['intestatario']}»" if info["intestatario"] else ""
+        return "scaduta", f"La licenza {nome_fascia(info['fascia'])}{chi} è scaduta il {_it(info['scade'])}. {MSG_SOLA_LETTURA} Per rinnovarla rivolgiti a chi te l'ha fornita."
+    return None
+
+
+def _msg_attiva(info):
+    chi = f", intestata a «{info['intestatario']}»," if info["intestatario"] else ""
+    coda = f" Vale fino al {_it(info['scade'])}." if info["scade"] else f" Tutti gli aggiornamenti della versione {info['versione_maggiore']} sono inclusi."
+    return f"Licenza {nome_fascia(info['fascia'])} attiva{chi} per {info['computer']} computer.{coda}"
+
+
+def _msg_prova(pr):
+    f = funzioni_di("prova"); t = tier()["prova"]
+    quando = "oggi è l'ultimo giorno" if pr["giorni_rimasti"] <= 1 else f"mancano {pr['giorni_rimasti']} giorni"
+    cosa = "Hai le funzioni del Pro" + ("" if f["export_psd_livelli"] else " tranne il PSD a livelli") + ("; le esportazioni JPG e PDF hanno una filigrana." if t["filigrana_export"] else ".")
+    return f"Prova gratuita: {quando} (fino al {_it(pr['fine'])}). {cosa}"
+
+
+def _senza_chiave(base, pr):
+    """stato del programma senza una chiave che valga: prova in corso o sola lettura"""
+    if pr["in_corso"]:
+        return dict(base, stato="prova", sola_lettura=False, filigrana=bool(tier()["prova"]["filigrana_export"]), funzioni=funzioni_di("prova"), messaggio=_msg_prova(pr))
+    return dict(base, stato="scaduta", sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(),
+                messaggio=f"La prova gratuita è finita il {_it(pr['fine'])}. {MSG_SOLA_LETTURA} Inserisci una chiave di licenza per continuare da dove eri.")
+
+
+def stato(adesso=None):
+    """condizione del programma: {stato, messaggio, sola_lettura, filigrana, funzioni, fascia, nome_fascia, intestatario,
+    computer, seriale, emessa, scade, impronta, omaggio, beta, motivo, prova, versione_maggiore, chiave_presente}. Mai il
+    testo della chiave"""
+    adesso = orologio() if adesso is None else adesso
+    pr = prova(adesso); testo = chiave_salvata()
+    base = dict(versione_maggiore=VERSIONE_MAGGIORE, prova=pr, fascia=None, nome_fascia=None, intestatario=None, computer=None, seriale=None,
+                emessa=None, scade=None, impronta=None, omaggio=False, beta=False, motivo=None, chiave_presente=bool(testo))
+    if not testo: return _orologio(_senza_chiave(base, pr))
+    try:
+        info = _verifica(testo)
+        base.update({k: info[k] for k in ("fascia", "intestatario", "computer", "seriale", "emessa", "scade", "impronta", "omaggio", "beta")}, nome_fascia=nome_fascia(info["fascia"]))
+        problema = _problema(info, adesso)
+    except K.ChiaveNonValida as e: problema = ("non valida", str(e))
+    if problema is None: return dict(base, stato="attiva", sola_lettura=False, filigrana=False, funzioni=funzioni_di(info["fascia"]), messaggio=_msg_attiva(info))
+    tipo, motivo = problema
+    if tipo != "non valida": return dict(base, stato=tipo, sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(), messaggio=motivo, motivo=motivo)
+    s = _orologio(_senza_chiave(base, pr))
+    seguito = f"Intanto vale la prova gratuita: {s['messaggio'][len('Prova gratuita: '):]}" if s["stato"] == "prova" else MSG_SOLA_LETTURA
+    return dict(s, stato="non valida", motivo=motivo, messaggio=f"La chiave salvata non vale. {motivo} {seguito}")
+
+
+def _orologio(s):
+    if s["prova"]["orologio_indietro"] and s["stato"] in ("prova", "scaduta"):
+        s["messaggio"] += " L'orologio del computer è indietro rispetto all'ultimo uso: per la prova conta la data più recente."
+    return s
+
+
+def attiva(testo, adesso=None):
+    """verifica la chiave incollata e, se vale su questo programma oggi, la salva (0600) al posto di quella che c'era.
+    Restituisce il nuovo stato; ChiaveNonValida con il motivo altrimenti (la chiave che c'era resta)"""
+    adesso = orologio() if adesso is None else adesso
+    info = _verifica(K.in_testo(K.da_testo(testo)))
+    problema = _problema(info, adesso)
+    if problema: raise K.ChiaveNonValida(problema[1])
+    _scrivi_riservato(os.path.join(cartella(), FILE_CHIAVE), info["testo"] + "\n")
+    log.info("licenza %s attivata (seriale %s)", info["fascia"], info["seriale"])          # mai il testo della chiave né l'intestatario
+    return stato(adesso)
+
+
+def rimuovi(adesso=None):
+    """toglie la chiave da questo computer (per usarla su un altro): torna la prova, se c'è ancora, o la sola lettura"""
+    try:
+        os.remove(os.path.join(cartella(), FILE_CHIAVE)); log.info("licenza tolta da questo computer")
+    except FileNotFoundError: pass
+    return stato(adesso)
+
+
+# ---------------------------------------------------------------- domande e cancelli
+def consentita(funzione, st=None):
+    """la licenza di questo computer comprende la funzione (chiave di «funzioni» in tier.json)? Un limite numerico maggiore
+    di zero conta come sì (limite() dice quanto). KeyError per una funzione che tier.json non conosce"""
+    v = (st or stato())["funzioni"][funzione]
+    return v is True or (type(v) is int and v > 0)
+
+
+def limite(funzione, st=None):
+    """None = senza limite, 0 = esclusa, n = al massimo n"""
+    v = (st or stato())["funzioni"][funzione]
+    return None if v is True else 0 if v is False else int(v)
+
+
+NOMI_FUNZIONI = {
+    "editor_completo": "La modifica degli album", "export_jpg": "L'esportazione JPG", "export_pdf": "L'esportazione PDF",
+    "export_psd_livelli": "Il PSD a livelli", "impaginazione_automatica_album": "L'impaginazione automatica dell'album",
+    "correzione_spaziature_album": "La correzione degli spazi su tutto l'album", "uniformita_tono": "Il controllo del tono dell'album",
+    "modelli_personali": "Il salvataggio dei modelli personali", "server_mcp": "Il collegamento con l'assistente AI (MCP)",
+}
+
+
+def motivo(funzione, st=None):
+    """frase per l'utente: perché la funzione non c'è e dove si trova"""
+    st = st or stato()
+    if st["sola_lettura"]: return f"Impaginatore è in sola lettura. {st['messaggio']}"
+    nome = NOMI_FUNZIONI.get(funzione, f"La funzione «{funzione}»")
+    dove = "della prova gratuita" if st["stato"] in ("prova", "non valida") else f"della licenza {st['nome_fascia']}"
+    return f"{nome} non fa parte {dove}: c'è nelle licenze {fasce_con(funzione)}."
+
+
+OP_SENZA_MODIFICHE = frozenset({"copia"})                 # appunti dell'editor: non cambiano il progetto
+OP_FUNZIONI = dict.fromkeys(("tono_fix", "tono_L", "tono_escl"), "uniformita_tono")   # operazioni del pannello del tono; tutte le altre: editor_completo
+ESPORTAZIONI = {"jpg": "export_jpg", "pdf": "export_pdf", "psd": "export_psd_livelli"}
+LETTURE = {"/api/tono": "uniformita_tono", "/api/tono_all": "uniformita_tono"}      # GET dell'editor che sono funzioni di fascia
+
+
+def controlla_operazione(o):
+    """cancello delle operazioni dell'editor (do_op): NonConsentita in sola lettura o se l'operazione è una funzione di
+    un'altra fascia"""
+    t = o.get("op") if isinstance(o, dict) else None
+    if t in OP_SENZA_MODIFICHE: return
+    f = OP_FUNZIONI.get(t, "editor_completo"); st = stato()
+    if not consentita(f, st): raise NonConsentita(motivo(f, st))
+
+
+def controlla_modifica():
+    """cancello delle modifiche al progetto fuori da do_op (foto aggiunte): NonConsentita in sola lettura"""
+    st = stato()
+    if not consentita("editor_completo", st): raise NonConsentita(motivo("editor_completo", st))
+
+
+def controlla_esportazione(fmt):
+    """cancello delle esportazioni (run_export, formato già controllato): NonConsentita se il formato non è compreso o il
+    programma è in sola lettura. Restituisce True se l'esportazione va con la filigrana (prova)"""
+    f = ESPORTAZIONI[fmt]; st = stato()
+    if not consentita(f, st): raise NonConsentita(motivo(f, st))
+    return st["filigrana"]
+
+
+def applica_filigrana(im):
+    """copia dell'immagine con la filigrana della prova (filigrana.py). PIL si carica qui e non all'import: la schermata dei
+    progetti usa licenze senza caricare le librerie delle immagini"""
+    from . import filigrana
+    return filigrana.applica(im)
+
+
+def controlla_modelli(azione, quanti):
+    """cancello dei modelli personali: salvarne o importarne uno nuovo quando ce ne sono già `quanti`"""
+    if azione not in ("salva", "importa"): return
+    st = stato(); n = limite("modelli_personali", st)
+    if n == 0: raise NonConsentita(motivo("modelli_personali", st))
+    if n is not None and quanti >= n:
+        raise NonConsentita(f"La licenza {st['nome_fascia']} comprende {n} modelli personali: per salvarne un altro eliminane uno. Nelle licenze {fasce_con('modelli_personali', senza_limite=True)} sono illimitati.")
+
+
+def controlla_lettura(percorso):
+    """cancello delle GET dell'editor: NonConsentita se il percorso è una funzione che la licenza non comprende"""
+    f = LETTURE.get(percorso)
+    if f is None: return
+    st = stato()
+    if not consentita(f, st): raise NonConsentita(motivo(f, st))
