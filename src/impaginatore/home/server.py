@@ -208,7 +208,8 @@ class Editor:
         """come Popen.wait; durante un riavvio aspetta anche l'editor nuovo (che poll ferma, se intanto è stato fermato)"""
         fine = None if timeout is None else time.monotonic() + timeout
         while self.processo.poll() is not None and self.poll() is None:     # riavvio in corso: il processo nuovo non c'è ancora
-            if fine is not None and time.monotonic() >= fine: raise subprocess.TimeoutExpired(f"editor sulla porta {self.porta}", timeout)
+            if fine is not None and time.monotonic() >= fine:
+                raise subprocess.TimeoutExpired(f"editor sulla porta {self.porta}", timeout)       # non tradotto: lo raccoglie chi chiama wait, come quello di Popen
             time.sleep(0.1)
         return self.processo.wait(None if fine is None else max(0, fine - time.monotonic()))
 
