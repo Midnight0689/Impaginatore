@@ -110,6 +110,15 @@ def test_l_utente_cambia_l_album_intanto(editor, a):
     assert rifiuto(a.cambia_disposizione, p, 1) == S.MSG_CAMBIATO
     a.stato_album(p)
     assert a.cambia_disposizione(p, 1)["disposizione"] >= 1
+    editor.post("/api/op", {"op": "swappages", "s": 1, "cid": "scheda-utente", "rev": editor.E.REV})
+    rev = editor.E.REV
+    assert rifiuto(a.sostituisci_foto, p, 1, "sinistra", 1, "Q05") == S.MSG_CAMBIATO, "anche se lo strumento rilegge l'album per controllare gli argomenti"
+    assert rifiuto(a.annulla, p) == S.MSG_CAMBIATO, "l'annulla dell'assistente non annulla la modifica dell'utente"
+    a.salva(p); a.controlla_album(p); a.apri_progetto(p)
+    assert rifiuto(a.cambia_disposizione, p, 1) == S.MSG_CAMBIATO, "salvare, controllare o riaprire non vuol dire aver visto l'album"
+    assert editor.E.REV == rev
+    a.elenca_foto(p)
+    assert a.annulla(p)["annullato"] == {"nome": "Inverti pagine", "spread": 2}, "dopo aver riletto, l'annulla è una scelta informata"
 
 
 def test_gruppo_testi_e_foto_per_spread(editor, a):
@@ -460,6 +469,7 @@ def test_client_locale(editor, monkeypatch):
 def test_niente_proxy_per_il_gettone(editor, monkeypatch):
     """con HTTP_PROXY impostato il gettone non va al proxy: le richieste restano su 127.0.0.1"""
     monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:9"); monkeypatch.setenv("http_proxy", "http://127.0.0.1:9")
+    for k in ("NO_PROXY", "no_proxy"): monkeypatch.delenv(k, raising=False)
     assert C.chiedi(editor.porta, editor.gettone, "/api/ping")["rev"] == 0
 
 

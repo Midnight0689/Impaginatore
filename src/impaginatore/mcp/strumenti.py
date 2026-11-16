@@ -201,9 +201,13 @@ class Assistente:
             if id_progetto(s.ping["path"]) == progetto: return s, s.ping["path"]
         raise Rifiuto(MSG_NON_APERTO)
 
-    def _stato(self, progetto):
+    def _stato(self, progetto, vista=False):
+        """(editor, cartella, stato dell'album). vista=True solo dove l'assistente riceve l'album com'è (stato_album,
+        elenca_foto): le sue modifiche partono da quella versione. Gli strumenti che leggono lo stato solo per controllare
+        i propri argomenti non la aggiornano, così una modifica dell'utente intanto si vede (MSG_CAMBIATO)"""
         ed, base = self._editor(progetto); st = ed.chiedi("/api/state")
-        with self._lock: self._rev[progetto] = st["rev"]
+        if vista:
+            with self._lock: self._rev[progetto] = st["rev"]
         return ed, base, st
 
     def _op(self, progetto, corpo, g=None):
@@ -319,7 +323,7 @@ class Assistente:
     def stato_album(self, progetto, da_spread=1, quanti=20):
         """spread da da_spread (1 = il primo) per quanti: pagine, cornici con foto, misure, risoluzione, ritaglio"""
         intero(da_spread, 1, 100000, "da_spread"); intero(quanti, 1, 50, "quanti")
-        _, _, st = self._stato(progetto); out = []
+        _, _, st = self._stato(progetto, vista=True); out = []
         for s in range(da_spread - 1, min(len(st["spreads"]), da_spread - 1 + quanti)):
             sp = st["spreads"][s]; pagine = {}
             for lato in "LR":
@@ -338,7 +342,7 @@ class Assistente:
     def elenca_foto(self, progetto, filtro="tutte", da=1, quanti=100):
         """foto del progetto: nome, proporzioni, data di scatto, spread dove sono, stella, etichetta"""
         scelta(filtro, ("tutte", "libere", "nell_album", "con_stella", "tolte"), "filtro"); intero(da, 1, 1000000, "da"); intero(quanti, 1, 500, "quanti")
-        _, _, st = self._stato(progetto)
+        _, _, st = self._stato(progetto, vista=True)
         tiene = dict(tutte=lambda f: True, libere=lambda f: f["sp"] is None and not f["tolta"], nell_album=lambda f: f["sp"] is not None,
                      con_stella=lambda f: f["star"], tolte=lambda f: f["tolta"])[filtro]
         sel = [f for f in st["photos"] if tiene(f)]; out = []
@@ -450,9 +454,8 @@ class Assistente:
     @strumento
     def salva(self, progetto):
         """salva l'album (l'editor salva anche da solo poco dopo ogni modifica); tiene una copia della versione precedente"""
-        ed, _ = self._editor(progetto); st = ed.chiedi("/api/save", {})
-        with self._lock: self._rev[progetto] = st["rev"]
-        return self._dopo(st, salvato=True)
+        ed, _ = self._editor(progetto)
+        return self._dopo(ed.chiedi("/api/save", {}), salvato=True)               # salvare non vuol dire aver visto l'album: la versione vista resta
 
     @strumento
     def aggiungi_foto(self, progetto, cosa="cartella"):
