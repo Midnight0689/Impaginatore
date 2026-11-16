@@ -160,11 +160,22 @@ Radici (`percorsi.Radici`):
   esporta senza percorso): la cartella scelta, o quella del file scelto;
 - **schermata**: la cartella dei progetti e i progetti aggiunti all'elenco;
 - **editor**: la cartella del progetto, quella delle foto e la cartella che la contiene (le altre cartelle del cliente),
-  l'uscita dei PSD, le cartelle delle foto aggiunte e di tutte le foto in elenco.
+  le cartelle delle foto aggiunte (`foto_extra`) e l'uscita dei PSD (`motore.album.luoghi_foto`). Mai le cartelle delle
+  foto in elenco (`_cache/meta.json`): un progetto ricevuto come cartella le farebbe puntare ovunque (VER-004).
 
 Le radici dedotte da un progetto che sono troppo ampie (la radice del disco, la casa dell'utente o una cartella che la
-contiene) si scartano: un `progetto.json` con `"foto": "/"` non apre tutto il disco. Quelle scelte con la finestra di
-sistema valgono anche se ampie: le ha scelte l'utente.
+contiene) o **riservate** (`percorsi.riservata`: cartelle nascoste della casa come `~/.ssh` e `~/.config`, dati e cache dei
+programmi, anche i nostri con i file di sessione, `~/Library` e `AppData`, cartelle di sistema come `/etc`, `/usr`,
+`/proc`, `/System`, `%SystemRoot%`) si scartano: un `progetto.json` con `"foto": "/"` non apre tutto il disco. Quelle
+scelte con la finestra di sistema valgono anche se ampie o riservate: le ha scelte l'utente.
+
+Foto in elenco (VER-004): all'apertura (`motore.album._src_fidate`) una foto si legge solo se il suo file ha l'estensione
+di una foto, sta dentro i luoghi del progetto e non in una cartella riservata (collegamenti risolti); altrimenti risulta
+mancante e si ricollega. «Ricollega foto» aggiunge le foto ritrovate a `foto_extra`, così la cartella scelta resta un luogo
+del progetto alle aperture successive. `progetto.json` con `foto`, `foto_extra` o `uscita_psd` in una cartella riservata
+torna a `Foto`, nessuna, `PSD` del progetto. «Esporta progetto» copia solo foto che passano lo stesso controllo.
+Resta aperto: un `progetto.json` ricevuto la cui cartella delle foto è una cartella qualunque (non riservata) dell'utente
+la fa ancora diventare radice, come per un progetto proprio.
 
 Contenimento (`percorsi.dentro`): `realpath` (collegamenti simbolici e `..` risolti), confronto con `normcase` e separatore
 finale (`/a/radice2` non sta in `/a/radice`); se non basta, si risale confrontando le cartelle vere (`samestat`), che
