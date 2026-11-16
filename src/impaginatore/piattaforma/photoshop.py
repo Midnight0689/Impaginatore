@@ -76,11 +76,24 @@ def esegui_jsx(path, timeout=3600):
     if sistema() == "mac":
         r = subprocess.run(_do_javascript(ps, f"$.evalFile(new File({json.dumps(os.path.abspath(path))}))", timeout), capture_output=True, text=True, encoding="utf-8", env=ambiente_figli())  # nosec B603  # osascript con il codice come argomento (SEC-004); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return (r.stdout + r.stderr).strip()
+    return cscript(_VBS, os.path.abspath(path), timeout=timeout)
+
+
+def cscript(vbs_testo, *argomenti, timeout=3600):
+    """esegue lo script VBScript (testo ASCII) con cscript e restituisce quello che ha scritto. //U: in una pipe cscript
+    scriverebbe nella code page della console (le lettere accentate di nomi e percorsi arriverebbero storte), così in UTF-16"""
     with tempfile.TemporaryDirectory(prefix="impaginatore_ps_") as d:
         vbs = os.path.join(d, "esegui.vbs")
-        with open(vbs, "w", encoding="ascii", newline="") as f: f.write(_VBS)
-        r = subprocess.run(["cscript", "//nologo", vbs, os.path.abspath(path)], capture_output=True, timeout=timeout, env=ambiente_figli())  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
-        return (r.stdout + r.stderr).decode("utf-8", "replace").strip()
+        with open(vbs, "w", encoding="ascii", newline="") as f: f.write(vbs_testo)
+        r = subprocess.run(["cscript", "//nologo", "//U", vbs, *argomenti], capture_output=True, timeout=timeout, env=ambiente_figli())  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
+        return (testo_cscript(r.stdout) + testo_cscript(r.stderr)).strip()
+
+
+def testo_cscript(b):
+    """byte scritti da cscript //U: UTF-16 little endian. Un testo che non lo è (senza byte nulli: i messaggi di chi non
+    ha eseguito lo script) si legge come prima, in UTF-8"""
+    if len(b) % 2 == 0 and 0 in b: return b.decode("utf-16-le", "replace")
+    return b.decode("utf-8", "replace")
 
 
 def esegui_js(codice):

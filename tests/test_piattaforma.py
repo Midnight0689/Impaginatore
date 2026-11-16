@@ -234,12 +234,24 @@ def test_photoshop_windows(sistema, tmp_path, monkeypatch, reg):
     for v in ("Adobe Photoshop 2025", "Adobe Photoshop 2026", "Adobe Photoshop 2027 (Beta)"):
         d = tmp_path / "Adobe" / v; d.mkdir(parents=True); (d / "Photoshop.exe").write_bytes(b"")
     assert photoshop.trova()["nome"] == "Adobe Photoshop 2026"
-    reg.out = "fatto"
+    vero = reg.run
+    monkeypatch.setattr(subprocess, "run", lambda cmd, *a, **k: (lambda r: types.SimpleNamespace(returncode=0, stdout=r.stdout.decode().encode("utf-16-le"), stderr=b""))(vero(cmd, *a, **k)))
+    reg.out = "fatto: Sposi àè €"
     jsx = tmp_path / "s.jsx"; jsx.write_text("1", encoding="utf-8")
-    assert photoshop.esegui_jsx(str(jsx)) == "fatto"
-    assert reg.cmd[-1][0] == "cscript" and reg.cmd[-1][-1] == str(jsx)
-    assert photoshop.esegui_js("app.documents.length") == "fatto"
+    assert photoshop.esegui_jsx(str(jsx)) == "fatto: Sposi àè €", "//U: in UTF-16, accenti compresi"
+    assert reg.cmd[-1][:3] == ["cscript", "//nologo", "//U"] and reg.cmd[-1][-1] == str(jsx)
+    assert photoshop.esegui_js("app.documents.length") == "fatto: Sposi àè €"
+    assert photoshop.testo_cscript("Errore di input".encode()) == "Errore di input" and photoshop.testo_cscript(b"") == ""
     monkeypatch.delenv("ProgramFiles"); assert photoshop._programmi() == [r"C:\Program Files"]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="cscript c'è solo su Windows")
+def test_cscript_vero_con_accenti():
+    """Windows: cscript //U restituisce nomi e percorsi con lettere accentate, simboli e emoji come sono (in una pipe senza
+    //U li scriverebbe nella code page della console). Lo script ripete il suo argomento su StdOut e su StdErr"""
+    testo = "Sposi àèìòù ñ ü € 😀 C:\\Album\\x fine"
+    vbs = 'WScript.StdOut.Write WScript.Arguments(0)\r\nWScript.StdErr.Write "|" & WScript.Arguments(0)\r\n'
+    assert photoshop.cscript(vbs, testo, timeout=60) == testo + "|" + testo
 
 
 def test_photoshop_linux(sistema):
