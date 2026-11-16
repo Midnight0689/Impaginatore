@@ -1,5 +1,6 @@
 """Fixture comuni. Ogni test gira con una casa finta: niente di quello che fa tocca la cartella dell'utente, nessuna
 finestra di sistema si apre (IMPAGINATORE_DIALOGHI=nessuno), nessun aggiornamento parte, nessun riavvio vero."""
+import json
 import os
 import shutil
 import sys
@@ -65,6 +66,17 @@ def home_srv(home, monkeypatch):
     c = Client(srv.server_address[1], srv.sessione.gettone); c.modulo = home; c.uscite = uscite; c.srv = srv
     yield c
     srv.shutdown(); srv.server_close()
+
+
+@pytest.fixture
+def prj(tmp_path):
+    """il progetto dello scenario 1.5.2 (cornici libere, angoli, testi), pronto per gli script del motore"""
+    from impaginatore import formato
+    p = tmp_path / "Album àè"; crea_foto(str(p / "Foto"))
+    shutil.copy(os.path.join(DATI, "progetto_152", "spec.py"), p / "spec.py")
+    with open(os.path.join(DATI, "progetto_152", "progetto.json"), encoding="utf-8") as f: cfg = json.loads(f.read().replace("{PROGETTO}", str(p).replace("\\", "/")))
+    formato.scrivi_json(str(p / "progetto.json"), cfg, indent=2, ensure_ascii=False)
+    return str(p)
 
 
 @pytest.fixture

@@ -54,6 +54,7 @@ if __name__ == "__main__":
         for i, v in per_photo.items():
             groups.setdefault(os.path.basename(ORIGINE.get(M[i]["n"]) or os.path.dirname(M[i]["src"])), []).append(v)
         allv = list(per_photo.values())
+        if not allv: print("nessun volto trovato nelle foto: la luminosità della pelle non si può misurare"); sys.exit(0)
         print(f"pelle L* mediana album {np.median(allv):.1f} (p10 {np.percentile(allv, 10):.1f}, p90 {np.percentile(allv, 90):.1f}), foto con volti {len(allv)}")
         for g, v in groups.items(): print(f"  cartella {g}: mediana {np.median(v):.1f} (n={len(v)})")
         SP = spreads_or_none()

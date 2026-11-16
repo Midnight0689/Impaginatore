@@ -4,7 +4,7 @@ Programma per impaginare album fotografici (spread, modelli, testi, correzioni) 
 
 ## Primo avvio su un Mac (lanciatori della versione 1.x, in `legacy/macos/`)
 1. Scarica questa cartella da GitHub (vedi sotto) e mettila dove vuoi.
-2. Doppio clic su **legacy/macos/Installa.command** (una volta sola): crea l'ambiente Python con il programma, collega la skill di Claude, controlla Photoshop e font. Serve Python 3.10 o più recente (python.org).
+2. Doppio clic su **legacy/macos/Installa.command** (una volta sola): crea l'ambiente Python con il programma, collega la skill di Claude, controlla Photoshop e font. Serve Python 3.11 o più recente (python.org).
 3. Apri **legacy/macos/Impaginatore.app**.
 
 ## Da terminale (macOS, Windows, Linux)

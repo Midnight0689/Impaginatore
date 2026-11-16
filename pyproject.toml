@@ -7,7 +7,7 @@ name = "impaginatore"
 dynamic = ["version"]
 description = "Impaginare album fotografici (spread, modelli, testi, correzioni) ed esportare JPG, PDF e PSD"
 readme = "LEGGIMI.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Proprietario: tutti i diritti riservati" }
 authors = [{ name = "Stefano Imperato" }]
 classifiers = [
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
-    "pillow>=10.1,<14",
+    "pillow>=13,<14",          # 13: correzioni di sicurezza (pip-audit); vuole Python 3.11 o successivo
     "numpy>=1.26,<3",
     "opencv-python-headless>=4.8,<5",
     "psd-tools>=1.9,<2",
@@ -51,7 +51,11 @@ markers = [
     "browser: serve un Chrome/Chromium senza schermo; saltato se manca",
     "lento: prova lunga (processi veri, molte foto)",
 ]
-filterwarnings = ["error::DeprecationWarning:impaginatore.*"]
+filterwarnings = [
+    "error::DeprecationWarning:impaginatore.*",
+    # runpy su un modulo già importato ne esegue una seconda copia (e coverage può smettere di seguirla): aiuti.come_script
+    "error:.*found in sys.modules after import of package:RuntimeWarning",
+]
 
 [tool.coverage.run]
 source = ["impaginatore"]
@@ -59,12 +63,16 @@ branch = true
 parallel = true
 sigterm = true
 patch = ["subprocess", "execv", "_exit"]
+# stesso motore di misura su ogni Python, in locale e in CI. Con Python 3.14 il predefinito è «sysmon», che segna come
+# parziali i rami percorsi delle righe «if ...: raise ...» (lo stile del progetto); «ctrace» (predefinito fino alla 3.13)
+# misura giusto. Vale anche per i processi figli (patch = subprocess). La variabile COVERAGE_CORE, se c'è, ha la precedenza.
+core = "ctrace"
 
 [tool.coverage.paths]
 impaginatore = ["src/impaginatore", "*/site-packages/impaginatore"]
 
 [tool.coverage.report]
-fail_under = 74            # soglia bloccante della CI = copertura misurata (74,5 %) per difetto; T-104 la porta a 100
+fail_under = 100           # soglia bloccante (righe e rami), l'unica: CI e controlli.py la leggono da qui. Una riga esclusa ha il motivo accanto al pragma
 show_missing = true
 skip_covered = false
 precision = 1
@@ -72,7 +80,7 @@ precision = 1
 # ---------------------------------------------------------------- stile
 [tool.ruff]
 line-length = 400          # il codice esistente usa righe lunghe e più istruzioni per riga: non si riformatta
-target-version = "py310"
+target-version = "py311"
 extend-exclude = ["legacy", "tests/dati"]
 
 [tool.ruff.lint]

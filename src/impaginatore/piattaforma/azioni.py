@@ -12,7 +12,7 @@ Regola (SEC-004): un percorso non entra mai nel testo di uno script (AppleScript
 import datetime
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import urllib.parse
 
 from . import cartelle, sistema
@@ -22,15 +22,15 @@ from .processi import ambiente_figli
 def mostra(path):
     """apre la cartella del file e, dove si può, lo seleziona"""
     s = sistema(); path = os.path.abspath(path)
-    if s == "mac": subprocess.run(["open", "-R", path], env=ambiente_figli()); return
-    if s == "windows": subprocess.run(["explorer", "/select,", os.path.normpath(path)], env=ambiente_figli()); return
+    if s == "mac": subprocess.run(["open", "-R", path], env=ambiente_figli()); return  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
+    if s == "windows": subprocess.run(["explorer", "/select,", os.path.normpath(path)], env=ambiente_figli()); return  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
     uri = "file://" + urllib.parse.quote(os.path.abspath(path))
     if shutil.which("gdbus"):
-        r = subprocess.run(["gdbus", "call", "--session", "--dest", "org.freedesktop.FileManager1", "--object-path", "/org/freedesktop/FileManager1",
+        r = subprocess.run(["gdbus", "call", "--session", "--dest", "org.freedesktop.FileManager1", "--object-path", "/org/freedesktop/FileManager1",  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
                             "--method", "org.freedesktop.FileManager1.ShowItems", f"['{uri}']", ""], capture_output=True, timeout=10, env=ambiente_figli())
         if r.returncode == 0: return
     if shutil.which("xdg-open"):
-        subprocess.Popen(["xdg-open", path if os.path.isdir(path) else os.path.dirname(path) or "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, env=ambiente_figli())
+        subprocess.Popen(["xdg-open", path if os.path.isdir(path) else os.path.dirname(path) or "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, env=ambiente_figli())  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
         return
     raise OSError("non trovo un gestore di file da aprire (manca xdg-open)")
 
@@ -39,15 +39,15 @@ def cestina(path):
     """mette il file o la cartella nel Cestino (si può recuperare); solleva un errore se non riesce"""
     s = sistema()
     if s == "mac":
-        subprocess.run(["osascript", "-e", "on run argv", "-e", 'tell application "Finder" to delete (POSIX file (item 1 of argv) as alias)', "-e", "end run",
+        subprocess.run(["osascript", "-e", "on run argv", "-e", 'tell application "Finder" to delete (POSIX file (item 1 of argv) as alias)', "-e", "end run",  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell; il percorso è un argomento dello script (SEC-004)
                         os.path.abspath(path)], check=True, capture_output=True, env=ambiente_figli()); return
     if s == "windows":                                   # con -Command gli argomenti dopo lo script diventerebbero testo dello script: il percorso passa dall'ambiente
         ps = ("Add-Type -AssemblyName Microsoft.VisualBasic; $p = $env:IMPAGINATORE_PERCORSO; if (Test-Path -LiteralPath $p -PathType Container) "
               "{ [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p, 'OnlyErrorDialogs', 'SendToRecycleBin') } else "
               "{ [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p, 'OnlyErrorDialogs', 'SendToRecycleBin') }")
-        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], check=True, capture_output=True,
+        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], check=True, capture_output=True,  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell; il percorso passa dall'ambiente (SEC-004)
                        env=ambiente_figli(dict(os.environ, IMPAGINATORE_PERCORSO=os.path.normpath(os.path.abspath(path))))); return
-    if shutil.which("gio") and subprocess.run(["gio", "trash", "--", os.path.abspath(path)], capture_output=True, env=ambiente_figli()).returncode == 0: return
+    if shutil.which("gio") and subprocess.run(["gio", "trash", "--", os.path.abspath(path)], capture_output=True, env=ambiente_figli()).returncode == 0: return  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
     cestina_freedesktop(path)
 
 

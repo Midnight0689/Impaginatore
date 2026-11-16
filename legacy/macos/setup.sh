@@ -6,16 +6,16 @@ V="$HOME/.album-tools/venv"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 fail() { echo "ERRORE: $1" >&2; exit 1; }
 
-# 1. serve un Python 3.10+ che funzioni (il «python3» finto di macOS senza strumenti sviluppatori non conta; quello degli
+# 1. serve un Python 3.11+ che funzioni (il «python3» finto di macOS senza strumenti sviluppatori non conta; quello degli
 #    strumenti sviluppatori è 3.9: troppo vecchio, serve quello di python.org o di Homebrew)
 SYS=""
 for c in python3 /Library/Frameworks/Python.framework/Versions/Current/bin/python3 /opt/homebrew/bin/python3 /usr/local/bin/python3; do
-  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then SYS="$c"; break; fi
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then SYS="$c"; break; fi
 done
-[ -n "$SYS" ] || fail "manca Python 3.10 o più recente (installalo da python.org)"
+[ -n "$SYS" ] || fail "manca Python 3.11 o più recente (installalo da python.org)"
 
 # 2. ambiente: se esiste ma è rotto (Python aggiornato, cartella a metà) lo rifaccio da zero
-if [ -e "$V" ] && ! "$V/bin/python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+if [ -e "$V" ] && ! "$V/bin/python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
   echo "ambiente Python rovinato: lo ricreo"; rm -rf "$V"
 fi
 if [ ! -x "$V/bin/python" ]; then

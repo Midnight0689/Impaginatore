@@ -10,7 +10,7 @@ Il numero di rilascio di una versione si legge da src/impaginatore/__init__.py (
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 import time
 
@@ -29,7 +29,7 @@ class Git(Aggiornamenti):
     # ---------------------------------------------------------------- git
     def _git(self, *a, t=30):
         env = processi.ambiente_figli(dict(os.environ, GIT_TERMINAL_PROMPT="0"))          # senza il gettone (VER-011): git lancia hook e programmi esterni
-        return subprocess.run(["git", "-C", self.radice, *a], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=t, env=env)
+        return subprocess.run(["git", "-C", self.radice, *a], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=t, env=env)  # nosec B603, B607  # git del PATH (predefiniti() lo cerca con shutil.which); argomenti in lista, senza shell
 
     def rilascio(self, rif):
         """numero di rilascio (maggiore.minore.correzione) della versione rif"""
@@ -74,7 +74,7 @@ class Git(Aggiornamenti):
         Restituisce "" se è andata bene, altrimenti l'ultima riga dell'errore"""
         if shutil.which("uv"): cmd = ["uv", "pip", "install", "--python", sys.executable, "-q", "-e", self.radice]
         else: cmd = [sys.executable, "-m", "pip", "install", "-q", "-e", self.radice]
-        try: r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900, env=processi.ambiente_figli())
+        try: r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900, env=processi.ambiente_figli())  # nosec B603  # uv del PATH o il pip di questo Python; argomenti in lista, senza shell
         except (OSError, subprocess.SubprocessError) as e: return str(e)[:200]
         return "" if r.returncode == 0 else ((r.stderr or r.stdout).strip().splitlines() or ["errore"])[-1][:200]
 

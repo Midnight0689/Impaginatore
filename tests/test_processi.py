@@ -53,9 +53,12 @@ def _chiusa(porta):
     with socket.socket() as s: return s.connect_ex(("127.0.0.1", porta)) != 0
 
 
-def test_versione():
-    r = subprocess.run([sys.executable, "-m", "impaginatore", "--versione"], capture_output=True, text=True, encoding="utf-8")
+@pytest.mark.parametrize("modulo", ["impaginatore", "impaginatore.cli", "impaginatore.home", "impaginatore.home.server"])
+def test_versione(modulo):
+    """python -m impaginatore e gli altri modi di lanciare la schermata dei progetti (quello dei lanciatori 1.x è cli)"""
+    r = subprocess.run([sys.executable, "-m", modulo, "--versione"], capture_output=True, text=True, encoding="utf-8")
     assert r.returncode == 0 and r.stdout.strip() == f"Impaginatore {__version__}"
+    if modulo != "impaginatore": return
     exe = shutil.which("impaginatore", path=os.path.dirname(sys.executable))
     if exe:
         r = subprocess.run([exe, "--versione"], capture_output=True, text=True, encoding="utf-8"); assert __version__ in r.stdout

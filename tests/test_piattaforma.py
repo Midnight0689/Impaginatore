@@ -103,6 +103,24 @@ def test_cartelle_utente_e_volumi(sistema, casa, tmp_path, monkeypatch):
 def test_documenti_windows(sistema, casa, monkeypatch):
     sistema("windows")
     assert cartelle.documenti() == os.path.join(str(casa), "Documents")          # ctypes.windll non c'è: ripiego
+    import ctypes
+    chieste = []
+
+    def cartella_di_sistema(risposta, codice):
+        def SHGetFolderPathW(hwnd, csidl, token, flags, buf):
+            chieste.append(csidl); buf.value = risposta; return codice
+        return types.SimpleNamespace(shell32=types.SimpleNamespace(SHGetFolderPathW=SHGetFolderPathW))
+    monkeypatch.setattr(ctypes, "windll", cartella_di_sistema("D:\\OneDrive\\Documenti", 0), raising=False)
+    assert cartelle.documenti() == "D:\\OneDrive\\Documenti", "la cartella Documenti che dice Windows (anche spostata su OneDrive)"
+    monkeypatch.setattr(ctypes, "windll", cartella_di_sistema("", 0x80004005), raising=False)
+    assert cartelle.documenti() == os.path.join(str(casa), "Documents") and chieste == [5, 5], "CSIDL_PERSONAL; se Windows non risponde: la predefinita"
+
+
+def test_documenti_linux_dalle_cartelle_utente(sistema, casa):
+    """su Linux la cartella Documenti è quella di ~/.config/user-dirs.dirs (con il nome nella lingua del sistema)"""
+    sistema("linux"); (casa / ".config").mkdir()
+    (casa / ".config" / "user-dirs.dirs").write_text('# commento\nXDG_DOCUMENTS_DIR="$HOME/Documenti"\n', encoding="utf-8")
+    assert cartelle.documenti() == os.path.join(str(casa), "Documenti")
 
 
 def test_progetti_predefinita(monkeypatch, tmp_path):
@@ -112,6 +130,16 @@ def test_progetti_predefinita(monkeypatch, tmp_path):
     if r: assert cartelle.progetti_predefinita() == os.path.join(r, "Progetti")
     monkeypatch.setattr(cartelle, "radice_checkout", lambda: None)
     assert cartelle.progetti_predefinita() == os.path.join(cartelle.documenti(), "Impaginatore", "Progetti")
+
+
+def test_radice_checkout(tmp_path, monkeypatch):
+    """il programma gira da un checkout (src/impaginatore con .git e pyproject.toml due cartelle sopra) o da un pacchetto installato"""
+    radice = tmp_path / "repo"; pac = radice / "src" / "impaginatore" / "piattaforma"; pac.mkdir(parents=True)
+    (radice / "pyproject.toml").write_text(""); (radice / ".git").mkdir()
+    monkeypatch.setattr(cartelle, "__file__", str(pac / "cartelle.py"))
+    assert cartelle.radice_checkout() == str(radice)
+    monkeypatch.setattr(cartelle, "__file__", str(tmp_path / "site-packages" / "impaginatore" / "piattaforma" / "cartelle.py"))
+    assert cartelle.radice_checkout() is None
 
 
 # ---------------------------------------------------------------- font
@@ -136,6 +164,20 @@ def test_pil_ripiego(sistema, monkeypatch):
     assert font.pil_ripiego(40).getlength("Ciao") > 0, "font mancante: quello interno di Pillow"
     monkeypatch.setattr(font, "font_ripiego", lambda: (None, 0))
     assert font.pil_ripiego(12).getlength("Ciao") > 0
+
+
+def test_font_mac_e_profili_colore(sistema, monkeypatch):
+    """sul Mac il font di ripiego (Helvetica) si apre sempre, senza ripieghi; profilo sRGB del sistema dove c'è; su Linux un
+    font che non c'è in nessuna cartella dà None"""
+    from PIL import ImageFont
+    aperti = []
+    monkeypatch.setattr(ImageFont, "truetype", lambda p, size, index=0: aperti.append((p, size, index)) or "font")
+    sistema("mac"); assert font.pil_ripiego(30) == "font" and aperti == [("/System/Library/Fonts/Helvetica.ttc", 30, 0)]
+    monkeypatch.setattr(font.os.path, "isfile", lambda p: p.endswith(("sRGB Profile.icc", "sRGB Color Space Profile.icm")))
+    assert font.profilo_srgb() == "/System/Library/ColorSync/Profiles/sRGB Profile.icc"
+    sistema("windows"); monkeypatch.setenv("WINDIR", "C:\\Windows")
+    assert font.profilo_srgb() == os.path.join("C:\\Windows", "System32", "spool", "drivers", "color", "sRGB Color Space Profile.icm")
+    assert font._cerca_linux("NonEsiste-T104.ttf", "NemmenoQuesto-T104.otf") is None
 
 
 # ---------------------------------------------------------------- photoshop
@@ -226,6 +268,19 @@ def test_dialoghi_predefiniti(sistema, monkeypatch):
     monkeypatch.setenv("DISPLAY", ":99")
     assert isinstance(dialoghi.predefiniti(), (dialoghi.Tk, dialoghi.Nessuno))
     monkeypatch.setenv("IMPAGINATORE_DIALOGHI", "zenity"); assert isinstance(dialoghi.predefiniti(), dialoghi.Zenity)
+
+
+@pytest.mark.parametrize("tk", [True, False])
+def test_dialoghi_con_e_senza_tkinter(sistema, monkeypatch, tk):
+    """Windows: le finestre di Tk se Python ha tkinter, altrimenti nessuna finestra (si scrive il percorso a mano); Linux con
+    uno schermo: Tk, oppure zenity"""
+    import importlib.util
+    monkeypatch.delenv("IMPAGINATORE_DIALOGHI"); monkeypatch.setenv("DISPLAY", ":0")
+    trova = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda n, *a: (trova("os") if tk else None) if n == "tkinter" else trova(n, *a))
+    monkeypatch.setattr(dialoghi.shutil, "which", lambda n: "/usr/bin/zenity" if n == "zenity" else None)
+    sistema("windows"); assert type(dialoghi.predefiniti()) is (dialoghi.Tk if tk else dialoghi.Nessuno)
+    sistema("linux"); assert type(dialoghi.predefiniti()) is (dialoghi.Tk if tk else dialoghi.Zenity)
 
 
 def test_dialoghi_aggancio():
@@ -344,3 +399,32 @@ def test_processi(sistema, monkeypatch, reg):
     assert chiamate[0][1][-1] == "/a b" and chiamate[1][1][-1] == '"C:\\a b"', "su Windows execv non mette le virgolette"
     sistema("linux"); processi.rilancia_dopo(["python", "-m", "impaginatore"], 0.1)
     assert reg.cmd[-1][1] == "-c" and reg.cmd[-1][-3:] == ["python", "-m", "impaginatore"]
+
+
+STACCA = """import os, sys
+from impaginatore.piattaforma import processi
+sessione = os.getsid(0)
+processi.stacca(sys.argv[1])
+print("staccato", os.getsid(0) != sessione, sys.stdin.read() == "", flush=True)
+"""
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="il doppio fork c'è solo su macOS e Linux")
+def test_stacca_doppio_fork(tmp_path):
+    """--daemon: il processo che l'ha lanciato finisce subito, quello che resta è in una sessione nuova, senza input e con
+    l'uscita nel registro (non muore quando si chiude il terminale o l'app che l'ha lanciato)"""
+    from aiuti import attendi
+    registro = tmp_path / "impaginatore.log"
+    r = subprocess.run([sys.executable, "-c", STACCA, str(registro)], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and r.stdout == "", r.stderr
+    assert attendi(lambda: registro.exists() and registro.read_text()) == "staccato True True\n"
+
+
+def test_porta_libera_su_windows(sistema):
+    """su Windows basta aprire la porta (collegarsi a una porta chiusa lì costa secondi); una porta in uso resta occupata"""
+    from impaginatore import servizio
+    srv = servizio.ServerLocale(("127.0.0.1", 0), None); occupata = srv.server_address[1]
+    try:
+        sistema("windows"); assert not servizio.porta_libera(occupata)
+    finally: srv.server_close()
+    assert servizio.porta_libera(occupata)

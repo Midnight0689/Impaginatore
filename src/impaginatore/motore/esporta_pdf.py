@@ -9,7 +9,7 @@ I PSD vengono solo aperti e chiusi SENZA salvare. Documenti aperti in Photoshop 
 Risultato ~5 MB per 25 pagine (2000 px di larghezza, JPEG 72).
 """
 import os, glob, argparse, json
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageOps
 
 
 if __name__ == "__main__":
@@ -38,8 +38,9 @@ out.join("\n");
     files = sorted(glob.glob(os.path.join(X, "Spread_*.jpg")))
     Wp = a.larghezza; Hs = round(Wp * CH / CW); PH = Hs + 60
     T = CFG.get("testo", {}); INKc = tuple(T.get("colore", [58, 54, 51]))
-    serif = ImageFont.truetype(T.get("file_font_titolo") or SERIF_FILE, 46)
-    sans = ImageFont.truetype(T.get("file_font_testo") or SANS_FILE, 24, index=T.get("indice_font_testo", 7))
+    # come nelle anteprime: un font che non si apre (l'indice 7 vale per Avenir Next.ttc del Mac, non per un .ttf) lascia il posto a quello di ripiego
+    serif = _album._font("file_font_titolo", SERIF_FILE, 46)
+    sans = _album._font("file_font_testo", SANS_FILE, 24, T.get("indice_font_testo", 7))
     pages = []
     covers = [c for c in a.copertina.split(",") if c]
     if covers:

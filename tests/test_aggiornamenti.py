@@ -92,3 +92,48 @@ def test_senza_rete(repo):
     _, utente = repo
     _git(utente, "remote", "set-url", "origin", str(utente.parent / "sparito.git"))
     s = Git(str(utente)).controlla(); assert s["errore"] and not s["da_aggiornare"]
+
+
+def test_ciclo_di_controllo():
+    """il controllo periodico si ripete ogni `ogni` secondi finché non arriva il segnale di fermarsi"""
+    from impaginatore.aggiornamenti import Aggiornamenti
+    attese = []
+
+    class Fermo:
+        def wait(self, s): attese.append(s); return len(attese) == 3
+
+    class Conta(Aggiornamenti):
+        controlli = 0
+
+        def controlla(self): Conta.controlli += 1
+
+    Conta().ciclo(Fermo(), ogni=7)
+    assert Conta.controlli == 3 and attese == [7, 7, 7]
+
+
+def test_rilascio_senza_numero_nel_pacchetto(repo):
+    """una versione con __init__.py senza __version__ prende il numero dal file VERSION (come le 1.x)"""
+    lavoro, _ = repo
+    (lavoro / "src" / "impaginatore" / "__init__.py").write_text('"""senza numero"""\n', encoding="utf-8"); _git(lavoro, "commit", "-qam", "senza numero")
+    assert Git(str(lavoro)).rilascio("HEAD") == "1.5.2"
+
+
+def test_controllo_che_si_blocca(repo, monkeypatch):
+    """git che non risponde in tempo (o un altro errore) durante il controllo: lo stato lo dice, il programma va avanti"""
+    _, utente = repo
+    g = Git(str(utente)); vero = g._git
+
+    def lento(*a, **k):
+        if a[0] == "fetch": raise subprocess.TimeoutExpired(["git", "fetch"], 30)
+        return vero(*a, **k)
+    monkeypatch.setattr(g, "_git", lento)
+    s = g.controlla(); assert "timed out" in s["errore"] and s["controllato"] and not s["da_aggiornare"]
+
+
+def test_ripristino_non_riuscito(repo, monkeypatch):
+    """se git non riesce a riportare i file alla versione chiesta non si fa nessun commit e non si riavvia"""
+    _, utente = repo; riavvii = []
+    g = Git(str(utente), lambda: riavvii.append(1)); vero = g._git; prima = _git(utente, "rev-parse", "HEAD")
+    monkeypatch.setattr(g, "_git", lambda *a, **k: subprocess.CompletedProcess(a, 1, "", "errore") if a[0] == "read-tree" else vero(*a, **k))
+    with pytest.raises(ValueError, match="Ripristino non riuscito"): g.ripristina(g.versioni()[1]["codice"])
+    assert _git(utente, "rev-parse", "HEAD") == prima and riavvii == []

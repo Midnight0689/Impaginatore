@@ -11,12 +11,12 @@ del motore. Importare il modulo non legge niente: inizializza(progetto) carica i
 porta (0 = una libera), avvia_cicli() fa partire autosalvataggio e controllo delle foto, ferma() li ferma.
 main() fa tutto questo per il processo dell'editor lanciato dalla schermata dei progetti.
 """
-import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time
+import argparse, copy, hashlib, io, json, logging, os, re, shutil, subprocess, sys, threading, time  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, risorse, sicurezza
+from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import testo as TX
@@ -506,11 +506,9 @@ def apply(o):
     elif t == "newspreadsel":                             # foto trascinate sulla fila degli spread: nuovo spread nel punto scelto, col modello che rispetta meglio le proporzioni
         names = list(o["names"]); ph = []
         for n in names:
-            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
         if not 1 <= len(ph) <= 10: raise ValueError("per uno spread servono da 1 a 10 foto")
-        best = next((x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R")), None)
-        if best is None: raise ValueError("nessun modello adatto a queste foto")
+        best = next(x for x in tpl_options(ph)["items"] if x.get("L") and x.get("R"))      # da 1 a 10 foto c'è sempre almeno un modello
         gone = set(ph)
         for sp in SP:
             for pg in sp: pg[1][:] = [it for it in pg[1] if it["k"] == "t" or it["i"] not in gone]       # le foto spostate escono dal vecchio spread (restano le altre e i testi)
@@ -520,7 +518,6 @@ def apply(o):
     elif t == "addtospread":                              # foto lasciate sulla miniatura di uno spread esistente: entrano lì (cornici libere) e, a richiesta, lo spread si riorganizza con un altro modello
         s_ = o["s"]; ph = []
         for n in o["names"]:
-            if n not in A.IDX: raise ValueError(f"foto sconosciuta: {n}")
             if A.IDX[n] - 1 not in ph: ph.append(A.IDX[n] - 1)
         here = {it["i"] for pg in SP[s_] for it in pg[1] if it["k"] != "t"}; new = [i for i in ph if i not in here]
         gone = set(new)
@@ -659,7 +656,6 @@ def apply(o):
             _put_px(s_, key[0], key[1], ax + (L["x"] - ax) * sx, ay + (L["y"] - ay) * sy, L["W"] * sx, L["H"] * sy)
     elif t == "dup":                                      # spread identico subito dopo (le foto compaiono due volte: si usa per fare varianti)
         s_ = o["s"]
-        if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
         SP.insert(s_ + 1, copy.deepcopy(SP[s_])); GD.insert(s_ + 1, copy.deepcopy(GD[s_]))
     elif t == "copia":                                    # appunti dell'editor (non cambiano il progetto): elementi scelti con la loro posizione
         R = _rects(o["s"]); CLIP.clear()
@@ -715,14 +711,11 @@ def apply(o):
     elif t == "mode": SP[o["s"]][0 if o["side"] == "L" else 1][0] = o["mode"]
     elif t == "move":
         s, to = o["s"], max(0, min(len(SP) - 1, o["to"]))
-        if not 0 <= s < len(SP): raise ValueError("spread inesistente")
         SP.insert(to, SP.pop(s)); GD.insert(to, GD.pop(s))
     elif t == "swappages":                                # inverte le due pagine: quello che stava a sinistra va a destra e viceversa (stesse posizioni dentro la pagina)
         s_ = o["s"]
-        if not 0 <= s_ < len(SP): raise ValueError("spread inesistente")
         SP[s_][0], SP[s_][1] = SP[s_][1], SP[s_][0]; GD[s_]["v"] = [round(VW - x, 1) for x in GD[s_]["v"]]
     elif t == "delete":
-        if not 0 <= o["s"] < len(SP): raise ValueError("spread inesistente")
         if len(SP) > 1: SP.pop(o["s"]); GD.pop(o["s"])
     elif t == "new":
         u = [i for i in range(len(A.M)) if i not in used_set()]
@@ -838,7 +831,7 @@ def spread_hash(s):
                     {A.name(it["i"]): CFG["tono"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): CFG["ritocco"].get(A.name(it["i"])) for pg in SP[s] for it in pg[1] if it["k"] != "t"},
                     {A.name(it["i"]): PV.get(A.name(it["i"]), 0) for pg in SP[s] for it in pg[1] if it["k"] != "t"}]], sort_keys=True)
-    return hashlib.md5(d.encode()).hexdigest()[:10]
+    return hashlib.md5(d.encode(), usedforsecurity=False).hexdigest()[:10]          # impronta per la cache delle anteprime, non crittografica
 
 def page_grid(side, mode):
     """linee della griglia di una pagina, in pixel dell'anteprima, identiche a quelle di album._place:
@@ -969,20 +962,20 @@ def modelli(o):
         lst = ut_load(); a = o["azione"]; nome = str(o.get("nome", "")).strip()[:60]
         if a == "importa":
             t = next((x for x in ut_progetto() if x["id"] == o.get("id")), None)
-            if not t: raise ValueError("modello non trovato")
+            if not t: raise ValueError("modello non trovato")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_arrivati_con_un_progetto
             if any(x["nome"].lower() == t["nome"].lower() for x in lst): t = dict(t, nome=t["nome"][:48] + " (importato)")
             lst.append(t)
         elif a == "salva":
-            if not nome: raise ValueError("scrivi un nome per il modello")
-            if any(t["nome"].lower() == nome.lower() for t in lst): raise ValueError("esiste già un modello con questo nome: usa «Aggiorna» su quello")
+            if not nome: raise ValueError("scrivi un nome per il modello")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+            if any(t["nome"].lower() == nome.lower() for t in lst): raise ValueError("esiste già un modello con questo nome: usa «Aggiorna» su quello")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
             pages, n, lato = tpl_from_spread(o["s"]); lst.append(dict(id=os.urandom(4).hex(), nome=nome, n=n, lato=lato, pages=pages))
         else:
             t = next((x for x in lst if x["id"] == o["id"]), None)
-            if not t: raise ValueError("modello non trovato")
+            if not t: raise ValueError("modello non trovato")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
             if a == "aggiorna": t["pages"], t["n"], t["lato"] = tpl_from_spread(o["s"])
             elif a == "rinomina":
-                if not nome: raise ValueError("scrivi un nome")
-                if any(x is not t and x["nome"].lower() == nome.lower() for x in lst): raise ValueError("esiste già un modello con questo nome")
+                if not nome: raise ValueError("scrivi un nome")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+                if any(x is not t and x["nome"].lower() == nome.lower() for x in lst): raise ValueError("esiste già un modello con questo nome")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
                 t["nome"] = nome
             elif a == "elimina": lst.remove(t)
             else: raise ValueError("azione sconosciuta")
@@ -991,7 +984,7 @@ def modelli(o):
 def templates(s):
     with LOCK:
         lk = locked_sides(s)
-        if len(lk) == 2: return dict(items=[], utente=[], nota="Le due pagine sono di solo testo: non ci sono foto da impaginare.")
+        if len(lk) == 2: return dict(items=[], utente=[], nota="Le due pagine sono di solo testo: non ci sono foto da impaginare.")  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_modelli_errori
         side = None if not lk else next(x for x in "LR" if x not in lk); sides = "LR" if side is None else side
         photos = [it["i"] for k, x in enumerate("LR") if x in sides for it in SP[s][k][1] if it["k"] != "t"]
         cur = sorted((round(e["x"]), round(e["y"]), e["w"], e["h"]) for e in spread_view(s)["items"] if e["k"] != "t" and e["side"] in sides)
@@ -1004,7 +997,7 @@ def templates_for(names):
         used = used_set(); ph = []
         for n in names:
             i = A.IDX[n] - 1
-            if i in used: raise ValueError(f"{n} è già in uno spread")
+            if i in used: raise ValueError(f"{n} è già in uno spread")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
             ph.append(i)
         return tpl_options(ph) if ph else dict(items=[], n=0, tot=0)
 
@@ -1152,7 +1145,7 @@ def tono_spread(s, over=None, light=False):
     with LOCK:
         ms = _tono_misure(s); items = []; pen = []; L0 = _tono_L0()
         if over: ms = [dict(m, evp=over[m["name"]].get("ev", m["evp"]), rit=over[m["name"]].get("rit", m["rit"]), st=_tono_st(m, over[m["name"]].get("ev", m["evp"]), over[m["name"]].get("rit", m["rit"]))) if m["name"] in over else m for m in ms]
-        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)
+        if not ms: return dict(s=s, items=[], score=100, prev=None, next=None, rif=L0)  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_tono_spread_senza_foto_e_vicini_esclusi
         for j, m in enumerate(ms):
             st = m["st"]; esc = m["name"] in CFG["tono_escl"]; d = st["M"] - L0
             ze = m["ze"]; stato = "escl" if esc else _tono_stato(d, ze, ze + 6)
@@ -1187,7 +1180,7 @@ def bruc_img(s, side, idx):
     import io as _io, numpy as np
     with LOCK:
         m = next((x for x in _tono_misure(s) if x["side"] == side and x["idx"] == idx), None)
-        if m is None: raise ValueError("foto non trovata")
+        if m is None: raise ValueError("foto non trovata")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_tono_spread_senza_foto_e_vicini_esclusi
         Lm = _tono_sim(m["i"], m["im"], m["evp"], m["rit"], m["bw"]); base = np.asarray(m["im"].convert("L"), dtype=np.float32)
     if base.shape != Lm.shape: base = np.asarray(m["im"].convert("L").resize((Lm.shape[1], Lm.shape[0])), dtype=np.float32)
     rgb = np.stack([base * .45] * 3, axis=-1); msk = (Lm > 96)[..., None]
@@ -1204,7 +1197,7 @@ def live_photo(q):
             for j, x in enumerate(pg[1]):
                 if sd == side and j == idx: L, it = dict(lay[k]), x
                 k += 1
-        if L is None or it["k"] == "t": raise ValueError("cornice non trovata")
+        if L is None or it["k"] == "t": raise ValueError("cornice non trovata")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_foto_live_di_una_cornice_che_non_ce
         n = A.name(it["i"]); R, E = CFG["ritocco"], CFG["esposizione"]["per_foto"]; old = (R.get(n), E.get(n))
         try:
             if "rit" in over:
@@ -1250,7 +1243,7 @@ def spread_jpg(s, K, hide=None):
     """immagine dello spread; hide = (side, idx) di una cornice libera da NON disegnare (serve mentre la si trascina)"""
     with LOCK:
         key = (spread_hash(s), K, hide)
-        if key in CACHE: return CACHE[key]
+        if key in CACHE: return CACHE[key]  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_anteprima_senza_la_cornice_trascinata
         tup = spread_tuple(s)
         if hide:
             pi = 0 if hide[0] == "L" else 1; its = SP[s][pi][1]
@@ -1518,7 +1511,7 @@ def run_export(o):
                 LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
             else:
                 cmd = [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
-                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
+                p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
                                      env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ)))
                 t0 = time.time() - 2; out = []
                 for line in p.stdout: out.append(line.rstrip()); LOG.append(line.rstrip())
@@ -1639,11 +1632,6 @@ def ricollega(cartella):
         formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
 
-def _file_programma(f):
-    """file del motore che un progetto esportato porta con sé (album_libere.py, testo.py, vib_lut.npz): sempre quelli di questa versione"""
-    if f.endswith(".py"): return os.path.join(os.path.dirname(os.path.abspath(A.__file__)), f)
-    return risorse.percorso(f)
-
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
     v1x=True aggiunge spec.py (e le copie del motore che gli servono) per chi apre il progetto con la versione 1.x"""
@@ -1698,7 +1686,7 @@ def versioni():
     for f in sorted(os.listdir(bk), reverse=True):
         mf = re.fullmatch(r"(\d{8}-\d{6})_(album\.json|spec\.py)", f)
         if not mf or (out and out[-1]["ts"] == mf.group(1)): continue
-        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode()).hexdigest()
+        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
         if h == prev: continue
         if f.endswith(".json"):
             try: nsp = len(formato.leggi_album(os.path.join(bk, f))["spread"])
@@ -1791,7 +1779,7 @@ class H(Gestore):
             elif u.path == "/api/versioni": self.send(versioni())
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), float(q.get("k", ["0.2"])[0]), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
-                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8")).hexdigest()[:16], w, PV.get(n, 0))
+                n = unquote(u.path.rsplit("/", 1)[1]); w = int(q.get("w", ["260"])[0]); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
                 if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
                 elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)

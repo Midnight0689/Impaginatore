@@ -21,6 +21,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-011` **test** — `tests/test_sicurezza.py`: i payload dell'audit rifatti in modo innocuo (file sentinella), ZIP malevoli, e un controllo che fallisce se nel pacchetto compaiono `exec`, `eval`, `compile`, `__import__`, `importlib`, `runpy` o `pickle`. _File:_ `tests/test_sicurezza.py`, `tests/test_formato.py`. _Rif:_ `TEST-004`.
 - `AGG-012` **test** — Client di prova con il gettone, prove di sicurezza dei server, richieste dell'editor, foto, e XSS e giro completo in Chrome senza schermo con il protocollo DevTools. _File:_ `tests/aiuti.py`, `tests/cdp.py`, `tests/test_sicurezza_server.py`, `tests/test_editor_richieste.py`, `tests/test_foto.py`, `tests/test_interfaccia.py`. _Rif:_ `T-102`, `T-103`.
 - `AGG-013` **sito** — Sito di vendita statico in italiano e inglese (pagina principale, prezzi, installazione, grazie, legale, 404) con prezzi letti da `tier.json`, configurazione in un solo file, ripiego `mailto:` per lista d'attesa e acquisto, interruttori per vendita, Claude e testimonianze, e strumenti per configurare, controllare, fotografare e pubblicare. _File:_ `marketing/sito/index.html`, `marketing/sito/prezzi.html`, `marketing/sito/config.json`, `marketing/sito/strumenti/sito.py`. _Rif:_ `T-502`.
+- `AGG-014` **test** — Prove di tutte le operazioni dell'editor e dei servizi attorno (modelli, tono, anteprime, esportazioni, Windows e macOS simulati), degli script del motore con Photoshop e PSD finti, della piattaforma, degli aggiornamenti e della schermata dei progetti: 459 prove. _File:_ `tests/test_editor_operazioni.py`, `tests/test_editor_servizi.py`, `tests/test_script_motore.py`. _Rif:_ `T-104`.
 
 ### Modificato
 
@@ -30,6 +31,10 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-004` **installer** — I lanciatori della versione 1.x per macOS sono spostati in `legacy/macos/` e installano il pacchetto. _File:_ `legacy/macos/`.
 - `MOD-005` **mercato** — Listino 2026-11-15d: Essenziale 49 €, Pro 99 €, Studio 149 € (lancio 39/79/119 €), passaggi di fascia 50/50/100 €, assistenza 49/249/499 € senza sconto a quantità; studio dei prezzi, schede di marca, negozio, piano di lancio, email e bozze legali riallineati. _File:_ `docs/mercato/tier.json`, `docs/mercato/prezzi.md`, `brand/STYLEBOOK.md`, `marketing/negozio/polar/prodotti.json`, `marketing/lancio/PIANO-90-GIORNI.md`, `marketing/email/sorgenti/lancio.mjml`, `docs/legale/CONDIZIONI-ASSISTENZA.md`.
 - `MOD-006` **motore** — `genera_psd_angolo` non modifica più il sorgente di `genera_psd` come testo né lo esegue con `exec`: lo script per Photoshop ha parti con nome che la variante sostituisce (JSX identico a prima). _File:_ `src/impaginatore/motore/genera_psd.py`, `src/impaginatore/motore/genera_psd_angolo.py`. _Rif:_ `TEST-004`.
+- `MOD-007` **pacchetto** — Pillow 13 (correzioni di sicurezza della 12.x) e Python 3.11 o successivo; la CI prova 3.11, 3.12, 3.13 e 3.14. _File:_ `pyproject.toml`, `uv.lock`, `.github/workflows/ci.yml`, `strumenti/controlli.py`, `LEGGIMI.md`, `legacy/macos/setup.sh`. _Rif:_ `VER-008`.
+- `MOD-008` **ci** — bandit blocca a ogni gravità; i falsi positivi sono annotati riga per riga con il motivo e l'MD5 delle chiavi di cache è dichiarato `usedforsecurity=False`. _File:_ `.github/workflows/sicurezza.yml`, `strumenti/controlli.py`, `src/impaginatore/piattaforma/azioni.py`, `src/impaginatore/editor/server.py`. _Rif:_ `VER-009`.
+- `MOD-009` **test** — La copertura si misura con il motore ctrace su ogni Python, anche sulla 3.14; gli script del motore senza `main()` girano nello stesso processo e runpy su un modulo già importato è un errore. _File:_ `pyproject.toml`, `tests/aiuti.py`. _Rif:_ `T-104`.
+- `MOD-010` **ci** — Soglia di copertura bloccante a 100 % di righe e rami (era 74 %), in un solo posto; 16 righe escluse, ognuna con il motivo accanto al pragma. _File:_ `pyproject.toml`, `docs/architettura/ARCHITETTURA.md`. _Rif:_ `T-104`.
 
 ### Corretto
 
@@ -43,6 +48,10 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-008` **editor** — Miniature, informazioni e correzioni funzionano con foto che hanno spazi, accenti, %, #, ? o + nel nome. _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`. _Rif:_ `BUG-002`.
 - `COR-009` **motore** — Le foto senza data di scatto si ordinano con la data del file e sono segnalate nella galleria, invece di finire tutte in fondo. _File:_ `src/impaginatore/motore/album.py`. _Rif:_ `BUG-003`.
 - `COR-010` **progetti** — «Mostra nel Finder» prende il nome del gestore file del sistema; il nome proposto dalla cartella delle foto si legge anche su Windows. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/risorse/index.html`.
+- `COR-011` **pacchetto** — `uv.lock` comprende pillow-heif: l'extra `heic` si installa alle versioni fissate. _File:_ `uv.lock`. _Rif:_ `VER-007`.
+- `COR-012` **motore** — `analizza luminosita` senza volti nelle foto lo dice invece di fermarsi con un IndexError. _File:_ `src/impaginatore/motore/analizza.py`. _Rif:_ `T-104`.
+- `COR-013` **motore** — `verifica_psd` non si ferma su un PSD senza risoluzione scritta: lo segnala e continua. _File:_ `src/impaginatore/motore/verifica_psd.py`. _Rif:_ `T-104`.
+- `COR-014` **motore** — `esporta_pdf` su Windows e Linux non si ferma più sul font del sottotitolo: usa il font del motore con il suo ripiego. _File:_ `src/impaginatore/motore/esporta_pdf.py`. _Rif:_ `T-104`.
 
 ### Sicurezza
 
@@ -63,6 +72,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 
 - `RIM-001` **pacchetto** — Tolto il file `VERSION` dalla radice: la versione sta in `src/impaginatore/__init__.py`. _File:_ `VERSION`.
 - `RIM-002` **motore** — Tolto `motore/compat.py`: i nomi 1.x come moduli di primo livello servivano solo a eseguire `spec.py`. _File:_ `src/impaginatore/motore/compat.py`. _Rif:_ `SEC-001`.
+- `RIM-003` **editor** — Tolti `_file_programma`, non più usata, e sette controlli di spread e foto in `apply` che `valida` fa già prima di ogni operazione. _File:_ `src/impaginatore/editor/server.py`. _Rif:_ `T-104`.
+- `RIM-004` **piattaforma** — Tolto il ripiego di `pil_ripiego` per Pillow precedenti alla 10.1. _File:_ `src/impaginatore/piattaforma/font.py`. _Rif:_ `T-104`.
 
 ### Documenti e contenuti
 

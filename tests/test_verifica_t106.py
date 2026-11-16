@@ -210,7 +210,6 @@ def _lock():
     with open(os.path.join(RADICE, "uv.lock"), encoding="utf-8") as f: return f.read()
 
 
-@xfail("VER-007", "uv.lock non contiene pillow-heif (f09bc15): ogni comando --locked fallisce")
 def test_lock_contiene_tutte_le_dipendenze():
     tomllib = pytest.importorskip("tomllib")
     with open(os.path.join(RADICE, "pyproject.toml"), "rb") as f: pj = tomllib.load(f)["project"]
@@ -220,7 +219,6 @@ def test_lock_contiene_tutte_le_dipendenze():
     assert nomi - nel_lock == set()
 
 
-@xfail("VER-008", "per Python 3.10 il lock fissa Pillow 12.3.0, con vulnerabilità note corrette in 13.0.0")
 def test_pillow_del_lock_senza_vulnerabilita_note():
     versioni = re.findall(r'^name = "pillow"\nversion = "([^"]+)"', _lock(), re.M)
     assert versioni and all(tuple(int(x) for x in v.split(".")[:2]) >= (13, 0) for v in versioni), versioni

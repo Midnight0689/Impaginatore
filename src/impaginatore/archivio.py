@@ -82,7 +82,7 @@ def estrai(zp, dest, avvisi=None):
         if len(infos) > MAX_FILE: _rifiuta(f"contiene più di {MAX_FILE} file")
         scelti, totale = _scegli(infos, avvisi)
         os.makedirs(dest, exist_ok=True)
-        if totale + RISERVA_DISCO > shutil.disk_usage(dest).free: raise ErroreProgetto(f"Non c'è abbastanza spazio sul disco per estrarre il progetto ({totale // 2**20} MB)")
+        if totale + RISERVA_DISCO > shutil.disk_usage(dest).free: raise ErroreProgetto(f"Non c'è abbastanza spazio sul disco per estrarre il progetto ({totale // 2**20} MB)")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_zip_limiti
         fatti = []
         try:
             for i, parti in scelti:

@@ -1,6 +1,8 @@
-"""Strumenti comuni dei test: foto sintetiche, client HTTP, attese."""
+"""Strumenti comuni dei test: foto sintetiche, client HTTP, attese, script del motore nello stesso processo."""
 import json
 import os
+import runpy
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -67,6 +69,17 @@ class Client:
         except urllib.error.HTTPError as e:
             try: return False, json.load(e)
             except Exception: return False, {"errore": str(e)}
+
+
+def come_script(monkeypatch, nome, *argv):
+    """esegue impaginatore.motore.<nome> come «python -m» (con __name__ == "__main__") in questo processo, per gli script
+    del motore che non hanno una main(). Il modulo non deve essere già importato: runpy ne eseguirebbe una seconda copia
+    (RuntimeWarning «found in sys.modules», che pyproject.toml trasforma in errore). Gli script con una main() si provano
+    chiamando main(argv); la riga «if __name__ == "__main__"» la provano i sottoprocessi veri (test_motore)."""
+    modulo = f"impaginatore.motore.{nome}"
+    assert modulo not in sys.modules, f"{modulo} è già importato: chiama la sua main() invece di eseguirlo come script"
+    monkeypatch.setattr(sys, "argv", [nome, *argv])
+    return runpy.run_module(modulo, run_name="__main__")
 
 
 def attendi(cond, secondi=60, passo=0.1):
