@@ -22,8 +22,8 @@ CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-
 @pytest.mark.parametrize("st, atteso", [
     (dict(stato="attiva", fascia="studio", nome_fascia="Studio", beta=False, sola_lettura=False), ("Licenza Studio", "attiva")),
     (dict(stato="attiva", fascia="pro", nome_fascia=None, sola_lettura=False), ("Licenza pro", "attiva")),
-    (dict(stato="attiva", fascia="studio", nome_fascia="Studio", beta=True, sola_lettura=False), ("Licenza beta", "beta")),
-    (dict(stato="attiva", fascia="beta", nome_fascia="Beta", sola_lettura=False), ("Licenza beta", "beta")),
+    (dict(stato="attiva", fascia="studio", nome_fascia="Studio", beta=True, sola_lettura=False), ("Beta privata", "beta")),
+    (dict(stato="attiva", fascia="beta", nome_fascia="Beta", sola_lettura=False), ("Beta privata", "beta")),
     (dict(stato="prova", sola_lettura=False, prova=dict(giorni_rimasti=1)), ("Prova gratuita · 1 giorno", "prova")),
     (dict(stato="prova", sola_lettura=False, prova=dict(giorni_rimasti=12)), ("Prova gratuita · 12 giorni", "prova")),
     (dict(stato="non valida", sola_lettura=False, prova=dict(giorni_rimasti=3)), ("Prova gratuita · 3 giorni", "prova")),

@@ -7,7 +7,7 @@ nasce nascosta e si mostra quando la pagina degli album ha chiesto l'elenco (hom
 secondi dalla comparsa della schermata (niente lampi) e non dopo MASSIMO (se qualcosa va storto si vede comunque la
 finestra). Solo con la finestra del programma: nel browser e nella seconda finestra (ospite) non c'è.
 
-Licenza (licenze.stato(), sola lettura): «Licenza <fascia>» se è attiva, «Licenza beta» per le chiavi beta (campo
+Licenza (licenze.stato(), sola lettura): «Licenza <fascia>» se è attiva, «Beta privata» per le chiavi beta (campo
 `beta` vero, o fascia «beta»), «Prova · N giorni» durante la prova, «Sola lettura» altrimenti. Se lo stato non si legge
 la riga della licenza non c'è: la schermata di avvio non ferma mai il programma.
 """
