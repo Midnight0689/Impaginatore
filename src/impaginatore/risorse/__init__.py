@@ -1,12 +1,12 @@
 """File che il programma usa così come sono: le pagine dell'interfaccia (home.html, index.html), i file statici che le
-pagine caricano (statici/: token della marca, caratteri con le loro licenze), la tabella dei testi in italiano e in
+pagine caricano (statici/: token della marca, caratteri con le loro licenze, icone SVG), la tabella dei testi in italiano e in
 inglese (testi/<lingua>/<area>.json, vedi lingua.py) e la tabella della vibranza misurata in Photoshop (vib_lut.npz).
 Fanno parte del pacchetto installato."""
 import json
 import os
 
 CARTELLA = os.path.dirname(os.path.abspath(__file__))
-TIPI_STATICI = {".css": "text/css; charset=utf-8", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8"}
+TIPI_STATICI = {".css": "text/css; charset=utf-8", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml"}       # .svg: icone dei CSS (la CSP, img-src 'self', non ammette data:)
 PREFISSI_TESTI = {"home.html": ("comune.", "home.", "statistiche."), "index.html": ("comune.", "editor.")}      # quali testi riceve ogni pagina (statistiche d'uso, T-204: solo la schermata Album)
 
 

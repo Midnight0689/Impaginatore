@@ -55,7 +55,7 @@ Clicca una riga per andare allo spread e alla foto.
 - le foto fuori tono rispetto all'album.
 
 1. Premi «Sistema (N)».
-2. Leggi l'avviso, per esempio «Sistemati: spazi in 3 spread, tono di 5 foto».
+2. Leggi l'avviso, per esempio «Sistemato: gli spazi di 3 spread e il tono di 5 foto».
 3. Se non ti piace, premi «Annulla» nell'avviso, o Ctrl+Z. Si annulla tutto in un passo.
 
 Il resto va guardato a mano: il programma te lo dice con «N cose da guardare a mano: clic su una per andarci».

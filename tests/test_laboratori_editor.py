@@ -3,6 +3,7 @@ sistema, prodotto di un album aperto (operazione dell'editor, con annulla), cont
 consegna al laboratorio (file, nomi, misure, profilo, riepilogo, cartella nuova), assistente AI (MCP)."""
 import json
 import os
+import shutil
 import types
 
 import pytest
@@ -238,14 +239,19 @@ def test_consegna_al_laboratorio(editor, chiavi_prova):
     assert not ok and "Non c'è nessuno spread da esportare" in r["errore"]
     assert os.listdir(os.path.join(c.progetto, "Esportazioni", "Consegna")) == [], "un controllo che non passa non lascia cartelle"
     album(c, 2)
-    p = prodotto(spread_min=3, copertina="Rigida, in lino grigio", consegna={"nome": "LAB_{album}_{pagina}", "file": "pagine", "cifre": 3, "qualita": 90})
+    p = prodotto(spread_min=3, ppi_minimi=72, copertina="Rigida, in lino grigio", consegna={"nome": "LAB_{album}_{pagina}", "file": "pagine", "cifre": 3, "qualita": 90})
     installa(C.firma(catalogo(prodotti=[p]), chiavi_prova.seme, 1))
     c.post("/api/op", {"op": "prodotto", "prodotto": "lab-prova/album-30"})
-    assert c.post("/api/export", {"fmt": "consegna"}) == {"spread": 2}
+    ok, r = c.prova("/api/export", {"fmt": "consegna"})                     # 2 spread, il prodotto ne vuole 3: blocca la stampa (UX-013)
+    assert not ok and r["codice"] == "problemi_bloccanti" and r["conta"] == 1 and [(x["tipo"], x["s"]) for x in r["problemi"]] == [("prodotto", None)]
+    assert r["errore"] == "C'è 1 problema che blocca la stampa: la consegna non è partita. Correggilo, oppure conferma che vuoi consegnare lo stesso"
+    assert os.listdir(os.path.join(c.progetto, "Esportazioni", "Consegna")) == [] and c.get("/api/log") == [], "non è partita"
+    assert c.post("/api/export", {"fmt": "consegna", "conferma_problemi": True}) == {"spread": 2}
     L_ = attendi_log(c)
     dest = next(x[len("RISULTATO:"):] for x in L_ if x.startswith("RISULTATO:"))
     assert os.path.dirname(dest) == os.path.join(c.progetto, "Esportazioni", "Consegna") and os.path.basename(dest).startswith("Album 30 × 22,5 20")
-    assert L_[0] == f"Esporto 2 spread in CONSEGNA → {dest}" and "  spread 1: LAB_Prova_001.jpg, LAB_Prova_002.jpg" in L_ and "ESPORTATI 2 spread su 2" in L_
+    assert L_[0] == f"Esporto 2 spread in CONSEGNA → {dest}" and L_[1] == "ATTENZIONE: consegna confermata con 1 problema che blocca la stampa"
+    assert "  spread 1: LAB_Prova_001.jpg, LAB_Prova_002.jpg" in L_ and "ESPORTATI 2 spread su 2" in L_
     assert sorted(os.listdir(dest)) == ["LAB_Prova_001.jpg", "LAB_Prova_002.jpg", "LAB_Prova_003.jpg", "LAB_Prova_004.jpg", "Riepilogo consegna.txt"]
     with Image.open(os.path.join(dest, "LAB_Prova_003.jpg")) as im:
         assert im.size == (1772, 1329) and round(im.info["dpi"][0]) == 150 and im.info.get("icc_profile") and im.mode == "RGB", "pagina 30 × 22,5 cm a 150 ppi, sRGB incorporato"
@@ -253,13 +259,13 @@ def test_consegna_al_laboratorio(editor, chiavi_prova):
     assert "Firma del catalogo: verificato" in t and "uno per pagina · 1772 × 1329 px" in t and "Spread nell'album: 2 (il prodotto ne vuole almeno 3)" in t
     assert "Copertina (da preparare a parte, Impaginatore non la esporta): Rigida, in lino grigio" in t and "File (4):" in t and "filigrana" not in t
     # di nuovo: un'altra cartella, mai sopra quella di prima
-    c.post("/api/export", {"fmt": "consegna", "range": "2"}); L2 = attendi_log(c)
+    c.post("/api/export", {"fmt": "consegna", "range": "2", "conferma_problemi": True}); L2 = attendi_log(c)
     dest2 = next(x[len("RISULTATO:"):] for x in L2 if x.startswith("RISULTATO:"))
     assert dest2 != dest and sorted(os.listdir(dest)) == sorted(os.listdir(dest)) and len(os.listdir(dest2)) == 3
 
 
 def test_consegna_cartella_scelta_e_prova(editor, licenza):
-    c = editor; album(c, 1); installa(catalogo())
+    c = editor; album(c, 1); installa(catalogo(prodotti=[prodotto(ppi_minimi=72)]))                 # foto piccole per 150 ppi: niente problemi che bloccano
     c.post("/api/op", {"op": "prodotto", "prodotto": "lab-prova/album-30"})
     vuota = os.path.join(c.progetto, "Per il lab"); os.makedirs(vuota)
     c.post("/api/export", {"fmt": "consegna", "dest": vuota}); L_ = attendi_log(c)
@@ -275,13 +281,13 @@ def test_consegna_cartella_scelta_e_prova(editor, licenza):
 
 
 def test_consegna_licenza_e_spread_saltati(editor, monkeypatch):
-    c = editor; E = c.E; album(c, 2); installa(catalogo())
+    c = editor; E = c.E; album(c, 2); installa(catalogo(prodotti=[prodotto(ppi_minimi=72)]))
     c.post("/api/op", {"op": "prodotto", "prodotto": "lab-prova/album-30"})
     d = lambda n: os.path.join(c.progetto, "Consegne", n)
     rotto = E.A.render
     monkeypatch.setattr(E.A, "render", lambda tup, *a, **k: (_ for _ in ()).throw(MemoryError()) if tup == E.spread_tuple(1) else rotto(tup, *a, **k))
     c.post("/api/export", {"fmt": "consegna", "dest": d("a")}); L_ = attendi_log(c)
-    assert "SALTATO spread 2 -> memoria insufficiente: prova a esportare meno spread alla volta" in L_ and "ERRORE: 1 spread non esportati (vedi sopra)" in L_
+    assert "SALTATO spread 2 -> memoria insufficiente: prova a esportare meno spread alla volta" in L_ and "ERRORE: 1 spread non esportato (vedi sopra)" in L_
     assert "ESPORTATI 1 spread su 2" in L_ and sorted(os.listdir(d("a"))) == ["LAB_Prova_01.jpg", "Riepilogo consegna.txt"]
     scrivi = E._scrivi_img; monkeypatch.setattr(E, "_scrivi_img", lambda im, f, **kw: open(f, "wb").write(b"x"))
     c.post("/api/export", {"fmt": "consegna", "range": "1", "dest": d("b")}); L_ = attendi_log(c)
@@ -293,8 +299,29 @@ def test_consegna_licenza_e_spread_saltati(editor, monkeypatch):
     g = L.per_progetto(*L.trova("generico", "orizzontale-30x22")); E.CFG["prodotto"] = dict(g, prodotto=dict(g["prodotto"], abbondanza_mm=0))
     assert c.prova("/api/export", {"fmt": "consegna", "range": "1", "dest": d("d")})[0] is False, "un prodotto generico cambiato non è più generico"
     E.CFG["prodotto"] = g; E.CFG["abbondanza_mm"] = 3
-    assert c.prova("/api/export", {"fmt": "consegna", "range": "1", "dest": d("e")})[0] is True, "il Generico è di tutti"
+    assert c.prova("/api/export", {"fmt": "consegna", "range": "1", "dest": d("e"), "conferma_problemi": True})[0] is True, "il Generico è di tutti"
     attendi_log(c)
+
+
+def test_generico_nella_lingua_dell_editor(home_srv, apri_editor, foto_campione, monkeypatch):
+    """il Generico nell'editor in inglese: nomi tradotti nello stato, nell'elenco dei prodotti, negli avvisi, nella cartella
+    e nel riepilogo della consegna; progetto.json tiene il dato del catalogo com'è"""
+    p = home_srv.post("/api/nuovo", {"nome": "Prova", "prodotto": "generico/orizzontale-30x22"})["path"]
+    for f in sorted(os.listdir(foto_campione)): shutil.copy2(os.path.join(foto_campione, f), os.path.join(p, "Foto", f))
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); c = apri_editor(p); album(c, 1)
+    ok, r = c.prova("/api/op", {"op": "prodotto", "prodotto": "generico/quadrato-30"})
+    assert not ok and r["errore"].startswith("The album has pages of 30 × 22.5 cm, the product “Square 30 × 30” of 30 × 30 cm"), r
+    g = next(x for x in c.get("/api/prodotti")["cataloghi"] if x["id"] == "generico")
+    assert g["nome"] == "Generic" and g["prodotti"][0]["nome"] == "Square 30 × 30" and "“Square 30 × 30”" in g["prodotti"][0]["incompatibile"]
+    c.post("/api/op", {"op": "prodotto", "prodotto": None}); c.post("/api/op", {"op": "prodotto", "prodotto": "generico/orizzontale-30x22"}); c.post("/api/save")
+    st = c.get("/api/state")["prodotto"]
+    assert (st["nome_catalogo"], st["laboratorio"], st["prodotto"]["nome"], st["generico"]) == ("Generic", "No lab: common sizes", "Landscape 30 × 22.5", True)
+    assert progetto_json(c)["prodotto"] == L.per_progetto(*L.trova("generico", "orizzontale-30x22")) and progetto_json(c)["prodotto"]["prodotto"]["nome"] == "Orizzontale 30 × 22,5"
+    c.post("/api/export", {"fmt": "consegna", "conferma_problemi": True}); L_ = attendi_log(c)          # foto piccole per 300 ppi
+    dest = next((x[len("RISULTATO:"):] for x in L_ if x.startswith("RISULTATO:")), None)
+    assert dest and os.path.basename(dest).startswith("Landscape 30 × 22.5 20"), L_
+    t = open(os.path.join(dest, "Riepilogo consegna.txt"), encoding="utf-8").read()
+    assert "Catalogue: Generic (generico, " in t and "Product: Landscape 30 × 22.5 (orizzontale-30x22)" in t and "Lab: No lab: common sizes" in t
 
 
 # ---------------------------------------------------------------- assistente AI (MCP)
@@ -303,7 +330,7 @@ def test_assistente_prodotti_e_consegna(editor, home_srv, monkeypatch):
     from impaginatore.mcp import strumenti as S
     monkeypatch.setattr(MC, "avvia_programma", lambda attesa=None: MC.programma())          # la schermata di questo test, mai il programma vero
     a = S.Assistente(); p = S.id_progetto(editor.progetto)
-    installa(catalogo(stato="da_confermare", laboratorio="Lab <b>Rossi</b>", prodotti=[prodotto(spread_max=40)]))
+    installa(catalogo(stato="da_confermare", laboratorio="Lab <b>Rossi</b>", prodotti=[prodotto(spread_max=40, ppi_minimi=72)]))
     installa({"rotto": True}, "rotto.json")
     el = a.elenca_prodotti()
     assert el["cataloghi_non_letti"] == 1 and "generico/quadrato-30" in [x["prodotto"] for x in el["prodotti"]]
@@ -323,6 +350,14 @@ def test_assistente_prodotti_e_consegna(editor, home_srv, monkeypatch):
     e = a.esporta(p, "consegna")
     assert e["finita"] is True and e["spread_esportati"] == 1 and e["errori"] == [] and e["cartella"].startswith(os.path.join("Esportazioni", "Consegna", "Assistente "))
     assert sorted(os.listdir(os.path.join(editor.progetto, e["cartella"]))) == ["LAB_Prova_01.jpg", "Riepilogo consegna.txt"]
+    installa(catalogo(stato="da_confermare", laboratorio="Lab <b>Rossi</b>", prodotti=[prodotto(spread_min=3, spread_max=40, ppi_minimi=72)]))
+    a.imposta_prodotto(p, "lab-prova/album-30")
+    e = a.esporta(p, "consegna")
+    assert e["partita"] is False and e["problemi_bloccanti"] == 1 and e["problemi"][0]["tipo"] == "prodotto" and e["problemi"][0]["spread"] is None
+    assert e["problemi"][0]["testo"] == "L'album ha 1 spread, il prodotto «Album 30 × 22,5» ne vuole almeno 3" and "conferma_problemi=true solo se l'utente" in e["messaggio"]
+    with pytest.raises(S.Rifiuto, match="conferma_problemi"): a.esporta(p, "consegna", conferma_problemi="sì")
+    e = a.esporta(p, "consegna", conferma_problemi=True)
+    assert e["finita"] is True and e["spread_esportati"] == 1, "l'utente ha chiesto di consegnare lo stesso"
     assert a.imposta_prodotto(p, None)["prodotto"] is None
     with pytest.raises(S.Rifiuto, match="non ha ancora il prodotto del laboratorio"): a.esporta(p, "consegna")
     altro = L.per_progetto(*L.trova("lab-prova", "album-30")); altro["prodotto"]["pagina_cm"] = [20, 20]; editor.E.CFG["prodotto"] = altro

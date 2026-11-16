@@ -184,6 +184,45 @@ def test_ogni_file_ha_le_sue_chiavi_una_volta():
                 assert isinstance(v, str) and v.strip() and v == v.strip(), (lg, k)
 
 
+NON_CONTEGGI = {"nome", "file", "funzione", "dove", "fasce", "versione", "attuale", "col", "tutte", "cmd", "maiusc", "indietro",
+                "tasto", "spread", "nfoto", "foto", "cosa", "formato", "prodotto", "pagina", "cornice", "blocca"}      # parametri che non sono numeri, o sono già un conteggio tradotto («{foto}» = «3 foto»)
+PLURALE_FISSO = {      # numero davanti a un nome al plurale fuori da una coppia _1/_n: va bene solo se il numero non è mai 1
+    "editor.bozza.sotto": "la finestra della bozza si apre con almeno 10 foto da usare; sotto c'è editor.bozza.poche",
+    "editor.lic.prova": "per l'ultimo giorno c'è editor.lic.prova_1",
+    "home.prova_restano": "per l'ultimo giorno c'è home.prova_ultimo",
+    "licenze.prova_mancano": "per l'ultimo giorno c'è licenze.prova_ultimo_giorno",
+    "editor.sel.n": "la selezione multipla ha almeno 2 elementi",
+    "editor.sel.testi": "la selezione multipla ha almeno 2 testi",
+    "editor.side.volte": "per una volta c'è editor.side.volta",
+    "server.prodotto_spread_max": "l'album supera il massimo del prodotto, quindi ha almeno 2 spread",
+    "server.prodotto_spread_max_ancora": "il massimo di un prodotto è almeno spread_min, e nessun catalogo vero ha un massimo di 1 spread",
+    "server.prodotto_spread_max_zero": "come server.prodotto_spread_max_ancora: il massimo di spread di un prodotto non è mai 1",
+    "mcp.img_miniatura": "il lato delle miniature per l'assistente è fisso, centinaia di pixel",
+    "mcp.img_spread": "la larghezza delle immagini degli spread per l'assistente è fissa, centinaia di pixel",
+    "motore.troppo_grande": "il limite in milioni di pixel è più di 1 (IMPAGINATORE_MAX_MPIXEL)",
+    "progetto.nome_lungo": "il limite in caratteri è una costante di decine",
+    "progetto.testo_lungo": "il limite in caratteri è una costante di migliaia",
+    "progetto.zip_troppi_file": "il limite dei file è una costante di migliaia",
+    "progetto.valori": "gli elenchi a lunghezza fissa hanno 2, 3 o 4 valori (validazione.lista)",
+    "progetto.griglia": "la griglia delle pagine ha più di una colonna e più di una riga",
+    "progetto.file_troppo_grande": "MB con decimali: «0,5 MB», «1 MB» sono giusti",
+    "progetto.file_troppo_grande_max": "MB: unità di misura, non cambia",
+}
+
+
+def test_conteggi_al_plurale():
+    """«1 spread non esportati», «1 cose bloccano», «1 photos selected»: un numero davanti a un nome passa da tn() e da una
+    coppia _1/_n (tn sceglie), oppure il testo dice perché quel numero non è mai 1 (PLURALE_FISSO)"""
+    it, en = risorse.testi("it"), risorse.testi("en")
+    inglese = re.compile(r"\{(\w+)\} (?!(?:is|has|was)\b)(?:[a-z]+ )?[a-z]+s\b")
+    italiano = re.compile(r"\{(\w+)\} (?:\w+ )?(cose|spazi|stacchi|modelli|problemi|giorni|pagine|testi|disposizioni|righe|cartelle|elementi|"
+                          r"volte|valori|colonne|caratteri|milioni|selezionate|aggiunte|mancanti|diversi|uguali|bloccano|restano|sono|aperti|esportati)\b")
+    trovati = sorted(k for k in en if not k.endswith(("_1", "_n")) and k not in PLURALE_FISSO
+                     and {x for x in inglese.findall(en[k]) + [a for a, _ in italiano.findall(it[k])]} - NON_CONTEGGI)
+    assert trovati == []
+    assert sorted(k for k in PLURALE_FISSO if k not in it) == [] and all(len(v) > 20 for v in PLURALE_FISSO.values())
+
+
 def test_testi_senza_markup_e_con_parametri_nominati():
     """niente HTML nei testi (le pagine li mettono con textContent o con tH, che li protegge); parametri «{nome}»"""
     for lg in lingua.LINGUE:
@@ -199,6 +238,7 @@ def test_inglese_tradotto_davvero():
     uguali = [k for k in en if en[k] == it[k] and prosa(it[k]) and len(re.findall(r"[A-Za-zÀ-ÿ]{2,}", it[k])) > 1]
     assert uguali == []
     assert [k for k, v in en.items() if "«" in v or "»" in v] == []
+    assert [k for k, v in en.items() if re.search(r"(?<!“)\bFoto\b", v)] == [], "la cartella «Foto» ha questo nome anche in inglese: si scrive “Foto”, come un nome"
     italiane = re.compile(r"\b(il|della|delle|degli|nella|questo|questa|sono|perché|più|già|foto|spread\w* \d+–\d+ e)\b")
     assert [k for k, v in en.items() if italiane.search(SEGNAPOSTO.sub(" ", v)) and not re.fullmatch(r"[^a-z]*", v)] == []
 

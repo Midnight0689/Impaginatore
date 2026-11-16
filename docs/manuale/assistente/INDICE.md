@@ -16,8 +16,8 @@ In breve:
 
 - L'assistente c'è nelle licenze Pro e Studio e nella prova gratuita.
 - Ogni modifica dell'assistente la vedi nell'editor e la annulli con Ctrl+Z, come le tue.
-- Di serie l'assistente riceve solo testo: nomi, misure, date, disposizioni. Le immagini gli arrivano solo se le
-  accendi tu.
+- Di serie l'assistente riceve solo testo: nomi degli album e dei file, misure, date, disposizioni, i testi che scrivi
+  negli album. Le immagini gli arrivano solo se le accendi tu.
 - Quello che l'assistente riceve va al suo fornitore (per Claude, Anthropic), fuori dal tuo computer.
 
 Per chi sviluppa: i dettagli tecnici sono in [`docs/architettura/MCP.md`](../../architettura/MCP.md).

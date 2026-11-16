@@ -12,7 +12,7 @@
   "licenze.chiave_firma_non_corrisponde": "This key isn't valid: its contents don't match its signature. Copy it again from the email, in full; if the problem persists, write to support.",
   "licenze.chiave_firma_ritirata": "This key was signed with a signing key that has been withdrawn: write to support and we'll send you a new key free of charge.",
   "licenze.chiave_firma_sconosciuta": "This key is signed with a key that this version of Impaginatore doesn't know (no. {numero}): update the program or write to support.",
-  "licenze.chiave_incompleta": "The key is incomplete: part of it may be missing. Copy it again from the email, in full, or use the “Activate in Impaginatore” button in the email.",
+  "licenze.chiave_incompleta": "The key is incomplete: part of it may be missing. Copy it again from the email, all of it, from “IMP1-” to the last character, and paste it into the “Licence” window.",
   "licenze.chiave_licenza_sconosciuta": "This key is for a licence that this version of Impaginatore doesn't know: update the program.",
   "licenze.chiave_non_di_impaginatore": "This isn't an Impaginatore key: the key starts with IMP1-.",
   "licenze.chiave_non_vale": "The saved key isn't valid. {motivo} {seguito}",

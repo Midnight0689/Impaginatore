@@ -19,7 +19,7 @@ Versione in sviluppo: 2.0 (ramo `prodotto/2.0`). Il ramo `main` è la versione a
 Serve Python 3.11 o più recente. Con [uv](https://docs.astral.sh/uv/) (versioni fissate in `uv.lock`):
 
 ```bash
-uv sync --extra dev --extra mcp                    # una volta: ambiente con strumenti di sviluppo e server MCP
+uv sync --locked --extra dev --extra mcp           # una volta: ambiente con strumenti di sviluppo e server MCP (la suite completa li vuole tutti e due)
 uv run impaginatore                                # schermata Album nella finestra del programma, o nel browser
 uv run impaginatore --browser                      # nel browser anche se la finestra è disponibile
 uv run impaginatore --porta 0 --no-browser --progetti ~/Album   # porta libera, senza finestra né browser, album altrove
@@ -38,6 +38,8 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev,desktop]"   # su Window
 ```
 
 Gli extra: `dev` (test e ruff), `mcp` (assistente AI), `desktop` (finestra propria del programma), `heic` (foto HEIC).
+La suite completa dei test e la copertura al 100 % vogliono `dev` e `mcp` (`uv sync --locked --extra dev --extra mcp`,
+o `pip install -e ".[dev,mcp]"`): senza `mcp` i test del server MCP si saltano con il motivo e la copertura non è completa.
 
 I PSD si creano solo dove c'è Photoshop (macOS, Windows); su Linux JPG e PDF.
 La finestra del programma usa WebKit su macOS e WebView2 su Windows (già nel sistema). Su Linux servono PyGObject e

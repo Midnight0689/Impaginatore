@@ -33,7 +33,7 @@
   "progetto.manca_formato": "manca «formato»: non è un album dell'Impaginatore",
   "progetto.manca_formato_cm": "manca «formato_cm» (larghezza e altezza dello spread in cm)",
   "progetto.modello_altra_pagina": "il modello vale solo per l'altra pagina: questa deve essere vuota",
-  "progetto.modello_foto": "dice {dichiarate} foto ma le cornici sono {cornici}",
+  "progetto.modello_foto": "foto dichiarate: {dichiarate}, cornici: {cornici}",
   "progetto.nome_caratteri": "Il nome contiene caratteri non ammessi (a capo, tabulazioni o caratteri invisibili)",
   "progetto.nome_file": "«{nome}» non è un nome di file valido",
   "progetto.nome_lungo": "Il nome è troppo lungo: al massimo {massimo} caratteri",

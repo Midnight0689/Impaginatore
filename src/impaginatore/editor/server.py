@@ -933,6 +933,17 @@ class Conflitto(ValueError):
     codice «altra_scheda», che pagina e server MCP riconoscono senza leggere il testo (che segue la lingua)"""
 
 
+MAX_PROBLEMI_RISPOSTA = 50                 # problemi nella risposta di una consegna rifiutata (la conta li dice tutti)
+
+
+class ProblemiBloccanti(ValueError):
+    """la consegna al laboratorio con problemi che bloccano la stampa non parte finché chi esporta non conferma
+    (conferma_problemi): la risposta ha codice «problemi_bloccanti», quanti sono e i primi MAX_PROBLEMI_RISPOSTA"""
+
+    def __init__(self, problemi):
+        super().__init__(lingua.tn("server.consegna_problemi", len(problemi))); self.problemi = problemi
+
+
 def do_op(o):
     """esegue un'operazione della pagina (_do_op) e la conta per le statistiche d'uso, se l'utente le ha accese (T-204):
     nome, durata, esito e chi l'ha chiesta (pagina o assistente), mai gli argomenti. Le statistiche non cambiano niente di
@@ -1212,14 +1223,14 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                 if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", lingua.t("server.ctl_volto_piega", nome=n), e)
                 if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", lingua.t("server.ctl_ripetuta", nome=n, s=usi[i][0] + 1), e)
             sp = stato_spazi(s, modo, cm)
-            if sp["diversi"]: add("guarda", "spazi", lingua.t("server.ctl_spazi", diversi=sp["diversi"], n=sp["n"], cm=lingua.num(sp["ref"] / A.PPI * 2.54, 2, True)), sistema=True); conta_sistema["spazi"] += 1
+            if sp["diversi"]: add("guarda", "spazi", lingua.tn("server.ctl_spazi", sp["diversi"], tot=sp["n"], cm=lingua.num(sp["ref"] / A.PPI * 2.54, 2, True)), sistema=True); conta_sistema["spazi"] += 1
             if tono:
                 for t in tono_spread(s, light=True)["items"]:
                     if t["stato"] == "no":
                         e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
                         add("guarda", "tono", lingua.t("server.ctl_tono_chiara" if t["d"] > 0 else "server.ctl_tono_scura", nome=t["name"]), e, sistema=True); conta_sistema["tono"] += 1
         if spreads is None and pr:
-            for testo in _problemi_prodotto(pr): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
+            for testo in _problemi_prodotto(_prodotto_mostrato()): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
         if spreads is None:
             stelle = set(CFG["stelle"]); tolte = set(CFG.get("tolte", []))
             for n in unused():
@@ -1273,7 +1284,7 @@ def _foto_bozza(almeno=0):
     """foto da impaginare: non ancora nell'album e non tolte, in ordine di scatto (ValueError se sono meno di almeno)"""
     usate = used_set(); tolte = set(CFG.get("tolte", [])); stelle = set(CFG["stelle"])
     foto = [dict(i=i, dt=A.M[i]["dt"], ar=A.M[i]["ar"], stella=A.name(i) in stelle) for i in range(len(A.M)) if i not in usate and A.name(i) not in tolte]
-    if len(foto) < almeno: raise ValueError(lingua.t("server.bozza_poche_foto", almeno=almeno, ci_sono=len(foto)))
+    if len(foto) < almeno: raise ValueError(lingua.tn("server.bozza_poche_foto", len(foto), almeno=almeno))
     return sorted(foto, key=lambda f: (f["dt"] or "", A.name(f["i"])))
 
 
@@ -1317,8 +1328,13 @@ def _spread_liberi():
     return pr["spread_max"] - len(SP)
 
 
+def _prodotto_mostrato():
+    """il prodotto dell'album con il nome da mostrare, nella lingua in uso se viene dal catalogo del programma"""
+    return LAB.tradotto_progetto(CFG["prodotto"])["prodotto"]
+
+
 def _troppi_spread(n, liberi):
-    pr = _prodotto()
+    pr = _prodotto_mostrato()
     if liberi: return lingua.t("server.prodotto_spread_max_ancora", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP), liberi=liberi, n=n)
     return lingua.t("server.prodotto_spread_max_zero", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP))
 
@@ -1326,7 +1342,7 @@ def _troppi_spread(n, liberi):
 def _problemi_prodotto(pr):
     """problemi dell'album intero rispetto al prodotto: numero di spread, formato e abbondanza"""
     out = []; n = len(SP)
-    if n < pr.get("spread_min", 0): out.append(lingua.t("server.prodotto_spread_min", n=n, prodotto=pr["nome"], minimo=pr["spread_min"]))
+    if n < pr.get("spread_min", 0): out.append(lingua.tn("server.prodotto_spread_min", n, prodotto=pr["nome"], minimo=pr["spread_min"]))
     if n > pr.get("spread_max", n): out.append(lingua.t("server.prodotto_spread_max", n=n, prodotto=pr["nome"], massimo=pr["spread_max"]))
     m = LAB.incompatibile(CFG, pr)
     if m: out.append(m)
@@ -1338,16 +1354,20 @@ def imposta_prodotto(v):
     per toglierlo. Il formato dell'album non cambia: un prodotto di un altro formato si rifiuta con il motivo"""
     if v is None: CFG["prodotto"] = None; return
     cat, prod = LAB.scelta(v)                                     # licenza compresa: i cataloghi dei laboratori sono «preset_laboratori»
-    m = LAB.incompatibile(CFG, prod)
+    pr = LAB.per_progetto(cat, prod); vis = LAB.tradotto_progetto(pr)
+    m = LAB.incompatibile(CFG, vis["prodotto"])
     if m: raise ValueError(m)
-    CFG["prodotto"] = LAB.per_progetto(cat, prod); ESITO.update(prodotto=prod["nome"], laboratorio=cat["laboratorio"])
+    CFG["prodotto"] = pr; ESITO.update(prodotto=vis["prodotto"]["nome"], laboratorio=vis["laboratorio"])
 
 
 def prodotto_pagina():
     """il prodotto dell'album come lo mostra la pagina (None se non c'è): copia del progetto, stato rispetto ai cataloghi
-    installati (verificato, generico) e il motivo per cui non va, se l'album non ha il suo formato"""
+    installati (verificato, generico) e il motivo per cui non va, se l'album non ha il suo formato. Nomi nella lingua in uso
+    (laboratori.tradotto_progetto)"""
     pr = CFG.get("prodotto")
-    return dict(pr, **LAB.stato(pr), avviso=LAB.incompatibile(CFG, pr["prodotto"])) if pr else None
+    if not pr: return None
+    vis = LAB.tradotto_progetto(pr)
+    return dict(vis, **LAB.stato(pr), avviso=LAB.incompatibile(CFG, vis["prodotto"]))
 
 
 def prodotti_pagina():
@@ -2004,9 +2024,9 @@ def preflight(o, nums, dest, fmt):
     if fuori: raise ValueError(lingua.t("server.spread_non_esiste", k=fuori[0], n=n))
     usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
-    if manca: raise ValueError(lingua.t("server.foto_non_si_trovano", n=len(manca), nomi=", ".join(manca[:4]) + ("…" if len(manca) > 4 else "")))
+    if manca: raise ValueError(lingua.tn("server.foto_non_si_trovano", len(manca), nomi=", ".join(manca[:4]) + ("…" if len(manca) > 4 else "")))
     rotte = [m["n"] for ix, m in enumerate(A.M) if ix in usati and m["n"] in A.DANNEGGIATE]
-    if rotte: raise ValueError(lingua.t("server.foto_danneggiate", n=len(rotte), nomi=", ".join(rotte[:4]) + ("…" if len(rotte) > 4 else "")))
+    if rotte: raise ValueError(lingua.tn("server.foto_danneggiate", len(rotte), nomi=", ".join(rotte[:4]) + ("…" if len(rotte) > 4 else "")))
     try:
         t = os.path.join(dest, ".prova_scrittura")
         with open(t, "w", encoding="utf-8") as f: f.write("x")
@@ -2022,14 +2042,16 @@ def _consegna_prima(o, dest):
     """controlli della consegna al laboratorio (T-208) prima di cominciare: il prodotto c'è, l'album ha il suo formato, la
     licenza comprende il catalogo. Restituisce (prodotto del progetto, stato del prodotto, serve una cartella nuova): la
     cartella scelta si usa se è nuova o vuota, altrimenti (o con quella di serie) se ne crea una nuova dentro, dopo i
-    controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote)"""
+    controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote). Il prodotto ha i
+    nomi da mostrare (cartella e riepilogo nella lingua in uso); lo stato si calcola sulla copia del progetto"""
     with LOCK: pr = copy.deepcopy(CFG.get("prodotto"))
     if not pr: raise ValueError(lingua.t("server.consegna_senza_prodotto"))
-    m = LAB.incompatibile(CFG, pr["prodotto"])
+    vis = LAB.tradotto_progetto(pr)
+    m = LAB.incompatibile(CFG, vis["prodotto"])
     if m: raise ValueError(m)
     info = LAB.stato(pr)
     if not info["generico"]: _cancello("preset_laboratori")
-    return pr, info, not (o.get("dest") and (not os.path.exists(dest) or (os.path.isdir(dest) and not os.listdir(dest))))
+    return vis, info, not (o.get("dest") and (not os.path.exists(dest) or (os.path.isdir(dest) and not os.listdir(dest))))
 
 
 def _consegna(pr, info, nums, dest, con_filigrana, nome):
@@ -2056,6 +2078,13 @@ def _consegna(pr, info, nums, dest, con_filigrana, nome):
     if len(fatti) < len(nums): _log_errore(lingua.tn("server.log_non_esportati", len(nums) - len(fatti)))
 
 
+def _bloccano_la_consegna(nums):
+    """problemi del controllo che bloccano la stampa negli spread da consegnare (numeri da 1) o nell'album intero (numero
+    di spread o formato rispetto al prodotto): la consegna li dice prima di partire (UX-013)"""
+    voluti = {k - 1 for k in nums}
+    return [p for p in controlla(None, False)["problemi"] if p["livello"] == "blocca" and (p["s"] is None or p["s"] in voluti)]
+
+
 def run_export(o):
     """un solo punto per esportare: JPG (un file per spread), PDF (bozza per il cliente), PSD (Photoshop) o la consegna al
     laboratorio (T-208: i file come li chiede il prodotto dell'album, in una cartella nuova, con il riepilogo)"""
@@ -2071,6 +2100,8 @@ def run_export(o):
     try: os.makedirs(dest, exist_ok=True)
     except OSError as e: raise ValueError(lingua.t("server.cartella_non_creata", dest=dest, motivo=e.strerror or e))
     preflight(o, nums, dest, fmt)
+    bloccano = _bloccano_la_consegna(nums) if fmt == "consegna" else []
+    if bloccano and o.get("conferma_problemi") is not True: raise ProblemiBloccanti(bloccano)
     if fmt == "consegna" and nuova: dest = CONSEGNA.cartella_nuova(dest, pr["prodotto"]["nome"])
     nome = CFG.get("nome", "Album")
     with LOCK:
@@ -2081,6 +2112,7 @@ def run_export(o):
         try:
             _esito(dest=dest, formato=fmt, totale=len(nums))
             LOG.append(lingua.tn("server.log_esporto", len(nums), formato=fmt.upper(), dest=dest))
+            if bloccano: LOG.append(lingua.tn("server.log_consegna_confermata", len(bloccano)))
             if fmt == "consegna": _consegna(pr, info, nums, dest, con_filigrana, nome)
             elif fmt == "jpg":
                 stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
@@ -2537,6 +2569,7 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except Conflitto as e: self.send({"errore": str(e), "codice": "altra_scheda"}, code=400)
+        except ProblemiBloccanti as e: self.send({"errore": str(e), "codice": "problemi_bloccanti", "conta": len(e.problemi), "problemi": e.problemi[:MAX_PROBLEMI_RISPOSTA]}, code=409)
         except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=400)          # T-204: tipo e punto del codice, solo con le statistiche accese
 
 # ------------------------------------------------------------------ avvio

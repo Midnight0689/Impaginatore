@@ -113,7 +113,8 @@ def test_argomenti_arrivano_agli_strumenti():
         ("sostituisci_foto", {"progetto": p, "spread": 2, "pagina": "sinistra", "cornice": 3, "foto": "H01", "adatta": False, "gruppo": "g"}, (p, 2, "sinistra", 3, "H01", False, "g")),
         ("sistema_album", {"progetto": p, "spread": [1], "spazi": False, "tono": True, "gruppo": "g"}, (p, [1], False, True, "g")),
         ("annulla", {"progetto": p}, (p,)), ("ripeti", {"progetto": p}, (p,)), ("salva", {"progetto": p}, (p,)),
-        ("esporta", {"progetto": p, "formato": "pdf", "spread": "1-3", "risoluzione": "schermo"}, (p, "pdf", "1-3", "schermo")), ("stato_esportazione", {"progetto": p}, (p,)),
+        ("esporta", {"progetto": p, "formato": "pdf", "spread": "1-3", "risoluzione": "schermo"}, (p, "pdf", "1-3", "schermo", False)), ("stato_esportazione", {"progetto": p}, (p,)),
+        ("esporta", {"progetto": p, "formato": "consegna", "conferma_problemi": True}, (p, "consegna", "", "stampa", True)),
         ("anteprima_spread", {"progetto": p, "spread": 2, "larghezza": 640}, (p, 2, 640)), ("miniatura_foto", {"progetto": p, "foto": "H01", "lato": 200}, (p, "H01", 200)),
     ]
     _, r = sessione(server.crea(Registra()), *[(n, a) for n, a, _ in attese])

@@ -33,7 +33,7 @@
   "progetto.manca_formato": "“formato” is missing: this isn't an Impaginatore album",
   "progetto.manca_formato_cm": "“formato_cm” is missing (width and height of the spread in cm)",
   "progetto.modello_altra_pagina": "the template applies to the other page only: this one must be empty",
-  "progetto.modello_foto": "says {dichiarate} photos but there are {cornici} frames",
+  "progetto.modello_foto": "photos declared: {dichiarate}, frames: {cornici}",
   "progetto.nome_caratteri": "The name contains characters that aren't allowed (line breaks, tabs or invisible characters)",
   "progetto.nome_file": "“{nome}” isn't a valid file name",
   "progetto.nome_lungo": "The name is too long: at most {massimo} characters",

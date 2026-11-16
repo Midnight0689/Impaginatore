@@ -26,7 +26,9 @@ La vista Foto mostra tutte le foto dell'album. Sotto ogni foto c'è lo spread do
 3. Si apre una finestra con le cartelle. Se la cartella che cerchi non c'è, premi «Altra cartella…» e sceglila.
 4. Premi «Importa questa cartella», oppure seleziona le foto e premi «Importa N foto».
 
-Le foto compaiono subito, senza riaprire l'album. Un avviso dice quante ne sono state aggiunte e quante saltate.
+Le foto compaiono subito, senza riaprire l'album. Un avviso dice quante ne sono state aggiunte e quante no perché
+hanno lo stesso nome di una foto già nell'album, per esempio «3 foto aggiunte · 2 non aggiunte: hanno lo stesso nome
+di foto già nell'album».
 
 Una foto viene saltata se:
 

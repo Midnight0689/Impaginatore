@@ -21,7 +21,7 @@
   "home.assist_menu": "Assistente AI…",
   "home.assist_nota": "Se lo accendi, le miniature delle foto (al massimo 512 pixel di lato) e le anteprime degli spread (al massimo 1200 pixel di larghezza) vanno all'assistente AI e quindi al suo fornitore, fuori dal tuo computer. Gli originali restano qui. Le foto possono mostrare persone riconoscibili: accendilo solo se puoi farlo per i tuoi clienti. L'assistente non può cambiare questa scelta.",
   "home.assist_opzione": "Se nella configurazione dell'assistente c'è l'opzione «--consenti-immagini», le immagini restano accese anche con l'interruttore spento: per spegnerle togli anche l'opzione.",
-  "home.assist_testo": "Un assistente AI collegato a Impaginatore (MCP, per esempio Claude) legge e modifica i tuoi album: ogni modifica la vedi nell'editor e la annulli come le tue. Di serie riceve solo testo: nomi dei file, proporzioni, date, disposizioni ed esiti del controllo.",
+  "home.assist_testo": "Un assistente AI collegato a Impaginatore (MCP, per esempio Claude) legge e modifica i tuoi album: ogni modifica la vedi nell'editor e la annulli come le tue. Di serie non riceve immagini, ma riceve del testo, che arriva anche al suo fornitore, fuori dal tuo computer: i nomi degli album e delle loro cartelle, i nomi dei file delle foto, proporzioni, date di scatto, stelle ed etichette, le disposizioni, i testi che scrivi negli album (per esempio i nomi degli sposi) e gli esiti del controllo.",
   "home.assist_titolo": "Assistente AI",
   "home.avanzate": "Avanzate (abbondanza, spazio tra le foto, margine)",
   "home.catalogo_importato_1": "Catalogo «{nome}» importato: {n} prodotto",

@@ -185,6 +185,13 @@ def _prodotto(pr):
                 da_confermare=pr["stato"] == "da_confermare", **({"avviso": dato(pr["avviso"], 400)} if pr.get("avviso") else {}))
 
 
+def _problema(p, base):
+    """un problema del controllo dell'editor per l'assistente: spread e cornice da 1, nomi e testi come dati"""
+    return dict(livello=p["livello"], tipo=p["tipo"], spread=p["s"] + 1 if p["s"] is not None else None, pagina=NOMI_LATI.get(p["side"]),
+                cornice=p["idx"] + 1 if p["idx"] is not None else None, foto=dato(p["foto"]) if p["foto"] else None, testo=_ripulisci(p["testo"], base),
+                si_sistema_da_solo=bool(p["sistema"]))
+
+
 def strumento(fn):
     """ogni strumento: limite di richieste, licenza, errori del programma tradotti in Rifiuto, risposta entro i limiti"""
     def esegui(self, *a, **k):
@@ -395,9 +402,7 @@ class Assistente:
         if spread is not None: corpo["spread"] = [intero(k, 1, 100000, "spread") - 1 for k in spread]
         if tono is not None: corpo["tono"] = tono
         r = ed.chiedi("/api/controlla", corpo, timeout=300)
-        P = [dict(livello=p["livello"], tipo=p["tipo"], spread=p["s"] + 1 if p["s"] is not None else None, pagina=NOMI_LATI.get(p["side"]),
-                  cornice=p["idx"] + 1 if p["idx"] is not None else None, foto=dato(p["foto"]) if p["foto"] else None, testo=_ripulisci(p["testo"], base),
-                  si_sistema_da_solo=bool(p["sistema"])) for p in r["problemi"][:300]]
+        P = [_problema(p, base) for p in r["problemi"][:300]]
         return dict(progetto=progetto, pronto_per_la_stampa=r["pronto"], conta=r["conta"], sistema_corregge=r["sistema"], problemi=P,
                     **({"altri_problemi": len(r["problemi"]) - 300} if len(r["problemi"]) > 300 else {}), dati_utente=dati_utente())
 
@@ -510,17 +515,22 @@ class Assistente:
 
     # ------------------------------------------------------------ esportazioni
     @strumento
-    def esporta(self, progetto, formato, spread="", risoluzione="stampa"):
+    def esporta(self, progetto, formato, spread="", risoluzione="stampa", conferma_problemi=False):
         """JPG (un file per spread), PDF (bozza per il cliente) o consegna al laboratorio (i file come li chiede il prodotto
-        dell'album, con il riepilogo) in una cartella NUOVA dentro Esportazioni: non sovrascrive mai niente"""
-        scelta(formato, ("jpg", "pdf", "consegna"), "formato"); scelta(risoluzione, ("stampa", "schermo"), "risoluzione")
+        dell'album, con il riepilogo) in una cartella NUOVA dentro Esportazioni: non sovrascrive mai niente. Una consegna
+        con problemi che bloccano la stampa non parte: la risposta li elenca (conferma_problemi=True consegna lo stesso)"""
+        scelta(formato, ("jpg", "pdf", "consegna"), "formato"); scelta(risoluzione, ("stampa", "schermo"), "risoluzione"); booleano(conferma_problemi, "conferma_problemi")
         if not isinstance(spread, str) or not RE_INTERVALLO.fullmatch(spread): raise Rifiuto(lingua.t("mcp.spread_intervalli"))
         ed, base = self._editor(progetto)
         with self._lock: prima = self._esportazioni.get(progetto)
         if prima and not self._esito(ed, base, prima)["finita"]: raise Rifiuto(lingua.t("mcp.esportazione_in_corso"))
         cartella = os.path.join(base, "Esportazioni", "Consegna" if formato == "consegna" else formato.upper(), "Assistente " + time.strftime("%Y-%m-%d %H.%M.%S")); k = 2
         while os.path.exists(cartella): cartella = cartella.rsplit(" (", 1)[0] + f" ({k})"; k += 1
-        ed.chiedi("/api/export", dict(fmt=formato, range=spread, dest=cartella, res=risoluzione), timeout=120)
+        try: ed.chiedi("/api/export", dict(fmt=formato, range=spread, dest=cartella, res=risoluzione, conferma_problemi=conferma_problemi), timeout=120)
+        except C.Errore as e:
+            if e.causa != "problemi_bloccanti": raise
+            P = [_problema(p, base) for p in e.dati.get("problemi", [])[:50]]
+            return dict(progetto=progetto, partita=False, problemi_bloccanti=e.dati.get("conta", len(P)), problemi=P, messaggio=lingua.t("mcp.consegna_problemi"), dati_utente=dati_utente())
         lavoro = dict(formato=formato, cartella=cartella, t=time.monotonic())
         with self._lock: self._esportazioni[progetto] = lavoro
         fine = time.monotonic() + ATTESA_ESPORTAZIONE
