@@ -216,6 +216,14 @@ def test_sessioni_vecchie_o_di_altri_progetti(home_srv, editor, monkeypatch):
     assert home_srv.get(f"/api/pronto?porta={spenta}") == {"pronto": False, "indirizzo": None}
 
 
+def test_client_locale_senza_proxy(editor, monkeypatch):
+    """con un proxy nell'ambiente le richieste fra i processi del programma restano su 127.0.0.1: urllib le manderebbe al
+    proxy (proxy_bypass non conta 127.0.0.1 se NO_PROXY non lo dice), e con loro il gettone"""
+    for k in ("HTTP_PROXY", "http_proxy"): monkeypatch.setenv(k, "http://127.0.0.1:9")
+    for k in ("NO_PROXY", "no_proxy"): monkeypatch.delenv(k, raising=False)
+    assert sicurezza.chiedi(editor.porta, "/api/ping", editor.gettone)["rev"] == 0
+
+
 def test_radici_dell_editor_senza_progetto(editor, monkeypatch, tmp_path):
     E = editor.E; monkeypatch.setattr(E, "PROJ", None)
     assert E._radici_progetto() == []
