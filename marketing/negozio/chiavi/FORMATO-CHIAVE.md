@@ -34,6 +34,12 @@ IMP1-AEDQE-AQCAA-AAAAB-KAGRB-QU3UO-VSGS3-ZAIZX-XI33H-OJQWM-2LDN4-QMHAD-MMZQ5-...
 
 Il formato 2 serve alle licenze a tempo: la «licenza di sito» annuale dei laboratori (modello C di `docs/mercato/tier.json`), o una proroga della prova data dal supporto. Si emette con `chiavi.py emetti … --scadenza AAAA-MM-GG`. Un programma che conosce solo il formato 1 rifiuta le chiavi del formato 2 (lunghezza e byte 0): non le scambia mai per licenze perpetue.
 
+**Chiavi della beta privata.** Sono chiavi del formato 2, fascia Studio, con i bit omaggio e beta accesi (`flag` = 3) e prezzo `beta` nel registro. Si emettono tutte insieme, una per tester:
+
+    python3 chiavi.py emetti-beta --intestatari tester.txt --quante 10 --scadenza 2027-01-31
+
+`tester.txt` ha un intestatario per riga (righe vuote e `#` si saltano; ripetuti o troppo lunghi fermano tutto). `--quante` è un controllo: deve coincidere con le righe. Il registro si scrive una volta sola, dopo che tutte le chiavi sono firmate; chiavi e link `impaginatore://attiva?chiave=…` vanno in un CSV (`seriale,intestatario,scadenza,chiave,link`) con permessi 600, creato nuovo (un file che c'è già non si sovrascrive) e mai dentro il repository; il nome predefinito è `<cartella del negozio>/beta-<data>-seriali-<primo>-<ultimo>.csv`. Nel programma la licenza si presenta come «Beta privata · scade il 31/01/2027» (`licenze.stato()`: `beta`, `etichetta_beta`, `riga_beta`); dopo la scadenza il programma passa in sola lettura come alla fine della prova e dice «La beta privata è finita il …». Solo con questa licenza il programma chiede se condividere le statistiche d'uso (`docs/architettura/STATISTICHE.md`).
+
 Il prefisso `IMP1-` distingue queste chiavi da quelle Polar (`IMP-` seguito da un UUID: `polar/API-LICENZE.md`). Il programma oggi accetta solo `IMP1-`.
 
 ## 2. Cosa fa il programma

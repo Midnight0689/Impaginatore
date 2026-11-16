@@ -90,9 +90,10 @@ def test_licenza_attiva(licenza, ora):
     assert s["funzioni"] == licenze.funzioni_di("studio") and s["seriale"] == 1 and s["emessa"] == "2026-11-01" and s["scade"] is None
     assert s["messaggio"] == "Licenza Studio attiva, intestata a «Studio Prova», per 5 computer. Tutti gli aggiornamenti della versione 2 sono inclusi."
     assert "IMP1" not in json.dumps(s) and K.da_testo(licenza.chiavi.studio)[-64:].hex() not in json.dumps(s), "il testo della chiave non esce mai"
-    licenza.usa(licenza.chiavi.chiave(fascia="pro", intestatario="", flag=K.FLAG_OMAGGIO | K.FLAG_BETA, computer=2))
+    licenza.usa(licenza.chiavi.chiave(fascia="pro", intestatario="", flag=K.FLAG_OMAGGIO, computer=2))
     s = licenze.stato()
-    assert s["messaggio"] == "Licenza Pro attiva per 2 computer. Tutti gli aggiornamenti della versione 2 sono inclusi." and s["omaggio"] and s["beta"]
+    assert s["messaggio"] == "Licenza Pro attiva per 2 computer. Tutti gli aggiornamenti della versione 2 sono inclusi." and s["omaggio"] and not s["beta"]
+    assert s["etichetta_beta"] is None and s["riga_beta"] is None, "la beta privata ha i suoi testi: tests/test_licenze_beta.py"
 
 
 def test_prova_gratuita_dalla_prima_apertura(licenza, ora):

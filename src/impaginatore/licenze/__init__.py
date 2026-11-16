@@ -159,6 +159,13 @@ def _leggi_prova(path):
     log.warning("dati della prova non validi: la prova riparte"); return None
 
 
+def inizio_prova():
+    """istante (secondi) della prima apertura del programma, dal file della prova; None se non c'è. Lo usano le statistiche
+    d'uso (T-204) per i tempi «dal primo avvio»; non fa partire la prova"""
+    d = _leggi_prova(os.path.join(cartella(), FILE_PROVA))
+    return d["inizio"] if d else None
+
+
 def _data(t):
     return dt.datetime.fromtimestamp(t).date()
 
@@ -202,11 +209,26 @@ def _problema(info, adesso):
     if info["seriale"] in revocate(): return "revocata", msg_revocata()
     if info["scade"] and _data(adesso).isoformat() > info["scade"]:
         chi = " " + lingua.t("licenze.intestata_a", nome=info["intestatario"]) if info["intestatario"] else ""
+        if info["beta"]: return "scaduta", lingua.t("licenze.beta_finita", chi=chi, data=_it(info["scade"]), sola_lettura=msg_sola_lettura())       # fine della beta privata: sola lettura, come alla fine della prova
         return "scaduta", lingua.t("licenze.scaduta", fascia=nome_fascia(info["fascia"]), chi=chi, data=_it(info["scade"]), sola_lettura=msg_sola_lettura())
     return None
 
 
+def _beta(info, stato):
+    """etichetta della licenza beta privata e riga che la schermata Album e l'editor mostrano («Beta privata · scade il
+    31/01/2027»; dopo la scadenza «… · finita il …»); niente se la chiave non è una beta"""
+    if not info["beta"]: return {}
+    et = lingua.t("licenze.beta_etichetta"); riga = et
+    if info["scade"] and stato == "attiva": riga = lingua.t("licenze.beta_scade", data=_it(info["scade"]))
+    elif info["scade"] and stato == "scaduta": riga = lingua.t("licenze.beta_finita_riga", data=_it(info["scade"]))
+    return dict(etichetta_beta=et, riga_beta=riga)
+
+
 def _msg_attiva(info):
+    if info["beta"]:
+        chi = f", {lingua.t('licenze.intestata_a', nome=info['intestatario'])}" if info["intestatario"] else ""
+        f = nome_fascia(info["fascia"])
+        return lingua.t("licenze.beta_attiva", chi=chi, fascia=f, data=_it(info["scade"])) if info["scade"] else lingua.t("licenze.beta_attiva_senza_scadenza", chi=chi, fascia=f)
     chi = f", {lingua.t('licenze.intestata_a', nome=info['intestatario'])}," if info["intestatario"] else ""
     coda = lingua.t("licenze.attiva_fino_al", data=_it(info["scade"])) if info["scade"] else lingua.t("licenze.attiva_aggiornamenti", versione=info["versione_maggiore"])
     return lingua.t("licenze.attiva", fascia=nome_fascia(info["fascia"]), chi=chi, computer=lingua.tn("licenze.computer", info["computer"]), coda=coda)
@@ -239,21 +261,22 @@ def _senza_chiave(base, pr):
 
 def stato(adesso=None):
     """condizione del programma: {stato, messaggio, sola_lettura, filigrana, funzioni, fascia, nome_fascia, intestatario,
-    computer, seriale, emessa, scade, impronta, omaggio, beta, motivo, prova, versione_maggiore, chiave_presente}. Mai il
-    testo della chiave"""
+    computer, seriale, emessa, scade, impronta, omaggio, beta, etichetta_beta, riga_beta, motivo, prova, versione_maggiore,
+    chiave_presente}. Mai il testo della chiave. Licenza beta privata: beta True, etichetta_beta «Beta privata» e riga_beta
+    «Beta privata · scade il 31/01/2027» (dopo la scadenza «… · finita il …»), da mostrare così come sono"""
     adesso = orologio() if adesso is None else adesso
     pr = prova(adesso); testo = chiave_salvata()
     base = dict(versione_maggiore=VERSIONE_MAGGIORE, prova=pr, fascia=None, nome_fascia=None, intestatario=None, computer=None, seriale=None,
-                emessa=None, scade=None, impronta=None, omaggio=False, beta=False, motivo=None, chiave_presente=bool(testo))
+                emessa=None, scade=None, impronta=None, omaggio=False, beta=False, etichetta_beta=None, riga_beta=None, motivo=None, chiave_presente=bool(testo))
     if not testo: return _orologio(_senza_chiave(base, pr))
     try:
         info = _verifica(testo)
         base.update({k: info[k] for k in ("fascia", "intestatario", "computer", "seriale", "emessa", "scade", "impronta", "omaggio", "beta")}, nome_fascia=nome_fascia(info["fascia"]))
         problema = _problema(info, adesso)
     except K.ChiaveNonValida as e: problema = (NON_VALIDA, str(e))
-    if problema is None: return dict(base, stato="attiva", sola_lettura=False, filigrana=False, funzioni=funzioni_di(info["fascia"]), messaggio=_msg_attiva(info))
+    if problema is None: return dict(base, stato="attiva", sola_lettura=False, filigrana=False, funzioni=funzioni_di(info["fascia"]), messaggio=_msg_attiva(info), **_beta(info, "attiva"))
     tipo, motivo = problema
-    if tipo != NON_VALIDA: return dict(base, stato=tipo, sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(), messaggio=motivo, motivo=motivo)
+    if tipo != NON_VALIDA: return dict(base, stato=tipo, sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(), messaggio=motivo, motivo=motivo, **_beta(info, tipo))
     s = _orologio(_senza_chiave(base, pr))
     seguito = lingua.t("licenze.intanto_la_prova", dettaglio=_dettaglio_prova(pr) + _coda_orologio(pr)) if s["stato"] == "prova" else msg_sola_lettura()
     return dict(s, stato=NON_VALIDA, motivo=motivo, messaggio=lingua.t("licenze.chiave_non_vale", motivo=motivo, seguito=seguito))

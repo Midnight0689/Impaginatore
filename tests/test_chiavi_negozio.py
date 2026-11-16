@@ -104,3 +104,45 @@ def test_firma_catalogo(negozio, capsys, tmp_path):
     (tmp_path / "x.json").write_text('{"formato_catalogo": 2}', encoding="utf-8")
     with pytest.raises(SystemExit, match="non è un catalogo del formato 1"): C.esegui("firma-catalogo", str(tmp_path / "x.json"))
     with pytest.raises(SystemExit, match="catalogo non letto"): C.esegui("firma-catalogo", str(tmp_path / "manca.json"))
+
+
+def test_emetti_beta_una_chiave_per_tester(negozio, capsys, licenza, tmp_path):
+    """beta privata: chiavi Studio con il segno beta e la scadenza, una per tester, nel registro e in un CSV riservato;
+    nel programma sono «Beta privata · scade il …»"""
+    C = negozio; capsys.readouterr()
+    elenco = tmp_path / "tester.txt"
+    elenco.write_text("# tester della beta\nAnna Neri\n\n  Studio Bianchi  \nFoto Àlfa\n", encoding="utf-8")
+    assert C.esegui("emetti-beta", "--quante", "3", "--scadenza", "2099-01-31", "--intestatari", str(elenco), "--data", "2026-11-16") == 0
+    out = capsys.readouterr().out
+    assert "3 chiavi della beta privata · studio · 5 computer" in out and "seriali 1–3" in out
+    csv_beta = C.dir / "beta-2026-11-16-seriali-1-3.csv"
+    assert csv_beta.exists() and (os.name != "posix" or csv_beta.stat().st_mode & 0o777 == 0o600)
+    with open(csv_beta, encoding="utf-8", newline="") as f: emesse = list(csv.DictReader(f))
+    assert [(r["seriale"], r["intestatario"], r["scadenza"]) for r in emesse] == [("1", "Anna Neri", "2099-01-31"), ("2", "Studio Bianchi", "2099-01-31"), ("3", "Foto Àlfa", "2099-01-31")]
+    assert emesse[0]["link"] == "impaginatore://attiva?chiave=" + emesse[0]["chiave"]
+    with open(C.dir / "registro.csv", encoding="utf-8", newline="") as f: righe = list(csv.DictReader(f))
+    assert {(r["tier"], r["prezzo"], r["nota"], r["scadenza"], r["riferimento"]) for r in righe} == {("studio", "beta", "beta privata", "2099-01-31", "beta privata fino al 2099-01-31")}
+    info = K.decodifica(emesse[1]["chiave"])
+    assert (info["fascia"], info["beta"], info["omaggio"], info["formato"], info["scade"], info["intestatario"], info["seriale"]) == ("studio", True, True, 2, "2099-01-31", "Studio Bianchi", 2)
+    licenza.usa(None); s = licenze.attiva(emesse[1]["chiave"])
+    assert s["beta"] and s["riga_beta"] == "Beta privata · scade il 31/01/2099" and s["funzioni"] == licenze.funzioni_di("studio")
+    assert C.esegui("emetti-beta", "--scadenza", "2099-01-31", "--intestatari", str(elenco), "--json", "--uscita", str(tmp_path / "b.csv"), "--riferimento", "BETA-2") == 0
+    j = json.loads(capsys.readouterr().out); assert [c["seriale"] for c in j["chiavi"]] == ["4", "5", "6"] and j["file"] == str(tmp_path / "b.csv")
+    with pytest.raises(FileExistsError): C.esegui("emetti-beta", "--scadenza", "2099-01-31", "--intestatari", str(elenco), "--uscita", str(tmp_path / "b.csv"))
+    with open(C.dir / "registro.csv", encoding="utf-8", newline="") as f: assert len(list(csv.DictReader(f))) == 6, "un CSV che c'è già: niente registrato"
+
+
+def test_emetti_beta_controlla_prima_di_firmare(negozio, capsys, tmp_path):
+    C = negozio; elenco = tmp_path / "t.txt"; elenco.write_text("Anna\nBruno\n", encoding="utf-8")
+    beta = lambda *a: C.esegui("emetti-beta", "--intestatari", str(elenco), *a)
+    with pytest.raises(SystemExit, match="--quante 3 ma l'elenco ha 2"): beta("--quante", "3", "--scadenza", "2099-01-31")
+    with pytest.raises(SystemExit, match="prima della data di emissione"): beta("--scadenza", "2026-01-01", "--data", "2026-11-16")
+    with pytest.raises(SystemExit, match="dentro il repository"): beta("--scadenza", "2099-01-31", "--uscita", os.path.join(RADICE, "chiavi-beta.csv"))
+    elenco.write_text("Anna\nAnna\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="ripetuti"): beta("--scadenza", "2099-01-31")
+    elenco.write_text("x" * 49 + "\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="oltre 48 byte"): beta("--scadenza", "2099-01-31")
+    elenco.write_text("# nessuno\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="--quante 0"): beta("--scadenza", "2099-01-31")
+    with pytest.raises(SystemExit, match="non letto"): C.esegui("emetti-beta", "--intestatari", str(tmp_path / "manca.txt"), "--scadenza", "2099-01-31")
+    assert not (C.dir / "registro.csv").exists() and not os.path.exists(os.path.join(RADICE, "chiavi-beta.csv")), "niente firmato, niente scritto"
