@@ -89,6 +89,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-019` **brand** — Nel piede della schermata Album solo «Impaginatore v<versione>»; tolto il credito dell'autore. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/servizio.py`. _Rif:_ `T-207`.
 - `MOD-020` **aggiornamenti** — Aprire la schermata Album non fa più un controllo in rete: lo fa il programma; aggiornare e tornare indietro si rifiutano durante un'esportazione. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/home/server.py`. _Rif:_ `T-207`.
 - `MOD-021` **ci** — Extra `compilazione` (Nuitka) fuori dal programma distribuito; nome di un passaggio in `sicurezza.yml`. _File:_ `pyproject.toml`, `uv.lock`, `.github/workflows/sicurezza.yml`. _Rif:_ `T-302`.
+- `MOD-022` **editor** — Un errore interno di una richiesta GET lascia causa e punto nel registro dell'editor. _File:_ `src/impaginatore/editor/server.py`.
+- `MOD-023` **test** — Le prove nel browser trovano Chrome anche su Windows e macOS, aspettano condizioni invece di pause fisse e partono senza estensioni; i test girano su Windows con percorsi nativi e casi equivalenti per i nomi che Windows non ammette; i test dei riavvii veri dicono, allo scadere, che cosa è rimasto. _File:_ `tests/cdp.py`, `tests/aiuti.py`, `tests/conftest.py`, `tests/test_processi.py`.
+- `MOD-024` **ci** — Storia git intera nei test; su macOS e Windows prove nel browser in un job a parte; un push nuovo annulla l'esecuzione superata; macOS 15 al posto di macOS 26 finché GitHub non ne assegna le macchine; tempi misurati nel commento. _File:_ `.github/workflows/ci.yml`.
 
 ### Corretto
 
@@ -128,6 +131,14 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-034` **desktop** — Su Linux la finestra del programma compare dopo la schermata di avvio (restava nascosta). _File:_ `src/impaginatore/desktop/avvio.py`, `tests/test_avvio.py`, `tests/prova_finestra.py`. _Rif:_ `T-207`.
 - `COR-035` **pacchetto** — Nel compilato: eseguibile giusto per i processi figli, modelli di OpenCV per i volti e moduli per la finestra su Linux inclusi. _File:_ `src/impaginatore/compilato.py`, `strumenti/compila.py`. _Rif:_ `T-302`.
 - `COR-036` **mcp** — Il messaggio sulle immagini spente dice che lo sono di serie e dove sta l'interruttore («⋯» › «Assistente AI…»), in italiano e in inglese. _File:_ `src/impaginatore/risorse/testi/it/mcp.json`, `src/impaginatore/risorse/testi/en/mcp.json`, `tests/test_lingua_server.py`.
+- `COR-037` **progetti** — Un progetto.json, un album.json o un corpo JSON con più di 64 livelli di annidamento si rifiuta come file non valido anche con Python 3.14 e uno stack grande, dove prima veniva letto. _File:_ `src/impaginatore/validazione.py`, `src/impaginatore/formato.py`, `src/impaginatore/servizio.py`.
+- `COR-038` **piattaforma** — Su Linux le cartelle utente di user-dirs.dirs si normalizzano («$HOME//Foto/» è ~/Foto; «$HOME/» non vale come cartella speciale). _File:_ `src/impaginatore/piattaforma/cartelle.py`.
+- `COR-039` **desktop** — Su Windows la schermata dei progetti segue l'editor che si riavvia (foto aggiunte, ritorno a una versione), anche dentro un ambiente virtuale: l'album resta aperto, «Apri» non avvia un secondo editor, «Esci» e la chiusura della finestra lo fermano. _File:_ `src/impaginatore/home/server.py`, `src/impaginatore/editor/server.py`, `src/impaginatore/sicurezza.py`, `src/impaginatore/piattaforma/processi.py`.
+- `COR-040` **piattaforma** — Su Windows l'editor riparte e salva anche mentre la schermata dei progetti legge i suoi file: la sostituzione di un file aperto da un altro processo si riprova per qualche istante invece di fallire. _File:_ `src/impaginatore/piattaforma/__init__.py`, `src/impaginatore/formato.py`, `src/impaginatore/sicurezza.py`.
+- `COR-041` **mcp** — Con un aggiornamento installato, su Windows l'avvio del programma dall'assistente non risulta più «non partito». _File:_ `src/impaginatore/mcp/collegamento.py`.
+- `COR-042` **piattaforma** — Su Windows le risposte di Photoshop (nomi dei documenti, messaggi) arrivano con le lettere accentate giuste. _File:_ `src/impaginatore/piattaforma/photoshop.py`.
+- `COR-043` **motore** — Un carattere che il sistema non disegna alla misura delle miniature (visto su macOS 26) non dà più un errore interno: si usa il carattere di riserva alla stessa misura. _File:_ `src/impaginatore/motore/testo.py`, `tests/test_motore.py`.
+- `COR-044` **editor** — Il menu del tasto destro chiuso subito dopo l'apertura non dà più un errore nella pagina. _File:_ `src/impaginatore/risorse/index.html`.
 
 ### Sicurezza
 
@@ -153,6 +164,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `SIC-020` **piattaforma** — Le richieste fra i processi del programma non passano più da un proxy (`HTTP_PROXY` o proxy di sistema): prima il gettone poteva arrivare al proxy. _File:_ `src/impaginatore/sicurezza.py`. _Rif:_ `T-203`.
 - `SIC-021` **aggiornamenti** — Manifesto firmato Ed25519 con la chiave nel programma, sha256 per file e per pacchetto, mai una versione più vecchia, solo https verso GitHub con limiti di misura, nessun dato dell'utente nelle richieste, estrazione sicura, revoche controllate, prova di avvio prima del cambio; un rilascio finale con il segnaposto della chiave non passa i test. _File:_ `src/impaginatore/aggiornamenti/firmati.py`, `src/impaginatore/aggiornamenti/sorgenti.py`, `src/impaginatore/aggiornamenti/installazione.py`. _Rif:_ `SEC-007`.
 - `SIC-022` **licenze** — Chiavi pubbliche vere di licenze e aggiornamenti nel codice al posto dei segnaposto; le chiavi private stanno fuori dal repository, sul computer del titolare; i test fermano chi rimette un segnaposto, in ogni versione. _File:_ `src/impaginatore/licenze/chiave.py`, `src/impaginatore/aggiornamenti/firmati.py`, `tests/test_licenze.py`, `tests/test_aggiornamenti_firmati.py`, `docs/architettura/LICENZE.md`, `docs/architettura/AGGIORNAMENTI.md`, `.gitignore`. _Rif:_ `T-202`, `T-207`.
+- `SIC-023` **mcp** — Su Windows il server MCP non manda più il gettone alla porta di un programma che non c'è più: chiede al sistema se il processo è vivo. _File:_ `src/impaginatore/piattaforma/processi.py`, `src/impaginatore/mcp/collegamento.py`.
+- `SIC-024` **progetti** — Un percorso con il carattere nullo è rifiutato anche su Windows. _File:_ `src/impaginatore/percorsi.py`.
 
 ### Rimosso
 

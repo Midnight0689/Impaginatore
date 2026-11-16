@@ -2,7 +2,7 @@
 # Ogni passo chiama strumenti/controlli.py, che in locale esegue gli stessi controlli:
 #     python strumenti/controlli.py lint | test | copertura | tutto   [--python 3.13]
 #
-# Matrice: Linux con Python 3.11 (la minima di pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64)
+# Matrice: Linux con Python 3.11 (la minima di pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 15 (arm64)
 # e Windows Server 2025 solo con Python 3.12. Un push nuovo sullo stesso ramo annulla l'esecuzione superata (concurrency).
 #
 # Tempi reali (esecuzioni del 16/11/2026, cache di uv calda); i job sono paralleli, un'esecuzione dura quanto il più lungo
@@ -75,8 +75,10 @@ jobs:
           - { os: ubuntu-24.04, python: "3.14", comando: test }
           # macOS e Windows in due job paralleli: le prove nel browser (Chrome vero, lente) da una parte, il resto
           # dall'altra; insieme supererebbero i 30 minuti di un job
-          - { os: macos-26, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
-          - { os: macos-26, python: "3.12", comando: test, parte: browser, marcatori: browser }
+          # macos-15 e non macos-26: per quattro esecuzioni di fila GitHub non ha assegnato una macchina macos-26 ai job in coda.
+          # Si torna a macos-26 quando è disponibile; il difetto dei caratteri visto lì resta coperto da tests/test_motore.py.
+          - { os: macos-15, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
+          - { os: macos-15, python: "3.12", comando: test, parte: browser, marcatori: browser }
           - { os: windows-2025, python: "3.12", comando: test, parte: senza browser, marcatori: "not browser" }
           - { os: windows-2025, python: "3.12", comando: test, parte: browser, marcatori: browser }
     steps:
