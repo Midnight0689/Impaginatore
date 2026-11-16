@@ -29,8 +29,8 @@ concorrenti (PROPOSTE.md: niente «Auto…», «Smart…», «Rearrange», «Des
 | schermata Album | Albums screen | la schermata con l'elenco degli album |
 | spread | spread | «spread 07–08» resta così |
 | pagina sinistra / destra | left page / right page | |
-| pagina piena | full bleed | le foto arrivano al bordo |
-| pagina bianca | white border | margine bianco intorno alle foto |
+| pagina piena | full bleed | le foto arrivano al bordo; nella barra dello spread, per lo spazio: «Full» (non «Bleed», che è l’abbondanza) |
+| pagina bianca | white border | margine bianco intorno alle foto; nella barra dello spread: «Border» |
 | piega | gutter | la piega centrale dello spread |
 | abbondanza | bleed | |
 | rifilo | trim | |
