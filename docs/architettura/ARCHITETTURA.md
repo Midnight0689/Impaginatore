@@ -27,6 +27,8 @@ src/impaginatore/
 ├── motore/              motore di impaginazione (viene dalla skill «impaginazione-album-stefano»)
 │   ├── album.py         progetto caricato, geometria, foto (metadati, miniature, volti con OpenCV), moduli P/FULL/DUO..., render
 │   ├── album_libere.py  cornici libere, angoli, stili, testi liberi, tono/ritocco: si «installa» dentro album all'import
+│   ├── spazi.py         stacchi fra le foto: stato e correzione («Correggi spazi», «Sistema»), gli stessi della pagina
+│   ├── bozza.py         bozza dell'album: capitoli, gruppi, ritmo, scelta delle disposizioni (UX-018)
 │   ├── testo.py         testi liberi: font installati (nomi letti dai file), misura e disegno
 │   ├── photoshop.py     funzioni per gli script (app_name, run_jsx, open_documents) + libreria ExtendScript JS_LIB
 │   ├── genera_psd_angolo.py  genera_psd con le parti JavaScript estese (angoli, testi, tono, sRGB): niente exec
@@ -57,7 +59,8 @@ impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
             N = porta_stabile(P) = 8801 + crc32(P) % 99 se libera, altrimenti la prima libera 8801–8899
             cwd = cartella che contiene il pacchetto, ambiente con PYTHONUTF8=1, uscita in <progetti>/editor.log
             └─ editor (processo 2, uno per progetto) 127.0.0.1:N
-                 ├─ /api/import, /api/ripristina -> salva e riparte con gli stessi argomenti (processi.riesegui = os.execv)
+                 ├─ /api/import, /api/ripristina -> salva e riparte con gli stessi argomenti (processi.riesegui = os.execv);
+                 │    /api/import con a_caldo: true aggiunge le foto senza ripartire (UX-012)
                  └─ export PSD -> python -m impaginatore.motore.genera_psd_angolo --progetto P --spread ...
                        └─ Photoshop: osascript «do javascript» (Mac) / cscript + COM (Windows); su Linux si ferma prima
 ```
@@ -91,10 +94,10 @@ e controlla che nel pacchetto non ci siano `exec`, `eval`, `compile`, `__import_
 
 | Dove | Cosa | Chi lo azzera |
 |---|---|---|
-| `motore/album.py` | PROJ, CFG, M (foto), F (volti), IDX, CW/CH/G..., TITLE, INK, font dei titoli | `carica_progetto(cartella)` |
+| `motore/album.py` | PROJ, CFG, M (foto), F (volti), IDX, CW/CH/G..., TITLE, INK, font dei titoli | `carica_progetto(cartella, sottofondo)` |
 | `motore/album_libere.py` | sostituisce funzioni di `album` (`_place`, `zcrop.__code__`, `_photo`, `render`, `_text`, `apply_ev`, `layout.__code__`) la prima volta che viene importato; cache `_VIB` | mai (è voluto: vale per tutto il processo) |
 | `motore/testo.py` | `_FONTS` (elenco dei font, una volta per processo), `DIRS`/`CACHE` sovrascrivibili | riavvio |
-| `editor/server.py` | PROJ, HOME, CFG (= `album.CFG`), SP, GD, UNDO/REDO, CLIP, LOG, SAVED, REV, LASTC, BOOT, BL/VW/VH, NPH, UT_FILE, cache (CACHE, TH, INFO, PV, FT, TONO_*), LAST, SAVE_ERR, LASTDIR, AGG, `_ICC` | `inizializza(progetto, home)` |
+| `editor/server.py` | PROJ, HOME, CFG (= `album.CFG`), SP, GD, UNDO/REDO, CLIP, LOG, SAVED, REV, LASTC, BOOT, BL/VW/VH, NPH, UT_FILE, cache (CACHE, TH, INFO, PV, FT, TONO_*), LAST, SAVE_ERR, LASTDIR, AGG, `_ICC`, ESITO, DISP, BOZZA (ultima bozza proposta), PREP e PREP_FILO (preparazione in sottofondo) | `inizializza(progetto, home, sottofondo)` (ferma la preparazione in corso) |
 | `home/server.py` | PROGETTI, REG, PORTA, AGGIORNAMENTI, EDITORS (processi figli), SERVER, RADICI (cartelle scelte) | `configura(...)`, `crea_server(...)`; `RADICI.scelte` vale per la sessione |
 | `piattaforma/dialoghi.py` | implementazione scelta con `imposta()` | `imposta(None)` |
 | `piattaforma/font.py` | `_cerca_linux` in `lru_cache` | riavvio |
@@ -118,6 +121,8 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **MCP** (T-203): le azioni esistono già come funzioni senza interfaccia: `home.server.nuovo`, `editor.server.inizializza`,
   `do_import`, `do_op` (tutte le operazioni dell'editor, stesso formato JSON della pagina), `templates_for`, `save`,
   `run_export`. Un server MCP può chiamarle nello stesso processo (un progetto per volta) oppure usare l'API HTTP dell'editor.
+  Le operazioni aggiunte per l'interfaccia nuova e per l'assistente (altra disposizione, sostituisci, controllo,
+  «Sistema», bozza, annulla con nome, ricollega con prova, import a caldo) sono descritte in `OPERAZIONI.md`.
 - **Riavvio dell'editor**: `editor.server.riavvia_processo` (di serie `os.execv` con gli stessi argomenti) si può sostituire
   quando l'editor gira dentro un altro processo.
 - **Photoshop**: `piattaforma.photoshop.trova / esegui_jsx / esegui_js`; i test li sostituiscono con un Photoshop finto.
