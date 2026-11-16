@@ -3,7 +3,7 @@ il calcolo degli spazi fra le foto è nel motore (motore/spazi.py) e dà lo stes
 import os
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, CONTROLLA, EDITOR
 from aiuti import crea_foto
 
 from impaginatore.motore import album as A
@@ -63,18 +63,19 @@ def test_spazi_come_la_pagina(editor, tmp_path):
     for s, d in ((0, 20), (1, 9), (2, 35)): sposta(c, s, d)
     assert all(E.stato_spazi(s)["diversi"] for s in range(3))
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
         assert b.js("typeof gapStat") == "undefined" and b.js("typeof gapPairs") == "undefined", "niente conti degli spazi nella pagina"
         for modo, cm in (("std", None), ("freq", None), ("custom", 0.4)):
             gv = f"GAPMODE = {modo!r}; GAPCM = {cm or 0};"
             for s in range(3):
-                segni = b.js(f"(async () => {{ {gv} cur = {s}; view = 'album'; GAPCHK = true; render(); for (let i = 0; i < 40 && !gapMarks().length; i++) await new Promise(r => setTimeout(r, 50)); return gapMarks().map(m => [m.ax, m.from, m.to, m.at, m.g, m.c]); }})()")
+                b.js(f"(() => {{ {gv} cur = {s}; view = 'album'; GAPCHK = true; render(); }})()")
+                segni = b.attendi("gapMarks().map(m => [m.ax, m.from, m.to, m.at, m.g, m.c])")      # le misure di /api/spazi per questo spread e questo modo
                 py = E.spazi_spread(s, modo, cm)
                 assert segni == [[p["ax"], p["da"], p["a"], p["at"], p["g"], "ok" if p["ok"] else "bad"] for p in py["coppie"]], (modo, s)
                 preso = b.js(f"(async () => {{ {gv} let preso = null; const vero = op; op = async x => {{ preso = x; return null; }}; try {{ await gapFix({s}, true); }} finally {{ op = vero; }} return preso; }})()")
                 assert preso == dict(op="spazi", s=s, modo=modo, **({"cm": cm} if cm else {})), (modo, s)
         prima = E.stato_spazi(0)["diversi"]
-        b.js("(async () => { GAPMODE = 'std'; GAPCM = 0; await gapFix(0); })()"); b.pausa(0.5)
+        b.js("(async () => { GAPMODE = 'std'; GAPCM = 0; await gapFix(0); })()")
         assert prima and E.stato_spazi(0)["diversi"] == 0 and b.js("S.annulla.nome") == "Correggi spazi"
         assert not b.problemi(), b.problemi()
 
@@ -137,8 +138,8 @@ def test_controlla_al_singolare(piccolo, tmp_path):
     op(c, op="newspread", pos=0, L=FULL(ix("H01")), R=FULL(ix("H08")))
     os.remove(os.path.join(c.progetto, "Foto", "H08.jpg"))
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 1)
-        b.js("(async () => { apriControlla(true); for (let i = 0; i < 60 && !(CTL.d && $('ctlsis')); i++) await new Promise(r => setTimeout(r, 50)); })()")
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
+        b.js("apriControlla(true)"); b.attendi(CONTROLLA)
         d = b.js("CTL.d.conta"); assert d["blocca"] == 1 and d["guarda"] == 0, d
         conta = b.js("[...document.querySelectorAll('#insp .conta span')].map(x => x.innerText)")
         assert conta == ["1 blocca", "0 da guardare", f"{d['info']} note"], conta

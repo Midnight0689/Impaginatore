@@ -127,7 +127,7 @@ def test_la_pagina_rispetta_la_sua_csp(tmp_path):
     f = tmp_path / "avvio.html"
     f.write_text(avvio.pagina(dict(stato="prova", sola_lettura=False, prova=dict(giorni_rimasti=12))), encoding="utf-8")
     with Browser(tmp_path) as b:
-        b.apri(f.as_uri(), 1.2)
+        b.apri(f.as_uri())
         assert b.js("document.fonts.ready.then(() => [...document.fonts].map(x => x.family + ':' + x.status).join())") == "IBM Plex Mono:loaded"
         assert b.js("document.querySelector('.licenza').textContent") == "Prova gratuita · 12 giorni" and b.js("document.scripts.length") == 0
         assert not b.problemi(), b.problemi()

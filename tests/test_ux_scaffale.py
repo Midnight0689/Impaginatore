@@ -7,7 +7,7 @@ import shutil
 import time
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, HOME
 
 from impaginatore import licenze
 from impaginatore.piattaforma import azioni
@@ -17,6 +17,8 @@ pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve 
 GIORNO = 86400
 VOCE = "[...document.querySelectorAll('#menu button')].find(b => b.textContent.startsWith(%s))"
 ESC = "document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"
+# menu, fogli di conferma (chiedi) ed Esc della schermata sono sincroni: dopo il clic sono già aperti o chiusi; si aspetta
+# solo quello che passa dal server
 
 
 def crea(h, n, prefisso="Album"):
@@ -36,7 +38,7 @@ def test_elenco_con_stati_e_colonne(home_srv, tmp_path):
     p = crea(home_srv, 2)
     os.makedirs(os.path.join(p[1], "Foto"), exist_ok=True)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert b.js("document.documentElement.dataset.theme") == "dark" and sorted(righe(b)) == ["Album 01", "Album 02"]
         r = b.js("[...document.querySelectorAll('#grid .riga')].map(r => r.innerText.replace(/\\s+/g, ' '))")
         assert all("Senza foto" in x and "30 × 30" in x for x in r), r
@@ -52,9 +54,9 @@ def test_ricerca_oltre_dodici_album(home_srv, tmp_path):
     from cdp import Browser
     crea(home_srv, 12)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert b.js("document.getElementById('cerca').hidden") is True
-        crea(home_srv, 1, "Sposi"); b.js("load()"); b.pausa(0.5)
+        crea(home_srv, 1, "Sposi"); b.js("load()")                      # load() è una promessa: js() la aspetta
         assert b.js("document.getElementById('cerca').hidden") is False and len(righe(b)) == 13
         b.js("(() => { const c = document.getElementById('cerca'); c.value = 'sposi'; c.dispatchEvent(new Event('input')); })()")
         assert righe(b) == ["Sposi 01"], "filtra per nome, senza badare alle maiuscole"
@@ -67,7 +69,7 @@ def test_invio_e_doppio_clic_aprono(home_srv, tmp_path):
     from cdp import Browser
     crea(home_srv, 2)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         b.js("window.aperti = []; openProject = p => window.aperti.push(p.nome)")
         b.js("(() => { const r = document.querySelector('#grid .riga'); r.focus(); r.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); })()")
         b.js("document.querySelectorAll('#grid .riga')[1].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))")
@@ -83,18 +85,18 @@ def test_cestino_chiede_in_pagina(home_srv, tmp_path, monkeypatch):
     monkeypatch.setattr(azioni, "cestina", lambda p: (cestinati.append(p), shutil.rmtree(p)))
     p = crea(home_srv, 1)[0]
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         b.js("window.confirm = () => { window.usato = 'confirm'; return true; }; window.alert = () => { window.usato = 'alert'; }")
-        b.js("document.querySelector('#grid .riga [data-a=altro]').click()"); b.pausa(0.3)
+        b.js("document.querySelector('#grid .riga [data-a=altro]').click()")
         assert b.js("getComputedStyle(document.getElementById('menu')).display") == "block"
-        b.js(VOCE % "'Metti nel Cestino'" + ".click()"); b.pausa(0.3)
+        b.js(VOCE % "'Metti nel Cestino'" + ".click()")
         assert mostra(b, "vchiedi") == "flex" and "Album 01" in b.js("document.getElementById('ch-titolo').textContent")
         assert b.js("document.activeElement.dataset.esito") == "annulla", "il fuoco parte dal pulsante sicuro"
-        b.js(ESC); b.pausa(0.3)
+        b.js(ESC); b.attendi_rete()                                      # nessuna richiesta partita
         assert mostra(b, "vchiedi") == "none" and cestinati == [] and righe(b) == ["Album 01"], "Esc annulla"
-        b.js("document.querySelector('#grid .riga [data-a=altro]').click()"); b.pausa(0.2)
-        b.js(VOCE % "'Metti nel Cestino'" + ".click()"); b.pausa(0.3)
-        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(1)
+        b.js("document.querySelector('#grid .riga [data-a=altro]').click()")
+        b.js(VOCE % "'Metti nel Cestino'" + ".click()")
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.attendi("document.querySelectorAll('#grid .riga').length === 0")
         assert cestinati == [p] and righe(b) == [] and b.js("window.usato || null") is None, "nessun confirm() né alert()"
         assert mostra(b, "vuoto") == "block", "senza album, lo stato vuoto"
         assert not b.problemi(), b.problemi()
@@ -103,31 +105,31 @@ def test_cestino_chiede_in_pagina(home_srv, tmp_path, monkeypatch):
 def test_chiudi_programma_chiede_in_pagina(home_srv, tmp_path):
     from cdp import Browser
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
-        b.js("document.getElementById('altro').click()"); b.pausa(0.3)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        b.js("document.getElementById('altro').click()")
         assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Lingua…", "Chiudi programma"]
-        b.js(VOCE % "'Chiudi programma'" + ".click()"); b.pausa(0.3)
-        assert mostra(b, "vchiedi") == "flex"; b.js(ESC); b.pausa(0.3)
+        b.js(VOCE % "'Chiudi programma'" + ".click()")
+        assert mostra(b, "vchiedi") == "flex"; b.js(ESC); b.attendi_rete()  # nessuna richiesta partita
         assert mostra(b, "vchiedi") == "none" and home_srv.uscite == []
         assert b.js("document.activeElement.id") == "altro", "il fuoco torna dove era"
-        b.js("document.getElementById('altro').click()"); b.pausa(0.2)
-        b.js(VOCE % "'Chiudi programma'" + ".click()"); b.pausa(0.3)
-        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(1.2)
-        assert home_srv.uscite == [1] and "Programma chiuso" in b.js("document.body.innerText")
+        b.js("document.getElementById('altro').click()")
+        b.js(VOCE % "'Chiudi programma'" + ".click()")
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.attendi("document.body.innerText.includes('Programma chiuso')")
+        b.attendi_che(lambda: home_srv.uscite == [1])                     # il server esce poco dopo aver risposto
         assert not b.problemi(), b.problemi()
 
 
 def test_stato_vuoto_porta_avanti(home_srv, tmp_path):
     from cdp import Browser
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert mostra(b, "vuoto") == "block" and mostra(b, "nuova") == "none" and mostra(b, "scaffale") == "none"
         t = b.js("document.getElementById('vuoto').innerText")
         assert "Il tuo primo album" in t and "restano dove sono, sul tuo computer" in t
         assert b.js("document.querySelectorAll('button.primario:not([hidden])').length && [...document.querySelectorAll('button.primario')].filter(e => e.offsetParent).length") == 1, "un solo pulsante primario"
-        b.js("document.getElementById('vuoto-nuovo').focus(); document.getElementById('vuoto-nuovo').click()"); b.pausa(0.3)
+        b.js("document.getElementById('vuoto-nuovo').focus(); document.getElementById('vuoto-nuovo').click()")
         assert mostra(b, "vnew") == "flex" and b.js("document.activeElement.id") == "nome"
-        b.js(ESC); b.pausa(0.2)
+        b.js(ESC)
         assert mostra(b, "vnew") == "none" and b.js("document.activeElement.id") == "vuoto-nuovo"
         assert not b.problemi(), b.problemi()
 
@@ -142,8 +144,8 @@ def test_scegli_cartella_apre_il_nuovo_album(home_srv, tmp_path):
     dialoghi.imposta(Finti())
     crea(home_srv, 1)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
-        b.js("document.getElementById('scegli').click()", attendi=False); b.pausa(1)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        b.js("document.getElementById('scegli').click()", attendi=False); b.attendi("document.getElementById('fdir').value")
         assert mostra(b, "vnew") == "flex" and b.js("document.getElementById('nome').value") == "Rossi" and b.js("document.getElementById('fdir').value").endswith("JPG")
         assert not b.problemi(), b.problemi()
 
@@ -152,20 +154,21 @@ def test_riga_della_prova_solo_negli_ultimi_sette_giorni(home_srv, licenza, tmp_
     from cdp import Browser
     licenza.usa(None); licenze.stato()                                                 # parte la prova
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
-        assert b.js("document.getElementById('prova').hidden") is True and b.js("document.getElementById('lic').textContent") == "Prova gratuita · 30 giorni"
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        assert b.attendi("document.getElementById('lic').textContent") == "Prova gratuita · 30 giorni" and b.js("document.getElementById('prova').hidden") is True
         monkeypatch.setattr(licenze, "orologio", lambda: time.time() + 26 * GIORNO)
-        b.js("loadLic()"); b.pausa(0.5)
+        b.js("loadLic()")                                                # loadLic() è una promessa: js() la aspetta
         assert b.js("document.getElementById('prova').hidden") is False and b.js("document.getElementById('provatxt').textContent") == "Prova: restano 4 giorni"
         assert b.js("getComputedStyle(document.getElementById('prova')).height") == "40px"
-        b.js("document.getElementById('provalic').focus(); document.getElementById('provalic').click()"); b.pausa(0.4)
+        b.js("document.getElementById('provalic').focus(); document.getElementById('provalic').click()")
+        b.attendi_rete()                                                 # la finestra rilegge la licenza: che finisca prima di cambiare l'orologio
         assert mostra(b, "vlic") == "flex"
-        b.js(ESC); b.pausa(0.2)
+        b.js(ESC)
         assert mostra(b, "vlic") == "none" and b.js("document.activeElement.id") == "provalic"
         monkeypatch.setattr(licenze, "orologio", lambda: time.time() + 29.5 * GIORNO)
-        b.js("loadLic()"); b.pausa(0.5)
+        b.js("loadLic()")
         assert b.js("document.getElementById('provatxt').textContent") == "Prova: ultimo giorno"
-        licenza.usa(licenza.chiavi.studio); b.js("loadLic()"); b.pausa(0.5)
+        licenza.usa(licenza.chiavi.studio); b.js("loadLic()")
         assert b.js("document.getElementById('prova').hidden") is True, "con la licenza la riga sparisce"
         assert not b.problemi(), b.problemi()
 
@@ -174,15 +177,15 @@ def test_tema_scuro_predefinito_e_si_ricorda(home_srv, tmp_path):
     from cdp import Browser
     crea(home_srv, 1)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         tema = lambda: b.js("document.documentElement.dataset.theme")
         assert tema() == "dark" and b.js("document.getElementById('tema').getAttribute('aria-label')") == "Passa al tema chiaro"
         scuro = b.js("getComputedStyle(document.body).backgroundColor")
-        b.js("document.getElementById('tema').click()"); b.pausa(0.2)
+        b.js("document.getElementById('tema').click()")
         assert tema() == "light" and b.js("localStorage.getItem('impaginatore_tema')") == "light" and b.js("getComputedStyle(document.body).backgroundColor") != scuro
-        b.js("location.reload()", attendi=False); b.pausa(1.5)
+        b.segna(); b.js("location.reload()", attendi=False); b.attendi_pagina(HOME)
         assert tema() == "light", "la preferenza si ricorda"
-        b.js("localStorage.setItem('impaginatore_tema', 'rosso'); location.reload()", attendi=False); b.pausa(1.5)
+        b.segna(); b.js("localStorage.setItem('impaginatore_tema', 'rosso'); location.reload()", attendi=False); b.attendi_pagina(HOME)
         assert tema() == "dark", "un valore sconosciuto vale come predefinito"
         assert not b.problemi(), b.problemi()
 
@@ -207,20 +210,20 @@ def test_assistente_immagini_solo_dopo_la_conferma(home_srv, tmp_path):
     from cdp import Browser
     from impaginatore.mcp import consenso
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
-        b.js("document.getElementById('altro').click()"); b.pausa(0.2)
-        b.js(VOCE % "'Assistente AI'" + ".click()"); b.pausa(0.4)
-        assert mostra(b, "vassist") == "flex" and b.js("document.activeElement.id") == "aimg"
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        b.js("document.getElementById('altro').click()")
+        b.js(VOCE % "'Assistente AI'" + ".click()"); b.attendi("getComputedStyle(document.getElementById('vassist')).display === 'flex'")
+        assert b.js("document.activeElement.id") == "aimg"
         assert b.js("document.getElementById('aimg').checked") is False and b.js("document.getElementById('aimg').getAttribute('role')") == "switch"
         assert "fuori dal tuo computer" in b.js("document.getElementById('anota').textContent")
-        b.js("document.getElementById('aimg').click()"); b.pausa(0.3)
+        b.js("document.getElementById('aimg').click()")
         assert mostra(b, "vchiedi") == "flex" and "fuori dal tuo computer" in b.js("document.getElementById('ch-testo').textContent")
-        b.js("document.querySelector('#vchiedi [data-esito=annulla]').click()"); b.pausa(0.3)
+        b.js("document.querySelector('#vchiedi [data-esito=annulla]').click()"); b.attendi_rete()     # nessuna richiesta partita
         assert b.js("document.getElementById('aimg').checked") is False and not consenso.salvato()
-        b.js("document.getElementById('aimg').click()"); b.pausa(0.3)
-        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(0.5)
-        assert b.js("document.getElementById('aimg').checked") is True and consenso.salvato()
-        b.js("document.getElementById('aimg').click()"); b.pausa(0.5)
-        assert mostra(b, "vchiedi") == "none" and b.js("document.getElementById('aimg').checked") is False and not consenso.salvato()
-        b.js(ESC); b.pausa(0.2); assert mostra(b, "vassist") == "none"
+        b.js("document.getElementById('aimg').click()")
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.attendi_che(consenso.salvato); b.attendi_rete()
+        assert b.js("document.getElementById('aimg').checked") is True
+        b.js("document.getElementById('aimg').click()"); b.attendi_che(lambda: not consenso.salvato()); b.attendi_rete()
+        assert mostra(b, "vchiedi") == "none" and b.js("document.getElementById('aimg').checked") is False
+        b.js(ESC); assert mostra(b, "vassist") == "none"
         assert not b.problemi(), b.problemi()

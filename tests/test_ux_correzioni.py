@@ -2,7 +2,7 @@
 (A-26), menu di «Correggi spazi» che restava aperto (A-30), contatore delle modifiche in /api/ping (per UX-009)."""
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, EDITOR, HOME
 
 from impaginatore import nomi
 from impaginatore.piattaforma import dialoghi
@@ -49,8 +49,8 @@ def test_nome_dalla_cartella_jpg_nella_pagina(home_srv, tmp_path):
     from cdp import Browser
     dialoghi.imposta(Finti(["C:\\Clienti\\Rossi\\JPG"]))
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1)
-        b.js("document.getElementById('fpick').click()", attendi=False); b.pausa(1)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        b.js("document.getElementById('fpick').click()", attendi=False); b.attendi("document.getElementById('fdir').value")
         assert b.js("document.getElementById('nome').value") == "Rossi" and b.js("document.getElementById('fdir').value") == "C:\\Clienti\\Rossi\\JPG"
         assert not b.problemi(), b.problemi()
 
@@ -61,11 +61,11 @@ def test_salva_e_menu_degli_spazi_nella_pagina(editor, tmp_path):
     from cdp import Browser
     c = editor
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
         b.js("(async () => { const t = await api('/api/templates', { photos: S.photos.slice(0, 2).map(p => p.n) }); await op({ op: 'newspread', pos: 0, L: t.items[0].L, R: t.items[0].R }); go(0); })()")
-        b.pausa(1)
-        b.js("document.getElementById('save').click()", attendi=False); b.pausa(1)
-        testo = b.js("document.getElementById('toast').textContent")
+        assert b.js("S.spreads.length") == 1 and b.js("!!document.getElementById('mgapfix')"), "lo spread nuovo, con il menu degli spazi"
+        b.js("document.getElementById('save').click()", attendi=False)
+        testo = b.attendi("document.getElementById('toast').textContent", lambda t: t.startswith("Salvato alle "))
         assert testo.startswith("Salvato alle ") and len(testo) == len("Salvato alle 10:30") and "spec.py" not in testo, testo
         assert b.js("S.salvato.slice(9, 11) + ':' + S.salvato.slice(11, 13)") == testo[-5:]
         # il menu si chiude quando si apre la finestra delle foto (A-30) ...

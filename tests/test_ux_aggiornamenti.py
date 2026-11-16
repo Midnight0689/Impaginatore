@@ -3,7 +3,7 @@ novità («Aggiorna e riavvia», «Più tardi» per questa sessione), annuncio d
 automatico nella finestra della versione, piede con nome e versione."""
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, HOME
 
 from impaginatore import __version__, aggiornamenti
 
@@ -31,35 +31,34 @@ def test_avviso_annuncio_e_controllo_automatico(home_srv, tmp_path, monkeypatch)
     from cdp import Browser
     a = Finti(); monkeypatch.setattr(home_srv.modulo, "AGGIORNAMENTI", a)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME); b.attendi("!document.getElementById('aggav').hidden")
         assert b.js("document.getElementById('credit').textContent") == f"Impaginatore v{__version__}"
         assert b.js("document.getElementById('aggav').hidden") is False and b.js("document.getElementById('aggav-t').textContent") == "È disponibile Impaginatore 2.0.1"
         assert b.js("[...document.querySelectorAll('#aggav-l li')].map(l => l.textContent).join('|')") == "Esportazione più veloce|<img src=x onerror=alert(1)>", "le novità come testo"
         assert b.js("document.querySelectorAll('#aggav img').length") == 0
         assert b.js("document.getElementById('aggav-ok').textContent") == "Aggiorna e riavvia" and b.js("document.getElementById('aggav-dopo').textContent") == "Più tardi"
         assert b.js("document.getElementById('avvtxt').textContent") == "Impaginatore aggiornato alla versione 2.0.0." and b.js("document.getElementById('avviso').className") == "ok"
-        b.js("document.getElementById('aggav-dopo').click()"); b.pausa(0.2)
+        b.js("document.getElementById('aggav-dopo').click()")
         assert b.js("document.getElementById('aggav').hidden") is True
         b.js("document.getElementById('avvchiudi').click()")
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)                     # con la rete ferma: lo stato degli aggiornamenti è arrivato
         assert b.js("document.getElementById('aggav').hidden") is True, "«Più tardi» vale per questa sessione"
         assert b.js("getComputedStyle(document.getElementById('avviso')).display") == "none", "l'annuncio si mostra una volta"
         # finestra della versione: interruttore del controllo automatico
-        b.js("document.getElementById('verb').click()"); b.pausa(0.5)
+        b.js("document.getElementById('verb').click()"); b.attendi_rete()
         assert b.js("document.getElementById('vautor').hidden") is False and b.js("document.getElementById('vauto').checked") is True
         assert b.js("document.getElementById('vautor').textContent") == "Controlla da solo se ci sono versioni nuove"
-        b.js("document.getElementById('vauto').click()"); b.pausa(0.5)
-        assert aggiornamenti.automatico() is False and b.js("document.getElementById('vauto').checked") is False
+        b.js("document.getElementById('vauto').click()"); b.attendi_che(lambda: aggiornamenti.automatico() is False); b.attendi_rete()
+        assert b.js("document.getElementById('vauto').checked") is False
         b.js("document.getElementById('vclose').click()")
         # un'altra versione nuova: l'avviso torna; «Aggiorna e riavvia» aggiorna senza altre domande
         a.s.update(ultima=dict(a.s["ultima"], n="2.0.2"), annuncio=None, scartata=False)
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME); b.attendi("!document.getElementById('aggav').hidden")
         assert b.js("document.getElementById('aggav').hidden") is False and b.js("document.getElementById('aggav-t').textContent") == "È disponibile Impaginatore 2.0.2"
         assert b.js("document.getElementById('vauto').checked") is False
-        b.js("document.getElementById('aggav-ok').click()"); b.pausa(0.8)
-        assert a.aggiornati == 1
+        b.js("document.getElementById('aggav-ok').click()"); b.attendi_che(lambda: a.aggiornati == 1)
         assert not b.problemi(), b.problemi()
     a.s.update(scartata=True); (tmp_path / "di-nuovo").mkdir()
     with Browser(tmp_path / "di-nuovo") as b:                   # un'altra sessione del browser: «Più tardi» non vale più
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)                     # con la rete ferma: lo stato degli aggiornamenti è arrivato
         assert b.js("document.getElementById('aggav').hidden") is True, "la versione da cui l'utente è tornato indietro non si ripropone nell'avviso"
