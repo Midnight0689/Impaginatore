@@ -11,7 +11,8 @@ Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
 Importare il modulo non fa niente: configura() le prepara, crea_server() apre la porta, main() fa tutto.
 """
-import argparse, json, logging, os, shutil, subprocess, sys, threading, time, webbrowser
+import argparse, json, logging, os, shutil, subprocess, sys, threading, time
+import webbrowser  # noqa: F401  (resta come attributo del modulo: lo intercettano i test; il browser si apre con processi.apri_browser)
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, percorsi, piattaforma, sicurezza
@@ -270,7 +271,7 @@ def gia_aperto(porta):
 
 
 def apri_browser(indirizzo, ritardo=0.3):
-    threading.Timer(ritardo, webbrowser.open, args=(indirizzo,)).start()
+    threading.Timer(ritardo, processi.apri_browser, args=(indirizzo,)).start()          # senza il gettone nell'ambiente (VER-011)
 
 
 def main(argv=None):
@@ -285,7 +286,7 @@ def main(argv=None):
         indirizzo = f"http://127.0.0.1:{args.porta}/"
         if gia_aperto(args.porta):                         # già in funzione: basta aprire la pagina (con un indirizzo di avvio nuovo)
             print(f"Impaginatore è già aperto: {indirizzo}", flush=True)
-            if not args.no_browser: webbrowser.open(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
+            if not args.no_browser: processi.apri_browser(sicurezza.indirizzo_avvio("home", args.porta) or indirizzo)
             return 0
         print(f"La porta {args.porta} è occupata da un altro programma: scegline un'altra con --porta", file=sys.stderr)
         return 1

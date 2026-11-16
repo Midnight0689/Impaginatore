@@ -1,7 +1,13 @@
-"""Processi: come partono i figli (editor, script dei PSD), come si riavvia il programma, come si stacca dal terminale."""
+"""Processi: come partono i figli (editor, script dei PSD), come si riavvia il programma, come si stacca dal terminale.
+
+Ogni processo figlio, nostro o di altri (finestre di sistema, file manager, Photoshop, git, il browser), riceve l'ambiente
+costruito da ambiente_figli: senza il gettone del server (VER-011). Solo i nostri riavvii lo ritrovano (riesegui, che sostituisce
+il processo, e rilancia_dopo, che lo rimette in modo esplicito)."""
 import os
 import subprocess
 import sys
+import threading
+import webbrowser
 
 from .. import giornale
 from . import sistema
@@ -20,6 +26,20 @@ def ambiente_figli(env=None):
     e.pop("IMPAGINATORE_GETTONE", None)
     e["PYTHONUTF8"] = "1"; e["PYTHONIOENCODING"] = "utf-8"
     return e
+
+
+_BROWSER = threading.Lock()
+
+
+def apri_browser(url):
+    """apre url nel browser predefinito. webbrowser non accetta un ambiente per il processo che lancia: il gettone si toglie
+    da os.environ per il tempo del lancio e si rimette dopo (il browser non lo eredita, VER-011). Lo usa solo la schermata,
+    che non si riavvia con os.execv (rilancia_dopo passa il gettone in modo esplicito)"""
+    with _BROWSER:
+        g = os.environ.pop("IMPAGINATORE_GETTONE", None)
+        try: return webbrowser.open(url)
+        finally:
+            if g is not None: os.environ["IMPAGINATORE_GETTONE"] = g
 
 
 def opzioni_staccato():

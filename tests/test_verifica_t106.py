@@ -147,7 +147,6 @@ def test_cookie_della_pagina_non_e_il_gettone(home_srv):
 
 
 # ------------------------------------------------------------------ VER-011
-@xfail("VER-011", "i programmi esterni (gdbus, xdg-open, zenity, osascript...) ereditano IMPAGINATORE_GETTONE")
 def test_programmi_esterni_senza_gettone(monkeypatch, tmp_path):
     from impaginatore.piattaforma import azioni
     visti = []
