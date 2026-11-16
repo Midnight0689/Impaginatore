@@ -1,30 +1,32 @@
 """Le pagine si aprono davvero in un browser (Chrome/Chromium senza schermo) e mostrano i dati del server."""
 import json
 import os
-import subprocess
 
 import pytest
-from cdp import CHROME, EDITOR, HOME, OPZIONI
+from cdp import CHROME, EDITOR, HOME
 from aiuti import attendi, crea_foto
 
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 
-def dom(url, tmp_path):
-    r = subprocess.run([CHROME, *OPZIONI, f"--user-data-dir={tmp_path / 'chrome'}", "--virtual-time-budget=8000", "--dump-dom", url],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
-    return r.stdout
+def dom(url, tmp_path, atteso):
+    """l'HTML della pagina quando contiene «atteso» (un'espressione JavaScript). Con il protocollo di Chrome e non con
+    --dump-dom: con il tempo virtuale di --virtual-time-budget alcuni Chrome (i recenti con il meta refresh, quello delle
+    macchine macOS Intel con ogni pagina) non escono più"""
+    from cdp import Browser
+    with Browser(tmp_path / "chrome") as b:
+        b.apri(url)
+        b.attendi(atteso)
+        return b.js("document.documentElement.outerHTML")
 
 
 def test_home_nel_browser(home_srv, tmp_path):
     """l'indirizzo di avvio collega il browser (cookie) e apre la schermata; l'indirizzo nudo dà la pagina che spiega come
-    aprirla (401). Quella pagina si ricarica da sola ogni 5 secondi (meta refresh): si guarda con il protocollo di Chrome e
-    non con --dump-dom, perché con il tempo virtuale di --virtual-time-budget i Chrome recenti la ricaricano senza fine e
-    non escono più"""
+    aprirla (401), che si ricarica da sola ogni 5 secondi (meta refresh)"""
     from cdp import Browser
     from impaginatore import lingua
     home_srv.post("/api/nuovo", {"nome": "Album Verdi", "w": 30, "h": 30})
-    assert "Album Verdi" in dom(home_srv.srv.indirizzo_avvio(), tmp_path), "l'indirizzo di avvio collega il browser (cookie) e apre la pagina"
+    assert "Album Verdi" in dom(home_srv.srv.indirizzo_avvio(), tmp_path, "document.body.innerText.includes('Album Verdi')"), "l'indirizzo di avvio collega il browser (cookie) e apre la pagina"
     with Browser(tmp_path / "altro") as b:
         b.apri(home_srv.url("/"))
         testo = b.js("document.body.innerText")
@@ -36,7 +38,7 @@ def test_editor_nel_browser(editor, tmp_path):
     st = editor.get("/api/state"); names = [p["n"] for p in st["photos"]]
     t = editor.post("/api/templates", {"photos": names[:2]})["items"][0]
     editor.post("/api/op", dict(cid="b", rev=st["rev"], op="newspread", pos=0, L=t["L"], R=t["R"]))
-    html = dom(editor.srv.indirizzo_avvio(), tmp_path)
+    html = dom(editor.srv.indirizzo_avvio(), tmp_path, "!!document.querySelector('img[src*=\"/img/spread/0\"], img[src*=\"/img/thumb/\"]')")
     assert "/img/spread/0" in html or "/img/thumb/" in html, html[:2000]
     assert os.path.exists(os.path.join(editor.progetto, "album.json"))
 
