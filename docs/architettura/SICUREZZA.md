@@ -276,13 +276,38 @@ schermata ed editor in Chrome senza schermo con nome del progetto, nome di file,
 
 Una foto oltre il limite non entra nel progetto: va in `album.SCARTATE` con il motivo e l'editor lo mostra.
 
-## Aggiornamenti (SEC-007)
+## Aggiornamenti (SEC-007, T-207)
 
 L'aggiornamento con git vale solo per chi lavora da un checkout (`aggiornamenti.predefiniti`). Le richieste che cambiano
-il programma (`/api/aggiorna`, `/api/ripristina`, `/api/controlla`, `/api/esci`) passano dai controlli di sopra come tutte
-le altre. Il contratto per le installazioni da pacchetto (manifesto firmato Ed25519, chiave pubblica nel programma,
-sha256 del pacchetto, niente ritorni a versioni vecchie, installazione solo su richiesta dell'utente) è in
-`aggiornamenti/firmati.py` (`PacchettiFirmati`, non ancora attivo).
+il programma (`/api/aggiorna`, `/api/ripristina`, `/api/controlla`, `/api/aggiornamenti/automatico`, `/api/esci`) passano
+dai controlli di sopra come tutte le altre: nessuna pagina web può far partire un aggiornamento. Le installazioni da
+pacchetto usano `aggiornamenti/firmati.py` (`PacchettiFirmati`); come si pubblica una release: `AGGIORNAMENTI.md`.
+
+Cosa si controlla, e dove:
+
+| Regola | Dove |
+|---|---|
+| Manifesto firmato Ed25519 (dominio `IMPAGINATORE-AGGIORNAMENTO-v1`, diverso da licenze e revoche) con la chiave pubblica scritta nel programma (`firmati.CHIAVI_FIDATE`, per `id_firma`); la privata non entra mai nel repository | `firmati.verifica` |
+| Segnaposto della chiave: nessun manifesto vale; una versione finale con il segnaposto non passa i test, come per le licenze | `firmati.problemi_per_il_rilascio`, `test_un_rilascio_non_parte_con_il_segnaposto` |
+| Campi del manifesto controllati (versione, novità, pacchetti, elenco dei file con sha256, nomi solo sotto `impaginatore/`, niente `..`, file nascosti o nomi riservati di Windows) | `firmati.controlla_campi`, `percorso_valido` |
+| Versione strettamente più nuova di quella in uso e con la stessa versione maggiore: mai indietro, né da un controllo né all'installazione; il lanciatore non avvia mai una copia più vecchia della base installata | `PacchettiFirmati.controlla`, `_installa`, `lanciatore.scegli` |
+| Pacchetto: misura e sha256 del manifesto (l'impronta che dichiara GitHub, se c'è, si confronta prima di scaricare); si scarica al massimo la misura firmata | `PacchettiFirmati._installa` |
+| Estrazione: solo i file elencati nel manifesto, ognuno una volta e con il suo sha256; niente collegamenti simbolici, file cifrati, percorsi fuori; limiti di voci, misura per file e totale; i metadati della wheel non si estraggono | `installazione.estrai` |
+| Elenco delle revoche delle licenze (`licenze/revoche.json`) dentro il pacchetto: coperto dal manifesto e, se firmato con una chiave delle licenze che il programma conosce, controllato anche con quella | `installazione.controlla_revoche` |
+| Prova di avvio della copia nuova in un processo a parte (stesso Python, argomenti in lista, nessuna shell) prima di cambiare il puntatore; il puntatore si sostituisce in un colpo; una versione che non conferma la partenza in 3 avvii torna da sola alla precedente | `installazione.prova_avvio`, `lanciatore` |
+| Rete: solo `https://api.github.com` e `https://github.com` (porta 443, niente credenziali nell'indirizzo), rimandi solo verso https, certificato e nome verificati (contesto ssl predefinito), tempo massimo, misure massime (1 MB l'API, 1 MB il manifesto, 1 KB la firma, 256 MB il pacchetto) | `sorgenti.controlla_url`, `_SoloHttps`, `CONTESTO`, `leggi_limitato` |
+| Richieste senza dati dell'utente: solo `User-Agent: Impaginatore/<versione>`, `Accept` e la versione dell'API; niente gettone, cookie, percorsi, nomi di file, identificativi del computer o della licenza | `sorgenti.intestazioni` |
+| Proxy: le richieste verso GitHub possono passare dal proxy di sistema (https da capo a capo, certificato verificato); le richieste locali con il gettone non partono da qui e restano senza proxy (`sicurezza.APRI_LOCALE`) | `sorgenti.APRI_RETE` |
+| Niente rete finché il titolare non sceglie il repository (`sorgenti.REPOSITORY` vuoto): stato «non configurato», nessuna richiesta | `SorgenteGitHub.configurata` |
+| Si scarica e si installa solo quando l'utente lo chiede dalla pagina (con il gettone); il controllo automatico (all'avvio e poi al massimo una volta al giorno) si spegne dalla schermata Album | `PacchettiFirmati.aggiorna`, `ciclo`, `aggiornamenti.automatico` |
+| Nessun aggiornamento né ritorno indietro mentre un album esporta (il riavvio la interromperebbe) | `home.server.esportazione_in_corso` |
+
+Prove: la release finta (`SorgenteFinta`, `IMPAGINATORE_AGGIORNAMENTI_FINTI`) passa dagli stessi controlli di indirizzi e
+misure e dalla stessa verifica della firma. La sua chiave di prova (`chiave-prova.txt`, id 0) vale solo in una versione
+di sviluppo (`.dev`, `a`, `b`, `rc`) da sorgente: mai in una versione finale né nel programma compilato.
+
+Le foto e i progetti dell'utente non sono mai parte di una richiesta: il codice degli aggiornamenti non legge le
+cartelle dei progetti e scrive solo in `<dati dell'utente>/programma/` e `aggiornamenti.json`.
 
 ## Registro
 
@@ -303,5 +328,8 @@ sha256 del pacchetto, niente ritorni a versioni vecchie, installazione solo su r
 - `'unsafe-inline'` negli stili (vedi sopra).
 - Finestra del programma: filtro di navigazione e finestre di scelta provati con WebKitGTK; WebView2 e WKWebView no
   (vedi «Finestra del programma»); ponte interno di pywebview in ogni pagina.
+- Aggiornamenti: rete vera (GitHub, la CDN degli asset, un proxy con ispezione TLS) non provata; il salto nella copia
+  aggiornata (`os.execv`) e il riavvio provati solo su Linux. Chi può scrivere nella cartella dei dati dell'utente può
+  mettere lì una copia del programma e un puntatore: è lo stesso utente che esegue il programma (vedi `AGGIORNAMENTI.md`).
 - Provato su Linux. Su macOS e Windows le parti di sistema (osascript, PowerShell, permessi dei file) sono provate
   simulando il sistema e intercettando i comandi; vanno provate su macchine reali.
