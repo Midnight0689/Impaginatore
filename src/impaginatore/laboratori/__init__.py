@@ -16,7 +16,7 @@ import logging
 import os
 import secrets
 
-from .. import formato, licenze
+from .. import formato, licenze, lingua
 from .. import validazione as V
 from ..piattaforma import cartelle
 from . import catalogo as C
@@ -34,7 +34,7 @@ def cartella_utente():
 def _leggi(path, interno):
     raw = formato.leggi_json_rigoroso(path, C.MAX_BYTE)
     cat = C.valida(raw, os.path.basename(path), interno)
-    ver, perche = (True, "catalogo che viene con Impaginatore") if interno else C.verifica(raw)
+    ver, perche = (True, lingua.t("laboratori.verifica_interno")) if interno else C.verifica(raw)
     cat.update(verificato=ver, verifica=perche, interno=interno)
     return cat
 
@@ -49,7 +49,7 @@ def cataloghi():
         for f in nomi:
             try: c = _leggi(os.path.join(d, f), interno)
             except (OSError, V.ErroreProgetto) as e: problemi.append(dict(file=f, errore=str(e))); continue
-            if any(x["id"] == c["id"] for x in out): problemi.append(dict(file=f, errore=f"c'è già un catalogo con l'id «{c['id']}»")); continue
+            if any(x["id"] == c["id"] for x in out): problemi.append(dict(file=f, errore=lingua.t("laboratori.id_doppio", id=c["id"]))); continue
             out.append(c)
     return out, problemi
 
@@ -78,9 +78,9 @@ def trova(id_catalogo, id_prodotto):
     for c in cataloghi()[0]:
         if c["id"] == id_catalogo:
             p = next((p for p in c["prodotti"] if p["id"] == id_prodotto), None)
-            if p is None: raise ValueError(f"Il catalogo «{c['nome']}» non ha il prodotto «{id_prodotto}»")
+            if p is None: raise ValueError(lingua.t("laboratori.senza_prodotto", nome=c["nome"], prodotto=id_prodotto))
             return c, p
-    raise ValueError(f"Catalogo «{id_catalogo}» non trovato: importalo dalla schermata dei progetti")
+    raise ValueError(lingua.t("laboratori.non_trovato", id=id_catalogo))
 
 
 def scelta(v):
@@ -88,7 +88,7 @@ def scelta(v):
     Controlla anche la licenza"""
     if isinstance(v, str) and v.count("/") == 1: v = dict(zip(("catalogo", "prodotto"), v.split("/")))
     if not isinstance(v, dict) or not all(isinstance(v.get(k), str) and C._ID.fullmatch(v[k]) for k in ("catalogo", "prodotto")):
-        raise ValueError("Prodotto non valido: servono il catalogo e il prodotto (per esempio «generico/quadrato-30»)")
+        raise ValueError(lingua.t("laboratori.prodotto_non_valido"))
     c, p = trova(v["catalogo"], v["prodotto"]); controlla_licenza(c)
     return c, p
 
@@ -122,8 +122,8 @@ def stato(pr):
     for c in cataloghi()[0]:
         if c["id"] == pr["catalogo"]:
             if any(p == pr["prodotto"] for p in c["prodotti"]): return dict(generico=c["generico"], verificato=c["verificato"], installato=True, verifica=c["verifica"])
-            return dict(generico=False, verificato=False, installato=True, verifica="il prodotto è diverso da quello del catalogo installato (catalogo aggiornato?)")
-    return dict(generico=False, verificato=False, installato=False, verifica="il catalogo di questo prodotto non è installato su questo computer")
+            return dict(generico=False, verificato=False, installato=True, verifica=lingua.t("laboratori.prodotto_diverso"))
+    return dict(generico=False, verificato=False, installato=False, verifica=lingua.t("laboratori.non_installato"))
 
 
 def geometria(prod):
@@ -132,7 +132,7 @@ def geometria(prod):
     return dict(formato_cm=[round(2 * w, 2), round(h, 2)], abbondanza_mm=prod["abbondanza_mm"], ppi=prod["ppi"])
 
 
-def _cm(v): return f"{v:g}".replace(".", ",")
+def _cm(v): return lingua.num(v)
 
 
 def incompatibile(cfg, prod):
@@ -140,12 +140,10 @@ def incompatibile(cfg, prod):
     Il formato di un album fatto non si cambia qui: si crea un album nuovo con il prodotto"""
     (W, H), (w, h) = cfg["formato_cm"], prod["pagina_cm"]
     if abs(W / 2 - w) > TOLLERANZA_CM or abs(H - h) > TOLLERANZA_CM:
-        return (f"L'album ha pagine di {_cm(round(W / 2, 2))} × {_cm(H)} cm, il prodotto «{prod['nome']}» di {_cm(w)} × {_cm(h)} cm: "
-                "il formato di un album fatto non si cambia. Crea un album nuovo con questo prodotto dalla schermata dei progetti")
+        return lingua.t("laboratori.formato_diverso", larghezza=_cm(round(W / 2, 2)), altezza=_cm(H), nome=prod["nome"], w=_cm(w), h=_cm(h))
     ab = cfg.get("abbondanza_mm", 0)
     if ab + 1e-6 < prod["abbondanza_mm"]:
-        return (f"L'album ha {_cm(ab)} mm di abbondanza, il prodotto «{prod['nome']}» ne chiede {_cm(prod['abbondanza_mm'])}: "
-                "crea un album nuovo con questo prodotto dalla schermata dei progetti")
+        return lingua.t("laboratori.abbondanza_poca", abbondanza=_cm(ab), nome=prod["nome"], richiesta=_cm(prod["abbondanza_mm"]))
     return None
 
 
@@ -156,8 +154,8 @@ def importa(path):
     programma non si sostituisce; uno verificato non si sostituisce con uno che non lo è"""
     try:
         with open(path, "rb") as f: dati = f.read(C.MAX_BYTE + 1)
-    except OSError as e: raise ValueError(f"Non riesco a leggere il catalogo: {e.strerror or e}") from None
-    if len(dati) > C.MAX_BYTE: raise ValueError(f"Il catalogo è troppo grande (al massimo {C.MAX_BYTE // 2**20} MB)")
+    except OSError as e: raise ValueError(lingua.t("laboratori.lettura_fallita", motivo=str(e.strerror or e))) from None
+    if len(dati) > C.MAX_BYTE: raise ValueError(lingua.t("laboratori.troppo_grande", mb=C.MAX_BYTE // 2**20))
     d = cartella_utente(); os.makedirs(d, exist_ok=True)
     tmp = os.path.join(d, f".importa-{secrets.token_hex(6)}.json")          # i byte letti una volta sola: si controlla quello che si copia
     try:
@@ -166,9 +164,9 @@ def importa(path):
         controlla_licenza(cat)
         presenti = {c["id"]: c for c in cataloghi()[0]}
         prima = presenti.get(cat["id"])
-        if prima and prima["interno"]: raise ValueError(f"«{cat['id']}» è l'id di un catalogo del programma: il laboratorio deve usarne un altro")
+        if prima and prima["interno"]: raise ValueError(lingua.t("laboratori.id_del_programma", id=cat["id"]))
         if prima and prima["verificato"] and not cat["verificato"]:
-            raise ValueError(f"Il catalogo «{prima['nome']}» che hai è verificato, questo no ({cat['verifica']}): non lo sostituisco")
+            raise ValueError(lingua.t("laboratori.verificato_resta", nome=prima["nome"], motivo=cat["verifica"]))
         dst = os.path.join(d, cat["id"] + ".json")
         for f in os.listdir(d):                                        # lo stesso catalogo salvato prima con un altro nome di file
             if f.lower().endswith(".json") and not f.startswith(".") and os.path.join(d, f) != dst:

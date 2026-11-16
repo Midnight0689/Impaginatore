@@ -1,6 +1,6 @@
 """Editor ridisegnato con la marca (T-205, passi 3 e 4 di PIANO-UX): zone, barra dello spread e della selezione, provini
 delle disposizioni, «Altra disposizione» (D), «Sostituisci», «Controlla» con «Sistema», bozza, menu per compiti, stati
-vuoti, tastiera, licenza spiegata prima, esportazione in corso visibile, testi tutti dalla tabella."""
+vuoti, tastiera, licenza spiegata prima, esportazione in corso visibile (i testi dalla tabella: test_lingua.py)."""
 import json
 import os
 import re
@@ -12,36 +12,9 @@ from impaginatore import risorse
 
 CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 PAGINA = os.path.join(os.path.dirname(risorse.__file__), "index.html")
-TESTI = os.path.join(os.path.dirname(risorse.__file__), "testi", "it.json")
 
 
 def html(): return open(PAGINA, encoding="utf-8").read()
-
-
-def chiavi_usate(s):
-    """le chiavi della tabella che la pagina usa: quelle scritte per intero e quelle composte (prefisso + elenco noto)"""
-    lit = set(re.findall(r'"((?:editor|comune)\.[a-z0-9_.]+)"', s))
-    lit = {k for k in lit if not k.endswith((".", "_")) and k not in ("editor.vuoto.foto", "editor.vuoto.spread")}
-    din = {f"editor.ctl.{k}_{x}" for k in ("blocca", "guarda", "info") for x in ("h", "n")}
-    din |= {f"editor.vuoto.{k}_{x}" for k in ("foto", "spread") for x in ("tit", "testo")}
-    din |= {"editor.allinea." + x for x in ("sx", "ch", "dx", "su", "cv", "giu", "dh", "dv")}
-    din |= {"editor.bozza.r_" + x for x in ("alterna", "piene", "bianche")}
-    din |= {"editor.sfondo." + x for x in ("tema", "nero", "grigio_scuro", "grigio_chiaro", "bianco")}
-    din |= {"editor.side.bordo_" + x for x in ("bianco", "crema", "grigio", "nero")}
-    din |= {"editor.side.exif_" + x for x in ("profilo", "tempo", "diaframma", "iso", "focale", "data")}
-    m = re.search(r"const KEYS = \[(.*?)\n\];", s, re.S).group(1)
-    din |= {"editor.tasti.g_" + g for g in re.findall(r'\["([a-z_]+)", \[\[', m)} | {"editor.tasti." + a for a in re.findall(r'\["([a-z_]+)", "', m)}
-    return lit | din
-
-
-def test_testi_tutti_nella_tabella():
-    """ogni testo che la pagina chiede c'è in it.json, e in it.json non restano voci dell'editor che nessuno usa"""
-    s, t = html(), json.load(open(TESTI, encoding="utf-8"))
-    usate = chiavi_usate(s)
-    assert sorted(k for k in usate if k not in t) == []
-    assert sorted(k for k in t if k.startswith("editor.") and k not in usate) == []
-    for k in usate:
-        segnaposto = set(re.findall(r"\{(\w+)\}", t[k])); assert all(re.fullmatch(r"[a-z_]+", x) for x in segnaposto), k
 
 
 def test_niente_finestre_del_browser_ne_codice_rischioso():
@@ -144,6 +117,8 @@ def test_altra_disposizione_sostituisci_e_annulla_con_il_nome(editor, tmp_path):
         assert b.js("document.querySelector('#pill span').textContent").startswith(("Foto sostituita", "Disposizione adattata", "Pagina adattata"))
         b.js("(async () => { await annulla(); })()")
         assert b.js("document.getElementById('toast').textContent").startswith("Annullato: Sostituisci")
+        assert b.js("CAMBIATE.length") >= 1 and b.js("document.querySelectorAll('#slots > .slot.cambiata').length") == b.js("CAMBIATE.length"), "le cornici cambiate si contornano (UX-003)"
+        b.pausa(0.6); assert b.js("document.querySelectorAll('#slots > .slot.cambiata').length") == 0, "per 400 ms"
         assert libera not in [i.get("name") for i in stato(c)["spreads"][0]["items"]]
         # elimina spread: niente conferma, un avviso con «Annulla»
         b.js("(async () => { await eliminaSpread(1); })()"); assert len(stato(c)["spreads"]) == 1
@@ -205,7 +180,7 @@ def test_bozza_dal_foglio_e_stato_vuoto(editor, tmp_path):
     c = editor
     with Browser(tmp_path) as b:
         b.apri(c.srv.indirizzo_avvio(), 2)
-        b.js("view = 'album'; render()")
+        assert b.js("view") == "album", "un album senza spread si apre su «Impagina», sullo stato vuoto (UX-008)"
         assert b.js("document.querySelectorAll('#nospread .azioni button.primary').length") == 1, "stato vuoto: una sola azione principale"
         assert b.js("document.querySelector('#nospread .azioni button.primary').textContent") == "Prepara la bozza…"
         b.js("document.querySelector('#nospread .azioni button.primary').click()"); b.pausa(1.5)
@@ -294,6 +269,17 @@ def test_modifica_dell_assistente_si_vede_e_si_annulla(editor, tmp_path):
         b.js("document.querySelector('#toast button').click()"); b.pausa(0.6)
         assert len(stato(c)["spreads"]) == 3 and b.js("S.spreads.length") == 3
         assert b.js("document.getElementById('toast').textContent") == "Annullato: Elimina spread (dell'assistente)"
+        # l'assistente annulla e ripete: l'avviso dice il nome del passo, con il pulsante giusto
+        c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 2")
+        c.post("/api/op", {"op": "undo", "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 3")
+        assert b.js("document.getElementById('toast').firstChild.textContent") == "L'assistente ha annullato: Elimina spread"
+        assert b.js("document.querySelector('#toast button').textContent") == "Ripeti"
+        c.post("/api/op", {"op": "redo", "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
+        assert aspetta(b, "S.spreads.length === 2")
+        assert b.js("document.getElementById('toast').firstChild.textContent") == "L'assistente ha ripetuto: Elimina spread"
+        b.js("document.querySelector('#toast button').click()"); b.pausa(0.6); assert len(stato(c)["spreads"]) == 3
         # mentre si scrive in un campo la pagina non ridisegna: lo fa appena il fuoco esce
         b.js("(() => { const i = document.createElement('input'); i.id = 'campoprova'; document.body.appendChild(i); i.focus(); })()")
         c.post("/api/op", {"op": "delete", "s": 2, "cid": "assistente-0a1b2c3d", "rev": stato(c)["rev"]})
@@ -305,4 +291,40 @@ def test_modifica_dell_assistente_si_vede_e_si_annulla(editor, tmp_path):
         assert aspetta(b, "S.spreads.length === 1")
         assert b.js("document.getElementById('toast').textContent") == "Album aggiornato: è stato modificato in un'altra finestra"
         assert b.js("document.querySelector('#toast button')") is None
+        assert not b.problemi(), b.problemi()
+
+
+TELA = "(() => { const r = document.getElementById('main').getBoundingClientRect(); return r.width * r.height / innerWidth / innerHeight * 100; })()"
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_tela_grande_e_foglio_sotto_i_1280(editor, tmp_path):
+    """UX-016: lo spread 60 × 22,5 occupa almeno il 24 % della finestra a 1280 × 800 con tutti i pannelli aperti e almeno
+    il 30 % a 1024 × 700; sotto i 1280 px il pannello di destra è un foglio che si apre sopra la tela senza rimpicciolirla,
+    si chiude con Esc, e la colonna degli spread mostra solo i numeri"""
+    from cdp import Browser
+    c = editor; album(c, 2)
+    with Browser(tmp_path) as b:
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False)
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        assert b.js("panels()") == [True, True, True] and b.js(TELA) >= 24, b.js(TELA)
+        assert b.js("document.getElementById('sideb').getBoundingClientRect().width") == 0, "a 1280 px il pannello sta al suo posto"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False); b.pausa(0.3)
+        assert b.js("panels()") == [True, False, True], "la finestra si stringe: il pannello aperto si chiude"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1280, height=800, deviceScaleFactor=1, mobile=False); b.pausa(0.3)
+        assert b.js("panels()") == [True, True, True] and b.js("localStorage.getItem('pan')") is None, "torna larga: si riapre, e non è una scelta da ricordare"
+        b.chiama("Emulation.setDeviceMetricsOverride", width=1024, height=700, deviceScaleFactor=1, mobile=False)
+        b.apri(c.srv.indirizzo_avvio(), 2)
+        assert b.js("panels()") == [True, False, True], "finestra stretta: il foglio parte chiuso, la colonna degli spread resta"
+        assert b.js("document.querySelector('#thumbs .sth img').getBoundingClientRect().width") == 0
+        assert b.js("document.querySelector('#thumbs .sth span').textContent") == "01–02" and b.js("document.getElementById('list').getBoundingClientRect().width") <= 80
+        tela = b.js(TELA); assert tela >= 30, tela
+        b.js("document.getElementById('sideb').click()"); b.pausa(0.3)
+        assert b.js("panels()[1]") is True and b.js(TELA) == tela, "il foglio si apre sopra la tela"
+        assert b.js("document.getElementById('sideb').getAttribute('aria-pressed')") == "true"
+        lati = b.js("(() => { const a = document.getElementById('side').getBoundingClientRect(), s = document.getElementById('stage').getBoundingClientRect(); return [a.right, s.right, a.width]; })()")
+        assert lati == [1024, 1024, 272]
+        tasto(b, "Escape"); assert b.js("panels()[1]") is False, "Esc chiude il foglio"
+        tasto(b, "c"); b.pausa(0.3); assert b.js("panels()[1]") is True and b.js("CTL.aperto") is True, "Controlla apre il foglio"
         assert not b.problemi(), b.problemi()

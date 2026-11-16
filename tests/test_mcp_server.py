@@ -76,8 +76,8 @@ def test_risposte_ed_errori_dal_protocollo(editor):
     assert contenuto(r[0])["licenza"]["fascia"] == "Studio"
     assert contenuto(r[1])["spread"][0]["numero"] == 1
     assert "greater than or equal to 1" in errore(r[2]), "gli schemi valgono prima dello strumento"
-    assert errore(r[3]) == S.MSG_NON_APERTO
-    assert errore(r[4]) == consenso.SPIEGAZIONE and len(r[4].content) == 1, "nessun pixel senza il consenso"
+    assert errore(r[3]) == S.msg_non_aperto()
+    assert errore(r[4]) == consenso.spiegazione() and len(r[4].content) == 1, "nessun pixel senza il consenso"
     assert "formato" in errore(r[5])
     assert contenuto(r[6])["annullato"]["nome"] == "Nuovo spread"
 
@@ -138,7 +138,7 @@ def test_comando_stdio(editor, home_srv):
     assert st["licenza"]["stato"] == "prova" and st["programma_in_funzione"] is True and st["progetti_aperti"] == [{"progetto": p, "cartella": "Prova"}]
     assert contenuto(r[1])["progetti"][0]["progetto"] == p and editor.progetto not in r[1].content[0].text
     pr = contenuto(r[2])
-    assert pr["foto"] == 10 and errore(r[3]) == consenso.SPIEGAZIONE
+    assert pr["foto"] == 10 and errore(r[3]) == consenso.spiegazione()
     # un altro processo, con le immagini: la proposta vive nel processo che l'ha fatta
     async def seconda():
         async with Client(stdio("--consenti-immagini"), read_timeout_seconds=120) as c:

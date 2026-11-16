@@ -1,8 +1,9 @@
 """Schermate dell'interfaccia 2.0 (T-205) per docs/prodotto/ux/schermate/2.0/: avvia la schermata degli album e
 l'editor in questo processo, su una casa finta e un album di foto sintetiche, li apre in Chrome senza schermo e salva
-una PNG per scena, nei due temi e nelle due misure di riferimento (1280 × 800 e 1920 × 1080).
+una PNG per scena, nei due temi e nelle due misure di riferimento (1280 × 800 e 1920 × 1080). Con --lingua en (T-206)
+una serie ridotta in inglese, in 2.0/en/: tema scuro, 1280 × 800 (la misura più stretta, dove un testo lungo si vede).
 
-    python strumenti/schermate_ux.py [--uscita CARTELLA] [--solo home|editor] [SCENA ...]
+    python strumenti/schermate_ux.py [--uscita CARTELLA] [--solo home|editor] [--lingua it|en] [SCENA ...]
 
 Serve Chrome o Chromium. Non tocca i dati dell'utente: tutto sta in una cartella temporanea che si cancella alla fine.
 Le scene dell'editor preparano lo stato con le stesse API della pagina (nessuna scorciatoia nel server)."""
@@ -22,8 +23,9 @@ MISURE = ((1280, 800), (1920, 1080))
 TEMI = ("scuro", "chiaro")
 
 
-def ambiente(casa):
+def ambiente(casa, lingua="it"):
     """come la fixture «casa» dei test: niente dati veri, finestre, rete, aggiornamenti o riavvii; licenza in prova"""
+    os.environ["IMPAGINATORE_LINGUA"] = lingua
     for k, v in dict(HOME=casa, USERPROFILE=casa, APPDATA=os.path.join(casa, "AppData"), LOCALAPPDATA=os.path.join(casa, "AppData", "Local"),
                      XDG_DATA_HOME=os.path.join(casa, ".local", "share"), XDG_CACHE_HOME=os.path.join(casa, ".cache"), XDG_CONFIG_HOME=os.path.join(casa, ".config"),
                      IMPAGINATORE_PROGETTI=os.path.join(casa, "Progetti"), IMPAGINATORE_DATI=os.path.join(casa, "dati"), IMPAGINATORE_CACHE=os.path.join(casa, "cache"),
@@ -70,7 +72,10 @@ SCENE_HOME = {
     "home-licenza": "document.getElementById('lic').click()",
     "home-riga": "document.querySelectorAll('#grid .riga')[0].focus()",
     "home-menu": "document.querySelectorAll('#grid .riga')[0].focus(); document.querySelector('#grid .riga [data-a=altro]').click()",
-    "home-assistente": "document.getElementById('altro').click(); [...document.querySelectorAll('#menu button')].find(b => b.textContent.startsWith('Assistente')).click()",
+    "home-assistente": "apriAssistente()",
+    "home-lingua": "apriLingua()",
+    # «Nuovo album» da un prodotto del catalogo Generico (T-208): il prodotto dà formato e abbondanza
+    "home-prodotto": "openNew(); cataloghi().then(() => { const s = document.getElementById('prod'); s.value = 'generico/orizzontale-30x22'; prodotto(); })",
     "home-cestino": "document.querySelectorAll('#grid .riga')[1].focus(); document.querySelectorAll('#grid .riga')[1].querySelector('[data-a=altro]').click(); [...document.querySelectorAll('#menu button')].find(b => b.className === 'pericolo').click()",
 }
 SCENE_EDITOR = {
@@ -84,9 +89,11 @@ SCENE_EDITOR = {
     "editor-disposizione": "go(1); altraDisp(1)",
     "editor-altro": "go(1); document.getElementById('morb').click()",
     # avviso dopo una modifica dell'assistente AI (MCP): solo nella pagina, con lo stesso testo e lo stesso pulsante
-    "editor-assistente": "go(1); toast(t('editor.msg.assistente_n', { nome: 'Bozza dell\\'album' }), false, annullaAz())",
+    "editor-assistente": "go(1); toast(t('editor.msg.assistente_n', { nome: LINGUA === 'en' ? 'Album draft' : 'Bozza dell\\'album' }), false, annullaAz())",
     # stato vuoto: solo nella pagina (lo stato del server resta com'è), per vedere come si presenta un album senza spread
     "editor-vuoto": "S.spreads = []; S.photos.forEach(p => { p.sp = null; }); cur = 0; view = 'album'; render()",
+    # Consegna al laboratorio con il prodotto dell'album (T-208)
+    "editor-consegna": "openExp(); setFmt('consegna')",
 }
 
 
@@ -103,11 +110,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--uscita", default=os.path.join(RADICE, "docs", "prodotto", "ux", "schermate", "2.0"))
     ap.add_argument("--solo", choices=("home", "editor"))
+    ap.add_argument("--lingua", choices=("it", "en"), default="it")
     ap.add_argument("scene", nargs="*")
     a = ap.parse_args(argv)
+    temi, misure = (TEMI, MISURE) if a.lingua == "it" else (TEMI[:1], MISURE[:1])
+    if a.lingua != "it" and a.uscita == ap.get_default("uscita"): a.uscita = os.path.join(a.uscita, a.lingua)
     tmp = tempfile.mkdtemp(prefix="sch-", dir="/tmp" if os.path.isdir("/tmp") else None)       # percorso corto: Chrome non parte con un TMPDIR lungo
     try:
-        ambiente(tmp); os.makedirs(a.uscita, exist_ok=True)
+        ambiente(tmp, a.lingua); os.makedirs(a.uscita, exist_ok=True)
         from aiuti import Client
         from cdp import Browser
 
@@ -118,8 +128,9 @@ def main(argv=None):
         hs = H.crea_server(0); threading.Thread(target=hs.serve_forever, daemon=True).start()
         hc = Client(hs.server_address[1], hs.sessione.gettone)
         progetti = []
-        for nome, w, h, nf in (("Matrimonio Rossi Bianchi", 60, 22.5, 36), ("Battesimo di Serena", 50, 20, 12), ("Comunione Luca", 40, 30, 0)):
-            p = H.nuovo({"nome": nome, "w": w, "h": h}); progetti.append(p)
+        nomi = ("Matrimonio Rossi Bianchi", "Battesimo di Serena", "Comunione Luca") if a.lingua == "it" else ("Wedding Smith Jones", "Serena's christening", "Luke's communion")
+        for nome, w, h, nf in zip(nomi, (60, 50, 40), (22.5, 20, 30), (36, 12, 0)):
+            p = H.nuovo(dict({"nome": nome, "w": w, "h": h}, **({"prodotto": "generico/orizzontale-30x22"} if not progetti else {}))); progetti.append(p)    # il primo album ha il prodotto del Generico (T-208)
             if nf: foto_finte(os.path.join(p, "Foto"), nf)
         E.inizializza(progetti[0], home=f"http://127.0.0.1:{hs.server_address[1]}")
         es = E.crea_server(0); threading.Thread(target=es.serve_forever, daemon=True).start()
@@ -130,8 +141,8 @@ def main(argv=None):
                 if a.solo and a.solo != gruppo: continue
                 for nome, js in scene.items():
                     if a.scene and nome not in a.scene: continue
-                    for tema in TEMI:
-                        for w, h in MISURE:
+                    for tema in temi:
+                        for w, h in misure:
                             b.apri(srv.indirizzo_avvio(), 2.5)
                             scatta(b, os.path.join(a.uscita, f"{nome}-{tema}-{w}x{h}.png"), w, h, tema, js or "", 1.2)
                     if b.problemi(): print("problemi nella pagina:", *b.problemi(), sep="\n  ", flush=True)

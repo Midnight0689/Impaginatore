@@ -498,7 +498,7 @@ def test_controlli_prima_di_esportare(apri, monkeypatch):
     assert errore(fmt="jpg", range=" , ;") == "Nessuno spread nell'intervallo scelto"
     with pytest.raises(ValueError, match="^Lo spread 3 non esiste: gli spread sono 2$"): E.preflight({}, [1, 3], c.progetto, "jpg")
     monkeypatch.setattr(shutil, "disk_usage", lambda p: Disco(10**9, 10**9, 2 * 10**7))
-    assert errore(fmt="jpg") == "Spazio insufficiente: servono circa 0.1 GB e ne restano 0.0 GB. Libera spazio o scegli un altro disco"
+    assert errore(fmt="jpg") == "Spazio insufficiente: servono circa 0,1 GB e ne restano 0,0 GB. Libera spazio o scegli un altro disco"
     assert c.get("/api/log") == [], "niente è partito"
 
 
@@ -547,7 +547,7 @@ def _psd_finto(monkeypatch, dest, crea=(), righe=(), codice=0):
 
 ESITI_PSD = {
     "tutti": (dict(crea=(1, 2), righe=["spread 1 ok", "spread 2 ok"]), ["PSD creati: 2 su 2"], True),
-    "uno a mano": (dict(crea=(1,), righe=["spread 1 ok", "SALTATO spread 2 (modificato a mano: lo lascio com'è)"]), ["PSD creati: 1 su 2 (1 lasciati com'erano perché modificati a mano)"], True),
+    "uno a mano": (dict(crea=(1,), righe=["spread 1 ok", "@@SALTATO 2 modificato", "SALTATO spread 2: modificato a mano dopo la generazione -> usa modifica_psd.py"]), ["PSD creati: 1 su 2 (1 lasciati com'erano perché modificati a mano)"], True),
     "nessuno": (dict(), ["SALTATO spread 1 -> il PSD non è stato creato", "SALTATO spread 2 -> il PSD non è stato creato", "PSD creati: 0 su 2"], False),
     "photoshop": (dict(righe=["Error 8800: General Photoshop error occurred."], codice=1),
                   ["SALTATO spread 1 -> il PSD non è stato creato", "SALTATO spread 2 -> il PSD non è stato creato",
@@ -571,8 +571,9 @@ def test_psd_con_il_processo_dei_psd(apri, monkeypatch, esito):
     chiamate = _psd_finto(monkeypatch, dest, **kw)
     assert c.post("/api/export", {"fmt": "psd", "force": esito == "tutti"}) == {"spread": 2}
     L = attendi_log(c)
-    assert L[0] == f"Esporto 2 spread in PSD → {dest}" and L[1:1 + len(kw.get("righe", ()))] == list(kw.get("righe", ()))
-    resto = L[1 + len(kw.get("righe", ())):]
+    visibili = [r for r in kw.get("righe", ()) if not r.startswith("@@")]            # le righe di protocollo non entrano nel registro
+    assert L[0] == f"Esporto 2 spread in PSD → {dest}" and L[1:1 + len(visibili)] == visibili
+    resto = L[1 + len(visibili):]
     assert resto == attese + ([f"RISULTATO:{dest}"] if risultato else []) + ["[finito]"], L
     (ch,) = chiamate
     assert ch["cmd"] == [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", "1,2", "--progetto", c.progetto] + (["--forza"] if esito == "tutti" else [])
@@ -693,3 +694,141 @@ def test_editor_come_programma(base, tmp_path):
         e = Client(int(m.group(1)), g); assert e.get("/api/ping")["path"] == p and len(e.get("/api/state")["photos"]) == 10
     finally:
         pr.terminate(); pr.wait(30)
+
+
+# ---------------------------------------------------------------- lingua (T-206): testi del server e esito strutturato
+def test_inglese_errore_http_conflitto_e_passo_d_annulla(apri, monkeypatch):
+    """un errore HTTP esce nella lingua in uso; il nome del passo si salva come chiave e si traduce quando esce: scritto in
+    italiano, letto in inglese dopo il cambio di lingua; il conflitto fra schede ha il testo nella lingua e il codice"""
+    c = apri(); assert c.prova("/api/export", {"fmt": "jpg"})[1]["errore"] == "Non c'è nessuno spread da esportare"
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    assert c.prova("/api/export", {"fmt": "jpg"}) == (False, {"errore": "There's no spread to export"})
+    assert c.prova("/api/inesistente") == (False, {"errore": "Not found"})
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
+    _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
+    st = c.post("/api/op", dict(op="evg", value=0.5, cid="a", rev=c.get("/api/state")["rev"]))
+    assert st["annulla"]["nome"] == "Esposizione dell'album" and E.UNDO[-1]["chiave"] == "server.op_evg"
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    assert c.get("/api/state")["annulla"]["nome"] == "Album exposure"
+    ok, r = c.prova("/api/op", dict(op="evg", value=0.7, cid="b", rev=0))
+    assert not ok and r["codice"] == "altra_scheda" and r["errore"].startswith("Another tab changed this project")
+    r = c.post("/api/op", dict(op="undo"))
+    assert r["annullato"]["nome"] == "Album exposure" and r["ripeti"]["nome"] == "Album exposure"
+    assert c.post("/api/op", dict(op="addtext", s=0, fx=0.1, fy=0.1, fw=0.2))["annulla"]["nome"] == "Add text"
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); assert c.get("/api/state")["annulla"]["nome"] == "Aggiungi testo"
+
+
+def test_inglese_controllo_dell_album(apri, monkeypatch):
+    """«Controlla» dice i problemi nella lingua in uso, con «Spread N: » davanti come sempre"""
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); c = apri()
+    _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); os.remove(os.path.join(c.progetto, "Foto", "H02.jpg"))
+    testi = [p["testo"] for p in c.post("/api/controlla", {})["problemi"]]
+    assert "Spread 1: photo H02 can't be found: relink it" in testi and "V03 isn't in the album" in testi and "Spread 1: H01 is too small for this frame (68 ppi, it needs at least 150)" in testi, testi
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
+    assert "Spread 1: la foto H02 non si trova: ricollegala" in [p["testo"] for p in c.post("/api/controlla", {})["problemi"]]
+
+
+def test_esito_riuscita_e_registro_in_inglese(apri, monkeypatch):
+    """/api/esito: prima di ogni esportazione è vuoto; una JPG riuscita dice destinazione, formato, spread fatti e risultato"""
+    c = apri(); vuoto = dict(dest="", formato="", totale=0, fatti=0, saltati=[], errori=[], risultato=None, finito=False)
+    assert c.get("/api/esito") == vuoto
+    _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    c.post("/api/export", {"fmt": "jpg", "res": "bozza"}); L = attendi_log(c); dest = os.path.join(c.progetto, "Esportazioni", "JPG")
+    assert L == [f"Exporting 2 spreads as JPG → {dest}", "  spread 1: Prova - Spread 01.jpg", "  spread 2: Prova - Spread 02.jpg", "Exported 2 of 2 spreads", f"RISULTATO:{dest}", "[finito]"]
+    assert c.get("/api/esito") == dict(vuoto, dest=dest, formato="jpg", totale=2, fatti=2, risultato=dest, finito=True)
+    c.post("/api/export", {"fmt": "jpg", "res": "bozza", "range": "1"}); L = attendi_log(c)
+    assert L[0] == f"Exporting 1 spread as JPG → {dest}" and c.get("/api/esito")["totale"] == 1
+
+
+def test_esito_con_spread_saltati_in_inglese(apri, monkeypatch):
+    """due spread non scritti (file vuoto, disco pieno): righe del registro in inglese, saltati e errori nell'esito, niente risultato"""
+    c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
+    scritti = []
+
+    def scrivi(im, f, **kw):
+        scritti.append(f)
+        if len(scritti) == 1: open(f, "wb").close()
+        else: raise OSError(errno.ENOSPC, "No space left on device")
+    monkeypatch.setattr(E, "_scrivi_img", scrivi); monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    c.post("/api/export", {"fmt": "jpg", "res": "bozza"}); L = attendi_log(c); dest = os.path.join(c.progetto, "Esportazioni", "JPG")
+    assert L == [f"Exporting 2 spreads as JPG → {dest}", "Skipped spread 1: file is empty", "Skipped spread 2: the disk is full: free up space or choose another disk",
+                 "Exported 0 of 2 spreads", "Error: 2 spreads weren't exported (see above)", "[finito]"]
+    assert c.get("/api/esito") == dict(dest=dest, formato="jpg", totale=2, fatti=0, risultato=None, finito=True, errori=["2 spreads weren't exported (see above)"],
+                                       saltati=[dict(spread=1, motivo="file is empty"), dict(spread=2, motivo="the disk is full: free up space or choose another disk")])
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); c.post("/api/export", {"fmt": "jpg", "res": "bozza", "range": "1"}); attendi_log(c)
+    assert c.get("/api/esito")["saltati"] == [dict(spread=1, motivo="il disco è pieno: libera spazio o scegli un altro disco")]
+    assert c.get("/api/esito")["errori"] == ["1 spread non esportati (vedi sopra)"]
+
+
+def test_esito_errore_del_pdf_e_progetto_esportato(apri, monkeypatch, tmp_path):
+    """un PDF vuoto è un errore nell'esito; l'esportazione del progetto azzera l'esito e dice cartella, foto copiate e risultato"""
+    c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
+    monkeypatch.setattr(E, "write_pdf", lambda path, jpegs, dpi=150: open(path, "wb").close()); monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    c.post("/api/export", {"fmt": "pdf", "width": 400, "range": "1"}); L = attendi_log(c)
+    assert L[-2:] == ["Error: the PDF is empty", "[finito]"]
+    assert c.get("/api/esito") == dict(dest=os.path.join(c.progetto, "Esportazioni", "PDF"), formato="pdf", totale=1, fatti=0, saltati=[], errori=["the PDF is empty"], risultato=None, finito=True)
+    dest = tmp_path / "uscita"; dest.mkdir(); dialoghi.imposta(Finti(str(dest)))
+    out = c.post("/api/prj_esporta", {"foto": True, "zip": True})["cartella"]; L = attendi_log(c)
+    assert L[0] == f"Exporting the project to {out}" and "  creating the ZIP…" in L and L[-3].startswith("Done: ") and L[-2] == f"RISULTATO:{out}.zip"
+    assert c.get("/api/esito") == dict(dest=out, formato="progetto", totale=10, fatti=10, saltati=[], errori=[], risultato=out + ".zip", finito=True)
+    leggimi = open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8").read()
+    assert "choose the ⋯ menu › “Open existing album…”" in leggimi and "(or “Import ZIP…” if you have the .zip file)" in leggimi and "The photos are in the Foto folder" in leggimi
+    assert open(os.path.join(out, "font_usati.txt"), encoding="utf-8").read().startswith("Fonts used in the text (install them on the computer where you open the project):\n")
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); dialoghi.imposta(Finti(str(dest)))
+    out = c.post("/api/prj_esporta", {"foto": False})["cartella"]; attendi_log(c)
+    assert "Le foto NON sono incluse" in open(os.path.join(out, "LEGGIMI.txt"), encoding="utf-8").read() and c.get("/api/esito")["totale"] == 0
+
+
+@pytest.mark.parametrize("lg, aperto, esiste", [("it", "è aperto in Photoshop", "esiste e non l'ho generato io"), ("en", "it's open in Photoshop", "it exists and I didn't generate it")])
+def test_psd_saltati_riconosciuti_in_tutte_e_due_le_lingue(apri, monkeypatch, lg, aperto, esiste):
+    """il processo dei PSD dice quali spread ha lasciato con righe di protocollo fisse: il server le riconosce con qualunque
+    lingua, non le mostra, e nell'esito mette il motivo nella lingua in uso"""
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", lg)
+    c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02")); _spread(c, _pag(c, "FULL", "V03"), _pag(c, "FULL", "V04"))
+    dest = os.path.join(c.progetto, "PSD"); os.makedirs(dest)
+    monkeypatch.setattr(pps, "trova", lambda: dict(nome="Adobe Photoshop 2026", percorso="/Applications/Adobe Photoshop 2026/Adobe Photoshop 2026.app"))
+    monkeypatch.setattr(shutil, "disk_usage", lambda p: Disco(10**12, 0, 10**12))
+    chiamate = _psd_finto(monkeypatch, dest, righe=["@@SALTATO 1 aperto", "una riga del processo", "@@SALTATO 2 esiste"])
+    c.post("/api/export", {"fmt": "psd"}); L = attendi_log(c)
+    assert "una riga del processo" in L and not any(x.startswith("@@") for x in L)
+    e = c.get("/api/esito")
+    assert e["saltati"] == [dict(spread=1, motivo=aperto), dict(spread=2, motivo=esiste)] and e["fatti"] == 0 and e["formato"] == "psd" and e["finito"] and e["risultato"] == dest
+    assert chiamate[0]["env"]["IMPAGINATORE_PROTOCOLLO"] == "1"
+
+
+@pytest.mark.parametrize("righe, codice, errore", [(["Error 8800: General Photoshop error occurred."], 1, "Photoshop reported an error. Check that it's open with no dialogue boxes waiting, then try again"),
+                                                   (["Traceback (most recent call last):"], 2, "the PSD script stopped (code 2): see above")])
+def test_esito_psd_con_errori_in_inglese(apri, monkeypatch, righe, codice, errore):
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    c = apri(); _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
+    dest = os.path.join(c.progetto, "PSD"); os.makedirs(dest)
+    monkeypatch.setattr(pps, "trova", lambda: dict(nome="Adobe Photoshop 2026", percorso="/x")); monkeypatch.setattr(shutil, "disk_usage", lambda p: Disco(10**12, 0, 10**12))
+    _psd_finto(monkeypatch, dest, righe=righe, codice=codice, crea=(1,) if codice == 2 else ())
+    c.post("/api/export", {"fmt": "psd"}); L = attendi_log(c); e = c.get("/api/esito")
+    assert e["errori"] == [errore] and f"Error: {errore}" in L
+    assert e["fatti"] == (1 if codice == 2 else 0) and e["saltati"] == ([] if codice == 2 else [dict(spread=1, motivo="the PSD wasn't created")])
+
+
+def test_inglese_modelli_foto_e_cartelle(apri, monkeypatch):
+    """messaggi di errore di modelli, appunti, ricollegamento, foto e operazioni, nella lingua in uso"""
+    c = apri(); monkeypatch.setenv("IMPAGINATORE_LINGUA", "en"); errore = lambda p, o=None: c.prova(p, o)[1]["errore"]
+    assert errore("/api/ricollega", {"cartella": os.path.join(c.progetto, "non-esiste")}) == "Folder not found"
+    assert errore("/api/ricollega", {"cartella": os.path.join(c.progetto, "_cache")}).startswith("This folder belongs to Impaginatore")
+    assert errore("/api/ricollega", {"cartella": c.progetto, "scelte": [1]}) == "Invalid choices: a list of “photo name: suggested file”"
+    assert errore("/api/ricollega", {"cartella": c.progetto, "scelte": {"H01.jpg": "x.jpg"}}) == "H01.jpg: “x.jpg” isn't one of the suggested photos"
+    assert errore("/api/ripristina", {"ts": "no"}) == "Version not found"
+    assert errore("/api/info/XXX") == "Photo not found" and errore("/img/thumb/XXX") == "Photo not found"
+    assert errore("/api/op", dict(op="incolla", s=0)) == "No such spread: 0"
+    _spread(c, _pag(c, "FULL", "H01"), _pag(c, "FULL", "H02"))
+    assert errore("/api/modelli", dict(azione="salva", s=0, nome="")) == "Enter a name for the template"
+    assert errore("/api/op", dict(op="incolla", s=0)) == "The clipboard is empty: copy something first"
+    assert errore("/api/op", dict(op="newspreadsel", names=[], pos=0)) == "A spread takes 1 to 10 photos"
+    assert errore("/api/op", dict(op="boh", s=0)) == "Unknown operation: boh"
+    assert errore("/api/op", dict(op="swap", a=[0, "X", 0], b=[0, "L", 0])) == "Invalid page: 'X'"
+    assert errore("/api/op", dict(op="settext", at=[0, "L", 0], tx="x")) == "This isn't a text layer"
+    assert errore("/api/op", dict(op="disposizione", s=0, passo=3)) == "Invalid step: 1 (forward) or -1 (back)"
+    assert errore("/api/op", dict(op="spazi", s=0, modo="x")) == "Invalid spacing mode: std, freq or custom"
+    assert errore("/api/op", dict(op="bozza", ritmo="x")) == "Invalid rhythm: use alterna, piene or bianche"
+    assert errore("/api/op", dict(op="evg", value=1.0, gruppo=5)) == "Invalid group: text of at most 100 characters"
+    assert errore("/api/export", dict(fmt="jpg", range="9")) == "spreads that don't exist: [9] (the album has 1)"

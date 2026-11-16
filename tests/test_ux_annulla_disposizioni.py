@@ -43,7 +43,7 @@ def test_nomi_e_spread_di_ogni_operazione(editor):
     assert E.spread_op(dict(op="tolta", photo="H01")) is None and E.spread_op(dict(op="new", s=True)) is None and E.spread_op(dict(op="x", at=[])) is None
     st = editor.post("/api/op", dict(op="newspreadsel", names=["H01"], pos=0)); assert st["annulla"]["nome"] == "Nuovo spread"
     E.do_op(dict(op="guides", s=0, v=[10], h=[])); assert E.passi()["annulla"] == {"nome": "Linee guida", "s": 0}
-    E.UNDO[-1]["nome"] = E.NOMI_OP.get("sconosciuta", "Modifica"); assert E.passi()["annulla"]["nome"] == "Modifica"
+    E.UNDO[-1]["chiave"] = E.NOMI_OP.get("sconosciuta", "server.op_modifica"); assert E.passi()["annulla"]["nome"] == "Modifica"
 
 
 def test_gruppo_di_operazioni_un_solo_passo(editor):

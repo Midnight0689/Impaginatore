@@ -29,7 +29,7 @@ def test_foto_nuova_troncata_resta_fuori(home, apri_editor):
     p = nuovo_progetto(home); tronca(os.path.join(p, "Foto", "troncata.jpg"))
     c = apri_editor(p); st = c.get("/api/state")
     assert [x["n"] for x in st["photos"]] == ["H01", "H02"]
-    assert st["scartate"] == [dict(n="troncata.jpg", motivo=A.DANNEGGIATA)]
+    assert st["scartate"] == [dict(n="troncata.jpg", motivo=A.danneggiata())]
     with open(os.path.join(p, "_cache", "meta.json"), encoding="utf-8") as f: assert "troncata.jpg" not in {m["n"] for m in json.load(f)}
     assert not os.path.exists(os.path.join(p, "_cache", "thumbs", "troncata.jpg"))
 
@@ -42,7 +42,7 @@ def test_foto_del_progetto_rovinata_dopo(home, apri_editor, tmp_path):
     os.remove(os.path.join(p, "_cache", "thumbs", "H01.jpg")); tronca(os.path.join(p, "Foto", "H01.jpg"))
     c = apri_editor(p); st = c.get("/api/state"); E = c.E
     assert [x["n"] for x in st["photos"]] == ["H01", "H02"] and len(st["spreads"]) == 1, "il progetto si apre com'era"
-    assert st["scartate"] == [dict(n="H01.jpg", motivo=A.DANNEGGIATA)] and "H01.jpg" in A.DANNEGGIATE
+    assert st["scartate"] == [dict(n="H01.jpg", motivo=A.danneggiata())] and "H01.jpg" in A.DANNEGGIATE
     segnaposto = os.path.join(p, "_cache", "thumbs", "H01.jpg")
     with Image.open(segnaposto) as im: assert im.convert("RGB").getpixel((5, 5)) == A.GRIGIO_SEGNAPOSTO
     assert os.stat(segnaposto).st_mtime == 0 and E.foto_cambiate() == [], "finché il file non cambia non si riprova"

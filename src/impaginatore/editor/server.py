@@ -16,12 +16,13 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image, ImageOps
 
-from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
+from .. import __version__, formato, formato_1x, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
 from ..motore import bozza as BZ                     # bozza dell'album (UX-018)
 from ..motore import spazi as SPAZI                  # spazi fra le foto (controllo e «Sistema»)
 from ..motore import testo as TX
+from ..motore import genera_psd as GPSD             # motivi per cui un PSD si salta (codici del protocollo con il processo dei PSD)
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..piattaforma import font as pfont
@@ -161,13 +162,13 @@ def _ut_leggi(path, dove):
     if not path or not os.path.exists(path): return [], []
     try: lst = V.lista(formato.leggi_json_rigoroso(path, 16 * 2**20), dove, 10**5)
     except (OSError, V.ErroreProgetto) as ex:
-        LOG.append(f"modelli non letti: {ex}")
+        LOG.append(lingua.t("server.modelli_non_letti", motivo=ex))
         if path == UT_FILE and isinstance(ex, V.ErroreProgetto): formato.copia_atomica(path, path + ".illeggibile")     # il prossimo salvataggio non deve far perdere niente
         return [], []
     ok, ko = [], []
     for k, t in enumerate(lst[:V.MAX_MODELLI], 1):
         try: ok.append(V.modello(t, f"{dove}, modello {k}"))
-        except V.ErroreProgetto as ex: ko.append(t); LOG.append(f"modello tralasciato: {ex}")
+        except V.ErroreProgetto as ex: ko.append(t); LOG.append(lingua.t("server.modello_tralasciato", motivo=ex))
     return ok, ko + lst[V.MAX_MODELLI:]
 
 def ut_load(): return _ut_leggi(UT_FILE, "modelli_utente.json")[0]
@@ -175,7 +176,7 @@ def ut_load(): return _ut_leggi(UT_FILE, "modelli_utente.json")[0]
 def ut_progetto():
     """modelli arrivati con questo progetto (non sono tra i tuoi): si vedono solo qui, finché non li aggiungi ai tuoi"""
     ids = {t["id"] for t in ut_load()}
-    return [t for t in _ut_leggi(os.path.join(PROJ, UT_PRJ) if PROJ else None, "modelli_utente.json del progetto")[0] if t["id"] not in ids]
+    return [t for t in _ut_leggi(os.path.join(PROJ, UT_PRJ) if PROJ else None, lingua.t("server.modelli_del_progetto"))[0] if t["id"] not in ids]
 
 def ut_tutti(): return ut_load() + [dict(t, progetto=True) for t in ut_progetto()]
 
@@ -187,7 +188,7 @@ class _Build(dict):
     def __missing__(self, key):
         if isinstance(key, str) and key.startswith("U:"):
             _, tid, side = key.split(":"); t = next((x for x in ut_tutti() if x["id"] == tid), None)
-            if not t: raise ValueError("modello non trovato (forse è stato eliminato)")
+            if not t: raise ValueError(lingua.t("server.modello_non_trovato_eliminato"))
             items = t["pages"][0 if side == "L" else 1]["items"]
             return lambda p, m: [dict(it, i=p[j] - 1, bw=False, z=1.0) for j, it in enumerate(items)]
         raise KeyError(key)
@@ -200,10 +201,57 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("T1_2", "I", False), ("T1_2", "I", True), ("T1_2", "W", False), ("T3B", "I", False), ("T3B", "I", True), ("T3B", "W", False), ("T3C", "I", False), ("T3C", "W", False),
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
 SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
-UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, nome, s: spread toccato, gruppo, rev} (UX-003)
+UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, chiave: del nome (NOMI_OP), s: spread toccato, gruppo, rev} (UX-003)
+ESPORTA = set()                                     # esportazioni in corso (/api/ping «esporta»: la finestra chiede conferma prima di chiudersi)
 ESITO = {}                                          # quello che un'operazione vuole dire a chi l'ha chiesta (disposizione scelta, foto scambiata...): va nella risposta
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
+ESITO_ESP = {}                                       # esito strutturato dell'ultima esportazione (/api/esito): lo leggono la pagina e l'assistente senza interpretare il registro
+_ESITO_LOCK = threading.Lock()
+
+
+def azzera_registro():
+    """un'esportazione (anche quella del progetto) comincia: registro ed esito ripartono da zero"""
+    LOG.clear()
+    with _ESITO_LOCK: ESITO_ESP.clear(); ESITO_ESP.update(dest="", formato="", totale=0, fatti=0, saltati=[], errori=[], risultato=None, finito=False)
+
+
+def _esito(**kw):
+    with _ESITO_LOCK: ESITO_ESP.update(kw)
+
+
+def esito_esportazione():
+    """{dest, formato, totale, fatti, saltati: [{spread, motivo}], errori, risultato, finito}: motivi ed errori nella lingua in uso"""
+    with _ESITO_LOCK: return copy.deepcopy(ESITO_ESP)
+
+
+def _log_saltato(k, motivo):
+    LOG.append(lingua.t("server.log_saltato", k=k, motivo=motivo))
+    with _ESITO_LOCK: ESITO_ESP["saltati"].append(dict(spread=k, motivo=motivo))
+
+
+def _log_errore(motivo):
+    LOG.append(lingua.t("server.log_errore", motivo=motivo))
+    with _ESITO_LOCK: ESITO_ESP["errori"].append(str(motivo))
+
+
+def _log_risultato(percorso):
+    LOG.append("RISULTATO:" + percorso)  # non tradotto: riga di protocollo (la leggono la pagina e i test)
+    _esito(risultato=percorso)
+
+
+def _log_finito():
+    with _ESITO_LOCK:
+        ESITO_ESP["finito"] = True; LOG.append("[finito]")  # non tradotto: riga di protocollo (la leggono la pagina e i test)
+
+
+def _esito_saltato_psd(k, codice):
+    """uno spread che il processo dei PSD ha lasciato com'era (codice del motivo: genera_psd.MOTIVI): esito nella lingua in uso"""
+    with _ESITO_LOCK: ESITO_ESP["saltati"].append(dict(spread=k, motivo=lingua.t(GPSD.MOTIVI[codice])))
+
+
+azzera_registro()
+
 
 def _ver_programma():       # numero di rilascio: serve a vedere quale versione sta girando
     return __version__
@@ -287,7 +335,7 @@ def used_set(): return {it["i"] for sp in SP for pg in sp for it in pg[1] if it[
 def unused(): u = used_set(); return [A.name(i) for i in range(len(A.M)) if i not in u]
 def item(ref):
     s, side, idx = ref; it = SP[s][0 if side == "L" else 1][1][idx]
-    if it["k"] == "t": raise ValueError("elemento di testo")
+    if it["k"] == "t": raise ValueError(lingua.t("server.elemento_di_testo"))
     return it
 def find_use(i):
     for s, sp in enumerate(SP):
@@ -412,7 +460,7 @@ def apply(o):
         pg[1].append(mkfree(it, (fx0 * A.CW - x0) / (x1 - x0), (fy0 * A.CH - y0) / (y1 - y0), wpx / (x1 - x0), hpx / (y1 - y0)))
     elif t == "settext":                                  # modifica contenuto / carattere / corpo / colore / allineamento
         s_, side, idx = o["at"]; pg = SP[s_][0 if side == "L" else 1]; it = pg[1][idx]
-        if not is_txt(it): raise ValueError("non è un livello di testo")
+        if not is_txt(it): raise ValueError(lingua.t("server.non_livello_testo"))
         for k in ("tx", "font", "al"):
             if k in o: it[k] = str(o[k])
         if "size" in o: it["size"] = round(min(max(float(o["size"]), 8), 2000), 1)
@@ -426,11 +474,11 @@ def apply(o):
         elif it.get("auto", True): fit_it(side, pg, it)
     elif t == "stile_salva":                              # crea/aggiorna lo stile dal testo scelto e lo collega
         s_, side, idx = o["at"]; it = SP[s_][0 if side == "L" else 1][1][idx]; nm = str(o["nome"]).strip()[:40]
-        if not is_txt(it) or not nm: raise ValueError("serve un testo e un nome")
+        if not is_txt(it) or not nm: raise ValueError(lingua.t("server.serve_testo_e_nome"))
         CFG["stili"][nm] = {k: it[k] for k in STILE_K}; it["stile"] = nm; fit_stile(nm)
     elif t == "stile_applica":
         s_, side, idx = o["at"]; pg = SP[s_][0 if side == "L" else 1]; it = pg[1][idx]; nm = o["nome"]
-        if not is_txt(it) or nm not in CFG["stili"]: raise ValueError("stile inesistente")
+        if not is_txt(it) or nm not in CFG["stili"]: raise ValueError(lingua.t("server.stile_inesistente"))
         it.update(copy.deepcopy(CFG["stili"][nm])); it["stile"] = nm
         if it.get("auto", True): fit_it(side, pg, it)
     elif t == "stile_scollega":
@@ -456,7 +504,7 @@ def apply(o):
             h_ = TX.fit_height(n_, W); pg[1].append(mkfree(n_, (X - x0) / (x1 - x0), (ytop - y0) / (y1 - y0), W / (x1 - x0), h_ / (y1 - y0)))
     elif t == "tscale":
         s_, side, idx = o["at"]; it = SP[s_][0 if side == "L" else 1][1][idx]
-        if it["k"] != "t": raise ValueError("non è un testo")
+        if it["k"] != "t": raise ValueError(lingua.t("server.non_testo"))
         ts = round(min(max(float(o["ts"]), 0.2), 6.0), 3)
         if abs(ts - 1) < 1e-6: it.pop("ts", None)
         else: it["ts"] = ts
@@ -467,7 +515,7 @@ def apply(o):
             elif n in CFG["tolte"]: CFG["tolte"].remove(n)
     elif t == "colore":                                # etichetta colore (come Lightroom) su una o più foto
         v = o.get("value")
-        if v is not None and v not in COLORI: raise ValueError("colore sconosciuto")
+        if v is not None and v not in COLORI: raise ValueError(lingua.t("server.colore_sconosciuto"))
         for n in o.get("photos") or [o["photo"]]:
             if v: CFG["colori"][n] = v
             else: CFG["colori"].pop(n, None)
@@ -475,7 +523,7 @@ def apply(o):
         for n in o.get("photos") or [o["photo"]]:
             if o.get("reset"): CFG["ritocco"].pop(n, None); CFG["tono"].pop(n, None); continue
             if o.get("copia"): CFG["ritocco"][n] = dict(o["copia"]); continue
-            if o["key"] not in FL.RIT_KEYS: raise ValueError("regolazione sconosciuta")
+            if o["key"] not in FL.RIT_KEYS: raise ValueError(lingua.t("server.regolazione_sconosciuta"))
             r = CFG["ritocco"].setdefault(n, {}); v = round(min(max(float(o["value"]), -100), 100))
             if v: r[o["key"]] = v
             else: r.pop(o["key"], None)
@@ -494,11 +542,11 @@ def apply(o):
         A.FACE_FIX[o["photo"]] = (round(float(o["x"]), 3), round(float(o["y"]), 3))
     elif t == "module":
         pg = SP[o["s"]][0 if o["side"] == "L" else 1]
-        if any(old_text(it) for it in pg[1]): raise ValueError("la pagina ha un testo: cambia solo le foto")
+        if any(old_text(it) for it in pg[1]): raise ValueError(lingua.t("server.pagina_con_testo"))
         need = NPH[o["module"]]; cur = [it["i"] for it in pg[1]]
         pool = [i for i in range(len(A.M)) if i not in used_set() and i not in cur]
         ph = (cur + pool)[:need]
-        if len(ph) < need: raise ValueError("non ci sono abbastanza foto libere")
+        if len(ph) < need: raise ValueError(lingua.t("server.foto_libere_insufficienti"))
         pg[1] = [dict(x) for x in BUILD[o["module"]]([i + 1 for i in ph], bool(o.get("mirror")))]
     elif t == "pan":                      # sposta l'immagine dentro la cornice: la finestra di ritaglio parte da (l, t) in frazioni della foto
         s_, side, idx = o["at"]; it = item(o["at"]); rc = A.layout(spread_tuple(s_))
@@ -510,7 +558,7 @@ def apply(o):
     elif t == "newspread":
         used = used_set()
         for side in "LR":
-            if any(i in used for i in o[side]["photos"]): raise ValueError("una di queste foto è già in uno spread")
+            if any(i in used for i in o[side]["photos"]): raise ValueError(lingua.t("server.foto_gia_in_uno_spread"))
         pos = min(max(int(o.get("pos", len(SP))), 0), len(SP))
         SP.insert(pos, [[o[side]["mode"], [dict(x) for x in BUILD[o[side]["module"]]([i + 1 for i in o[side]["photos"]], bool(o[side].get("mirror")))]] for side in "LR"])
         GD.insert(pos, dict(v=[], h=[]))
@@ -537,7 +585,7 @@ def apply(o):
         for j, i in enumerate(new): apply(dict(op="putfree", s=s_, photo=A.name(i), fx=0.27 + 0.46 * (j % 2), fy=0.42 + 0.08 * ((j // 2) % 3)))
         if o.get("how") == "reorg":
             alt = [x for x in templates(s_)["items"] if not x["cur"]]
-            if not alt: raise ValueError("nessun altro modello adatto a queste foto")
+            if not alt: raise ValueError(lingua.t("server.nessun_altro_modello"))
             apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
     elif t == "disposizione": altra_disposizione(o["s"], o.get("passo", 1), o.get("side"))
     elif t == "sostituisci": sostituisci(o["at"], o["photo"], o.get("adatta", True) is not False)
@@ -556,11 +604,11 @@ def apply(o):
             d = o[side]; sp[k] = [d["mode"], [dict(x) for x in BUILD[d["module"]]([i + 1 for i in d["photos"]], bool(d.get("mirror")))] + keep_t]
     elif t == "frame":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]
-        if it["k"] == "t": raise ValueError("il testo non si ridimensiona")
+        if it["k"] == "t": raise ValueError(lingua.t("server.testo_non_si_ridimensiona"))
         c, r, w, h = (int(o[k]) for k in ("c", "r", "w", "h"))
-        if w < 1 or h < 1 or c < 0 or r < 0 or c + w > A.NC or r + h > A.NR: raise ValueError("la cornice esce dalla pagina")
+        if w < 1 or h < 1 or c < 0 or r < 0 or c + w > A.NC or r + h > A.NR: raise ValueError(lingua.t("server.cornice_fuori_pagina"))
         for j, other in enumerate(pg[1]):
-            if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("si sovrappone a un'altra cornice")
+            if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError(lingua.t("server.cornice_sovrapposta"))
         pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "free":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]; it = pg[1][idx]
@@ -574,7 +622,7 @@ def apply(o):
             if pg[1][idx].get("auto", True): (x0, x1), (y0, y1) = A._frame(side, pg[0]); pg[1][idx]["fh"] = round(TX.fit_height(pg[1][idx], w * (x1 - x0)) / (y1 - y0), 4)
     elif t == "crosspage":
         s, side, idx = o["at"]; src = SP[s][0 if side == "L" else 1]; it = src[1][idx]; to = o["to"]
-        if to == side: raise ValueError("stessa pagina")
+        if to == side: raise ValueError(lingua.t("server.stessa_pagina"))
         if it["k"] == "t" and o.get("ts") is not None: it = dict(it, ts=round(min(max(float(o["ts"]), 0.2), 6.0), 3))
         dst = SP[s][0 if to == "L" else 1]
         x, y, w, h = (float(o[k]) for k in ("x", "y", "w", "h"))
@@ -590,18 +638,18 @@ def apply(o):
         c, r = n(gr["xs"], L["x"] - BL), n(gr["ys"], L["y"] - BL)
         w = max(n(gr["xe"], L["x"] - BL + L["W"]), c) - c + 1; h = max(n(gr["ye"], L["y"] - BL + L["H"]), r) - r + 1
         for j, other in enumerate(pg[1]):
-            if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError("agganciata alla griglia si sovrapporrebbe a un'altra cornice")
+            if j != idx and overlap((c, r, w, h), cell_of(other)): raise ValueError(lingua.t("server.cornice_agganciata_sovrapposta"))
         pg[1][idx] = dict(k="p", i=it["i"], c=c, r=r, w=w, h=h, bw=it.get("bw", False), z=it.get("z", 1.0), **keep(it))          # angolo, bordo, ombra, opacità, livello restano
     elif t == "addframe":
         s, side = o["s"], o["side"]; pg = SP[s][0 if side == "L" else 1]; rect = biggest_free(pg)
-        if not rect: raise ValueError("la pagina è piena: riduci una cornice prima")
+        if not rect: raise ValueError(lingua.t("server.pagina_piena"))
         free = [i for i in range(len(A.M)) if i not in used_set()]
         if o.get("photo"): n = A.IDX[o["photo"]] - 1; free = [n] if n not in used_set() else []
-        if not free: raise ValueError("non ci sono foto libere")
+        if not free: raise ValueError(lingua.t("server.nessuna_foto_libera"))
         pg[1].append(A.P(free[0] + 1, *rect))
     elif t == "putfree":                                  # foto trascinata su un punto vuoto dello spread: cornice libera centrata lì
         s_, n = o["s"], A.IDX[o["photo"]] - 1
-        if n in used_set(): raise ValueError("la foto è già in uno spread")
+        if n in used_set(): raise ValueError(lingua.t("server.foto_gia_usata"))
         side = "L" if float(o["fx"]) < 0.5 else "R"; pg = SP[s_][0 if side == "L" else 1]
         (x0, x1), (y0, y1) = A._frame(side, pg[0]); ar = A.M[n]["ar"]
         wpx = 0.55 * (x1 - x0); hpx = wpx / ar
@@ -679,11 +727,11 @@ def apply(o):
             key = (a[0], int(a[1])); L = R.get(key); it = SP[o["s"]][0 if key[0] == "L" else 1][1][key[1]]
             if L is None or (it["k"] == "t" and not is_txt(it)): continue
             nuovi.append(dict(item=copy.deepcopy(it), x=L["x"], y=L["y"], W=L["W"], H=L["H"]))
-        if not nuovi: raise ValueError("niente da copiare: scegli foto o testi")           # gli appunti restano com'erano
+        if not nuovi: raise ValueError(lingua.t("server.niente_da_copiare"))           # gli appunti restano com'erano
         CLIP[:] = nuovi
     elif t == "incolla":                                  # nello stesso spread con un piccolo scarto, in un altro spread nella stessa posizione
         s_ = o["s"]
-        if not CLIP: raise ValueError("gli appunti sono vuoti: copia prima qualcosa")
+        if not CLIP: raise ValueError(lingua.t("server.appunti_vuoti"))
         dx = dy = (A.CW * 0.02) if o.get("scarto") else 0.0; here = {x["i"] for pg in SP[s_] for x in pg[1] if x["k"] != "t"}; new = []; skipped = 0
         for c in CLIP:
             it = copy.deepcopy(c["item"]); it.pop("zo", None)
@@ -691,7 +739,7 @@ def apply(o):
             cx = c["x"] + dx + c["W"] / 2; side = "L" if cx < A.FOLD else "R"; pg = SP[s_][0 if side == "L" else 1]
             pg[1].append(it); idx = len(pg[1]) - 1; _put_px(s_, side, idx, c["x"] + dx, c["y"] + dy, c["W"], c["H"]); new.append([side, idx])
             if it["k"] != "t": here.add(it["i"])
-        if not new: raise ValueError("queste foto sono già in questo spread")
+        if not new: raise ValueError(lingua.t("server.foto_gia_in_questo_spread"))
         apply(dict(op="zorder", s=s_, ats=new, dir="front"))
     elif t == "align":                                    # allinea (a sinistra/centro/destra, in alto/in mezzo/in basso) o distribuisci con spazi uguali (dh/dv)
         s_ = o["s"]; R = _rects(s_); items = []
@@ -702,7 +750,7 @@ def apply(o):
         m = o["mode"]
         if not items: return
         if m in ("dh", "dv"):
-            if len(items) < 3: raise ValueError("per distribuire servono almeno 3 elementi")
+            if len(items) < 3: raise ValueError(lingua.t("server.distribuire_tre"))
             p, d_ = ("x", "W") if m == "dh" else ("y", "H"); items.sort(key=lambda kv: kv[1][p])
             first, last = items[0][1], items[-1][1]; gap = ((last[p] + last[d_]) - first[p] - sum(L[d_] for _, L, _ in items)) / (len(items) - 1); pos = first[p]
             for key, L, it in items:
@@ -719,11 +767,11 @@ def apply(o):
                 elif m == "t": ny = by0
                 elif m == "cv": ny = (by0 + by1) / 2 - L["H"] / 2
                 elif m == "b": ny = by1 - L["H"]
-                else: raise ValueError("allineamento sconosciuto")
+                else: raise ValueError(lingua.t("server.allineamento_sconosciuto"))
                 _put_obj(s_, it, nx, ny, L["W"], L["H"])
     elif t == "delframe":
         s, side, idx = o["at"]; pg = SP[s][0 if side == "L" else 1]
-        if old_text(pg[1][idx]): raise ValueError("questo testo non si rimuove da qui")
+        if old_text(pg[1][idx]): raise ValueError(lingua.t("server.testo_non_si_rimuove"))
         pg[1].pop(idx)
     elif t == "mode": SP[o["s"]][0 if o["side"] == "L" else 1][0] = o["mode"]
     elif t == "move":
@@ -736,31 +784,34 @@ def apply(o):
         if len(SP) > 1: SP.pop(o["s"]); GD.pop(o["s"])
     elif t == "new":
         u = [i for i in range(len(A.M)) if i not in used_set()]
-        if len(u) < 2: raise ValueError("servono almeno 2 foto libere")
+        if len(u) < 2: raise ValueError(lingua.t("server.servono_due_foto_libere"))
         GD.insert(o["s"] + 1, dict(v=[], h=[]))
         SP.insert(o["s"] + 1, [["W", [dict(x) for x in A.CV(u[0] + 1)]], ["I", [A.FULL(u[1] + 1)]]])
-    else: raise ValueError("operazione sconosciuta: " + t)
+    else: raise ValueError(lingua.t("server.operazione_sconosciuta", op=t))
+
+COSE = dict(spread="server.cosa_spread", elemento="server.cosa_elemento", foto="server.cosa_foto", posizione="server.cosa_posizione")      # di che cosa si parla nei messaggi di _intero
+
 
 def _intero(v, n, cosa):
-    """v è un intero (non un bool) tra 0 e n-1? Lo restituisce, altrimenti ValueError"""
-    if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v < n: raise ValueError(f"{cosa} inesistente: {v!r}")
+    """v è un intero (non un bool) tra 0 e n-1? Lo restituisce, altrimenti ValueError. cosa: una chiave di COSE"""
+    if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v < n: raise ValueError(lingua.t("server.inesistente", cosa=lingua.t(COSE[cosa]), valore=repr(v)))
     return v
 
 def _pagina(s, side):
-    if side not in ("L", "R"): raise ValueError(f"pagina non valida: {side!r}")
+    if side not in ("L", "R"): raise ValueError(lingua.t("server.pagina_non_valida_valore", valore=repr(side)))
     return SP[s][0 if side == "L" else 1][1]
 
 def _elemento(ref):
     """[spread, lato, indice] di un elemento che esiste"""
-    if not isinstance(ref, (list, tuple)) or len(ref) != 3: raise ValueError(f"elemento non valido: {ref!r}")
+    if not isinstance(ref, (list, tuple)) or len(ref) != 3: raise ValueError(lingua.t("server.elemento_non_valido_valore", valore=repr(ref)))
     s = _intero(ref[0], len(SP), "spread"); _intero(ref[2], len(_pagina(s, ref[1])), "elemento")
 
 def _foto(n):
-    if not isinstance(n, str) or n not in A.IDX: raise ValueError(f"foto sconosciuta: {n!r}")
+    if not isinstance(n, str) or n not in A.IDX: raise ValueError(lingua.t("server.foto_sconosciuta", valore=repr(n)))
 
 def valida(o):
     """argomenti di un'operazione controllati PRIMA di toccare lo stato (BUG-001): spread, pagine, elementi e foto devono esistere"""
-    if not isinstance(o.get("op"), str): raise ValueError("operazione mancante")
+    if not isinstance(o.get("op"), str): raise ValueError(lingua.t("server.operazione_mancante"))
     t = o["op"]
     if "s" in o:
         if t == "new": _intero(o["s"] + 1 if isinstance(o["s"], int) and not isinstance(o["s"], bool) else o["s"], len(SP) + 1, "spread")
@@ -768,63 +819,63 @@ def valida(o):
     for k in ("at",) + (("a", "b") if t == "swap" else ()):                  # altrove "a" è l'angolo
         if k in o: _elemento(o[k])
     for k in ("side",) + (("to",) if t == "crosspage" else ()):
-        if k in o and o[k] not in ("L", "R"): raise ValueError(f"pagina non valida: {o[k]!r}")
+        if k in o and o[k] not in ("L", "R"): raise ValueError(lingua.t("server.pagina_non_valida_valore", valore=repr(o[k])))
     for a in list(o.get("ats") or []) + ([o["ref"]] if "ref" in o else []):
-        if not isinstance(a, (list, tuple)) or len(a) != 2: raise ValueError(f"elemento non valido: {a!r}")
+        if not isinstance(a, (list, tuple)) or len(a) != 2: raise ValueError(lingua.t("server.elemento_non_valido_valore", valore=repr(a)))
         _intero(a[1], len(_pagina(o["s"], a[0])), "elemento")
     if o.get("photo") is not None: _foto(o["photo"])
     for k in ("photos", "names"):
         if o.get(k) is not None:
-            if not isinstance(o[k], list): raise ValueError(f"elenco di foto non valido: {k}")
+            if not isinstance(o[k], list): raise ValueError(lingua.t("server.elenco_foto_non_valido", campo=k))
             for n in o[k]: _foto(n)
     if t == "tono_fix":
         for c in o.get("items") or []: _foto(c.get("photo") if isinstance(c, dict) else c)
     if t == "newspreadsel" and not (isinstance(o.get("names"), list) and 1 <= len(set(o["names"])) <= 10):      # così next() in apply trova sempre un modello
-        raise ValueError("per uno spread servono da 1 a 10 foto")
+        raise ValueError(lingua.t("server.spread_da_1_a_10_foto"))
     if t in ("newspread", "template"):
         for side in "LR":
             if side not in o: continue
             d = o[side]
-            if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or not isinstance(d.get("photos"), list): raise ValueError("modello non valido")
+            if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or not isinstance(d.get("photos"), list): raise ValueError(lingua.t("server.modello_non_valido"))
             for i in d["photos"]: _intero(i, len(A.M), "foto")
     if t == "disposizione":
-        if "s" not in o: raise ValueError("manca lo spread")
-        if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError("passo non valido: 1 (avanti) o -1 (indietro)")
-    if t == "spazi" and "s" not in o: raise ValueError("manca lo spread")
+        if "s" not in o: raise ValueError(lingua.t("server.manca_lo_spread"))
+        if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError(lingua.t("server.passo_non_valido"))
+    if t == "spazi" and "s" not in o: raise ValueError(lingua.t("server.manca_lo_spread"))
     if t == "bozza": _valida_bozza(o)
     if t in ("spazi", "sistema"): _riferimento_spazi(o.get("modo", "std"), o.get("cm")); _elenco_spread(o.get("spread"))
-    if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError("servono la cornice (at) e la foto (photo)")
+    if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError(lingua.t("server.servono_cornice_e_foto"))
     if t == "rit" and o.get("copia") is not None:
         if not isinstance(o["copia"], dict) or any(k not in FL.RIT_KEYS or isinstance(v, bool) or not isinstance(v, (int, float)) or abs(v) > 100 for k, v in o["copia"].items()):
-            raise ValueError("ritocco da copiare non valido")
+            raise ValueError(lingua.t("server.ritocco_non_valido"))
 
 def verifica():
     """lo stato dopo un'operazione è coerente? (indici delle foto, modi e forma delle pagine, guide) Altrimenti ValueError"""
-    if len(GD) != len(SP): raise ValueError("guide e spread non corrispondono")
+    if len(GD) != len(SP): raise ValueError(lingua.t("server.guide_e_spread"))
     for sp in SP:
-        if not isinstance(sp, list) or len(sp) != 2: raise ValueError("spread non valido")
+        if not isinstance(sp, list) or len(sp) != 2: raise ValueError(lingua.t("server.spread_non_valido"))
         for pg in sp:
-            if pg[0] not in ("I", "W") or not isinstance(pg[1], list): raise ValueError("pagina non valida")
+            if pg[0] not in ("I", "W") or not isinstance(pg[1], list): raise ValueError(lingua.t("server.pagina_non_valida"))
             for it in pg[1]:
-                if not isinstance(it, dict) or it.get("k") not in ("p", "full", "f", "t"): raise ValueError("elemento non valido")
+                if not isinstance(it, dict) or it.get("k") not in ("p", "full", "f", "t"): raise ValueError(lingua.t("server.elemento_non_valido"))
                 if it["k"] != "t": _intero(it.get("i"), len(A.M), "foto")
 
 REV, LASTC = 0, None          # contatore delle modifiche e scheda che ha fatto l'ultima: evita che una scheda lavori (o annulli) su uno stato che non ha visto
 
-NOMI_OP = dict(                # nome di ogni operazione per «Annulla …» e «Ripeti …» (UX-003)
-    swap="Scambia foto", replace="Sostituisci foto", sostituisci="Sostituisci foto", set="Modifica cornice", ratio="Proporzioni cornice",
-    t2x="Cornice doppia", tscale="Misura del testo", gscale="Misura", snap="Allinea alla griglia", origar="Proporzioni originali",
-    orient="Gira cornice", copia="Copia", incolla="Incolla", equalize="Uguaglia cornici", align="Allinea", nudge="Sposta",
-    move="Sposta", frame="Ridimensiona cornice", free="Sposta cornice", addframe="Aggiungi cornice", delframe="Elimina cornice",
-    zorder="Porta avanti o indietro", crosspage="Sposta sull'altra pagina", putfree="Aggiungi foto", fullpage="Foto a tutta pagina",
-    guides="Linee guida", colore="Etichetta colore", stella="Stella", tolta="Togli foto", face="Centro del volto", pan="Inquadratura",
-    ev="Esposizione", evg="Esposizione dell'album", rit="Ritocco", tono="Tono", tono_escl="Tono", tono_fix="Uniforma il tono",
-    tono_L="Tono di riferimento", stile_applica="Stile del testo", stile_elimina="Elimina stile", stile_salva="Salva stile",
-    stile_scollega="Scollega stile", testo="Testo", settext="Modifica testo", addtext="Aggiungi testo", blank="Nuovo spread vuoto",
-    new="Nuovo spread", dup="Duplica spread", delete="Elimina spread", swappages="Inverti pagine", newspread="Nuovo spread",
-    newspreadsel="Nuovo spread", addtospread="Aggiungi foto allo spread", template="Cambia disposizione", setrects="Disposizione a mano",
-    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", spazi="Correggi spazi", sistema="Sistema album", bozza="Bozza dell'album",
-    prodotto="Prodotto del laboratorio")
+NOMI_OP = dict(                # chiave del nome di ogni operazione per «Annulla …» e «Ripeti …» (UX-003): si traduce quando lo stato esce, così segue la lingua in uso
+    swap="server.op_swap", replace="server.op_replace", sostituisci="server.op_sostituisci", set="server.op_set", ratio="server.op_ratio",
+    t2x="server.op_t2x", tscale="server.op_tscale", gscale="server.op_gscale", snap="server.op_snap", origar="server.op_origar",
+    orient="server.op_orient", copia="server.op_copia", incolla="server.op_incolla", equalize="server.op_equalize", align="server.op_align", nudge="server.op_nudge",
+    move="server.op_move", frame="server.op_frame", free="server.op_free", addframe="server.op_addframe", delframe="server.op_delframe",
+    zorder="server.op_zorder", crosspage="server.op_crosspage", putfree="server.op_putfree", fullpage="server.op_fullpage",
+    guides="server.op_guides", colore="server.op_colore", stella="server.op_stella", tolta="server.op_tolta", face="server.op_face", pan="server.op_pan",
+    ev="server.op_ev", evg="server.op_evg", rit="server.op_rit", tono="server.op_tono", tono_escl="server.op_tono_escl", tono_fix="server.op_tono_fix",
+    tono_L="server.op_tono_riferimento", stile_applica="server.op_stile_applica", stile_elimina="server.op_stile_elimina", stile_salva="server.op_stile_salva",
+    stile_scollega="server.op_stile_scollega", testo="server.op_testo", settext="server.op_settext", addtext="server.op_addtext", blank="server.op_blank",
+    new="server.op_new", dup="server.op_dup", delete="server.op_delete", swappages="server.op_swappages", newspread="server.op_newspread",
+    newspreadsel="server.op_newspreadsel", addtospread="server.op_addtospread", template="server.op_template", setrects="server.op_setrects",
+    module="server.op_module", mode="server.op_mode", disposizione="server.op_disposizione", spazi="server.op_spazi", sistema="server.op_sistema", bozza="server.op_bozza",
+    prodotto="server.op_prodotto")
 
 
 def _intero_o_none(x): return x if isinstance(x, int) and not isinstance(x, bool) else None
@@ -842,14 +893,14 @@ def spread_op(o):
 def _passo(p):
     """il passo d'annulla come lo vede la pagina: nome, spread e, se l'ha fatto l'assistente AI (MCP), assistente=True"""
     if not p: return None
-    d = dict(nome=p["nome"], s=p["s"])
+    d = dict(nome=lingua.t(p["chiave"]), s=p["s"])
     if p.get("assistente"): d["assistente"] = True
     return d
 
 
 def _gruppo(g):
     """gruppo d'annulla di un'operazione: le operazioni di fila con lo stesso gruppo diventano un passo solo (UX-001, UX-003)"""
-    if g is not None and not (isinstance(g, str) and 0 < len(g) <= 100): raise ValueError("gruppo non valido: un testo di al massimo 100 caratteri")
+    if g is not None and not (isinstance(g, str) and 0 < len(g) <= 100): raise ValueError(lingua.t("server.gruppo_non_valido"))
     return g
 
 
@@ -865,11 +916,16 @@ def controlla_stato():
     try:
         formato.testo_album_controllato(SP, A.name)
         formato.testo_progetto(_da_salvare(CFG))
-    except V.ErroreProgetto as e: raise ValueError(f"Operazione non valida: {e}") from None
+    except V.ErroreProgetto as e: raise ValueError(lingua.t("server.operazione_non_valida", motivo=e)) from None
     st = state()
     try: json.dumps(st, allow_nan=False)
-    except ValueError: raise ValueError("Operazione non valida: dà misure impossibili da mostrare") from None
+    except ValueError: raise ValueError(lingua.t("server.operazione_misure")) from None
     return st
+
+class Conflitto(ValueError):
+    """l'album è cambiato da un'altra scheda o dall'assistente dopo la versione vista da chi chiede: la risposta ha
+    codice «altra_scheda», che pagina e server MCP riconoscono senza leggere il testo (che segue la lingua)"""
+
 
 def do_op(o):
     """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
@@ -879,7 +935,7 @@ def do_op(o):
     with LOCK:
         cid, rev = o.pop("cid", None), o.pop("rev", None)
         if cid and rev is not None and cid != LASTC and rev != REV and LASTC is not None:
-            raise ValueError("Questo progetto è stato modificato da un'altra scheda: ho ricaricato lo stato, riprova.")
+            raise Conflitto(lingua.t("server.altra_scheda"))
         before = snap(); gruppo = _gruppo(o.pop("gruppo", None))
         if o["op"] in ("undo", "redo"):
             da, a = (UNDO, REDO) if o["op"] == "undo" else (REDO, UNDO); p = da.pop() if da else None
@@ -894,7 +950,7 @@ def do_op(o):
             ultimo = UNDO[-1] if UNDO else None
             if gruppo and ultimo and ultimo["gruppo"] == gruppo and ultimo["rev"] == REV: ultimo["rev"] = REV + 1       # stesso gruppo subito dopo: resta un solo passo, con lo stato di prima del primo
             else:
-                UNDO.append(dict(snap=before, nome=NOMI_OP.get(o["op"], "Modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1,
+                UNDO.append(dict(snap=before, chiave=NOMI_OP.get(o["op"], "server.op_modifica"), s=spread_op(o), gruppo=gruppo, rev=REV + 1,
                                  assistente=str(cid or "").startswith("assistente-"))); del UNDO[:-200]       # chi l'ha fatto: la pagina lo dice (T-203, T-205)
             REDO.clear(); REV += 1; LASTC = cid; st.update(rev=REV, canundo=True, canredo=False, **passi())
         if ESITO: st["esito"] = dict(ESITO)
@@ -974,12 +1030,12 @@ def disposizioni(s, side=None):
     ordine che non cambia mentre le si scorre (UX-001): prima quelle che rispettano le foto, dal costo minore, poi quelle
     che tagliano di più. Le pressioni di fila tengono l'ordine delle foto della prima"""
     lk = locked_sides(s)
-    if len(lk) == 2: raise ValueError("Le due pagine sono di solo testo: non ci sono foto da disporre")
-    if side in lk: raise ValueError("Questa pagina è di solo testo: non ci sono foto da disporre")
+    if len(lk) == 2: raise ValueError(lingua.t("server.disposizioni_due_testi"))
+    if side in lk: raise ValueError(lingua.t("server.disposizioni_pagina_testo"))
     if side is None and lk: side = next(x for x in "LR" if x not in lk)
     sides = "LR" if side is None else side; photos = foto_della_pagina(s, sides)
     if DISP.get("chiave") == (s, side) and DISP.get("rev") == REV and sorted(DISP["foto"]) == sorted(photos): photos = DISP["foto"]
-    if not photos: raise ValueError("Non ci sono foto da disporre")
+    if not photos: raise ValueError(lingua.t("server.disposizioni_nessuna_foto"))
     d = tpl_options(photos, cornici_attuali(s, sides), side, s); visti = {}
     for t in d["items"] + d["piu"]:
         k = _chiave_cornici(t)
@@ -997,7 +1053,7 @@ def altra_disposizione(s, passo=1, side=None):
     """D: sullo spread s (o sulla pagina side) la disposizione successiva (passo 1) o precedente (-1) per le stesse foto (UX-001)"""
     import math
     ordine, k, side = disposizioni(s, side)
-    if not ordine or (len(ordine) == 1 and k == 0): raise ValueError("Non ci sono altre disposizioni per queste foto")
+    if not ordine or (len(ordine) == 1 and k == 0): raise ValueError(lingua.t("server.disposizioni_nessuna_altra"))
     n = (k + passo) % len(ordine) if k is not None else (0 if passo > 0 else len(ordine) - 1)
     _metti_disposizione(s, ordine[n]); DISP["rev"] = REV + 1
     ESITO.update(disposizione=n + 1, di=len(ordine), taglia=round(math.exp(ordine[n]["worst"]), 2), a_mano=k is None, lato=side)
@@ -1035,9 +1091,9 @@ def _rett_spread(s):
 
 def _riferimento_spazi(modo="std", cm=None):
     """(modo, valore in px) del riferimento per gli spazi, controllati: std, freq o custom con cm > 0"""
-    if modo not in ("std", "freq", "custom"): raise ValueError("modo degli spazi non valido: std, freq o custom")
+    if modo not in ("std", "freq", "custom"): raise ValueError(lingua.t("server.modo_spazi_non_valido"))
     if modo != "custom": return modo, 0
-    if isinstance(cm, bool) or not isinstance(cm, (int, float)) or not 0 < cm <= 10: raise ValueError("scrivi lo stacco in cm (più di 0, al massimo 10)")
+    if isinstance(cm, bool) or not isinstance(cm, (int, float)) or not 0 < cm <= 10: raise ValueError(lingua.t("server.stacco_in_cm"))
     return modo, cm / 2.54 * A.PPI
 
 
@@ -1051,7 +1107,7 @@ def spazi_spread(s, modo="std", cm=None):
     try: m, v = _riferimento_spazi(modo, cm)
     except ValueError as e: raise RichiestaNonValida(str(e)) from None
     with LOCK: R = _rett_spread(s) if 0 <= s < len(SP) else None
-    if R is None: raise RichiestaNonValida("spread inesistente")
+    if R is None: raise RichiestaNonValida(lingua.t("server.spread_inesistente"))
     cp = SPAZI.coppie(R, A.G, A.PPI, m, v)
     return dict(SPAZI.stato(R, A.G, A.PPI, m, v), coppie=[dict(ax=p["ax"], da=p["da"], a=p["a_"], at=p["at"], g=p["g"], ok=p["ok"]) for p in cp])
 
@@ -1090,7 +1146,7 @@ def _con_tono(tono):
     """il tono entra nel controllo e in «Sistema»? None: se la licenza comprende il pannello del tono; True: la licenza lo
     deve comprendere (altrimenti 403, come /api/tono); False: no"""
     if tono is None: return licenze.consentita("uniformita_tono")
-    if not isinstance(tono, bool): raise ValueError("tono: true, false o niente")
+    if not isinstance(tono, bool): raise ValueError(lingua.t("server.tono_booleano"))
     if tono: _cancello("uniformita_tono")
     return tono
 
@@ -1113,36 +1169,36 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                 for it in pg[1]:
                     if it["k"] != "t": usi.setdefault(it["i"], []).append(s)
         for s in tutti:
-            v = spread_view(s); nome_s = f"Spread {s + 1}"
-            add = lambda liv, tipo, testo, e=None, foto=None, sistema=False: P.append(dict(livello=liv, tipo=tipo, s=s, side=e["side"] if e else None, idx=e["idx"] if e else None, foto=foto or (e or {}).get("name"), testo=f"{nome_s}: {testo}", sistema=sistema))
+            v = spread_view(s)
+            add = lambda liv, tipo, testo, e=None, foto=None, sistema=False: P.append(dict(livello=liv, tipo=tipo, s=s, side=e["side"] if e else None, idx=e["idx"] if e else None, foto=foto or (e or {}).get("name"), testo=lingua.t("server.ctl_riga", n=s + 1, testo=testo), sistema=sistema))
             for side, pg in zip("LR", SP[s]):
-                if not pg[1]: add("guarda", "pagina_vuota", f"la pagina {'sinistra' if side == 'L' else 'destra'} è vuota")
+                if not pg[1]: add("guarda", "pagina_vuota", lingua.t("server.ctl_pagina_vuota_sx" if side == "L" else "server.ctl_pagina_vuota_dx"))
             for e in v["items"]:
                 fuori = e["x"] < -BL - 1 or e["y"] < -BL - 1 or e["x"] + e["w"] > VW + BL + 1 or e["y"] + e["h"] > VH + BL + 1
                 if e["k"] == "t":
-                    if is_txt(e) and (e["x"] < 0 or e["y"] < 0 or e["x"] + e["w"] > VW or e["y"] + e["h"] > VH): add("blocca", "fuori_pagina", "un testo esce dalla pagina e si taglia in stampa", e)
+                    if is_txt(e) and (e["x"] < 0 or e["y"] < 0 or e["x"] + e["w"] > VW or e["y"] + e["h"] > VH): add("blocca", "fuori_pagina", lingua.t("server.ctl_testo_fuori"), e)
                     elif sic and is_txt(e) and (e["x"] < sic or e["y"] < sic or e["x"] + e["w"] > VW - sic or e["y"] + e["h"] > VH - sic):
-                        add("guarda", "sicurezza", f"un testo è a meno di {pr['sicurezza_mm']:g} mm dal bordo: il laboratorio lo può tagliare", e)
-                    if pr and pr["piega_mm"] and is_txt(e) and e["x"] < piega + cm1 and e["x"] + e["w"] > piega - cm1: add("guarda", "piega", "un testo è nella zona della piega", e)
+                        add("guarda", "sicurezza", lingua.t("server.ctl_testo_sicurezza", mm=lingua.num(pr["sicurezza_mm"])), e)
+                    if pr and pr["piega_mm"] and is_txt(e) and e["x"] < piega + cm1 and e["x"] + e["w"] > piega - cm1: add("guarda", "piega", lingua.t("server.ctl_testo_piega"), e)
                     continue
                 n = e["name"]; i = A.IDX[n] - 1; m = A.M[i]
-                if m["n"] in mancanti: add("blocca", "mancante", f"la foto {n} non si trova: ricollegala", e)
-                elif m["n"] in A.DANNEGGIATE: add("blocca", "danneggiata", f"la foto {n} è danneggiata e non si stampa", e)
-                elif e["ppi"] < ris_blocca: add("blocca", "risoluzione", f"{n} è troppo piccola per questa cornice ({e['ppi']} ppi, ne servono almeno {ris_blocca})", e)
-                elif e["ppi"] < ris_guarda: add("guarda", "risoluzione", f"{n} è al limite per questa cornice ({e['ppi']} ppi)", e)
-                if fuori: add("blocca", "fuori_pagina", f"{n} esce dalla pagina oltre l'abbondanza", e)
-                if e["crop"] / max(e["z"], 1e-9) > RITAGLIO_MAX: add("guarda", "ritaglio", f"{n} è tagliata molto (×{e['crop'] / max(e['z'], 1e-9):.2f}) per stare nella cornice", e)
+                if m["n"] in mancanti: add("blocca", "mancante", lingua.t("server.ctl_mancante", nome=n), e)
+                elif m["n"] in A.DANNEGGIATE: add("blocca", "danneggiata", lingua.t("server.ctl_danneggiata", nome=n), e)
+                elif e["ppi"] < ris_blocca: add("blocca", "risoluzione", lingua.t("server.ctl_risoluzione_bassa", nome=n, ppi=e["ppi"], minimo=ris_blocca), e)
+                elif e["ppi"] < ris_guarda: add("guarda", "risoluzione", lingua.t("server.ctl_risoluzione_limite", nome=n, ppi=e["ppi"]), e)
+                if fuori: add("blocca", "fuori_pagina", lingua.t("server.ctl_foto_fuori", nome=n), e)
+                if e["crop"] / max(e["z"], 1e-9) > RITAGLIO_MAX: add("guarda", "ritaglio", lingua.t("server.ctl_ritaglio", nome=n, taglio=lingua.num(e["crop"] / max(e["z"], 1e-9), 2, True)), e)
                 volti = _volti_visibili(e)
-                if any(f["fuori"] > 0.15 for f in volti): add("guarda", "volto_tagliato", f"un volto di {n} è tagliato dal ritaglio", e)
-                if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", f"un volto di {n} è vicino alla piega", e)
-                if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", f"{n} è già nello spread {usi[i][0] + 1}", e)
+                if any(f["fuori"] > 0.15 for f in volti): add("guarda", "volto_tagliato", lingua.t("server.ctl_volto_tagliato", nome=n), e)
+                if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", lingua.t("server.ctl_volto_piega", nome=n), e)
+                if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", lingua.t("server.ctl_ripetuta", nome=n, s=usi[i][0] + 1), e)
             sp = stato_spazi(s, modo, cm)
-            if sp["diversi"]: add("guarda", "spazi", f"{sp['diversi']} stacchi su {sp['n']} diversi da {sp['ref'] / A.PPI * 2.54:.2f} cm", sistema=True); conta_sistema["spazi"] += 1
+            if sp["diversi"]: add("guarda", "spazi", lingua.t("server.ctl_spazi", diversi=sp["diversi"], n=sp["n"], cm=lingua.num(sp["ref"] / A.PPI * 2.54, 2, True)), sistema=True); conta_sistema["spazi"] += 1
             if tono:
                 for t in tono_spread(s, light=True)["items"]:
                     if t["stato"] == "no":
                         e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
-                        add("guarda", "tono", f"{t['name']} è {'più chiara' if t['d'] > 0 else 'più scura'} del resto dell'album", e, sistema=True); conta_sistema["tono"] += 1
+                        add("guarda", "tono", lingua.t("server.ctl_tono_chiara" if t["d"] > 0 else "server.ctl_tono_scura", nome=t["name"]), e, sistema=True); conta_sistema["tono"] += 1
         if spreads is None and pr:
             for testo in _problemi_prodotto(pr): P.append(dict(livello="blocca", tipo="prodotto", s=None, side=None, idx=None, foto=None, sistema=False, testo=testo))
         if spreads is None:
@@ -1151,7 +1207,7 @@ def controlla(spreads=None, tono=None, modo="std", cm=None):
                 if n in tolte: continue
                 stella = n in stelle
                 P.append(dict(livello="info", tipo="stella_non_usata" if stella else "non_usata", s=None, side=None, idx=None, foto=n, sistema=False,
-                              testo=f"{n} {'ha la stella ma ' if stella else ''}non è nell'album"))
+                              testo=lingua.t("server.ctl_stella_non_usata" if stella else "server.ctl_non_usata", nome=n)))
         ordine = ("blocca", "guarda", "info"); P.sort(key=lambda p: ordine.index(p["livello"]))
         conta = {k: sum(1 for p in P if p["livello"] == k) for k in ordine}
         return dict(problemi=P, conta=conta, sistema=dict(conta_sistema, restano=sum(1 for p in P if p["livello"] != "info" and not p["sistema"])),
@@ -1182,14 +1238,14 @@ BOZZA = {}                                          # ultima proposta, per le an
 def _opzioni_bozza(o):
     """(ritmo, foto per spread, stelle da sole, seme) dalla richiesta, controllati; spread = quanti spread si vogliono"""
     ritmo = o.get("ritmo", "alterna"); stelle = o.get("stelle", True); seme = o.get("seme", 0)
-    if ritmo not in BZ.RITMI: raise ValueError("ritmo non valido: alterna, piene o bianche")
-    if not isinstance(stelle, bool): raise ValueError("stelle: true o false")
-    if type(seme) is not int or not 0 <= seme < 2 ** 31: raise ValueError("seme non valido: un intero da 0")
+    if ritmo not in BZ.RITMI: raise ValueError(lingua.t("server.bozza_ritmo"))
+    if not isinstance(stelle, bool): raise ValueError(lingua.t("server.bozza_stelle"))
+    if type(seme) is not int or not 0 <= seme < 2 ** 31: raise ValueError(lingua.t("server.bozza_seme"))
     per = o.get("per_spread")
-    if per is not None and (isinstance(per, bool) or not isinstance(per, (int, float)) or not 1 <= per <= BZ.MAX_GRUPPO): raise ValueError(f"foto per spread: da 1 a {BZ.MAX_GRUPPO}")
+    if per is not None and (isinstance(per, bool) or not isinstance(per, (int, float)) or not 1 <= per <= BZ.MAX_GRUPPO): raise ValueError(lingua.t("server.bozza_per_spread", massimo=BZ.MAX_GRUPPO))
     if o.get("spread") is not None:
         n = o["spread"]
-        if type(n) is not int or not 1 <= n <= 1000: raise ValueError("numero di spread non valido")
+        if type(n) is not int or not 1 <= n <= 1000: raise ValueError(lingua.t("server.bozza_numero_spread"))
         per = min(max(len(_foto_bozza()) / n, 1), BZ.MAX_GRUPPO)
     return ritmo, per or BZ.PER_SPREAD, stelle, seme
 
@@ -1198,7 +1254,7 @@ def _foto_bozza(almeno=0):
     """foto da impaginare: non ancora nell'album e non tolte, in ordine di scatto (ValueError se sono meno di almeno)"""
     usate = used_set(); tolte = set(CFG.get("tolte", [])); stelle = set(CFG["stelle"])
     foto = [dict(i=i, dt=A.M[i]["dt"], ar=A.M[i]["ar"], stella=A.name(i) in stelle) for i in range(len(A.M)) if i not in usate and A.name(i) not in tolte]
-    if len(foto) < almeno: raise ValueError(f"Per la bozza servono almeno {almeno} foto ancora da usare: ce ne sono {len(foto)}")
+    if len(foto) < almeno: raise ValueError(lingua.t("server.bozza_poche_foto", almeno=almeno, ci_sono=len(foto)))
     return sorted(foto, key=lambda f: (f["dt"] or "", A.name(f["i"])))
 
 
@@ -1244,15 +1300,15 @@ def _spread_liberi():
 
 def _troppi_spread(n, liberi):
     pr = _prodotto()
-    return (f"Il prodotto «{pr['nome']}» ammette al massimo {pr['spread_max']} spread e l'album ne ha {len(SP)}: "
-            + (f"se ne possono aggiungere ancora {liberi}, non {n}" if liberi else "non se ne possono aggiungere altri"))
+    if liberi: return lingua.t("server.prodotto_spread_max_ancora", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP), liberi=liberi, n=n)
+    return lingua.t("server.prodotto_spread_max_zero", prodotto=pr["nome"], massimo=pr["spread_max"], n_album=len(SP))
 
 
 def _problemi_prodotto(pr):
     """problemi dell'album intero rispetto al prodotto: numero di spread, formato e abbondanza"""
     out = []; n = len(SP)
-    if n < pr.get("spread_min", 0): out.append(f"L'album ha {n} spread, il prodotto «{pr['nome']}» ne vuole almeno {pr['spread_min']}")
-    if n > pr.get("spread_max", n): out.append(f"L'album ha {n} spread, il prodotto «{pr['nome']}» ne ammette al massimo {pr['spread_max']}")
+    if n < pr.get("spread_min", 0): out.append(lingua.t("server.prodotto_spread_min", n=n, prodotto=pr["nome"], minimo=pr["spread_min"]))
+    if n > pr.get("spread_max", n): out.append(lingua.t("server.prodotto_spread_max", n=n, prodotto=pr["nome"], massimo=pr["spread_max"]))
     m = LAB.incompatibile(CFG, pr)
     if m: out.append(m)
     return out
@@ -1285,12 +1341,12 @@ def prodotti_pagina():
 def _valida_bozza(o):
     o.setdefault("pos", len(SP)); _intero(o["pos"], len(SP) + 1, "posizione")
     if o.get("spreads") is None: _opzioni_bozza(o); return
-    if not isinstance(o["spreads"], list) or not 1 <= len(o["spreads"]) <= 1000: raise ValueError("spread della bozza non validi")
+    if not isinstance(o["spreads"], list) or not 1 <= len(o["spreads"]) <= 1000: raise ValueError(lingua.t("server.bozza_spread_non_validi"))
     for s in o["spreads"]:
         for side in "LR":
             d = s.get(side) if isinstance(s, dict) else None
             if not isinstance(d, dict) or d.get("mode") not in ("I", "W") or d.get("module") not in NPH or not isinstance(d.get("photos"), list) or len(d["photos"]) != NPH[d["module"]]:
-                raise ValueError("spread della bozza non valido: modo, modulo e foto di ogni pagina")
+                raise ValueError(lingua.t("server.bozza_spread_non_valido"))
             for i in d["photos"]: _intero(i, len(A.M), "foto")
 
 
@@ -1298,7 +1354,7 @@ def bozza_jpg(n, K):
     """anteprima dello spread n dell'ultima proposta (senza abbondanza), come le immagini degli spread"""
     _cancello("impaginazione_automatica_album")
     sp = BOZZA.get("spreads") or []
-    if not 0 <= n < len(sp): raise RichiestaNonValida("spread della bozza inesistente")
+    if not 0 <= n < len(sp): raise RichiestaNonValida(lingua.t("server.bozza_spread_inesistente"))
     with LOCK: tup = tuple((sp[n][side]["mode"], [dict(x) for x in BUILD[sp[n][side]["module"]]([i + 1 for i in sp[n][side]["photos"]], bool(sp[n][side]["mirror"]))]) for side in "LR")
     im = A.render(tup, K, True); b = round(A.B * K)
     if b: im = im.crop((b, b, im.width - b, im.height - b))
@@ -1307,7 +1363,7 @@ def bozza_jpg(n, K):
 
 def _elenco_spread(x):
     if x is None: return None
-    if not isinstance(x, list) or len(x) > 10000: raise ValueError("spread non validi: un elenco di numeri")
+    if not isinstance(x, list) or len(x) > 10000: raise ValueError(lingua.t("server.elenco_spread_non_valido"))
     for s in x: _intero(s, len(SP), "spread")
     return sorted(set(x))
 
@@ -1382,18 +1438,18 @@ def tpl_options(photos, cur=None, side=None, s=None):
             if side is None: d = build(("U:%s:L" % t["id"], t["pages"][0]["mode"], False), ("U:%s:R" % t["id"], t["pages"][1]["mode"], False))
             else: d = build(("U:%s:%s" % (t["id"], side), t["pages"][0 if side == "L" else 1]["mode"], False))
             d.update(id=t["id"], nome=t["nome"], progetto=bool(t.get("progetto"))); ut.append(d)
-        except Exception as ex: LOG.append(f"modello «{t.get('nome')}» non applicabile: {ex}")
+        except Exception as ex: LOG.append(lingua.t("server.modello_non_applicabile", nome=t.get("nome"), motivo=ex))
     return dict(items=out[:90], piu=piu, n=N, tot=len(out), utente=ut, lato=side)
 
 def tpl_from_spread(s):
     """(pagine, n, lato): se una pagina è di solo testo si salva solo l'altra (lato = quella), altrimenti tutto lo spread (lato = None)"""
     lk = locked_sides(s)
-    if len(lk) == 2: raise ValueError("le due pagine sono di solo testo: non c'è nessun layout di foto da salvare")
+    if len(lk) == 2: raise ValueError(lingua.t("server.salva_modello_due_testi"))
     lato = None if not lk else next(x for x in "LR" if x not in lk)
     pages = [dict(mode=pg[0], items=[{k: v for k, v in it.items() if k in UT_KEEP} for it in pg[1] if it["k"] != "t"] if lato in (None, side) else [])
              for side, pg in zip("LR", SP[s])]
     n = sum(len(p["items"]) for p in pages)
-    if not n: raise ValueError("lo spread non ha foto: non c'è nessun layout da salvare")
+    if not n: raise ValueError(lingua.t("server.salva_modello_senza_foto"))
     return pages, n, lato
 
 def modelli(o):
@@ -1404,34 +1460,34 @@ def modelli(o):
         licenze.controlla_modelli(a, len(lst))                                       # modelli personali: quanti ne comprende la fascia
         if a == "importa":
             t = next((x for x in ut_progetto() if x["id"] == o.get("id")), None)
-            if not t: raise ValueError("modello non trovato")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_arrivati_con_un_progetto
-            if any(x["nome"].lower() == t["nome"].lower() for x in lst): t = dict(t, nome=t["nome"][:48] + " (importato)")
+            if not t: raise ValueError(lingua.t("server.modello_non_trovato"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_arrivati_con_un_progetto
+            if any(x["nome"].lower() == t["nome"].lower() for x in lst): t = dict(t, nome=lingua.t("server.modello_importato", nome=t["nome"][:48]))
             lst.append(t)
         elif a == "salva":
-            if not nome: raise ValueError("scrivi un nome per il modello")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
-            if any(t["nome"].lower() == nome.lower() for t in lst): raise ValueError("esiste già un modello con questo nome: usa «Aggiorna» su quello")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
+            if not nome: raise ValueError(lingua.t("server.modello_nome_mancante"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+            if any(t["nome"].lower() == nome.lower() for t in lst): raise ValueError(lingua.t("server.modello_nome_doppio_aggiorna"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
             pages, n, lato = tpl_from_spread(o["s"]); lst.append(dict(id=os.urandom(4).hex(), nome=nome, n=n, lato=lato, pages=pages))
         else:
             t = next((x for x in lst if x["id"] == o["id"]), None)
-            if not t: raise ValueError("modello non trovato")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
+            if not t: raise ValueError(lingua.t("server.modello_non_trovato"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_utente
             if a == "aggiorna": t["pages"], t["n"], t["lato"] = tpl_from_spread(o["s"])
             elif a == "rinomina":
-                if not nome: raise ValueError("scrivi un nome")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
-                if any(x is not t and x["nome"].lower() == nome.lower() for x in lst): raise ValueError("esiste già un modello con questo nome")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+                if not nome: raise ValueError(lingua.t("server.nome_mancante"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+                if any(x is not t and x["nome"].lower() == nome.lower() for x in lst): raise ValueError(lingua.t("server.modello_nome_doppio"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
                 t["nome"] = nome
             elif a == "elimina": lst.remove(t)
-            else: raise ValueError("azione sconosciuta")
+            else: raise ValueError(lingua.t("server.azione_sconosciuta"))
         ut_save(lst)
 
 def templates(s):
     with LOCK:
         lk = locked_sides(s)
-        if len(lk) == 2: return dict(items=[], utente=[], nota="Le due pagine sono di solo testo: non ci sono foto da impaginare.")  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_modelli_errori
+        if len(lk) == 2: return dict(items=[], utente=[], nota=lingua.t("server.nota_due_testi"))  # pragma: no branch  # coverage 7.17 non vede un return dentro «with»; provato da test_modelli_errori
         side = None if not lk else next(x for x in "LR" if x not in lk); sides = "LR" if side is None else side
         photos = [it["i"] for k, x in enumerate("LR") if x in sides for it in SP[s][k][1] if it["k"] != "t"]
         cur = sorted((round(e["x"]), round(e["y"]), e["w"], e["h"]) for e in spread_view(s)["items"] if e["k"] != "t" and e["side"] in sides)
         d = tpl_options(photos, cur, side, s)
-        if side and not photos: d["nota"] = "La pagina senza testo non ha foto: aggiungine una per vedere i modelli."
+        if side and not photos: d["nota"] = lingua.t("server.nota_pagina_senza_foto")
         return d
 
 def templates_for(names):
@@ -1439,7 +1495,7 @@ def templates_for(names):
         used = used_set(); ph = []
         for n in names:
             i = A.IDX[n] - 1
-            if i in used: raise ValueError(f"{n} è già in uno spread")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
+            if i in used: raise ValueError(lingua.t("server.foto_gia_in_spread", nome=n))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_errori
             ph.append(i)
         return tpl_options(ph) if ph else dict(items=[], n=0, tot=0)
 
@@ -1465,7 +1521,7 @@ def licenza_pagina():
     fascia, se ci sono e la frase che spiega dove si trovano (così la pagina lo dice prima, non con un 403)"""
     st = licenze.stato(); f = {k: licenze.consentita(k, st) for k in FUNZIONI_PAGINA}
     return dict(stato=st["stato"], sola_lettura=st["sola_lettura"], filigrana=st["filigrana"], nome_fascia=st["nome_fascia"],
-                giorni=st["prova"]["giorni_rimasti"] if st["stato"] in ("prova", "non valida") else None, messaggio=st["messaggio"],
+                giorni=st["prova"]["giorni_rimasti"] if st["stato"] in ("prova", "non valida") else None, messaggio=st["messaggio"],  # non tradotto: codice di stato della licenza, non un testo
                 funzioni=f, motivi={k: licenze.motivo(k, st) for k, v in f.items() if not v})
 
 
@@ -1635,7 +1691,7 @@ def bruc_img(s, side, idx):
     import io as _io, numpy as np
     with LOCK:
         m = next((x for x in _tono_misure(s) if x["side"] == side and x["idx"] == idx), None)
-        if m is None: raise ValueError("foto non trovata")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_tono_spread_senza_foto_e_vicini_esclusi
+        if m is None: raise ValueError(lingua.t("server.foto_non_trovata"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_tono_spread_senza_foto_e_vicini_esclusi
         Lm = _tono_sim(m["i"], m["im"], m["evp"], m["rit"], m["bw"]); base = np.asarray(m["im"].convert("L"), dtype=np.float32)
     if base.shape != Lm.shape: base = np.asarray(m["im"].convert("L").resize((Lm.shape[1], Lm.shape[0])), dtype=np.float32)
     rgb = np.stack([base * .45] * 3, axis=-1); msk = (Lm > 96)[..., None]
@@ -1652,7 +1708,7 @@ def live_photo(q):
             for j, x in enumerate(pg[1]):
                 if sd == side and j == idx: L, it = dict(lay[k]), x
                 k += 1
-        if L is None or it["k"] == "t": raise ValueError("cornice non trovata")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_foto_live_di_una_cornice_che_non_ce
+        if L is None or it["k"] == "t": raise ValueError(lingua.t("server.cornice_non_trovata"))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_foto_live_di_una_cornice_che_non_ce
         n = A.name(it["i"]); R, E = CFG["ritocco"], CFG["esposizione"]["per_foto"]; old = (R.get(n), E.get(n))
         try:
             if "rit" in over:
@@ -1757,16 +1813,16 @@ def aggiorna_foto(idx):
                 m.update(dt=new["dt"], w=new["w"], h=new["h"], ar=new["ar"])
                 tp = os.path.join(A.THUMBS, m["n"])
                 if os.path.exists(tp): os.remove(tp)
-                if A._build_thumbs([m]): raise ValueError(A.DANNEGGIATA)
+                if A._build_thumbs([m]): raise ValueError(A.danneggiata())
                 A.DANNEGGIATE.pop(m["n"], None); A.SCARTATE[:] = [x for x in A.SCARTATE if x["n"] != m["n"]]          # tornata buona (VER-002)
                 try: A.F.update(A._build_faces([m])); formato.scrivi_json(os.path.join(A.CACHE, "faces.json"), A.F)
-                except Exception as ex: LOG.append(f"volti di {m['n']} non rifatti: {ex}")
+                except Exception as ex: LOG.append(lingua.t("server.volti_non_rifatti", nome=m["n"], motivo=ex))
                 n = A.name(i); PV[n] = PV.get(n, 0) + 1; INFO.pop(n, None)
                 with _CACHE_LOCK:
                     for k in [k for k in TH if k[0] == n]: TH.pop(k)
                 ok.append(m["n"])
                 if abs(new["ar"] - old_ar) > 0.003: ars.append(m["n"])
-            except Exception as ex: ko.append(m["n"]); LOG.append(f"{m['n']}: non aggiornata ({ex})")
+            except Exception as ex: ko.append(m["n"]); LOG.append(lingua.t("server.foto_non_aggiornata", nome=m["n"], motivo=ex))
         if ok:
             formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); CACHE.clear()
             AGG.update(n=AGG["n"] + 1, t=time.time(), nomi=ok, ar=ars)
@@ -1780,7 +1836,7 @@ def foto_watch_loop(fermo=None):
             cand = {i: (_mt(A.M[i]["src"]), os.path.getsize(A.M[i]["src"])) for i in foto_cambiate()}
             pronte = [i for i, v in cand.items() if seen.get(i) == v and time.time() - v[0] > 2]; seen = cand
             if pronte: aggiorna_foto(pronte)
-        except Exception as ex: LOG.append(f"controllo foto modificate: {ex}")
+        except Exception as ex: LOG.append(lingua.t("server.controllo_foto_fallito", motivo=ex))
 
 TH = {}
 def thumb_jpg(n, w):
@@ -1826,7 +1882,7 @@ def _pota_backup(bk, tieni=200):
             for f in ("album.json", "spec.py", "progetto.json"):
                 try: os.remove(os.path.join(bk, f"{t}_{f}"))
                 except OSError: pass
-    except Exception as e: LOG.append(f"pulizia copie non riuscita: {e}")
+    except Exception as e: LOG.append(lingua.t("server.pulizia_copie_fallita", motivo=e))
 def _da_salvare(base):
     """progetto.json da scrivere: `base` (quello sul disco) con le impostazioni che cambia l'editor"""
     out = dict(base)
@@ -1870,7 +1926,7 @@ def parse_range(txt, n):
             a_, b_ = (int(x) for x in part.split("-", 1)); out += list(range(min(a_, b_), max(a_, b_) + 1))
         else: out.append(int(part))
     bad = [x for x in out if not 1 <= x <= n]
-    if bad: raise ValueError(f"spread inesistenti: {bad} (l'album ne ha {n})")
+    if bad: raise ValueError(lingua.t("server.spread_inesistenti", elenco=bad, n=n))
     return list(dict.fromkeys(out))
 
 _ICC = None
@@ -1909,12 +1965,12 @@ def write_pdf(path, jpegs, dpi=150):
 def _spiega(e):
     """errore tecnico -> frase che si capisce"""
     import errno
-    if isinstance(e, PermissionError): return f"non posso scrivere nella cartella di destinazione ({e.filename or ''}): scegline un'altra"
-    if isinstance(e, OSError) and e.errno == errno.ENOSPC: return "il disco è pieno: libera spazio o scegli un altro disco"
-    if isinstance(e, FileNotFoundError): return f"file non trovato: {e.filename or e}"
-    if isinstance(e, MemoryError): return "memoria insufficiente: prova a esportare meno spread alla volta"
+    if isinstance(e, PermissionError): return lingua.t("server.errore_scrittura", file=e.filename or "")
+    if isinstance(e, OSError) and e.errno == errno.ENOSPC: return lingua.t("server.disco_pieno")
+    if isinstance(e, FileNotFoundError): return lingua.t("server.file_non_trovato", file=e.filename or e)
+    if isinstance(e, MemoryError): return lingua.t("server.memoria_insufficiente")
     if isinstance(e, (ValueError, RuntimeError)) and str(e): return str(e)            # messaggi scritti per l'utente (preflight, Photoshop)
-    return f"errore imprevisto ({type(e).__name__}: {e})"
+    return lingua.t("server.errore_imprevisto", tipo=type(e).__name__, motivo=e)
 
 def _scrivi_img(im, f, **kw):
     """salva l'immagine in un file temporaneo e poi la sposta: se l'export si interrompe non resta un file a metà né si perde quello vecchio"""
@@ -1923,23 +1979,23 @@ def _scrivi_img(im, f, **kw):
 def preflight(o, nums, dest, fmt):
     """controlli prima di esportare: se qualcosa non va l'utente lo sa subito, non dopo minuti di lavoro"""
     n = len(SP)
-    if n == 0: raise ValueError("Non c'è nessuno spread da esportare")
-    if not nums: raise ValueError("Nessuno spread nell'intervallo scelto")
+    if n == 0: raise ValueError(lingua.t("server.nessuno_spread"))
+    if not nums: raise ValueError(lingua.t("server.intervallo_vuoto"))
     fuori = [k for k in nums if not 1 <= k <= n]
-    if fuori: raise ValueError(f"Lo spread {fuori[0]} non esiste: gli spread sono {n}")
+    if fuori: raise ValueError(lingua.t("server.spread_non_esiste", k=fuori[0], n=n))
     usati = {it["i"] for k in nums for pg in SP[k - 1] for it in pg[1] if it.get("k") != "t" and "i" in it}
     manca = [m["n"] for ix, m in enumerate(A.M) if ix in usati and not os.path.exists(m.get("src", ""))]
-    if manca: raise ValueError(f"{len(manca)} foto di questi spread non si trovano più ({', '.join(manca[:4])}{'…' if len(manca) > 4 else ''}): ricollegale da Progetto → Ricollega foto")
+    if manca: raise ValueError(lingua.t("server.foto_non_si_trovano", n=len(manca), nomi=", ".join(manca[:4]) + ("…" if len(manca) > 4 else "")))
     rotte = [m["n"] for ix, m in enumerate(A.M) if ix in usati and m["n"] in A.DANNEGGIATE]
-    if rotte: raise ValueError(f"{len(rotte)} foto di questi spread sono danneggiate o incomplete ({', '.join(rotte[:4])}{'…' if len(rotte) > 4 else ''}): ricopiale nella cartella delle foto")
+    if rotte: raise ValueError(lingua.t("server.foto_danneggiate", n=len(rotte), nomi=", ".join(rotte[:4]) + ("…" if len(rotte) > 4 else "")))
     try:
         t = os.path.join(dest, ".prova_scrittura")
         with open(t, "w", encoding="utf-8") as f: f.write("x")
         os.remove(t)
-    except OSError as e: raise ValueError(f"Non posso scrivere in «{dest}»: {e.strerror or e}. Scegli un'altra cartella")
+    except OSError as e: raise ValueError(lingua.t("server.cartella_non_scrivibile", dest=dest, motivo=e.strerror or e))
     stima = {"jpg": 35e6 * len(nums), "pdf": 8e6 + 2e6 * len(nums), "psd": 450e6 * len(nums), "consegna": 35e6 * len(nums)}[fmt]
     libero = shutil.disk_usage(dest).free
-    if libero < stima * 1.2: raise ValueError(f"Spazio insufficiente: servono circa {stima / 1e9:.1f} GB e ne restano {libero / 1e9:.1f} GB. Libera spazio o scegli un altro disco")
+    if libero < stima * 1.2: raise ValueError(lingua.t("server.spazio_insufficiente", serve=lingua.num(stima / 1e9, 1, True), resta=lingua.num(libero / 1e9, 1, True)))
     if fmt == "psd":
         if not pps.disponibile(): raise ValueError(pps.motivo_assente())          # sul Mac: «Photoshop non è stato trovato in /Applications…»; su Linux non c'è
 
@@ -1949,7 +2005,7 @@ def _consegna_prima(o, dest):
     cartella scelta si usa se è nuova o vuota, altrimenti (o con quella di serie) se ne crea una nuova dentro, dopo i
     controlli (UX-013: non si sovrascrive niente; un controllo che non passa non lascia cartelle vuote)"""
     with LOCK: pr = copy.deepcopy(CFG.get("prodotto"))
-    if not pr: raise ValueError("Questo album non ha ancora il prodotto del laboratorio: sceglilo in Esporta → Consegna")
+    if not pr: raise ValueError(lingua.t("server.consegna_senza_prodotto"))
     m = LAB.incompatibile(CFG, pr["prodotto"])
     if m: raise ValueError(m)
     info = LAB.stato(pr)
@@ -1969,16 +2025,16 @@ def _consegna(pr, info, nums, dest, con_filigrana, nome):
                 if con_filigrana: im = licenze.applica_filigrana(im)
                 f = os.path.join(dest, CONSEGNA.nome_file(p, nome, k, None if pagina is None else 2 * k - 1 + pagina))
                 _scrivi_img(im, f, quality=q, dpi=(p["ppi"], p["ppi"]), icc_profile=icc, subsampling=0 if q >= 90 else 2)
-                if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
+                if os.path.getsize(f) < 1000: raise ValueError(lingua.t("server.file_vuoto"))
                 nomi_k.append(os.path.basename(f))
-            fatti.append(k); file += nomi_k; LOG.append(f"  spread {k}: {', '.join(nomi_k)}")
-        except Exception as ex: LOG.append(f"SALTATO spread {k} -> {_spiega(ex)}")
-    LOG.append(f"ESPORTATI {len(fatti)} spread su {len(nums)}")
+            fatti.append(k); _esito(fatti=len(fatti)); file += nomi_k; LOG.append(f"  spread {k}: {', '.join(nomi_k)}")
+        except Exception as ex: _log_saltato(k, _spiega(ex))
+    LOG.append(lingua.t("server.log_esportati", fatti=len(fatti), totale=len(nums)))
     with LOCK: n_sp = len(SP)
     testo = CONSEGNA.riepilogo(nome, pr, info, file, n_sp, controlla(None, False)["conta"], con_filigrana)
-    formato.scrivi_atomico(os.path.join(dest, CONSEGNA.RIEPILOGO), testo); LOG.append(f"  riepilogo: {CONSEGNA.RIEPILOGO}")
-    if fatti: LOG.append("RISULTATO:" + dest)
-    if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
+    formato.scrivi_atomico(os.path.join(dest, CONSEGNA.RIEPILOGO), testo); LOG.append("  " + lingua.t("server.log_riepilogo", file=CONSEGNA.RIEPILOGO))
+    if fatti: _log_risultato(dest)
+    if len(fatti) < len(nums): _log_errore(lingua.tn("server.log_non_esportati", len(nums) - len(fatti)))
 
 
 def run_export(o):
@@ -1988,13 +2044,13 @@ def run_export(o):
     nums = parse_range(o.get("range", ""), n); fmt = o["fmt"]
     dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", "Consegna" if fmt == "consegna" else str(fmt).upper())
     dest = os.path.expanduser(o.get("dest") or dflt)
-    if fmt not in ("jpg", "pdf", "psd", "consegna"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    if fmt not in ("jpg", "pdf", "psd", "consegna"): raise ValueError(lingua.t("server.formato_sconosciuto", formato=fmt))
     con_filigrana = licenze.controlla_esportazione(fmt)                                                             # formato della fascia; prova: con la filigrana
     if fmt == "consegna": pr, info, nuova = _consegna_prima(o, dest)
     qualita = round(numero({"q": [str(o.get("q", 92 if fmt == "jpg" else 80))]}, "q", 92, 1, 100))                  # VER-014: qualità JPEG da 1 a 100
     larghezza = round(numero({"width": [str(o.get("width", 2000))]}, "width", 2000, 500, 6000))                     # PDF: da 500 a 6000 px (la pagina offre 2000, 3500, 5000)
     try: os.makedirs(dest, exist_ok=True)
-    except OSError as e: raise ValueError(f"Non riesco a creare la cartella «{dest}»: {e.strerror or e}")
+    except OSError as e: raise ValueError(lingua.t("server.cartella_non_creata", dest=dest, motivo=e.strerror or e))
     preflight(o, nums, dest, fmt)
     if fmt == "consegna" and nuova: dest = CONSEGNA.cartella_nuova(dest, pr["prodotto"]["nome"])
     nome = CFG.get("nome", "Album")
@@ -2004,7 +2060,8 @@ def run_export(o):
         save(backup=False)
     def go():
         try:
-            LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
+            _esito(dest=dest, formato=fmt, totale=len(nums))
+            LOG.append(lingua.tn("server.log_esporto", len(nums), formato=fmt.upper(), dest=dest))
             if fmt == "consegna": _consegna(pr, info, nums, dest, con_filigrana, nome)
             elif fmt == "jpg":
                 stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
@@ -2016,12 +2073,12 @@ def run_export(o):
                         if b and not stampa: im = im.crop((b, b, im.width - b, im.height - b))
                         if con_filigrana: im = licenze.applica_filigrana(im)
                         f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); _scrivi_img(im, f, quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
-                        if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
-                        fatti.append(k); LOG.append(f"  spread {k}: {os.path.basename(f)}")
-                    except Exception as ex: LOG.append(f"SALTATO spread {k} -> {_spiega(ex)}")
-                LOG.append(f"ESPORTATI {len(fatti)} spread su {len(nums)}")
-                if fatti: LOG.append("RISULTATO:" + dest)
-                if len(fatti) < len(nums): LOG.append(f"ERRORE: {len(nums) - len(fatti)} spread non esportati (vedi sopra)")
+                        if os.path.getsize(f) < 1000: raise ValueError(lingua.t("server.file_vuoto"))
+                        fatti.append(k); _esito(fatti=len(fatti)); LOG.append(f"  spread {k}: {os.path.basename(f)}")
+                    except Exception as ex: _log_saltato(k, _spiega(ex))
+                LOG.append(lingua.t("server.log_esportati", fatti=len(fatti), totale=len(nums)))
+                if fatti: _log_risultato(dest)
+                if len(fatti) < len(nums): _log_errore(lingua.tn("server.log_non_esportati", len(nums) - len(fatti)))
             elif fmt == "pdf":
                 from PIL import ImageDraw
                 Wp = larghezza; K = Wp / VW; pages = []
@@ -2039,24 +2096,31 @@ def run_export(o):
                 for pg in pages:
                     bio = io.BytesIO(); pg.save(bio, "JPEG", quality=qualita, optimize=True, icc_profile=srgb_icc()); jp.append((bio.getvalue(), pg.width, pg.height))
                 write_pdf(f + ".tmp", jp, 150); os.replace(f + ".tmp", f)
-                if os.path.getsize(f) < 1000: raise ValueError("il PDF risulta vuoto")
-                LOG.append(f"{len(pages)} pagine, {os.path.getsize(f) / 1e6:.1f} MB"); LOG.append("RISULTATO:" + f)
+                if os.path.getsize(f) < 1000: raise ValueError(lingua.t("server.pdf_vuoto"))
+                LOG.append(lingua.tn("server.log_pagine", len(pages), mb=lingua.num(os.path.getsize(f) / 1e6, 1, True))); _esito(fatti=len(pages)); _log_risultato(f)
             else:
                 cmd = [sys.executable, "-m", "impaginatore.motore.genera_psd_angolo", "--spread", ",".join(map(str, nums)), "--progetto", PROJ] + (["--forza"] if o.get("force") else [])
                 p = subprocess.Popen(cmd, cwd=processi.cartella_pacchetto(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
-                                     env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ)))
+                                     env=processi.ambiente_figli(dict(os.environ, ALBUM_PROGETTO=PROJ, IMPAGINATORE_PROTOCOLLO="1")))
                 t0 = time.time() - 2; out = []
-                for line in p.stdout: out.append(line.rstrip()); LOG.append(line.rstrip())
+                skip = {}                                                         # spread lasciati com'erano dal processo dei PSD: {numero: codice del motivo}
+                for line in p.stdout:
+                    m = GPSD.PROTOCOLLO_SALTATO.match(line.rstrip())
+                    if m: skip[int(m.group(1))] = m.group(2); continue           # riga di protocollo: non si mostra, il motivo si dice nella lingua in uso
+                    out.append(line.rstrip()); LOG.append(line.rstrip())
                 rc = p.wait(); testo = "\n".join(out)
-                skip = {int(m) for m in re.findall(r"SALTATO spread (\d+)", testo)}
+                for k in sorted(skip): _esito_saltato_psd(k, skip[k])
                 nuovi = [k for k in nums if k not in skip and not (os.path.exists(os.path.join(dest, f"Spread_{k:02d}.psd")) and os.path.getmtime(os.path.join(dest, f"Spread_{k:02d}.psd")) >= t0 and os.path.getsize(os.path.join(dest, f"Spread_{k:02d}.psd")) > 1e5)]
-                for k in nuovi: LOG.append(f"SALTATO spread {k} -> il PSD non è stato creato")
-                if re.search(r"errore generale|general error|8800|Photoshop got an error|not running|isn.t running", testo, re.I): LOG.append("ERRORE: Photoshop ha dato un errore. Controlla che sia aperto, senza finestre di dialogo in attesa, e riprova")
-                elif rc != 0 and not nuovi: LOG.append(f"ERRORE: lo script dei PSD si è fermato (codice {rc}): vedi sopra")
-                LOG.append(f"PSD creati: {len(nums) - len(skip) - len(nuovi)} su {len(nums)}" + (f" ({len(skip)} lasciati com'erano perché modificati a mano)" if skip else ""))
-                if len(nums) - len(nuovi) > 0 or skip: LOG.append("RISULTATO:" + dest)
-        except Exception as e: LOG.append(f"ERRORE: {_spiega(e)}")
-        LOG.append("[finito]")
+                for k in nuovi: _log_saltato(k, lingua.t("server.log_psd_non_creato"))
+                if re.search(r"errore generale|general error|8800|Photoshop got an error|not running|isn.t running", testo, re.I): _log_errore(lingua.t("server.log_photoshop_errore"))
+                elif rc != 0 and not nuovi: _log_errore(lingua.t("server.log_psd_script_fermo", codice=rc))
+                creati = len(nums) - len(skip) - len(nuovi); _esito(fatti=creati)
+                LOG.append(lingua.t("server.log_psd_creati_a_mano", n=creati, totale=len(nums), a_mano=len(skip)) if skip else lingua.t("server.log_psd_creati", n=creati, totale=len(nums)))
+                if len(nums) - len(nuovi) > 0 or skip: _log_risultato(dest)
+        except Exception as e: _log_errore(_spiega(e))
+        finally: ESPORTA.discard(segno)
+        _log_finito()
+    segno = object(); ESPORTA.add(segno)                                   # in corso finché go() non finisce: la finestra chiede conferma prima di chiudersi
     threading.Thread(target=go, daemon=True).start()
     return len(nums)
 
@@ -2066,7 +2130,7 @@ def autosave_loop(fermo=None):
     while not fermo.wait(1):
         try:
             if time.time() - LAST["op"] > 2 and snap() != SAVED: save(backup=time.time() - LAST["backup"] > 600)
-        except Exception as e: LOG.append(f"autosalvataggio non riuscito: {e}"); SAVE_ERR[0] = str(e)[:160]
+        except Exception as e: LOG.append(lingua.t("server.autosalvataggio_fallito", motivo=e)); SAVE_ERR[0] = str(e)[:160]
 
 def pick(kind):
     """finestra di sistema: una cartella (kind="folder") o più foto; [] se annullata. Quello che l'utente sceglie diventa una radice"""
@@ -2088,7 +2152,7 @@ def ls_dir(path):
     """elenco di una cartella per il selettore di foto del programma (solo sottocartelle e foto), solo dentro le radici (SEC-005):
     le altre cartelle si aggiungono con «Altra cartella…», cioè con la finestra di sistema"""
     radici = RADICI.tutte()
-    if path: path = RADICI.controlla(path, "quella cartella")
+    if path: path = RADICI.controlla(path, "cartella")
     else: path = next((p for p in (LASTDIR[0], os.path.dirname(str(CFG.get("foto", "")).rstrip("/\\")), CFG.get("foto")) if p and RADICI.contiene(p) and os.path.isdir(p)), radici[0] if radici else PROJ)
     while not os.path.isdir(path) and os.path.dirname(path) != path: path = os.path.dirname(path)          # la cartella esistente più vicina (dentro la radice, che esiste)
     LASTDIR[0] = path; dirs, files = [], []
@@ -2105,8 +2169,8 @@ def ls_dir(path):
 
 FT = {}
 def file_thumb(path, w):
-    path = RADICI.controlla(path, "quella foto")
-    if not path.lower().endswith(A.estensioni()) or not os.path.isfile(path): raise ValueError("non è una foto")
+    path = RADICI.controlla(path, "foto")
+    if not path.lower().endswith(A.estensioni()) or not os.path.isfile(path): raise ValueError(lingua.t("server.non_una_foto"))
     k = (path, w, os.path.getmtime(path))
     if k not in FT:
         with A.apri_foto(path) as im0:
@@ -2132,7 +2196,7 @@ def do_import(paths):
     n = skipped = 0; new = []
     for f in files:
         base, ext = os.path.splitext(os.path.basename(f))
-        if not ext.lower().endswith(A.estensioni()) or base.startswith("."): skipped += 1; continue
+        if not ext.lower().endswith(A.estensioni()) or base.startswith("."): continue          # non è una foto: non si conta
         if os.path.basename(f).lower() in have: skipped += 1; continue
         have.add(os.path.basename(f).lower()); n += 1; new.append(os.path.abspath(f))
     if new:
@@ -2164,9 +2228,9 @@ def _uguale(m, p):
     """None se il file p può essere l'originale della foto m (stesse misure in pixel e, se la foto ha una data di scatto,
     la stessa data), altrimenti il motivo"""
     try: x = A._meta_one(p)
-    except A.ERRORI_FOTO: return "non si apre come foto"
-    if (x["w"], x["h"]) != (m.get("w"), m.get("h")): return f"misure diverse ({x['w']} × {x['h']} invece di {m.get('w')} × {m.get('h')})"
-    if not m.get("senza_data") and x["dt"] != m.get("dt"): return "data di scatto diversa"
+    except A.ERRORI_FOTO: return lingua.t("server.non_si_apre_come_foto")
+    if (x["w"], x["h"]) != (m.get("w"), m.get("h")): return lingua.t("server.misure_diverse", w=x["w"], h=x["h"], w0=m.get("w"), h0=m.get("h"))
+    if not m.get("senza_data") and x["dt"] != m.get("dt"): return lingua.t("server.data_scatto_diversa")
     return None
 
 
@@ -2178,11 +2242,11 @@ def ricollega(cartella, prova=False, scelte=None):
     diverso) si propongono («proposte») e si collegano solo se passate in scelte = {nome foto: file proposto}.
     prova=True: dice cosa farebbe senza cambiare niente. Restituisce {trovate, mancanti, totale, diverse, proposte}"""
     cartella = os.path.expanduser(cartella)
-    if not os.path.isdir(cartella): raise ValueError("cartella non trovata")
-    if scelte is not None and not (isinstance(scelte, dict) and all(isinstance(v, str) for v in scelte.values())): raise ValueError("scelte non valide: {nome della foto: file proposto}")
+    if not os.path.isdir(cartella): raise ValueError(lingua.t("server.cartella_non_trovata"))
+    if scelte is not None and not (isinstance(scelte, dict) and all(isinstance(v, str) for v in scelte.values())): raise ValueError(lingua.t("server.scelte_non_valide"))
     uscita = percorsi.reale(CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")); radice = percorsi.reale(cartella)
     if _cartella_interna(radice, uscita) or _dentro_interna(os.path.join(radice, "x"), uscita):
-        raise ValueError("Questa cartella è del programma (miniature, copie o esportazioni): scegli quella con le foto originali")
+        raise ValueError(lingua.t("server.cartella_del_programma"))
     idx, tutti = {}, []
     for root, dirs, fs in os.walk(cartella):
         dirs[:] = sorted(d for d in dirs if not _cartella_interna(percorsi.reale(os.path.join(root, d)), uscita) and not percorsi.riservata(os.path.join(root, d)))
@@ -2216,7 +2280,7 @@ def _esito_ricollega(idx, tutti, scelte):
         n = cerca.pop((x["w"], x["h"], x["dt"]), None)
         if n: proposte.append(dict(n=n, file=p))
     for n, p in (scelte or {}).items():
-        if dict(n=n, file=p) not in proposte: raise ValueError(f"{n}: «{os.path.basename(str(p))}» non è tra le foto proposte")
+        if dict(n=n, file=p) not in proposte: raise ValueError(lingua.t("server.foto_non_proposta", nome=n, file=os.path.basename(str(p))))
         nuovi[n] = p; trovate += 1; ancora.remove(n); proposte.remove(dict(n=n, file=p))
     return dict(trovate=trovate, mancanti=ancora, totale=len(A.M), diverse=diverse, proposte=proposte), nuovi
 
@@ -2246,54 +2310,54 @@ def _leggi_testo(p):
 def _src_foto(n):
     """file di una foto del progetto che si trova (fidato dall'apertura: motore.album._src_fidate), altrimenti ValueError"""
     s = A.M[A.IDX[n] - 1]["src"]
-    if not s or not os.path.exists(s): raise ValueError("la foto non si trova: ricollegala da Progetto → Ricollega foto")
+    if not s or not os.path.exists(s): raise ValueError(lingua.t("server.foto_si_ricollega"))
     return s
 
 def esporta_progetto(o):
     """pacchetto autonomo del progetto (cartella, e volendo ZIP): album.json, impostazioni, cache, modelli, elenco font e le foto; percorsi riparati da soli all'apertura.
     v1x=True aggiunge spec.py (e le copie del motore che gli servono) per chi apre il progetto con la versione 1.x"""
     dest = os.path.expanduser(o.get("dest") or "")
-    if not os.path.isdir(dest): raise ValueError("scegli una cartella di destinazione")
+    if not os.path.isdir(dest): raise ValueError(lingua.t("server.scegli_cartella_destinazione"))
     nome = nomi.nome_cartella(CFG.get("nome", "Album"), "Album"); out = os.path.join(dest, f"{nome} - progetto"); k = 2
     while os.path.exists(out): out = os.path.join(dest, f"{nome} - progetto {k}"); k += 1
     with LOCK: save(backup=False); metas = copy.deepcopy(A.M); cfg = formato.leggi_json(os.path.join(PROJ, "progetto.json")); spreads = copy.deepcopy(SP); modelli_prj = ut_load() + ut_progetto(); luoghi = A.luoghi_foto()
     con_foto = bool(o.get("foto", True)); zipf = bool(o.get("zip")); v1x = bool(o.get("v1x"))
     def go():
         try:
-            LOG.append(f"Esporto il progetto in {out}"); os.makedirs(os.path.join(out, "_cache"))
+            LOG.append(lingua.t("server.log_prj_esporto", cartella=out)); os.makedirs(os.path.join(out, "_cache"))
             shutil.copy2(os.path.join(PROJ, formato.ALBUM), os.path.join(out, formato.ALBUM))
-            if v1x: formato_1x.esporta(out, spreads, cfg.get("nome", nome), lambda i: metas[i]["n"].rsplit(".", 1)[0]); LOG.append("  spec.py per la versione 1.x aggiunto")
+            if v1x: formato_1x.esporta(out, spreads, cfg.get("nome", nome), lambda i: metas[i]["n"].rsplit(".", 1)[0]); LOG.append("  " + lingua.t("server.log_prj_spec"))
             for f in ("faces.json", "origine.json"):
                 if os.path.exists(os.path.join(PROJ, "_cache", f)): shutil.copy2(os.path.join(PROJ, "_cache", f), os.path.join(out, "_cache", f))
             if os.path.isdir(os.path.join(PROJ, "_cache", "thumbs")): shutil.copytree(os.path.join(PROJ, "_cache", "thumbs"), os.path.join(out, "_cache", "thumbs"))
-            LOG.append("  impostazioni, anteprime e correzioni copiate")
+            LOG.append("  " + lingua.t("server.log_prj_impostazioni"))
             if con_foto:
-                os.makedirs(os.path.join(out, "Foto")); tot = len(metas)
+                os.makedirs(os.path.join(out, "Foto")); tot = len(metas); copiate = 0; _esito(totale=tot)
                 for n, m in enumerate(metas, 1):
-                    if os.path.exists(m.get("src", "")) and A.fidata(m["src"], luoghi): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]          # solo foto del progetto (VER-004); relativo: all'apertura diventa quello della cartella dove sta il progetto
-                    else: LOG.append(f"  ATTENZIONE: {m['n']} non trovata, non è nel pacchetto")
-                    if n % 10 == 0 or n == tot: LOG.append(f"  foto {n} / {tot}")
+                    if os.path.exists(m.get("src", "")) and A.fidata(m["src"], luoghi): shutil.copy2(m["src"], os.path.join(out, "Foto", m["n"])); m["src"] = "Foto/" + m["n"]; copiate += 1; _esito(fatti=copiate)          # solo foto del progetto (VER-004); relativo: all'apertura diventa quello della cartella dove sta il progetto
+                    else: LOG.append("  " + lingua.t("server.log_prj_foto_assente", nome=m["n"]))
+                    if n % 10 == 0 or n == tot: LOG.append("  " + lingua.t("server.log_prj_foto", n=n, totale=tot))
             formato.scrivi_json(os.path.join(out, "_cache", "meta.json"), metas)
             cfg["foto"] = ""; cfg["foto_extra"] = []; cfg["uscita_psd"] = ""             # vuoti = quelli del progetto stesso (Foto, PSD), li riempie l'editor all'apertura
             formato.scrivi_progetto(out, cfg)
-            if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  modelli salvati copiati")
+            if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  " + lingua.t("server.log_prj_modelli"))
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
-            _scrivi_testo(os.path.join(out, "font_usati.txt"), "Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
-            _scrivi_testo(os.path.join(out, "LEGGIMI.txt"), f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
-                + (" (o Importa ZIP se hai il file .zip)" if zipf else "") + ".\n" + ("Le foto sono nella cartella Foto: i percorsi si sistemano da soli." if con_foto else "Le foto NON sono incluse: all'apertura premi «Progetto» → «Ricollega foto» e scegli la cartella con gli originali.")
-                + "\nI PSD già generati non sono inclusi: si rigenerano con Esporta → PSD.\nInstalla i font elencati in font_usati.txt.\n")
+            _scrivi_testo(os.path.join(out, "font_usati.txt"), lingua.t("server.font_usati_intestazione") + ":\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
+            _scrivi_testo(os.path.join(out, "LEGGIMI.txt"), lingua.t("server.leggimi_inizio", nome=cfg.get("nome", nome)) + "\n\n" + lingua.t("server.leggimi_apri_zip" if zipf else "server.leggimi_apri") + "\n"
+                + lingua.t("server.leggimi_foto_incluse" if con_foto else "server.leggimi_foto_assenti")
+                + "\n" + lingua.t("server.leggimi_psd") + "\n" + lingua.t("server.leggimi_font") + "\n")
             res = out
             if zipf:
                 import zipfile
-                LOG.append("  creo lo ZIP…"); res = out + ".zip"
+                LOG.append("  " + lingua.t("server.log_prj_zip")); res = out + ".zip"
                 with zipfile.ZipFile(res, "w", zipfile.ZIP_STORED) as z:
                     for root, _, fs in os.walk(out):
                         for f in fs: p = os.path.join(root, f); z.write(p, os.path.relpath(p, dest))
-            LOG.append(f"Fatto: {sum(len(f) for _, _, f in os.walk(out))} file"); LOG.append("RISULTATO:" + res)
-        except Exception as ex: LOG.append(f"ERRORE: {ex}")
-        LOG.append("[finito]")
-    LOG.clear(); threading.Thread(target=go, daemon=True).start()
+            LOG.append(lingua.tn("server.log_prj_fatto", sum(len(f) for _, _, f in os.walk(out)))); _log_risultato(res)
+        except Exception as ex: _log_errore(ex)
+        _log_finito()
+    azzera_registro(); _esito(dest=out, formato="progetto"); threading.Thread(target=go, daemon=True).start()
     return out
 
 def versioni():
@@ -2319,10 +2383,10 @@ def versioni():
 def ripristina(ts):
     """rimette la versione ts dell'impaginazione e di progetto.json (prima salva lo stato attuale come backup) e riavvia l'editor senza risalvare.
     La copia si controlla prima di toccare il progetto; una copia spec.py (1.x) si converte senza eseguirla"""
-    if not isinstance(ts, str) or not re.fullmatch(r"\d{8}-\d{6}", ts): raise ValueError("versione non trovata")
+    if not isinstance(ts, str) or not re.fullmatch(r"\d{8}-\d{6}", ts): raise ValueError(lingua.t("server.versione_non_trovata"))
     bk = os.path.join(PROJ, "_backup_editor"); srcj = os.path.join(bk, f"{ts}_progetto.json")
     src = next((p for p in (os.path.join(bk, f"{ts}_{formato.ALBUM}"), os.path.join(bk, f"{ts}_spec.py")) if os.path.exists(p)), None)
-    if not src: raise ValueError("versione non trovata")
+    if not src: raise ValueError(lingua.t("server.versione_non_trovata"))
     with LOCK:
         doc = formato.leggi_album(src, set(A.IDX)) if src.endswith(".json") else formato.documento_1x(src)
         old = V.progetto(formato.leggi_json(srcj)) if os.path.exists(srcj) else None
@@ -2390,11 +2454,12 @@ class H(Gestore):
             elif u.path.startswith("/api/info/"):
                 n = unquote(u.path.rsplit("/", 1)[1])                              # nomi con spazi, accenti, %, #, ?, + (BUG-002)
                 if n in A.IDX: self.send(photo_info(n))
-                else: self.send({"errore": "foto non trovata"}, code=404)
+                else: self.send({"errore": lingua.t("server.foto_non_trovata")}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"],
-                                                        "assistente": str(LASTC or "").startswith("assistente-")})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
+                                                        "assistente": str(LASTC or "").startswith("assistente-"), "esporta": bool(ESPORTA)})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
             elif u.path == "/api/log": self.send(LOG[-200:])
+            elif u.path == "/api/esito": self.send(esito_esportazione())
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
             elif u.path == "/api/versioni": self.send(versioni())
@@ -2402,10 +2467,10 @@ class H(Gestore):
             elif u.path.startswith("/img/spread/"): self.send(spread_jpg(int(u.path.rsplit("/", 1)[1]), numero(q, "k", 0.2, 0.02, 1.0), ((q["hide"][0][0], int(q["hide"][0][2:])) if q.get("hide") else None)), "image/jpeg")
             elif u.path.startswith("/img/thumb/"):
                 n = unquote(u.path.rsplit("/", 1)[1]); w = round(numero(q, "w", 260, 16, 1200)); et = '"%s-%d-%d"' % (hashlib.md5(n.encode("utf-8"), usedforsecurity=False).hexdigest()[:16], w, PV.get(n, 0))
-                if n not in A.IDX: self.send({"errore": "foto non trovata"}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
+                if n not in A.IDX: self.send({"errore": lingua.t("server.foto_non_trovata")}, code=404)                # solo le foto del progetto (niente «..» dopo la decodifica)
                 elif self.headers.get("If-None-Match") == et: self.send_response(304); self.send_header("ETag", et); self.end_headers()
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)
-            else: self.send({"errore": "non trovato"}, code=404)
+            else: self.send({"errore": lingua.t("server.non_trovato")}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
@@ -2422,7 +2487,7 @@ class H(Gestore):
                 self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono"), body.get("modo", "std"), body.get("cm")))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
-                n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
+                n, sk = do_import([RADICI.controlla(p, "foto_o_cartella") for p in body["paths"]])
                 if body.get("a_caldo") is True: self.send({"importate": n, "saltate": sk, "riavvio": False, "aggiunte": aggiungi_a_caldo() if n else 0})
                 else:
                     if n: restart()
@@ -2433,20 +2498,21 @@ class H(Gestore):
             elif u.path == "/api/ricollega":
                 c = body.get("cartella") or (pick("folder") or [""])[0]
                 if not c: self.send({"annullato": True})
-                else: self.send(ricollega(RADICI.controlla(c, "quella cartella"), bool(body.get("prova")), body.get("scelte")))
+                else: self.send(ricollega(RADICI.controlla(c, "cartella"), bool(body.get("prova")), body.get("scelte")))
             elif u.path == "/api/prj_esporta":
                 d = body.get("dest") or (pick("folder") or [""])[0]
                 if not d: self.send({"annullato": True})
-                else: self.send({"cartella": esporta_progetto(dict(body, dest=RADICI.controlla(d, "quella cartella")))})
+                else: self.send({"cartella": esporta_progetto(dict(body, dest=RADICI.controlla(d, "cartella")))})
             elif u.path == "/api/ripristina": ripristina(body["ts"]); self.send({"riavvio": True})
             elif u.path == "/api/save": ts = save(); self.send(dict(state(), salvato=ts))
             elif u.path == "/api/export":
-                if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "quella cartella")
-                LOG.clear(); self.send({"spread": run_export(body)})
-            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
-            else: self.send({"errore": "non trovato"}, code=404)
+                if body.get("dest"): body["dest"] = RADICI.controlla(body["dest"], "cartella")
+                azzera_registro(); self.send({"spread": run_export(body)})
+            elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel_percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
+            else: self.send({"errore": lingua.t("server.non_trovato")}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
+        except Conflitto as e: self.send({"errore": str(e), "codice": "altra_scheda"}, code=400)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio
@@ -2473,6 +2539,7 @@ def inizializza(progetto, home="", sottofondo=False):
         GD = [dict(v=list(g.get("v", [])), h=list(g.get("h", []))) for g in CFG.get("guide", [])][:len(SP)]
         GD += [dict(v=[], h=[]) for _ in range(len(SP) - len(GD))]
         UNDO, REDO, CLIP, LOG = [], [], [], []
+        azzera_registro()
         SAVED = snap(); REV, LASTC = 0, None
         BL = round(A.B); VW, VH = A.CW - 2 * BL, A.CH - 2 * BL
         BOOT = str(time.time())
@@ -2514,7 +2581,7 @@ def prepara_in_sottofondo():
 def _prepara(gen, mini, volti, cartella):
     try: trovati = _prepara_foto(gen, mini, volti, cartella)
     except Exception as ex:                                             # disco pieno, cartella sparita…: si smette, l'editor resta com'è
-        trovati = None; LOG.append(f"preparazione delle foto interrotta: {ex}")
+        trovati = None; LOG.append(lingua.t("server.preparazione_interrotta", motivo=ex))
     with LOCK:
         if PREP["gen"] == gen:
             if trovati is None: PREP["attivo"] = False

@@ -16,13 +16,13 @@ import logging
 import os
 import threading
 
-from .. import sicurezza
+from .. import lingua, sicurezza
 from ..piattaforma import dialoghi
 
 TIPI = ("cartella", "zip", "foto")
-FILTRO_FOTO = "Foto (" + ";".join(dialoghi.TIPI_FOTO) + ")"
+FILTRO_FOTO = "{nome} (" + ";".join(dialoghi.TIPI_FOTO) + ")"           # il nome nella lingua in uso: filtro_foto()
 FILTRO_ZIP = "ZIP (*.zip;*.ZIP)"
-FILTRO_CATALOGO = "Catalogo (*.json;*.JSON)"
+FILTRO_CATALOGO = "{nome} (*.json;*.JSON)"                         # il nome nella lingua in uso: filtro_catalogo()
 _TITOLO_GTK = {"cartella": "linux.openFolder", "zip": "linux.openFile", "catalogo": "linux.openFile", "foto": "linux.openFiles"}
 log = logging.getLogger("impaginatore.desktop")
 
@@ -42,15 +42,25 @@ class DialoghiFinestra(dialoghi.Dialoghi):
             f.localization[_TITOLO_GTK[tipo]] = str(messaggio)
             if tipo == "cartella": r = f.create_file_dialog(T.FOLDER)
             elif tipo == "zip": r = f.create_file_dialog(T.OPEN, file_types=(FILTRO_ZIP,))
-            elif tipo == "catalogo": r = f.create_file_dialog(T.OPEN, file_types=(FILTRO_CATALOGO,))
-            else: r = f.create_file_dialog(T.OPEN, allow_multiple=True, file_types=(FILTRO_FOTO,))
+            elif tipo == "catalogo": r = f.create_file_dialog(T.OPEN, file_types=(filtro_catalogo(),))
+            else: r = f.create_file_dialog(T.OPEN, allow_multiple=True, file_types=(filtro_foto(),))
         return [os.path.normpath(p) for p in (r or ()) if p]          # None: annullata (o errore del motore, che pywebview annota)
+
+
+def filtro_foto():
+    """filtro delle foto per le finestre di scelta: «Foto (*.jpg;…)» / «Photos (*.jpg;…)»"""
+    return FILTRO_FOTO.format(nome=lingua.t("desktop.filtro_foto"))
+
+
+def filtro_catalogo():
+    """filtro dei cataloghi dei laboratori: «Catalogo (*.json;*.JSON)» / «Catalogue (*.json;*.JSON)»"""
+    return FILTRO_CATALOGO.format(nome=lingua.t("desktop.filtro_catalogo"))
 
 
 def scegli(tipo, messaggio):
     """POST /api/dialogo della schermata: percorsi scelti con le finestre di scelta di questo processo ([] se annullata)"""
-    if tipo not in TIPI: raise ValueError("finestra di scelta sconosciuta")
-    if isinstance(dialoghi.attuali(), Ponte): raise ValueError("questa schermata non apre finestre di scelta sue")       # chiederebbe a sé stessa
+    if tipo not in TIPI: raise ValueError("finestra di scelta sconosciuta")        # non tradotto: risposta all'editor (Ponte), che non la mostra
+    if isinstance(dialoghi.attuali(), Ponte): raise ValueError("questa schermata non apre finestre di scelta sue")       # non tradotto: come sopra; chiederebbe a sé stessa
     m = str(messaggio or "")[:200]
     if tipo == "cartella": return [p for p in [dialoghi.scegli_cartella(m)] if p]
     if tipo == "zip": return [p for p in [dialoghi.scegli_zip(m)] if p]

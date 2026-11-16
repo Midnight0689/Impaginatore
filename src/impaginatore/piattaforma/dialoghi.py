@@ -17,6 +17,7 @@ import shutil
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 
+from .. import lingua
 from . import sistema
 from .processi import ambiente_figli
 
@@ -30,6 +31,11 @@ def senza_barra(p):
     return q if q and not q.endswith(":") else p
 
 
+def _testo(messaggio, chiave):
+    """il titolo della finestra: quello dato (anche vuoto), altrimenti quello della tabella nella lingua in uso"""
+    return lingua.t(chiave) if messaggio is None else messaggio
+
+
 class Dialoghi:
     """interfaccia: le sottoclassi implementano _scegli(tipo, messaggio) -> [percorsi]; tipo = "cartella", "zip", "catalogo"
     (un file JSON) o "foto" (più file)"""
@@ -38,19 +44,19 @@ class Dialoghi:
     def _scegli(self, tipo, messaggio):
         raise NotImplementedError
 
-    def scegli_cartella(self, messaggio="Scegli la cartella"):
-        return senza_barra((self._scegli("cartella", messaggio) or [""])[0])
+    def scegli_cartella(self, messaggio=None):
+        return senza_barra((self._scegli("cartella", _testo(messaggio, "sistema.scegli_cartella")) or [""])[0])
 
-    def scegli_zip(self, messaggio="Scegli il file ZIP del progetto"):
-        return (self._scegli("zip", messaggio) or [""])[0]
+    def scegli_zip(self, messaggio=None):
+        return (self._scegli("zip", _testo(messaggio, "sistema.scegli_zip")) or [""])[0]
 
-    def scegli_catalogo(self, messaggio="Scegli il catalogo del laboratorio (.json)"):
-        return (self._scegli("catalogo", messaggio) or [""])[0]
+    def scegli_catalogo(self, messaggio=None):
+        return (self._scegli("catalogo", _testo(messaggio, "sistema.scegli_catalogo")) or [""])[0]
 
     def scegli_percorsi(self, cartella=False, messaggio=None):
         """una cartella (cartella=True) o una o più foto (JPEG, PNG, TIFF, WebP, HEIC): elenco di percorsi"""
-        if cartella: return self._scegli("cartella", messaggio or "Scegli la cartella")
-        return self._scegli("foto", messaggio or "Scegli le foto")
+        if cartella: return self._scegli("cartella", _testo(messaggio, "sistema.scegli_cartella"))
+        return self._scegli("foto", _testo(messaggio, "sistema.scegli_foto"))
 
 
 class Nessuno(Dialoghi):
@@ -161,7 +167,7 @@ def attuali():
     return _ATTUALE[0] or predefiniti()
 
 
-def scegli_cartella(messaggio="Scegli la cartella"): return attuali().scegli_cartella(messaggio)
-def scegli_zip(messaggio="Scegli il file ZIP del progetto"): return attuali().scegli_zip(messaggio)
-def scegli_catalogo(messaggio="Scegli il catalogo del laboratorio (.json)"): return attuali().scegli_catalogo(messaggio)
+def scegli_cartella(messaggio=None): return attuali().scegli_cartella(messaggio)
+def scegli_zip(messaggio=None): return attuali().scegli_zip(messaggio)
+def scegli_catalogo(messaggio=None): return attuali().scegli_catalogo(messaggio)
 def scegli_percorsi(cartella=False, messaggio=None): return attuali().scegli_percorsi(cartella, messaggio)

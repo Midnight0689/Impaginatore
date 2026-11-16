@@ -52,6 +52,9 @@ L'assistente non può accendere le immagini da solo.
 
 La scelta vale subito, senza riavviare l'assistente. Per spegnerle, spegni l'interruttore.
 
+Se la tua licenza non comprende l'assistente (Essenziale), l'interruttore non c'è: la finestra dice in quali licenze si
+trova.
+
 ### L'altro modo: l'opzione nella configurazione
 
 Chi configura l'assistente a mano può aggiungere `--consenti-immagini` al comando (vedi [Collegare](03-collegare.md)).

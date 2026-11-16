@@ -124,7 +124,7 @@ def cartella_sessioni():
 
 
 def _file(tipo, porta):
-    if tipo not in TIPI: raise ValueError("tipo di server sconosciuto")
+    if tipo not in TIPI: raise ValueError("tipo di server sconosciuto")          # non tradotto: errore di programmazione, non arriva mai all'utente
     return os.path.join(cartella_sessioni(), f"{tipo}-{int(porta)}.json")
 
 

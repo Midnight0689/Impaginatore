@@ -17,6 +17,9 @@ Da sinistra a destra:
   - «Apri album esistente…»: aggiunge all'elenco un album che sta in un'altra cartella;
   - «Importa ZIP…»: apre un album ricevuto come file ZIP;
   - «Assistente AI…»: impostazioni dell'assistente (vedi la [guida all'assistente](assistente/INDICE.md));
+  - «Lingua…»: italiano o inglese. Vale per tutto il programma; la schermata cambia subito, gli album già aperti quando
+    li riapri. Al primo avvio il programma usa la lingua del computer (italiano se il computer è in italiano, altrimenti
+    inglese);
   - «Chiudi programma».
 
 ## L'elenco degli album

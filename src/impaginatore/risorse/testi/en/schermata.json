@@ -1,0 +1,16 @@
+{
+  "schermata.cartella_foto_assente": "The photos folder doesn't exist",
+  "schermata.cartella_senza_album": "There's no progetto.json in that folder: choose the album's folder",
+  "schermata.finestra_non_aperta": "the program window isn't open",
+  "schermata.immagini_vero_falso": "immagini: true or false",
+  "schermata.misura_non_numero": "Invalid measurements: “{valore}” isn't a number",
+  "schermata.misura_non_valida": "invalid measurement",
+  "schermata.misure_fuori": "Measurements out of range: width 5–300 cm, height 5–200 cm",
+  "schermata.misure_non_valide": "Invalid measurements: {motivo}",
+  "schermata.non_in_elenco": "album not in the list",
+  "schermata.scegli_cartella_album": "Choose the album's folder (the one with progetto.json)",
+  "schermata.scegli_cartella_foto": "Choose the folder with the client's photos",
+  "schermata.scegli_zip": "Choose the album's ZIP file",
+  "schermata.solo_creati_qui": "Only albums created here can be moved to the Trash",
+  "schermata.zip_senza_album": "There's no album in the ZIP file (progetto.json is missing)"
+}

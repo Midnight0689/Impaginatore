@@ -1,7 +1,8 @@
 """La finestra del programma con pywebview: scelta tra finestra e browser, apertura, chiusura ordinata.
 
 motore()  pywebview pronto con il motore giusto per il sistema, oppure None (motivo nel registro: si apre il browser)
-esegui()  la finestra di chi ha avviato la schermata dei progetti: alla chiusura salva e chiude gli editor, poi la schermata
+esegui()  la finestra di chi ha avviato la schermata dei progetti: alla chiusura salva e chiude gli editor, poi la schermata;
+          con un'esportazione in corso chiede prima conferma (T-206)
 ospite()  una seconda finestra sulla schermata già in funzione (secondo avvio del comando): alla chiusura non ferma niente
 """
 import logging
@@ -10,7 +11,7 @@ import subprocess  # nosec B404  # solo per TimeoutExpired: qui non si lancia ne
 import sys
 import threading
 
-from .. import risorse, sicurezza
+from .. import lingua, risorse, sicurezza
 from ..piattaforma import cartelle, dialoghi, sistema
 from . import dialoghi as dialoghi_finestra
 from .geometria import MINIMA, Geometria
@@ -67,11 +68,11 @@ def motore():
     try:
         import webview as wv
         from webview.guilib import initialize               # non «webview.guilib.initialize»: nel pacchetto «guilib» è una variabile (None)
-    except ImportError: return _no("pywebview non è installato: serve l'extra «desktop»")
-    if s == "linux" and not _gtk(): return _no("mancano PyGObject e WebKit2GTK del sistema")
+    except ImportError: return _no("pywebview non è installato: serve l'extra «desktop»")                 # non tradotto: registro e terminale, non l'interfaccia
+    if s == "linux" and not _gtk(): return _no("mancano PyGObject e WebKit2GTK del sistema")              # non tradotto: registro e terminale
     try: lib = initialize(GUI[s])
-    except Exception as e: return _no(f"il motore della finestra non parte: {e}")       # WebViewException e gli errori del sistema (.NET...)
-    if lib.renderer not in MOTORI: return _no(f"motore {lib.renderer} non adatto: serve WebView2 su Windows, WebKit su macOS e Linux")
+    except Exception as e: return _no(f"il motore della finestra non parte: {e}")       # non tradotto: registro e terminale. WebViewException e gli errori del sistema (.NET...)
+    if lib.renderer not in MOTORI: return _no(f"motore {lib.renderer} non adatto: serve WebView2 su Windows, WebKit su macOS e Linux")      # non tradotto: registro e terminale
     return Motore(wv, lib)
 
 
@@ -96,6 +97,7 @@ class Finestra:
         self.geo = Geometria(os.path.join(cartelle.dati_utente(), "finestra.json"))
         self.ultima = f"http://127.0.0.1:{self.porta}"      # origine dell'ultima pagina del programma (per tornarci)
         self.finestra = None
+        self.in_corso, self.forza = None, False              # proteggi(): esportazioni in corso? / chiusura già confermata
 
     def crea(self, indirizzo):
         """crea la finestra sull'indirizzo di avvio (che non passa da nessuna riga di comando)"""
@@ -129,6 +131,36 @@ class Finestra:
         """chiude la finestra da un altro thread («Esci» nella pagina, riavvio dopo un aggiornamento)"""
         if self.finestra is not None: self.finestra.destroy()
 
+    def proteggi(self, in_corso):
+        """prima di chiudersi la finestra chiede conferma se in_corso() è vero (un'esportazione che la chiusura interromperebbe)"""
+        self.in_corso = in_corso
+        self.finestra.events.closing += self.chiusura
+
+    def chiusura(self):
+        """evento closing, nel thread della finestra: False la annulla. La conferma si chiede da un altro thread (la finestra
+        di conferma di pywebview, chiesta dal thread della finestra, aspetterebbe sé stessa) e, se l'utente conferma, la
+        finestra si richiude: questa volta senza domande"""
+        if self.forza or not self.in_corso(): return None
+        threading.Thread(target=self.conferma, daemon=True).start()
+        return False
+
+    def conferma(self):
+        try: ok = self.finestra.create_confirmation_dialog(lingua.t("desktop.esporta_titolo"), lingua.t("desktop.esporta_testo"))
+        except Exception as e:                          # finestra chiusa nel frattempo o motore senza conferme: resta aperta
+            log.warning("conferma di chiusura non mostrata: %s", e); return
+        if ok is True: self.forza = True; self.chiudi()
+
+
+def esportazioni(editors, attesa=2):
+    """quanti editor lanciati da questa schermata ({progetto: (Popen, porta)}) stanno esportando (/api/ping «esporta»).
+    Un editor che non risponde non conta: se non risponde non sta scrivendo niente che la chiusura possa interrompere"""
+    n = 0
+    for pr, pt in list(editors.values()):
+        if pr.poll() is not None: continue
+        try: n += bool(sicurezza.chiedi(pt, "/api/ping", sicurezza.gettone_di("editor", pt), timeout=attesa).get("esporta"))
+        except (OSError, ValueError, AttributeError) as e: log.debug("editor sulla porta %s non risponde: %s", pt, type(e).__name__)
+    return n
+
 
 def chiudi_editor(editors, attesa=5):
     """chiusura ordinata degli editor lanciati da questa schermata ({progetto: (Popen, porta)}): ognuno salva (POST /api/save
@@ -160,7 +192,7 @@ def esegui(m, srv, fermo):
     H.esci, H.FINESTRA = f.chiudi, True
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        w = f.crea(srv.indirizzo_avvio())
+        w = f.crea(srv.indirizzo_avvio()); f.proteggi(lambda: esportazioni(H.EDITORS) > 0)
         if proprie: dialoghi.imposta(dialoghi_finestra.DialoghiFinestra(w, m.wv.FileDialog))
         f.avvia()
     finally:

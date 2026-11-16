@@ -112,7 +112,7 @@ def test_finestre_di_scelta_del_catalogo(monkeypatch):
         def create_file_dialog(self, tipo, **kw): self.scelte.append((tipo, kw, dict(self.localization))); return ("/x/lab.json",)
     f = Finestra()
     assert D.DialoghiFinestra(f, types.SimpleNamespace(OPEN=10, FOLDER=20)).scegli_catalogo("Catalogo") == os.path.normpath("/x/lab.json")
-    assert f.scelte == [(10, dict(file_types=(D.FILTRO_CATALOGO,)), {"linux.openFile": "Catalogo"})]
+    assert f.scelte == [(10, dict(file_types=(D.filtro_catalogo(),)), {"linux.openFile": "Catalogo"})]
 
 
 # ---------------------------------------------------------------- il prodotto dell'album aperto

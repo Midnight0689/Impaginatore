@@ -12,6 +12,7 @@ di sessione), le cartelle di sistema. L'utente può comunque sceglierle con una 
 import os
 import threading
 
+from . import lingua
 from .piattaforma import cartelle, sistema
 
 _SISTEMA_POSIX = ("/etc", "/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/boot", "/dev", "/proc", "/sys", "/run", "/snap",
@@ -106,8 +107,10 @@ class Radici:
     def contiene(self, p):
         return bool(p) and any(dentro(p, r) for r in self.tutte())
 
-    def controlla(self, p, cosa="questo percorso"):
-        """p (reale) se è consentito, altrimenti FuoriDalleRadici"""
+    def controlla(self, p, cosa="questo_percorso"):
+        """p (reale) se è consentito, altrimenti FuoriDalleRadici. `cosa` dice che cos'è, nella frase del rifiuto: questo_percorso,
+        quel_percorso, cartella, cartella_foto, foto, foto_o_cartella (testi progetto.cosa_…); un altro valore va dentro com'è"""
         if not isinstance(p, str) or not self.contiene(p):
-            raise FuoriDalleRadici(f"Non posso usare {cosa}: sta fuori dalle cartelle del progetto e da quelle che hai scelto. Sceglilo con «Scegli…»")
+            chiave = "progetto.cosa_" + cosa
+            raise FuoriDalleRadici(lingua.t("progetto.fuori_dalle_radici", cosa=lingua.t(chiave) if chiave in lingua.tabella(lingua.attuale()) else cosa))
         return reale(p)

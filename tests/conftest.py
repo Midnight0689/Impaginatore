@@ -28,6 +28,7 @@ def casa(tmp_path, monkeypatch):
     monkeypatch.setenv("IMPAGINATORE_FINESTRA", "no")                     # niente finestra del programma (desktop): il browser, intercettato
     monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "no")
     monkeypatch.setenv("IMPAGINATORE_SENZA_RIAVVIO", "1")
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")                       # lingua «del sistema»: i test non dipendono dal computer (T-206)
     for k in ("IMPAGINATORE_GETTONE", "IMPAGINATORE_MAX_MPIXEL", "IMPAGINATORE_REGISTRO"):      # ogni server di prova ha il suo gettone
         monkeypatch.setenv(k, ""); monkeypatch.delenv(k)                    # (così anche quello che main() scrive nell'ambiente sparisce dopo il test)
     from impaginatore.piattaforma import dialoghi

@@ -13,6 +13,10 @@
 
 F nasconde i pannelli e lascia solo lo spread («Tela piena»). Premi F di nuovo per tornare.
 
+Con la finestra stretta (meno di 1280 pixel di larghezza) l'elenco degli spread mostra solo i numeri e il pannello di
+destra resta chiuso. Lo apri con «Pannello», in fondo alla barra dello spread: si apre sopra lo spread, che non si
+rimpicciolisce. Esc lo chiude.
+
 ## Gli spread
 
 - Clicca uno spread nell'elenco per aprirlo. ↑ e ↓ passano allo spread prima e dopo.

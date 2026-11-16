@@ -1,0 +1,17 @@
+{
+  "motore.danneggiata": "damaged or incomplete file: copy the photo again (the program rereads it by itself) or remove it from the folder",
+  "motore.formato_non_supportato": "{formato} format isn't supported: export it as one of the formats that open (JPEG, PNG, TIFF, WebP, HEIC)",
+  "motore.nome_doppio": "there's already a photo called “{nome}”",
+  "motore.non_si_apre": "the file doesn't open as a photo",
+  "motore.originale_non_trovato": "{nome}: the original can't be found (relink the photo)",
+  "motore.photoshop_linux": "PSDs are created with Photoshop, which isn't available for Linux: export to JPG or PDF (or open the project on a Mac or a Windows PC with Photoshop)",
+  "motore.photoshop_mac": "Photoshop wasn't found in /Applications: it's needed to create PSDs (JPG and PDF work without it)",
+  "motore.photoshop_windows": "Photoshop wasn't found in the Program Files\\Adobe folder: it's needed to create PSDs (JPG and PDF work without it)",
+  "motore.psd_aperto": "it's open in Photoshop",
+  "motore.psd_esiste": "it exists and I didn't generate it",
+  "motore.psd_modificato": "it was edited by hand after it was generated",
+  "motore.psd_registro_illeggibile": "psd_generati.json can't be read ({motivo}): I'll rebuild it",
+  "motore.psd_saltato": "Skipped spread {n}: {motivo} -> use modifica_psd.py or --forza if the user really wants to regenerate it",
+  "motore.psd_verifica": "Next: python verifica_psd.py --progetto {progetto}",
+  "motore.troppo_grande": "{nome}: photo too large (over {milioni} million pixels; change the limit with IMPAGINATORE_MAX_MPIXEL)"
+}

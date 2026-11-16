@@ -1,6 +1,7 @@
 """File che il programma usa così come sono: le pagine dell'interfaccia (home.html, index.html), i file statici che le
-pagine caricano (statici/: token della marca, caratteri con le loro licenze), la tabella dei testi dell'interfaccia
-(testi/it.json) e la tabella della vibranza misurata in Photoshop (vib_lut.npz). Fanno parte del pacchetto installato."""
+pagine caricano (statici/: token della marca, caratteri con le loro licenze), la tabella dei testi in italiano e in
+inglese (testi/<lingua>/<area>.json, vedi lingua.py) e la tabella della vibranza misurata in Photoshop (vib_lut.npz).
+Fanno parte del pacchetto installato."""
 import json
 import os
 
@@ -24,9 +25,21 @@ def statici():
     return {n: TIPI_STATICI[os.path.splitext(n)[1]] for n in sorted(os.listdir(d)) if os.path.splitext(n)[1] in TIPI_STATICI and os.path.isfile(os.path.join(d, n))}
 
 
+def aree(lingua="it"):
+    """nomi dei file della tabella di una lingua (senza .json): comune, home, editor, server…"""
+    return sorted(n[:-5] for n in os.listdir(percorso(os.path.join("testi", lingua))) if n.endswith(".json"))
+
+
+def testi_area(lingua, area):
+    """{chiave: testo} di un file della tabella"""
+    return json.loads(leggi(os.path.join("testi", lingua, f"{area}.json")).decode("utf-8"))
+
+
 def testi(lingua="it"):
-    """tabella dei testi dell'interfaccia: {chiave: testo} (T-206 aggiungerà le altre lingue)"""
-    return json.loads(leggi(os.path.join("testi", f"{lingua}.json")).decode("utf-8"))
+    """tabella dei testi di una lingua: {chiave: testo}, tutti i file insieme (lingua.py la legge una volta)"""
+    d = {}
+    for a in aree(lingua): d.update(testi_area(lingua, a))
+    return d
 
 
 def testi_pagina(pagina, lingua="it"):
