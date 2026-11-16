@@ -36,7 +36,7 @@ nei negli nelle con su sul sullo sulla sui sulle per tra fra che non è e ed o m
 questi queste ti tu tuo tua tuoi tue già più può puoi sono hai ha ho the a an to of and or on for with is are not this that your
 you be it its from into by at as was were has have""".split())
 ELENCO_LIBERO = {"Impaginatore", "Enter", "Escape", "Tab", "Delete", "Backspace", "Shift", "Alt", "Meta", "Control", "Home", "End",
-                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial", "Stefano", "Imperato",
+                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial",
                  "Italiano", "English", "Album", "Spread", "Pro", "Studio", "Essenziale", "Essential", "Laboratorio"}
 
 

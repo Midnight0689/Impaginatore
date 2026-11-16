@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import types
 
 import pytest
@@ -38,8 +39,9 @@ class Evento:
 class FintaFinestra:
     def __init__(self, titolo="t", **kw):
         self.titolo, self.kw, self.uid = titolo, kw, "master"
-        self.events = types.SimpleNamespace(**{n: Evento() for n in ("before_show", "loaded", "moved", "resized", "maximized", "minimized", "restored", "closing")})
+        self.events = types.SimpleNamespace(**{n: Evento() for n in ("before_show", "shown", "loaded", "moved", "resized", "maximized", "minimized", "restored", "closing")})
         self.localization, self.url, self.caricati, self.distrutta, self.scelte, self.risposta = {}, kw.get("url"), [], False, [], None
+        self.mostrata = not kw.get("hidden")
         self.x, self.y, self.width, self.height = 30, 40, 1300, 820
 
     def get_current_url(self): return self.url
@@ -48,6 +50,8 @@ class FintaFinestra:
         self.caricati.append(u); self.url = u
 
     def destroy(self): self.distrutta = True
+
+    def show(self): self.mostrata = True
 
     def create_file_dialog(self, tipo, **kw):
         self.scelte.append((tipo, kw, dict(self.localization))); return self.risposta
@@ -61,7 +65,8 @@ def sistema(monkeypatch):
 
 @pytest.fixture
 def wv(monkeypatch):
-    """pywebview finto in sys.modules (anche dove quello vero è installato). start() lancia before_show, poi wv.durante(finestra)"""
+    """pywebview finto in sys.modules (anche dove quello vero è installato). start() mostra la prima finestra (shown: la
+    schermata di avvio, se c'è), lancia before_show dell'ultima, poi wv.durante(finestra)"""
     m = types.ModuleType("webview")
     m.settings = dict(OPEN_EXTERNAL_LINKS_IN_BROWSER=True, ALLOW_FILE_URLS=True, ALLOW_DOWNLOADS=True, IGNORE_SSL_ERRORS=True, REMOTE_DEBUGGING_PORT=9222)
     m.FileDialog = types.SimpleNamespace(OPEN=10, FOLDER=20, SAVE=30)
@@ -72,7 +77,9 @@ def wv(monkeypatch):
         f = FintaFinestra(titolo, **kw); m.finestre.append(f); return f
 
     def start(**kw):
-        m.avvii.append(kw); f = m.finestre[-1]; f.events.before_show(); m.durante(f)
+        m.avvii.append(kw); f = m.finestre[-1]
+        if len(m.finestre) > 1: m.finestre[0].events.shown()
+        f.events.before_show(); m.durante(f)
 
     def initialize(gui):
         m.gui = gui
@@ -362,7 +369,7 @@ def test_crea_e_avvia(motore, wv, home, sistema):
     w = f.crea(AVVIO)
     assert wv.settings == dict(OPEN_EXTERNAL_LINKS_IN_BROWSER=False, ALLOW_FILE_URLS=False, ALLOW_DOWNLOADS=False, IGNORE_SSL_ERRORS=False, REMOTE_DEBUGGING_PORT=None)
     assert w.titolo == "Impaginatore" and w.kw == dict(url=AVVIO, min_size=(1024, 700), background_color="#2B2B2B", text_select=True, draggable=True, zoomable=False,
-                                                     width=1440, height=900, x=None, y=None, maximized=False)
+                                                     hidden=False, width=1440, height=900, x=None, y=None, maximized=False)
     assert F.ATTUALE[0] is f and w.events.before_show() == [False], "filtro del motore non installato (pywebview finto): resta il controllo dopo il caricamento"
     f.avvia()
     dati = os.environ["IMPAGINATORE_DATI"]
@@ -448,7 +455,10 @@ class FintoServer:
 
 def _esegui(motore, wv, home, monkeypatch, durante=None):
     import threading
+
+    from impaginatore.desktop import avvio
     chiusi, visto = [], {}
+    monkeypatch.setattr(avvio, "MINIMO", 0); monkeypatch.setattr(avvio, "MASSIMO", 0.05)       # la schermata di avvio non aspetta (la provano test_avvio e test_esegui_con_la_schermata_di_avvio)
     monkeypatch.setattr(F, "chiudi_editor", chiusi.append)
     esci = home.esci
 
@@ -545,6 +555,22 @@ def test_esegui_dopo_un_rilancio(motore, wv, home, monkeypatch, nome, durante):
     monkeypatch.setenv("IMPAGINATORE_DIALOGHI", "finestra:9999"); motore.nome = nome
     v = _esegui(motore, wv, home, monkeypatch)
     assert v["env"] == durante and not isinstance(v["dialoghi"], D.Ponte) and v["env_dopo"] == "finestra:9999"
+
+
+def test_esegui_con_la_schermata_di_avvio(motore, wv, home, monkeypatch, caplog):
+    """T-207: prima la schermata di avvio, la finestra del programma nasce nascosta e si mostra quando la pagina degli
+    album è pronta (PRONTA), poi la schermata si chiude. Se la schermata non si crea, la finestra si mostra subito"""
+    from impaginatore.desktop import avvio
+    monkeypatch.setattr(avvio.threading, "Thread", lambda target, daemon=None, name=None: types.SimpleNamespace(start=target))
+    monkeypatch.setattr(home, "PRONTA", threading.Event()); home.PRONTA.set()
+    v = _esegui(motore, wv, home, monkeypatch)
+    schermata, finestra = wv.finestre
+    assert v["rc"] == 0 and "html" in schermata.kw and schermata.kw["frameless"] and schermata.distrutta
+    assert finestra.kw["url"] == AVVIO and finestra.kw["hidden"] is True and finestra.mostrata, "nascosta alla creazione, mostrata quando la pagina è pronta"
+    wv.finestre.clear()
+    monkeypatch.setattr(avvio, "pagina", lambda: 1 / 0)
+    with caplog.at_level(logging.WARNING, logger="impaginatore.desktop"): v = _esegui(motore, wv, home, monkeypatch)
+    assert [f.kw["hidden"] for f in wv.finestre] == [False] and "schermata di avvio non creata" in caplog.text and v["rc"] == 0
 
 
 def test_esegui_errore_della_finestra(motore, wv, home, monkeypatch):

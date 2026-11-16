@@ -18,12 +18,14 @@ import webbrowser  # noqa: F401  (resta come attributo del modulo: lo intercetta
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__, aggiornamenti, archivio, formato, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
+from ..aggiornamenti import lanciatore
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 from .. import licenze                         # T-202: licenza e prova gratuita, controllate su questo computer (docs/architettura/LICENZE.md)
 from .. import laboratori                      # T-208: cataloghi dei laboratori (docs/architettura/CATALOGHI.md)
 from .. import desktop                         # T-201: finestra del programma (pywebview si carica solo in desktop.motore())
 from ..desktop import dialoghi as desktop_dialoghi
+from ..desktop import finestra as desktop_finestra      # T-207: esportazioni in corso e chiusura ordinata degli editor, anche senza finestra
 from ..mcp import consenso as consenso_mcp      # T-203/T-205: l'interruttore «L'assistente può vedere le immagini» (solo libreria standard)
 from .. import statistiche                      # T-204: statistiche d'uso facoltative, solo con il consenso (docs/architettura/STATISTICHE.md)
 
@@ -36,6 +38,7 @@ LOCK = threading.Lock()
 EDITORS = {}                                   # percorso progetto -> (Popen, porta)
 SERVER = None                                  # server della schermata (crea_server): il suo gettone resta dopo un riavvio
 FINESTRA = False                               # la schermata è nella finestra del programma (desktop.esegui): dialoghi per gli editor, riavvio con la finestra
+PRONTA = threading.Event()                     # la pagina ha chiesto l'elenco degli album: la schermata Album è pronta (fine della schermata di avvio)
 RADICI = percorsi.Radici(lambda: [PROGETTI] + registro())      # cartelle che la pagina può nominare: progetti e cartelle scelte con le finestre di sistema
 log = logging.getLogger("impaginatore.home")
 
@@ -190,14 +193,13 @@ def scegli_cartella(msg=None):
 
 
 def riavvia_programma():
-    """dopo un aggiornamento: chiude gli editor, rilancia il programma sulla stessa porta (la pagina si ricarica da sola) ed esce.
-    Con la finestra del programma il rilancio apre una finestra nuova (questa si chiude con il processo)"""
+    """dopo un aggiornamento: gli editor salvano e si chiudono (come alla chiusura della finestra), il programma si rilancia
+    sulla stessa porta (la pagina si ricarica da sola) ed esce; il lanciatore del programma rilanciato avvia la versione
+    nuova. Con la finestra del programma il rilancio apre una finestra nuova (questa si chiude con il processo)"""
     if os.environ.get("IMPAGINATORE_SENZA_RIAVVIO"): return                       # solo per le prove
     def riavvia():
         time.sleep(.6)
-        for pr, _ in EDITORS.values():
-            try: pr.terminate()
-            except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+        desktop_finestra.chiudi_editor(EDITORS)
         processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI] + ([] if FINESTRA else ["--no-browser"]), 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
@@ -213,6 +215,11 @@ def assistente():
 def lingue():
     """lingua in uso e lingue tra cui scegliere, ognuna con il suo nome (T-206)"""
     return {"lingua": lingua.attuale(), "lingue": [{"id": k, "nome": v} for k, v in lingua.LINGUE.items()]}
+
+
+def esportazione_in_corso():
+    """un album sta esportando? Allora il programma non si aggiorna né torna indietro (il riavvio la interromperebbe)"""
+    if desktop_finestra.esportazioni(EDITORS): raise ValueError(lingua.t("sistema.agg_durante_esportazione"))
 
 
 def esci():
@@ -247,8 +254,8 @@ class H(Gestore):
         try:
             if u.path == "/": self.pagina("home.html")
             elif u.path == "/api/ping": self.send({"ok": True})
-            elif u.path == "/api/progetti": self.send(dict(progetti=progetti(), cartella=PROGETTI, sistema=piattaforma.sistema()))
-            elif u.path == "/api/aggiornamento": self.send(AGGIORNAMENTI.stato())       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
+            elif u.path == "/api/progetti": d = dict(progetti=progetti(), cartella=PROGETTI, sistema=piattaforma.sistema()); PRONTA.set(); self.send(d)
+            elif u.path == "/api/aggiornamento": self.send(dict(AGGIORNAMENTI.stato(), automatico=aggiornamenti.automatico()))       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
             elif u.path == "/api/versioni": self.send({"versioni": AGGIORNAMENTI.versioni()})
             elif u.path == "/api/licenza": self.send(licenze.stato())                     # aprire la schermata la prima volta fa partire la prova
             elif u.path == "/api/assistente": self.send(assistente())
@@ -280,9 +287,10 @@ class H(Gestore):
                 salva_registro(registro() + [p]); self.send({"path": p})
             elif u.path == "/api/scegli-foto":
                 p = scegli_cartella(lingua.t("schermata.scegli_cartella_foto")); RADICI.scelta(p); self.send({"path": p, "nome": nomi.nome_da_cartella(p)})
-            elif u.path == "/api/aggiorna": self.send({"ok": AGGIORNAMENTI.aggiorna()})
-            elif u.path == "/api/ripristina": self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
-            elif u.path == "/api/controlla": self.send(AGGIORNAMENTI.controlla())
+            elif u.path == "/api/aggiorna": esportazione_in_corso(); self.send({"ok": AGGIORNAMENTI.aggiorna()})
+            elif u.path == "/api/ripristina": esportazione_in_corso(); self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
+            elif u.path == "/api/controlla": self.send(dict(AGGIORNAMENTI.controlla(), automatico=aggiornamenti.automatico()))
+            elif u.path == "/api/aggiornamenti/automatico": aggiornamenti.imposta_automatico(d.get("automatico")); self.send({"automatico": aggiornamenti.automatico()})
             elif u.path == "/api/licenza/attiva":                                           # chiave non valida: ValueError con il motivo (400)
                 st = licenze.attiva(d.get("chiave")); statistiche.licenza("attivata", st); self.send(st)
             elif u.path == "/api/licenza/rimuovi": st = licenze.rimuovi(); statistiche.licenza("tolta", st); self.send(st)
@@ -374,6 +382,8 @@ def main(argv=None):
     fermo = threading.Event()
     threading.Thread(target=AGGIORNAMENTI.ciclo, args=(fermo,), daemon=True).start()
     srv = crea_server(args.porta, desktop.gettone() if m else sicurezza.gettone_del_processo())
+    try: lanciatore.conferma()                          # T-207: la versione appena installata è partita (non si torna più indietro da soli)
+    except OSError as e: log.warning("conferma della versione non scritta: %s", e)
     indirizzo = f"http://127.0.0.1:{PORTA}/"
     print(f"Impaginatore: {indirizzo}  | progetti: {PROGETTI}", flush=True)
     statistiche.processo("home"); statistiche.avvio(finestra=bool(m)); statistiche.avvia_invio(fermo)       # T-204: solo con il consenso; l'invio solo con un server (oggi no)

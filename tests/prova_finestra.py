@@ -90,7 +90,7 @@ def main(cartella):
     sito = "https://esempio.invalid/guida"
     aperti_fuori, esito = [], {}
     processi.apri_browser = aperti_fuori.append              # il browser di sistema: solo annotato
-    carte = "document.querySelectorAll('#grid .card:not(.new)').length"
+    carte = "document.querySelectorAll('#grid .riga').length"                 # righe degli album (la schermata Album è un elenco, non più a schede)
 
     def osserva():
         try:

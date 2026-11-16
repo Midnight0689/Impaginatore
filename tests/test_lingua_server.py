@@ -310,10 +310,13 @@ def test_aggiornamenti_in_inglese(inglese, monkeypatch):
     with pytest.raises(ValueError, match="aren't available"): a.aggiorna()
     monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "no")
     assert aggiornamenti.predefiniti().motivo == "Automatic updates are switched off (IMPAGINATORE_AGGIORNAMENTI)"
-    from impaginatore.aggiornamenti import firmati
-    f = firmati.PacchettiFirmati()
-    assert f.stato()["motivo"] == "Updates from signed packages: not yet active in this version"
-    with pytest.raises(ValueError, match="not yet active"): f.aggiorna()
+    from impaginatore.aggiornamenti import firmati, installazione, sorgenti
+    f = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub(""), installazione.InstallazionePython())
+    assert f.stato()["motivo"] == "Updates aren't active yet: the channel for new versions isn't set up in this version"
+    assert f.stato()["attuale"]["titolo"] == "installed version"
+    with pytest.raises(ValueError, match="isn't set up"): f.aggiorna()
+    c = firmati.PacchettiFirmati(sorgenti.SorgenteGitHub("a/b"), installazione.InstallazioneCompilata())
+    assert c.stato()["motivo"] == "The installed program will update with its installer: not yet available in this version"
 
 
 def test_lingua_cambiata_a_meta_si_vede_subito(monkeypatch):

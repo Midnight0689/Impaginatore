@@ -47,9 +47,16 @@ src/impaginatore/
 │   ├── photoshop.py     dove sta Photoshop e come eseguire un .jsx (osascript sul Mac, COM via cscript su Windows; su Linux no)
 │   ├── lingua.py        lingua del sistema per il primo avvio (AppleLanguages, GetUserDefaultUILanguage, LANG e simili)
 │   └── processi.py      ambiente dei figli (UTF-8), riavvio con gli stessi argomenti, rilancio ritardato, distacco dal terminale
-├── aggiornamenti/       interfaccia Aggiornamenti; git.py (checkout git), NonDisponibili (installato o spento), firmati.py (contratto dei pacchetti firmati)
+├── aggiornamenti/       aggiornamenti (T-207, AGGIORNAMENTI.md): interfaccia Aggiornamenti, NonDisponibili, impostazione del controllo automatico
+│   ├── lanciatore.py    prima cosa di cli.main: quale copia avviare (base installata o versione aggiornata), puntatore, ritorno da solo
+│   ├── firmati.py       PacchettiFirmati: manifesto firmato Ed25519, controllo, scaricamento, installazione, ritorno indietro, annuncio
+│   ├── sorgenti.py      SorgenteGitHub (API delle release, solo https, limiti) e SorgenteFinta (una cartella, per le prove)
+│   ├── installazione.py InstallazionePython (estrazione sicura, prova di avvio, puntatore) e InstallazioneCompilata (da fare)
+│   ├── rilascio.py      manifesto, firma e release finta per chi pubblica e per i test (strumenti/aggiornamento.py)
+│   └── git.py           Git: aggiornamenti da un checkout (sviluppo, Mac dell'ideatore)
 ├── desktop/             finestra del programma con pywebview (T-201; extra «desktop»): pywebview si carica solo in motore()
 │   ├── finestra.py      motore() (finestra o browser), esegui() (finestra della schermata, chiusura ordinata), ospite()
+│   ├── avvio.py         schermata di avvio (T-207): logotipo, versione, licenza; la finestra si mostra quando la schermata Album è pronta
 │   ├── navigazione.py   la finestra apre solo le pagine del programma; i siti vanno nel browser di sistema
 │   ├── geometria.py     misura e posizione ricordate in <dati>/finestra.json
 │   └── dialoghi.py      finestre di scelta di pywebview (schermata) e Ponte (editor → schermata, POST /api/dialogo)
@@ -58,7 +65,7 @@ src/impaginatore/
 │   ├── strumenti.py     gli strumenti (Assistente): argomenti controllati, licenza, testi come dati, limiti; senza SDK
 │   ├── consenso.py      immagini all'assistente: spente di serie, --consenti-immagini o <dati>/assistente.json
 │   └── server.py        registrazione con l'SDK (schemi, annotazioni, risposte) e avvio su stdio
-└── risorse/             home.html, index.html (interfaccia), testi/<lingua>/<area>.json (tabella dei testi), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
+└── risorse/             home.html, index.html (interfaccia), avvio.html (schermata di avvio), testi/<lingua>/<area>.json (tabella dei testi), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
 tests/                   pytest; dati/progetto_152 = progetto salvato dalla 1.5.2 (riferimento di parità)
 legacy/macos/            Impaginatore.app (applet compilata), .command, setup.sh; «Editor Album/home.py» è un ponte per l'applet
 skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets)
@@ -68,6 +75,7 @@ skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets
 
 ```
 impaginatore [--porta 8765] [--browser | --no-browser] [--progetti DIR] [--daemon]
+ └─ lanciatore (cli.main)            dopo un aggiornamento: os.execv nella copia <dati>/programma/versioni/<v> (AGGIORNAMENTI.md)
  └─ home (processo 1) 127.0.0.1:8765  ── apre la finestra del programma (o il browser) su un URL di avvio monouso (http://127.0.0.1:8765/avvio?c=…)
       POST /api/apri {path}
        ├─ editor già in ascolto per quel progetto? (porta stabile, poi 8801–8899: file di sessione + /api/ping con "path") -> si riusa
@@ -92,9 +100,11 @@ impaginatore [--porta 8765] [--browser | --no-browser] [--progetti DIR] [--daemo
   chiede aggiornamenti (`/api/aggiornamento`) e ritorno ai progetti (`/api/vai_progetti`) al suo server, che li chiede alla
   home con il gettone della home (niente più CORS `*`).
 - Uscita: `/api/esci` termina gli editor lanciati da quella home e chiude il processo (`home.server.esci`).
-- Dopo un aggiornamento: la home chiude gli editor, rilancia `python -m impaginatore --porta <stessa> --no-browser` dopo 1,5 s
-  (processo staccato) ed esce; la pagina si ricarica da sola. Con la finestra il rilancio è senza `--no-browser`: la
-  finestra vecchia si chiude con il suo processo e il programma rilanciato ne apre una nuova (stesso gettone).
+- Dopo un aggiornamento: la home fa salvare e chiudere gli editor (`desktop.finestra.chiudi_editor`), rilancia
+  `python -m impaginatore --porta <stessa> --no-browser` dopo 1,5 s (processo staccato) ed esce; il lanciatore del
+  programma rilanciato avvia la versione nuova e la pagina si ricarica quando risponde di nuovo (`/api/ping`). Con la
+  finestra il rilancio è senza `--no-browser`: la finestra vecchia si chiude con il suo processo e il programma
+  rilanciato ne apre una nuova (stesso gettone). Durante un'esportazione aggiorna e ripristina si rifiutano.
 
 ## Finestra desktop (T-201)
 
@@ -103,6 +113,9 @@ impaginatore                         (senza --browser, --no-browser, --daemon)
  └─ desktop.motore()                 pywebview + motore del sistema, oppure None → browser come prima (motivo nel registro e su stderr)
  └─ home (processo 1, thread)        crea_server(porta, desktop.gettone()): il gettone non resta nell'ambiente
  └─ desktop.esegui()                 thread principale: finestra pywebview sull'URL di avvio monouso (dentro il processo)
+      ├─ avvio.py (T-207)            prima la schermata di avvio (480 × 300, senza bordi, al centro, pagina senza script:
+      │                              logotipo in negativo, versione, licenza); la finestra nasce nascosta e si mostra quando
+      │                              la pagina chiede /api/progetti (home.server.PRONTA), dopo almeno 1 s e al massimo 20 s
       ├─ schermata ⇄ editor          stessa finestra, come nella scheda del browser: /api/pronto e /api/vai_progetti danno
       │                              un URL di avvio monouso del server di arrivo; ogni origine ha la sua sessionStorage
       ├─ navigazione.py              filtro del motore (WebKitGTK «decide-policy», WebView2 NavigationStarting) + controllo
@@ -175,8 +188,11 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **Finestra desktop** (T-201, fatto): `desktop.esegui(motore, server, fermo)`. Un altro motore si aggiunge in
   `finestra.GUI`/`MOTORI` e, se ha un filtro di navigazione, in `navigazione.FILTRI`; le finestre di scelta di pywebview si
   accendono per motore in `finestra.DIALOGHI_PROPRI` (Windows: da accendere dopo una prova vera).
-- **Aggiornamenti** (T-207): implementare `aggiornamenti.Aggiornamenti` (stato, controlla, versioni, aggiorna, ripristina,
-  ciclo) e passarlo a `home.server.configura(aggiorna=...)` o farlo scegliere da `aggiornamenti.predefiniti()`.
+- **Aggiornamenti** (T-207, fatto per il pacchetto Python): `aggiornamenti.Aggiornamenti` (stato, controlla, versioni,
+  aggiorna, ripristina, ciclo) passato a `home.server.configura(aggiorna=...)` o scelto da `aggiornamenti.predefiniti()`.
+  `PacchettiFirmati` prende una `Sorgente` (da dove: GitHub o una cartella) e una `Installazione` (come si sostituisce il
+  codice): il programma compilato (T-302) aggiunge la sua `InstallazioneCompilata` senza toccare il resto. Come si
+  pubblica una release: `AGGIORNAMENTI.md`.
 - **Licenze** (T-202): il punto d'ingresso unico è `cli.main` (e `home.server.main` / `editor.server.main`); le funzioni a
   pagamento passano tutte dalle richieste HTTP (`H.do_POST` di home ed editor) e dalle funzioni `run_export`, `esporta_progetto`:
   lì va il controllo della fascia (`docs/mercato/tier.json`).
@@ -208,6 +224,8 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 | `IMPAGINATORE_FINESTRA=no` | niente finestra del programma: si apre il browser (anche `0`, `browser`; i test la spengono) |
 | `IMPAGINATORE_FINESTRA_SVILUPPO=1` | strumenti di sviluppo della vista web nella finestra (mai in un programma impacchettato) |
 | `IMPAGINATORE_AGGIORNAMENTI=no` | aggiornamenti spenti |
+| `IMPAGINATORE_AGGIORNAMENTI_FINTI=<cartella>` | le release da una cartella locale (prove a mano, `AGGIORNAMENTI.md`); vale anche da un checkout |
+| `IMPAGINATORE_VERSIONE_SCELTA`, `IMPAGINATORE_BASE` | le mette il lanciatore: copia già scelta (niente secondo salto) e dove sta la base installata |
 | `IMPAGINATORE_SENZA_RIAVVIO` | dopo un aggiornamento non riavvia (prove) |
 | `IMPAGINATORE_GETTONE` | gettone di sessione del server di questo processo (lo scrive il server; resta dopo un riavvio, non passa ai figli) |
 | `IMPAGINATORE_LINGUA` | lingua «del sistema» (`it`, `en`, `it_IT`…): vale finché l'utente non ne sceglie una; i test la mettono a `it` |
@@ -232,13 +250,21 @@ agganciate).
 Marcatori: `photoshop` (saltati se Photoshop manca), `browser` (Chrome/Chromium senza schermo), `finestra` (finestra
 vera con WebKitGTK sotto Xvfb), `lento`.
 Ogni test ha una casa finta (`HOME`, `APPDATA`, `XDG_*`), `IMPAGINATORE_DIALOGHI=nessuno`, `IMPAGINATORE_FINESTRA=no` e
-aggiornamenti spenti.
+aggiornamenti spenti. Gli aggiornamenti si provano con release finte firmate con una chiave dei test
+(`tests/aiuti_aggiornamenti.py`); `tests/test_aggiornamenti_programma.py` fa il giro vero con processi veri (installa,
+riavvia nella versione nuova, torna indietro). I processi che eseguono copie del programma fuori da `src` girano senza
+coverage (sarebbero file estranei al rapporto).
 
 ## Cosa non è verificato
 
 Tutto è stato provato su Linux (Python 3.12). Su macOS e Windows i rami del codice sono provati simulando il sistema
 (`sys.platform`) e intercettando i comandi; l'esecuzione vera (osascript, COM di Photoshop, PowerShell, tkinter su Windows,
 `Impaginatore.app` con il ponte) va provata su una macchina reale.
+
+Aggiornamenti (T-207): il giro completo è provato su Linux con processi veri e una release in una cartella; la rete
+vera (api.github.com, la CDN degli asset, un proxy) non è provata, né il salto `os.execv` e il riavvio su Windows e macOS
+(dettagli in `AGGIORNAMENTI.md`, «Cosa non è provato»). Schermata di avvio: vista davvero solo con WebKitGTK sotto Xvfb
+(`docs/prodotto/ux/schermate/2.0/avvio-*.png`).
 
 Finestra desktop: provata davvero solo con WebKitGTK 2.52 (WebKit2 4.1) sotto Xvfb, Python 3.12, pywebview 6.2.1
 (schermata, editor nella stessa finestra, finestre di scelta GTK della schermata e dell'editor, navigazioni fuori dal
