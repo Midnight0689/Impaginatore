@@ -475,6 +475,57 @@ def test_esegui(motore, wv, home, monkeypatch):
     assert os.path.isfile(os.path.join(os.environ["IMPAGINATORE_DATI"], "finestra.json"))
 
 
+class Sincrono:
+    """threading.Thread che esegue subito (le prove della conferma di chiusura)"""
+
+    def __init__(self, target, daemon=None): self.target = target
+
+    def start(self): self.target()
+
+
+def test_chiusura_durante_un_esportazione(motore, wv, home, monkeypatch, caplog):
+    """con un'esportazione in corso la finestra non si chiude: chiede conferma (dalla tabella, nella lingua in uso) da un
+    altro thread; «Annulla» la lascia aperta, «OK» la chiude senza chiedere di nuovo. Senza esportazioni si chiude e basta.
+    Un errore della finestra di conferma la lascia aperta"""
+    in_corso, risposte, chieste, distrutte = [0], [False, RuntimeError("chiusa"), True], [], []
+    monkeypatch.setattr(F, "esportazioni", lambda editors: in_corso[0] if editors is home.EDITORS else 1 / 0)
+    monkeypatch.setattr(F, "threading", types.SimpleNamespace(Thread=Sincrono))
+
+    def durante(f):
+        def conferma(titolo, testo):
+            chieste.append((titolo, testo)); r = risposte.pop(0)
+            if isinstance(r, Exception): raise r
+            return r
+        f.create_confirmation_dialog = conferma
+        f.destroy = lambda: distrutte.append(f.events.closing())         # pywebview: destroy() passa di nuovo da closing
+        assert f.events.closing() == [None, None] and chieste == [], "niente in corso: si chiude senza domande"
+        in_corso[0] = 1
+        assert f.events.closing() == [None, False] and distrutte == [], "Annulla: resta aperta"
+        assert chieste[0] == ("Esportazione in corso", F.lingua.t("desktop.esporta_testo")) and "si interrompe" in chieste[0][1]
+        monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+        with caplog.at_level(logging.WARNING, logger="impaginatore.desktop"):
+            assert f.events.closing() == [None, False] and distrutte == [] and "conferma di chiusura non mostrata" in caplog.text
+        assert f.events.closing() == [None, False] and chieste[2][0] == "Export in progress"
+        assert distrutte == [[None, None]], "OK: si chiude, e la seconda volta non chiede"
+    v = _esegui(motore, wv, home, monkeypatch, durante)
+    assert v["rc"] == 0 and len(chieste) == 3
+
+
+def test_esportazioni_degli_editor(monkeypatch):
+    """conta gli editor vivi che dicono «esporta» al ping; chi è chiuso, non risponde o risponde male non conta"""
+    chieste = []
+
+    def chiedi(porta, percorso, gettone, corpo=None, timeout=3):
+        chieste.append((porta, percorso, gettone, timeout))
+        if porta == 4: raise OSError("rifiutata")
+        return {1: {"esporta": True}, 2: {"esporta": False}, 5: [], 6: {"esporta": True}}[porta]
+    monkeypatch.setattr(sicurezza, "chiedi", chiedi)
+    for p in (1, 2, 4, 6): sicurezza.scrivi_sessione("editor", p, f"g{p}")
+    ed = {"/a": (Proc(), 1), "/b": (Proc(), 2), "/c": (Proc(vivo=False), 3), "/d": (Proc(), 4), "/e": (Proc(), 5), "/f": (Proc(), 6)}
+    assert F.esportazioni(ed) == 2 and F.esportazioni({}) == 0
+    assert [c[0] for c in chieste[:5]] == [1, 2, 4, 5, 6] and chieste[0] == (1, "/api/ping", "g1", 2) and chieste[3][2] is None
+
+
 def test_esegui_dialoghi_scelti_a_mano(motore, wv, home, monkeypatch):
     v = _esegui(motore, wv, home, monkeypatch)
     assert v["env"] == "nessuno" and isinstance(v["dialoghi"], dialoghi.Nessuno) and v["env_dopo"] == "nessuno"
@@ -521,8 +572,8 @@ def test_dialoghi_della_finestra(wv):
     assert d.scegli_cartella() == "" and d.scegli_percorsi() == [], "annullata"
     assert f.scelte[0] == (20, {}, {"linux.openFolder": "Scegli la cartella con le foto"})
     assert f.scelte[1] == (10, dict(file_types=("ZIP (*.zip;*.ZIP)",)), {"linux.openFolder": "Scegli la cartella con le foto", "linux.openFile": "Scegli il file ZIP del progetto"})
-    assert f.scelte[2][:2] == (10, dict(allow_multiple=True, file_types=(D.FILTRO_FOTO,))) and f.scelte[2][2]["linux.openFiles"] == "Scegli le foto"
-    assert "*.heic" in D.FILTRO_FOTO and D.FILTRO_FOTO.startswith("Foto (*.jpg;")
+    assert f.scelte[2][:2] == (10, dict(allow_multiple=True, file_types=(D.filtro_foto(),))) and f.scelte[2][2]["linux.openFiles"] == "Scegli le foto"
+    assert "*.heic" in D.filtro_foto() and D.filtro_foto().startswith("Foto (*.jpg;")
 
 
 class Scelte(dialoghi.Dialoghi):
