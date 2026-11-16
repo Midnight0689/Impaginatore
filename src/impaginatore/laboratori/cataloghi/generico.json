@@ -1,0 +1,26 @@
+{
+  "formato_catalogo": 1,
+  "id": "generico",
+  "nome": "Generico",
+  "laboratorio": "Nessun laboratorio: formati comuni",
+  "generico": true,
+  "data": "2026-11-16",
+  "fonte": "Formati comuni degli album, scelti da Impaginatore: non sono le specifiche di un laboratorio",
+  "note": "Misure e regole prudenti per cominciare (abbondanza 3 mm, zona di sicurezza 5 mm, 300 ppi, sRGB). Prima di stampare controlla quello che chiede il tuo laboratorio, o importa il suo catalogo.",
+  "prodotti": [
+    {"id": "quadrato-30", "nome": "Quadrato 30 × 30", "pagina_cm": [30, 30], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "quadrato-25", "nome": "Quadrato 25 × 25", "pagina_cm": [25, 25], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "quadrato-20", "nome": "Quadrato 20 × 20", "pagina_cm": [20, 20], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "orizzontale-35x25", "nome": "Orizzontale 35 × 25", "pagina_cm": [35, 25], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "orizzontale-30x22", "nome": "Orizzontale 30 × 22,5", "pagina_cm": [30, 22.5], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "orizzontale-25x20", "nome": "Orizzontale 25 × 20", "pagina_cm": [25, 20], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}},
+    {"id": "verticale-20x30", "nome": "Verticale 20 × 30", "pagina_cm": [20, 30], "abbondanza_mm": 3, "sicurezza_mm": 5, "ppi": 300,
+     "consegna": {"nome": "{album} - Spread {n}"}}
+  ]
+}

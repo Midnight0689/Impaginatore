@@ -1,4 +1,4 @@
-"""Finestre di scelta (cartelle, foto, ZIP) quando c'è la finestra del programma.
+"""Finestre di scelta (cartelle, foto, ZIP, cataloghi) quando c'è la finestra del programma.
 
 - Nella schermata dei progetti (lo stesso processo della finestra): DialoghiFinestra, le finestre native di pywebview
   (Finder, Esplora file, GTK) aperte sopra la finestra del programma, una per volta. Si impostano con
@@ -22,7 +22,8 @@ from ..piattaforma import dialoghi
 TIPI = ("cartella", "zip", "foto")
 FILTRO_FOTO = "{nome} (" + ";".join(dialoghi.TIPI_FOTO) + ")"           # il nome nella lingua in uso: filtro_foto()
 FILTRO_ZIP = "ZIP (*.zip;*.ZIP)"
-_TITOLO_GTK = {"cartella": "linux.openFolder", "zip": "linux.openFile", "foto": "linux.openFiles"}
+FILTRO_CATALOGO = "{nome} (*.json;*.JSON)"                         # il nome nella lingua in uso: filtro_catalogo()
+_TITOLO_GTK = {"cartella": "linux.openFolder", "zip": "linux.openFile", "catalogo": "linux.openFile", "foto": "linux.openFiles"}
 log = logging.getLogger("impaginatore.desktop")
 
 
@@ -41,6 +42,7 @@ class DialoghiFinestra(dialoghi.Dialoghi):
             f.localization[_TITOLO_GTK[tipo]] = str(messaggio)
             if tipo == "cartella": r = f.create_file_dialog(T.FOLDER)
             elif tipo == "zip": r = f.create_file_dialog(T.OPEN, file_types=(FILTRO_ZIP,))
+            elif tipo == "catalogo": r = f.create_file_dialog(T.OPEN, file_types=(filtro_catalogo(),))
             else: r = f.create_file_dialog(T.OPEN, allow_multiple=True, file_types=(filtro_foto(),))
         return [os.path.normpath(p) for p in (r or ()) if p]          # None: annullata (o errore del motore, che pywebview annota)
 
@@ -48,6 +50,11 @@ class DialoghiFinestra(dialoghi.Dialoghi):
 def filtro_foto():
     """filtro delle foto per le finestre di scelta: «Foto (*.jpg;…)» / «Photos (*.jpg;…)»"""
     return FILTRO_FOTO.format(nome=lingua.t("desktop.filtro_foto"))
+
+
+def filtro_catalogo():
+    """filtro dei cataloghi dei laboratori: «Catalogo (*.json;*.JSON)» / «Catalogue (*.json;*.JSON)»"""
+    return FILTRO_CATALOGO.format(nome=lingua.t("desktop.filtro_catalogo"))
 
 
 def scegli(tipo, messaggio):

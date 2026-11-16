@@ -22,8 +22,9 @@ from impaginatore.mcp import strumenti as S  # noqa: E402
 from impaginatore.piattaforma import processi  # noqa: E402
 
 LETTURA = {"stato_programma", "elenca_progetti", "apri_progetto", "mostra_editor", "stato_album", "elenca_foto", "controlla_album", "proponi_bozza", "stato_esportazione",
-           "anteprima_spread", "miniatura_foto"}
-MODIFICA = {"crea_progetto", "aggiungi_foto", "applica_bozza", "cambia_disposizione", "sostituisci_foto", "sistema_album", "annulla", "ripeti", "salva", "esporta"}
+           "anteprima_spread", "miniatura_foto", "elenca_prodotti"}
+MODIFICA = {"crea_progetto", "aggiungi_foto", "applica_bozza", "cambia_disposizione", "sostituisci_foto", "sistema_album", "annulla", "ripeti", "salva", "esporta",
+            "imposta_prodotto"}
 
 
 def sessione(srv, *chiamate):
@@ -53,14 +54,15 @@ def stdio(*args):
 def test_strumenti_e_schemi():
     t, _ = sessione(server.crea(S.Assistente()))
     nomi = {x.name for x in t}
-    assert nomi == LETTURA | MODIFICA and len(t) == 21
+    assert nomi == LETTURA | MODIFICA and len(t) == 23
     for x in t:
         a = x.annotations
         assert x.description and x.title and a.open_world_hint is (x.name in ("anteprima_spread", "miniatura_foto")), x.name
         assert a.read_only_hint is (x.name in LETTURA) and a.destructive_hint is False, x.name
         assert x.input_schema["type"] == "object"
     sch = {x.name: x.input_schema for x in t}
-    assert sch["esporta"]["properties"]["formato"]["enum"] == ["jpg", "pdf"], "il PSD non c'è"
+    assert sch["esporta"]["properties"]["formato"]["enum"] == ["jpg", "pdf", "consegna"], "il PSD non c'è"
+    assert sch["crea_progetto"]["required"] == ["nome"] and sch["imposta_prodotto"]["required"] == ["progetto"], "col prodotto le misure non servono"
     assert sch["cambia_disposizione"]["properties"]["spread"]["minimum"] == 1 and sch["miniatura_foto"]["properties"]["lato"]["maximum"] == 512
     assert not any("percorso" in p or "path" in p for s in sch.values() for p in s["properties"]), "nessuno strumento prende un percorso"
 
@@ -99,8 +101,10 @@ def test_argomenti_arrivano_agli_strumenti():
     p = "p0123456789"
     attese = [
         ("stato_programma", {}, ()), ("elenca_progetti", {}, ()), ("apri_progetto", {"progetto": "Nozze"}, ("Nozze",)), ("mostra_editor", {"progetto": p}, (p,)),
-        ("crea_progetto", {"nome": "N", "larghezza_cm": 60, "altezza_cm": 22.5}, ("N", 60, 22.5, 0.0, 2.5, 10.0, False)),
-        ("crea_progetto", {"nome": "N", "larghezza_cm": 60, "altezza_cm": 22.5, "abbondanza_mm": 3, "spazio_mm": 2, "margine_mm": 8, "scegli_cartella_foto": True}, ("N", 60, 22.5, 3, 2, 8, True)),
+        ("crea_progetto", {"nome": "N", "larghezza_cm": 60, "altezza_cm": 22.5}, ("N", 60, 22.5, 0.0, 2.5, 10.0, False, None)),
+        ("crea_progetto", {"nome": "N", "larghezza_cm": 60, "altezza_cm": 22.5, "abbondanza_mm": 3, "spazio_mm": 2, "margine_mm": 8, "scegli_cartella_foto": True}, ("N", 60, 22.5, 3, 2, 8, True, None)),
+        ("crea_progetto", {"nome": "N", "prodotto": "generico/quadrato-30"}, ("N", None, None, 0.0, 2.5, 10.0, False, "generico/quadrato-30")),
+        ("elenca_prodotti", {}, ()), ("imposta_prodotto", {"progetto": p, "prodotto": "lab/album-30"}, (p, "lab/album-30")), ("imposta_prodotto", {"progetto": p}, (p, None)),
         ("aggiungi_foto", {"progetto": p}, (p, "cartella")), ("stato_album", {"progetto": p, "da_spread": 3, "quanti": 2}, (p, 3, 2)),
         ("elenca_foto", {"progetto": p, "filtro": "libere", "da": 5, "quanti": 7}, (p, "libere", 5, 7)), ("controlla_album", {"progetto": p, "spread": [2], "tono": False}, (p, [2], False)),
         ("proponi_bozza", {"progetto": p, "ritmo": "piene", "foto_per_spread": 2.5, "numero_spread": 9, "stelle": False, "seme": 4}, (p, "piene", 2.5, 9, False, 4)),
@@ -129,7 +133,7 @@ def test_comando_stdio(editor, home_srv):
     sull'album aperto in questo processo (l'utente lo vede), e senza «--consenti-immagini» non manda immagini"""
     E = editor.E; p = S.id_progetto(editor.progetto)
     t, r = sessione(stdio(), ("stato_programma", {}), ("elenca_progetti", {}), ("proponi_bozza", {"progetto": p}), ("anteprima_spread", {"progetto": p, "spread": 1}))
-    assert len(t) == 21
+    assert len(t) == 23
     st = contenuto(r[0])
     assert st["licenza"]["stato"] == "prova" and st["programma_in_funzione"] is True and st["progetti_aperti"] == [{"progetto": p, "cartella": "Prova"}]
     assert contenuto(r[1])["progetti"][0]["progetto"] == p and editor.progetto not in r[1].content[0].text

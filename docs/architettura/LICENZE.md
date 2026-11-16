@@ -65,7 +65,8 @@ I cancelli sollevano `licenze.NonConsentita` (un `ValueError` con il messaggio p
 |---|---|---|
 | `editor/server.py`, `do_op` | `controlla_operazione` | `editor_completo` per ogni operazione tranne `copia` (appunti); `uniformita_tono` per `tono_fix`, `tono_L`, `tono_escl` |
 | `editor/server.py`, `do_import` | `controlla_modifica` | `editor_completo` |
-| `editor/server.py`, `run_export` | `controlla_esportazione` | `export_jpg`, `export_pdf`, `export_psd_livelli`; nella prova restituisce «con filigrana» |
+| `editor/server.py`, `run_export` | `controlla_esportazione` | `export_jpg`, `export_pdf`, `export_psd_livelli`, `export_jpg` anche per la consegna al laboratorio (T-208); nella prova restituisce «con filigrana» |
+| `laboratori/__init__.py` (album nuovo, importazione, operazione `prodotto`, consegna, assistente) | `controlla_licenza` | `preset_laboratori` per i cataloghi non generici; il Generico è di tutti (CATALOGHI.md) |
 | `editor/server.py`, `modelli` | `controlla_modelli` | `modelli_personali`: salvare o importare oltre il limite della fascia (Essenziale: 5) |
 | `editor/server.py`, GET `/api/tono`, `/api/tono_all` | `controlla_lettura` | `uniformita_tono` (pannello Tono) |
 | `home/server.py` | — | GET `/api/licenza` (stato, mai il testo della chiave), POST `/api/licenza/attiva` `{chiave}`, POST `/api/licenza/rimuovi` |
@@ -138,7 +139,8 @@ accettata con le decisioni sopra; la tabella dice quanto costa ogni aggiramento.
   modelli a spread); `correzione_spaziature_album` (la correzione di tutto l'album è un giro della pagina sulle
   operazioni dei singoli spread: il server non la distingue); `impaginazione_automatica_album` e `server_mcp` (oggi
   esistono solo con Claude e la skill; il server MCP di T-203 deve chiedere `licenze.consentita("server_mcp")` e
-  `consentita("impaginazione_automatica_album")`); `preset_laboratori` (T-208); `computer` (non si conta).
+  `consentita("impaginazione_automatica_album")`); `computer` (non si conta). `preset_laboratori` ha il suo cancello
+  (T-208), ma oggi tutte le fasce lo comprendono.
 - **Chiave copiata negli appunti** e **link `impaginatore://`** (FLUSSO-ACQUISTO, § 3): il programma accetta il link
   incollato, ma non legge gli appunti da solo e il link non apre il programma finché l'installatore non lo registra (T-302).
 - **Chiavi Polar** (`IMP-` + UUID): non accettate; servirebbero solo se si passasse a Polar con le sue attivazioni,

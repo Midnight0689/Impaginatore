@@ -21,6 +21,7 @@ from .. import __version__, aggiornamenti, archivio, formato, giornale, lingua, 
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 from .. import licenze                         # T-202: licenza e prova gratuita, controllate su questo computer (docs/architettura/LICENZE.md)
+from .. import laboratori                      # T-208: cataloghi dei laboratori (docs/architettura/CATALOGHI.md)
 from .. import desktop                         # T-201: finestra del programma (pywebview si carica solo in desktop.motore())
 from ..desktop import dialoghi as desktop_dialoghi
 from ..mcp import consenso as consenso_mcp      # T-203/T-205: l'interruttore «L'assistente può vedere le immagini» (solo libreria standard)
@@ -88,7 +89,10 @@ def num(v):
 
 def nuovo(d):
     nome = nomi.nome_progetto(d.get("nome"))           # il nome è un dato: si salva in progetto.json, mai dentro codice (SEC-003)
-    w, h = num(d.get("w")), num(d.get("h"))
+    prodotto = laboratori.scelta(d["prodotto"]) if d.get("prodotto") else None       # T-208: formato, abbondanza e risoluzione dal prodotto del laboratorio
+    if prodotto:
+        g = laboratori.geometria(prodotto[1]); w, h = g["formato_cm"]; d = dict(d, abb=g["abbondanza_mm"])
+    else: w, h = num(d.get("w")), num(d.get("h"))
     if not (5 <= w <= 300 and 5 <= h <= 200): raise ValueError("Misure fuori dal normale: larghezza 5–300 cm, altezza 5–200 cm")
     cartella = nomi.nome_cartella(nome)                 # valido su macOS, Windows e Linux
     fotodir = dialoghi.senza_barra((d.get("foto") or "").strip())
@@ -104,6 +108,7 @@ def nuovo(d):
     cfg = dict(nome=nome, foto=fotodir or os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
                abbondanza_mm=mm("abb", 0), spazio_mm=mm("spazio", 2.5), margine_mm=mm("margine", 10), uscita_psd=os.path.join(p, "PSD"),
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
+    if prodotto: cfg.update(ppi=g["ppi"], prodotto=laboratori.per_progetto(*prodotto))
     try: testo = formato.testo_progetto(cfg)                # misure controllate come all'apertura, PRIMA di creare la cartella (VER-010)
     except formato.ErroreProgetto as e: raise ValueError(f"Misure non valide: {str(e).removeprefix('progetto.json, ')}") from None
     os.makedirs(p if fotodir else os.path.join(p, "Foto"))
@@ -234,6 +239,7 @@ class H(Gestore):
             elif u.path == "/api/licenza": self.send(licenze.stato())                     # aprire la schermata la prima volta fa partire la prova
             elif u.path == "/api/assistente": self.send(assistente())
             elif u.path == "/api/lingua": self.send(lingue())
+            elif u.path == "/api/cataloghi": self.send(dict(laboratori.elenco(), cartella=laboratori.cartella_utente()))
             elif u.path == "/api/pronto":
                 a = pronto(int(q["porta"][0])); self.send({"pronto": bool(a), "indirizzo": a})
             elif u.path == "/api/cover":
@@ -270,6 +276,9 @@ class H(Gestore):
                 lingua.imposta(d.get("lingua")); self.send(lingue())
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
+            elif u.path == "/api/importa-catalogo":            # T-208: solo l'utente sceglie il file, con la finestra del sistema (nessun percorso dalla pagina)
+                p = dialoghi.scegli_catalogo()
+                self.send(laboratori.importa(p) if p else {"annullato": True})
             elif u.path == "/api/rimuovi":
                 salva_registro([p for p in registro() if p != d["path"]]); self.send({"ok": True})
             elif u.path == "/api/cestino":

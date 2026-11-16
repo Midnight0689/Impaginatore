@@ -503,7 +503,7 @@
 </div></div>
 <div id="exp" class="veil" role="dialog" aria-modal="true" aria-labelledby="exph"><div class="dlg">
   <h3 id="exph" data-t="editor.exp.titolo"></h3>
-  <div class="seg" id="efmt" style="margin-bottom:10px"><button data-f="jpg" class="on">JPG</button><button data-f="pdf">PDF</button><button data-f="psd" data-t="editor.exp.psd"></button></div>
+  <div class="seg" id="efmt" style="margin-bottom:10px"><button data-f="jpg" class="on">JPG</button><button data-f="pdf">PDF</button><button data-f="psd" data-t="editor.exp.psd"></button><button data-f="consegna" data-t="editor.exp.consegna"></button></div>
   <div class="erow"><label data-t="editor.exp.spread"></label><div><label class="rd"><input type="radio" name="er" value="all" checked> <span data-t="editor.exp.tutti"></span></label>
     <label class="rd"><input type="radio" name="er" value="r"> <span data-t="editor.exp.intervallo"></span> <input id="erange" placeholder="1, 2, 5-7" style="width:130px" data-t-aria="editor.exp.intervallo"></label>
     <div class="empty" id="ecount"></div></div></div>
@@ -513,6 +513,7 @@
     <label class="rd"><input type="checkbox" id="epn" checked> <span data-t="editor.exp.numero"></span></label></div></div>
   <div class="erow" id="eo-psd"><label data-t="editor.exp.photoshop"></label><div><label class="rd"><input type="checkbox" id="epf"> <span data-t="editor.exp.sovrascrivi"></span></label>
     <div class="empty" data-t="editor.exp.psd_nota"></div></div></div>
+  <div class="erow" id="eo-consegna"><label for="eprod" data-t="editor.exp.prodotto"></label><div><select id="eprod" style="max-width:100%"></select><div class="empty" id="eprodi"></div></div></div>
   <div class="erow"><label for="eev" data-t="editor.exp.esposizione"></label><div><input id="eev" type="number" step="0.05" style="width:80px"> <span data-t="editor.exp.ev"></span> <span class="empty" data-t="editor.exp.ev_nota"></span></div></div>
   <div class="erow"><label data-t="editor.exp.colori"></label><div>sRGB <span class="empty" data-t="editor.exp.profilo"></span></div></div>
   <div class="erow"><label for="edest" data-t="editor.exp.cartella"></label><div style="display:flex;gap:6px"><input id="edest" style="flex:1"><button id="echoose" data-t="editor.exp.scegli"></button></div></div>
@@ -2310,11 +2311,29 @@ function openExp() {
 }
 function setFmt(f) {
   EF = f; document.querySelectorAll("#efmt button").forEach(b => b.classList.toggle("on", b.dataset.f === f));
-  ["jpg", "pdf", "psd"].forEach(k => $("eo-" + k).style.display = k === f ? "" : "none");
-  $("edest").value = ""; $("edest").placeholder = f === "psd" ? t("editor.exp.dest_psd") : t("editor.exp.dest", { f: f.toUpperCase() }); $("ego").textContent = t("editor.exp.esporta_in", { f: f.toUpperCase() });
-  const L = S.licenza, fn = { jpg: "export_jpg", pdf: "export_pdf", psd: "export_psd_livelli" }[f], no = L && L.funzioni[fn] === false;      // licenza: lo dice prima, non con un errore alla fine
+  ["jpg", "pdf", "psd", "consegna"].forEach(k => $("eo-" + k).style.display = k === f ? "" : "none");
+  $("edest").value = ""; $("edest").placeholder = f === "psd" ? t("editor.exp.dest_psd") : f === "consegna" ? t("editor.exp.dest_consegna") : t("editor.exp.dest", { f: f.toUpperCase() });
+  $("ego").textContent = f === "consegna" ? t("editor.exp.consegna_vai") : t("editor.exp.esporta_in", { f: f.toUpperCase() });
+  if (f === "consegna") prodotti();
+  const L = S.licenza, fn = { jpg: "export_jpg", pdf: "export_pdf", psd: "export_psd_livelli", consegna: "export_jpg" }[f], no = L && L.funzioni[fn] === false;      // licenza: lo dice prima, non con un errore alla fine
   $("elic").hidden = !(no || (L && L.filigrana)); $("elic").textContent = no ? L.motivi[fn] || L.messaggio : L && L.filigrana ? t("editor.exp.filigrana") : ""; $("ego").classList.toggle("lock", !!no); $("ego").disabled = !!no || ESPORTO;
 }
+async function prodotti() {                                    // T-208: prodotto del laboratorio per la consegna (cataloghi installati; testi sempre come testo)
+  const sel = $("eprod"), P = S.prodotto, ora = P ? P.catalogo + "/" + P.prodotto.id : "";
+  let r; try { r = await api("/api/prodotti"); } catch (e) { return; }
+  sel.replaceChildren(new Option(t("editor.exp.nessun_prodotto"), ""));
+  for (const c of r.cataloghi) {
+    const g = document.createElement("optgroup");
+    g.label = c.nome + " · " + c.laboratorio + (c.verificato ? "" : " · " + t("editor.exp.non_verificato")) + (c.stato === "da_confermare" ? " · " + t("editor.exp.da_confermare") : "");
+    for (const p of c.prodotti) { const o = new Option(p.nome, c.id + "/" + p.id); o.disabled = !!p.incompatibile || !c.consentito; o.title = p.incompatibile || ""; g.append(o); }
+    sel.append(g);
+  }
+  if (P && ![...sel.options].some(o => o.value === ora)) sel.append(new Option(P.prodotto.nome + " · " + P.laboratorio, ora));       // prodotto di un catalogo che qui non c'è
+  sel.value = ora;
+  $("eprodi").textContent = !P ? t("editor.exp.prodotto_nota") : P.avviso || t("editor.exp.prodotto_info", { lab: P.laboratorio, w: cmF(P.prodotto.pagina_cm[0]), h: cmF(P.prodotto.pagina_cm[1]), abb: cmF(P.prodotto.abbondanza_mm), ppi: P.prodotto.ppi })
+    + (P.verificato ? "" : " " + t("editor.exp.non_verificato_nota")) + (P.stato === "da_confermare" ? " " + t("editor.exp.da_confermare_nota") : "");
+}
+$("eprod").onchange = async () => { if (await op({ op: "prodotto", prodotto: $("eprod").value || null })) setFmt("consegna"); else prodotti(); };
 function rangeNums() {
   if (document.querySelector('input[name=er]:checked').value === "all") return S.spreads.map((_, i) => i + 1);
   const out = []; for (const p of $("erange").value.split(/[,;]/)) { const t = p.trim(); if (!t) continue; const m = t.match(/^(\d+)\s*-\s*(\d+)$/); if (m) { for (let i = Math.min(+m[1], +m[2]); i <= Math.max(+m[1], +m[2]); i++) out.push(i); } else if (/^\d+$/.test(t)) out.push(+t); else return null; }
