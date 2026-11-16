@@ -437,7 +437,7 @@
   <div id="libview">
     <div id="libmain">
       <div class="libbar"><button id="impF" data-t="editor.foto.importa_cartella"></button><button id="impP" data-t="editor.foto.importa_foto"></button><span id="libinfo"></span><span class="sp"></span>
-        <button id="selall" data-t="editor.foto.seleziona_tutte" data-t-title="editor.foto.seleziona_tutte_tit"></button><button id="selclear" data-t="editor.foto.deseleziona"></button></div>
+        <button id="selall" data-t="editor.foto.seleziona_tutte"></button><button id="selclear" data-t="editor.foto.deseleziona"></button></div>
       <div class="libbar2 fbar" id="libfbar"></div>
       <div id="libgrid"></div>
     </div>
@@ -525,7 +525,7 @@ const TT = t;                                                                   
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
 const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
-if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p></p><p></p></div>'; const p = document.querySelectorAll("p"); p[0].textContent = t("editor.non_collegata_1"); p[1].textContent = t("editor.non_collegata_2"); throw new Error("scheda non collegata"); }
+if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p></p><p></p></div>'; const p = document.querySelectorAll("p"); p[0].textContent = t("editor.non_collegata_1"); p[1].textContent = t("editor.non_collegata_2"); throw new Error("scheda non collegata"); }      // non tradotto: errore interno che ferma lo script, mai mostrato
 const escH = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato (nomi dei file, EXIF, testi dei progetti) passa da qui prima di innerHTML
 const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // nomi delle foto negli indirizzi e negli url(...) dei CSS
 const rq = (path, o = {}) => fetch(path, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
@@ -539,7 +539,7 @@ function applicaTesti(root = document) {
 }
 applicaTesti();
 const MAC = () => !S || S.sistema === "mac";
-const tasto = k => MAC() ? k : [["⌘", "Ctrl"], ["⇧", "Maiusc"], ["⌥", "Alt"]].reduce((s, [m, n]) => s.replace(new RegExp(m + " ?(?=[^\\s·])", "g"), n + "+").replace(new RegExp(m, "g"), n), k).replace(/⌫/g, "Canc");      // «⌘ Z» → «Ctrl+Z» su Windows e Linux
+const tasto = k => MAC() ? k : [["⌘", "Ctrl"], ["⇧", t("editor.tasti.maiusc")], ["⌥", "Alt"]].reduce((s, [m, n]) => s.replace(new RegExp(m + " ?(?=[^\\s·])", "g"), n + "+").replace(new RegExp(m, "g"), n), k).replace(/⌫/g, t("editor.tasti.canc"));      // «⌘ Z» → «Ctrl+Z» su Windows e Linux
 const conTasto = (s, k) => k ? `${s} (${tasto(k)})` : s;
 function tema(v) {                                            // scuro (predefinito) o chiaro; la scelta resta in questo browser
   if (v) { try { localStorage.setItem("impaginatore_tema", v); } catch (e) {} }
@@ -624,13 +624,13 @@ const mAts = () => msel.map(k => { const [a, b] = k.split(":"); return [a, +b]; 
 function selItem() { return sel ? slotsOf(sel.s).find(i => i.side === sel.side && i.idx === sel.idx) : null; }
 function pageHasText(side) { return slotsOf(cur).some(i => i.side === side && i.k === "t"); }
 
-const cmF = v => String(Math.round(v * 100) / 100).replace(".", ",");                                   // 22.5 → «22,5»
+const cmF = v => fN(v);                                                                                  // 22.5 → «22,5» (it) / «22.5» (en)
 const nomeSpread = k => String(2 * k + 1).padStart(2, "0") + "–" + String(2 * k + 2).padStart(2, "0");      // spread 3 → «05–06» (le pagine)
 let SALVATO = null, ERA_SPORCO = false;                                                                 // ora dell'ultimo salvataggio che la pagina ha visto
 function statoSalva() {
   const el = $("status");
   if (!S.dirty && ERA_SPORCO) SALVATO = new Date(); ERA_SPORCO = S.dirty;
-  const ora = SALVATO ? SALVATO.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : null;
+  const ora = SALVATO ? SALVATO.toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" }) : null;
   el.textContent = S.saveerr ? t("editor.top.salva_errore") : S.dirty ? t("editor.top.salvo") : ora ? t("editor.top.salvato_alle", { ora }) : t("editor.top.salvato");
   el.className = S.saveerr ? "err" : S.dirty ? "dirty" : ""; $("save").title = S.saveerr || conTasto(t("editor.top.salva_tit"), "⌘ S");
 }
@@ -653,7 +653,7 @@ function render() {
   else $("home").style.display = "none";
   document.body.classList.toggle("foto", view === "foto");
   [["tabF", "foto"], ["tabA", "album"]].forEach(([id, v]) => { $(id).classList.toggle("on", view === v); $(id).setAttribute("aria-selected", view === v ? "true" : "false"); });
-  $("tabF").title = conTasto(t("editor.top.foto_tit"), "⌘ 1"); $("tabA").title = conTasto(t("editor.top.impagina_tit"), "⌘ 2"); $("expb").title = conTasto(t("editor.top.esporta_tit"), "⌘ E");
+  $("tabF").title = conTasto(t("editor.top.foto_tit"), "⌘ 1"); $("tabA").title = conTasto(t("editor.top.impagina_tit"), "⌘ 2"); $("expb").title = conTasto(t("editor.top.esporta_tit"), "⌘ E"); $("selall").title = conTasto(t("editor.foto.seleziona_tutte_tit"), "⌘ A");
   renderLicenza(); renderPrep(); ctlPianifica();
   renderLib();
   const empty = !S.spreads.length; $("nospread").style.display = empty ? "block" : "none"; if (empty) renderVuoto();
@@ -695,7 +695,7 @@ function applyZoom(keepPoint) {
   const r0 = w.getBoundingClientRect(), fx = keepPoint ? (keepPoint.x - r0.left) / r0.width : .5, fy = keepPoint ? (keepPoint.y - r0.top) / r0.height : .5;
   if (ZM > 1.001) { rw.style.width = Math.round((st.clientWidth - 32) * ZM) + "px"; rw.style.maxWidth = "none"; } else { rw.style.width = ""; rw.style.maxWidth = ""; }
   if (keepPoint) { const r1 = w.getBoundingClientRect(); st.scrollLeft += (r1.left + fx * r1.width) - keepPoint.x; st.scrollTop += (r1.top + fy * r1.height) - keepPoint.y; }
-  let z = $("zpill"); if (!z) { z = document.createElement("button"); z.id = "zpill"; z.title = "Torna alla vista intera dello spread"; z.onclick = () => { ZM = 1; applyZoom(); renderStage(); }; st.appendChild(z); }
+  let z = $("zpill"); if (!z) { z = document.createElement("button"); z.id = "zpill"; z.title = t("editor.zoom.intera"); z.onclick = () => { ZM = 1; applyZoom(); renderStage(); }; st.appendChild(z); }
   z.style.display = ""; z.style.opacity = ZM > 1.001 ? "" : ".6"; z.textContent = ZM > 1.001 ? Math.round(ZM * 100) + "% · " + t("editor.zoom.adatta") : t("editor.zoom.adatta");
   clearTimeout(zmT); zmT = setTimeout(() => { if (S && view === "album") renderStage(); drawRulers(); }, 160);
 }
@@ -727,17 +727,17 @@ function renderStage() {
     d.style.zIndex = it.free ? 1 + it.zr : 0;      // le cornici libere stanno sopra (come nell'anteprima)
     if (it.k === "t") {
       const lay = it.kind === "txt";
-      d.innerHTML = `<span class="tag">${lay ? "Testo" : "Testo (titolo)"}</span>`; d.title = lay ? "Trascina per spostare · doppio clic per scrivere" : "Doppio clic: lo rendo modificabile come livelli di testo"; d.dataset.at = JSON.stringify([cur, it.side, it.idx]);
+      d.innerHTML = `<span class="tag">${tH(lay ? "editor.tela.testo" : "editor.side.titolo")}</span>`; d.title = t(lay ? "editor.tela.testo_tit" : "editor.tela.titolo_tit"); d.dataset.at = JSON.stringify([cur, it.side, it.idx]);
       d.onpointerdown = e => { if (e.button !== 0) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; }
         if (lay) { const now = Date.now(), k = kOf(it); if (lastTxDown.k === k && now - lastTxDown.t < 450) { lastTxDown = { k: null, t: 0 }; e.preventDefault(); e.stopPropagation(); setTimeout(() => { sel = { s: cur, side: it.side, idx: it.idx }; msel = [k]; const cur_ = selItem(); if (cur_) enterEdit(cur_); }, 30); return; } lastTxDown = { k, t: now }; }       // doppio clic riconosciuto qui: il primo clic ricostruisce gli elementi e il dblclick del browser andrebbe perso
         startFree(e, it, "move"); };
       d.oncontextmenu = e => frameMenu(e, it);
-      d.ondblclick = async () => { if (lay) { sel = { s: cur, side: it.side, idx: it.idx }; msel = [kOf(it)]; render(); enterEdit(it); } else { await op({ op: "t2x", at: [cur, it.side, it.idx] }); sel = null; msel = []; render(); toast("Ora ogni riga è un livello di testo: clic per selezionarla, doppio clic per scrivere"); } };
+      d.ondblclick = async () => { if (lay) { sel = { s: cur, side: it.side, idx: it.idx }; msel = [kOf(it)]; render(); enterEdit(it); } else { await op({ op: "t2x", at: [cur, it.side, it.idx] }); sel = null; msel = []; render(); toast(t("editor.tela.livelli")); } };
       if (isSel && msel.length < 2) ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach(k => { const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k; hd.onpointerdown = e => { if (e.button === 0) startFree(e, it, k); }; d.appendChild(hd); });
     }
     if (it.k !== "t") {
       const warn = showCropWarn && it.crop > 1.25, to = [cur, it.side, it.idx];
-      d.innerHTML = `<span class="tag${warn ? " warn" : ""}">${escH(it.name)}${it.bw ? " · BN" : ""}${it.z !== 1 ? " · ×" + it.z : ""}${warn ? " · ritaglio ×" + it.crop.toFixed(2) : ""}</span>`;
+      d.innerHTML = `<span class="tag${warn ? " warn" : ""}">${escH(it.name)}${it.bw ? " · " + tH("editor.tela.bn") : ""}${it.z !== 1 ? " · ×" + fN(it.z) : ""}${warn ? " · " + tH("editor.tela.ritaglio", { x: fN(it.crop, 2) }) : ""}</span>`;
       d.dataset.at = JSON.stringify(to);
       d.onpointerdown = e => { if (e.button !== 0 || e.target.closest(".chip")) return; if (e.shiftKey || e.metaKey || e.ctrlKey) { e.preventDefault(); e.stopPropagation(); toggleM(it); return; } if (cropMode && isSel) startPan(e, it, d); else startFree(e, it, "move"); };
       d.ondblclick = () => { sel = { s: cur, side: it.side, idx: it.idx }; setCrop(true); };
@@ -756,7 +756,7 @@ function renderStage() {
           const hd = document.createElement("div"); hd.className = "hd"; hd.dataset.k = k;
           hd.onpointerdown = e => { if (e.button === 0) startFree(e, it, k); }; d.appendChild(hd);
         });
-        const ch = document.createElement("div"); ch.className = "chip"; ch.textContent = "⇄ scambia"; ch.title = "Trascinami sopra un'altra foto per scambiarle"; ch.draggable = true;
+        const ch = document.createElement("div"); ch.className = "chip"; ch.textContent = t("editor.tela.scambia"); ch.title = t("editor.tela.scambia_tit"); ch.draggable = true;
         ch.ondragstart = e => { dragData = { from: to }; e.dataTransfer.setData("text/plain", it.name); e.dataTransfer.effectAllowed = "move"; };
         d.appendChild(ch);
       }
@@ -767,7 +767,7 @@ function renderStage() {
   reapplyLive(); groupBox(); selMarks();
 }
 let GAPCHK = false, GAPMODE = "std", GAPCM = 0, SPZ = { k: "", d: null, ask: "" };       // «Spazi»: gli stacchi fra le foto dello spread, calcolati dal motore (GET /api/spazi): la pagina non li rifà
-const cm2 = v => v.toFixed(2).replace(".", ",");
+const cm2 = v => fN(v, 2);
 const spaziQ = s => `/api/spazi?s=${s}&modo=${GAPMODE}` + (GAPMODE === "custom" ? `&cm=${GAPCM}` : "");
 const spaziK = () => S && S.spreads[cur] ? [cur, S.spreads[cur].h, GAPMODE, GAPCM].join(":") : "";
 const spaziDi = (s = cur) => api(spaziQ(s));
@@ -919,7 +919,7 @@ function apriPop(m, btn) {
   if (!m.hidden) { chiudiPop(); return; } chiudiPop();
   m.hidden = false; const r = btn.getBoundingClientRect(); m.style.top = r.bottom + 4 + "px"; m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, innerWidth - m.offsetWidth - 8)) + "px";
   btn.setAttribute("aria-expanded", "true"); apriPop.cur = { m, btn };
-  const voci = () => [...m.querySelectorAll("button:not(:disabled)")]; (voci()[0] || m).focus();
+  const voci = () => [...m.querySelectorAll("button:not(:disabled)")]; (voci()[0] || m).focus();      // non tradotto: «button:not(:disabled)» è un selettore CSS, non testo
   m.onkeydown = e => { const v = voci(), i = v.indexOf(document.activeElement); if (e.key === "ArrowDown") { e.preventDefault(); v[(i + 1) % v.length].focus(); } else if (e.key === "ArrowUp") { e.preventDefault(); v[(i - 1 + v.length) % v.length].focus(); } };
 }
 function chiudiPop(rifuoca) { const c = apriPop.cur; if (!c) return; c.m.hidden = true; c.btn.setAttribute("aria-expanded", "false"); apriPop.cur = null; if (rifuoca) c.btn.focus(); }
@@ -948,7 +948,7 @@ function renderSbar() {
   const sp = S.spreads[cur];
   const lato = side => { const mode = side === "L" ? sp.L : sp.R; return `<span class="lato"><span class="lbl">${escH(t(side === "L" ? "editor.sbar.sinistra" : "editor.sbar.destra"))}</span> <span class="seg2" role="group" aria-label="${escH(t(side === "L" ? "editor.sbar.pagina_sx" : "editor.sbar.pagina_dx"))}"><button data-mode="${side}:I" class="${mode === "I" ? "on" : ""}" aria-pressed="${mode === "I"}" title="${escH(t("editor.sbar.piena_tit"))}">${escH(t("editor.sbar.piena"))}</button><button data-mode="${side}:W" class="${mode === "W" ? "on" : ""}" aria-pressed="${mode === "W"}" title="${escH(t("editor.sbar.bianca_tit"))}">${escH(t("editor.sbar.bianca"))}</button></span></span>`; };
   $("sbarL").innerHTML = `<span class="num"><span class="lbl">${escH(t("editor.sbar.spread"))} </span><b class="mono">${nomeSpread(cur)}</b></span>${lato("L")}${lato("R")}<span class="sep"></span>`
-    + BT("mdisp", t("editor.sbar.disposizione"), { ic: "disp", k: "D", tit: t("editor.sbar.disposizione_tit") })
+    + BT("mdisp", t("editor.sbar.disposizione"), { ic: "disp", k: "D", tit: t("editor.sbar.disposizione_tit", { indietro: tasto("⇧ D") }) })
     + BT("ttxt", t("editor.sbar.testo"), { ic: "text", k: "T", on: textTool, pressed: textTool, tit: t("editor.sbar.testo_tit") })
     + BT("mgap", t("editor.sbar.spazi"), { ic: "gap", on: GAPCHK, pressed: GAPCHK, tit: t("editor.sbar.spazi_tit") }) + BT("mgapfix", t("editor.sbar.correggi_spazi"), { solo: true, ic: "next", cls: "ico", tit: t("editor.sbar.correggi_spazi") })
     + `<span class="sep"></span>` + BT("vistab", t("editor.sbar.vista"), { ic: "eye" }) + BT("spmb", t("editor.sbar.altro"), { ic: "more", solo: true, cls: "ico" });
@@ -1018,17 +1018,17 @@ async function sostituisci(at, n, adatta = true) {
   if (e.adattata) pillola(t(e.lato ? "editor.sost.adattata_pagina" : "editor.sost.adattata"), parti.join(" · "), 6000, { t: t("editor.sost.tieni"), f: async () => { await op({ op: "undo" }); await sostituisci(at, n, false); } });
   else pillola(e.taglia > 1.25 ? t("editor.sost.taglia", { x: cmF(e.taglia) }) : t("editor.sost.fatto"), parti.join(" · "), 4000, annullaAz());
 }
-async function dupSpread() { await op({ op: "dup", s: cur }); cur = cur + 1; sel = null; msel = []; render(); toast("Spread duplicato"); }
+async function dupSpread() { await op({ op: "dup", s: cur }); cur = cur + 1; sel = null; msel = []; render(); toast(t("editor.msg.spread_duplicato")); }
 let clipSrc = null;
 async function cutSel() {       // taglia = copia + togli dallo spread (la foto torna libera); un Annulla rimette tutto
   if (!msel.length) return; const at = mAts(); if (!await copySel()) return;
-  for (const [a, b] of at.sort((x, y) => y[1] - x[1])) await op({ op: "delframe", at: [cur, a, b] }); msel = []; sel = null; render(); toast("Tagliato: incolla dove vuoi (⌘V)");
+  for (const [a, b] of at.sort((x, y) => y[1] - x[1])) await op({ op: "delframe", at: [cur, a, b] }); msel = []; sel = null; render(); toast(t("editor.msg.tagliato", { tasto: tasto("⌘ V") }));
 }
-async function copySel() { if (!msel.length) return; try { await api("/api/op", { cid: CID, rev: S.rev, op: "copia", s: cur, ats: mAts() }); clipSrc = cur; toast(msel.length + (msel.length === 1 ? " elemento copiato" : " elementi copiati")); return true; } catch (e) { return false; } }
+async function copySel() { if (!msel.length) return; try { await api("/api/op", { cid: CID, rev: S.rev, op: "copia", s: cur, ats: mAts() }); clipSrc = cur; toast(tn("editor.msg.copiati", msel.length)); return true; } catch (e) { return false; } }
 async function pasteSel() {
   const before = new Set(S.spreads[cur].items.map(kOf)); await op({ op: "incolla", s: cur, scarto: clipSrc === cur });
   const fresh = S.spreads[cur].items.filter(i => !before.has(kOf(i)));
-  if (fresh.length) { msel = fresh.map(kOf); const l = fresh[fresh.length - 1]; sel = { s: cur, side: l.side, idx: l.idx }; render(); toast("Incollato"); }
+  if (fresh.length) { msel = fresh.map(kOf); const l = fresh[fresh.length - 1]; sel = { s: cur, side: l.side, idx: l.idx }; render(); toast(t("editor.msg.incollato")); }
 }
 function thumbTarget(ev) {                                     // trascinando foto sulla fila degli spread: {pos} = tra due miniature (nasce uno spread nuovo), {on} = sopra una miniatura (entrano in quello spread), null = fuori dalla fila
   const T = $("thumbs"), r = T.getBoundingClientRect(); if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return null;
@@ -1046,21 +1046,21 @@ function tline(t) {                                            // linea blu tra 
 async function senzaFoto(src) {                                // dopo aver portato via delle foto: gli spread rimasti senza foto si possono cancellare (si chiede, uno alla volta)
   const vuoti = src.filter(j => S.spreads[j] && !S.spreads[j].items.some(i => i.k !== "t")).sort((a, b) => b - a);
   for (const j of vuoti) {
-    const testo = S.spreads[j].items.length ? "Ci restano solo dei testi: se lo cancelli, si perdono." : "È rimasto completamente vuoto.";
+    const testo = t(S.spreads[j].items.length ? "editor.senza.solo_testi" : "editor.senza.vuoto");
     cur = j; render();
-    if (await choose(`Lo spread ${j + 1} è rimasto senza foto`, testo + " Vuoi cancellarlo? (puoi annullare)", [{ t: "Lascia lo spread", v: false }, { t: "Cancella lo spread", v: true, main: true }])) { await op({ op: "delete", s: j }); cur = Math.min(j, S.spreads.length - 1); render(); }
+    if (await choose(t("editor.senza.titolo", { n: j + 1 }), t("editor.senza.chiedi", { motivo: testo }), [{ t: t("editor.senza.lascia"), v: false }, { t: t("editor.senza.cancella"), v: true, main: true }])) { await op({ op: "delete", s: j }); cur = Math.min(j, S.spreads.length - 1); render(); }
   }
 }
 const spreadsDi = names => S.spreads.map((sp, k) => sp.items.some(i => i.name && names.includes(i.name)) ? k : -1).filter(k => k >= 0);
 async function newSpreadFrom(names, pos) {
   const src = spreadsDi(names);
   try { await op({ op: "newspreadsel", pos, names }); } catch (e) { toast(e.message || String(e), true); return false; }
-  cur = pos; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(t("editor.pool.nuovo", { n: nomeSpread(pos), foto: names.length }), false, annullaAz());
+  cur = pos; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(t("editor.pool.nuovo", { n: nomeSpread(pos), nfoto: names.length }), false, annullaAz());
   await senzaFoto(src.map(k => k + (pos <= k ? 1 : 0))); return true;
 }
 async function addToSpread(names, k) {
   const src = spreadsDi(names).filter(x => x !== k), tutte = names.every(n => S.spreads[k].items.some(i => i.name === n)); if (tutte) return false;
-  const how = await choose(`Aggiungere ${names.length === 1 ? "la foto" : names.length + " foto"} allo spread ${nomeSpread(k)}`, "Vuoi riorganizzare lo spread con un altro modello, oppure lasciarlo così com'è (le foto entrano come cornici libere, le sposti tu)?", [{ t: "Riorganizza con un altro modello", v: "reorg", main: true }, { t: "Lascia così", v: "keep" }]);
+  const how = await choose(tn("editor.agg.titolo", names.length, { spread: nomeSpread(k) }), t("editor.agg.testo"), [{ t: t("editor.agg.riorganizza"), v: "reorg", main: true }, { t: t("editor.agg.lascia"), v: "keep" }]);
   if (!how) return false;
   try { await op({ op: "addtospread", s: k, names, how }); } catch (e) { toast(e.message || String(e), true); return false; }
   cur = k; sel = null; msel = []; POOLSELS = []; POOLSEL = null; render(); toast(t("editor.pool.aggiunte", { n: nomeSpread(k) }), false, annullaAz());
@@ -1069,7 +1069,7 @@ async function addToSpread(names, k) {
 const droppa = (names, t) => t.on != null ? addToSpread(names, t.on) : newSpreadFrom(names, t.pos);
 async function moveSp(a, b) { if (b < 0 || b >= S.spreads.length || a === b) return; await op({ op: "move", s: a, to: b }); cur = b; sel = null; render(); }
 function go(k) { if (k >= 0 && k < S.spreads.length) { cur = k; sel = null; msel = []; render(); } }
-const fmt1 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
+const fmt1 = v => (v >= 0 ? "+" : "") + fN(v, 2);
 const corrUrl = (it, w, over) => `/img/corr?n=${encU(it.name)}&w=${w}&v=${encodeURIComponent(JSON.stringify([it.evp, it.rit, it.tono]))}${over ? "&o=" + encodeURIComponent(JSON.stringify(over)) + "&t=" + (++LIVE.seq) : ""}`;
 function cropStyle(it) {
   const [l, t, r, b] = it.box, W = r - l, H = b - t, ratio = it.w / it.h;
@@ -1081,22 +1081,22 @@ const hex = c => "#" + c.map(v => Math.round(v).toString(16).padStart(2, "0")).j
 function renderTextSide(it, P) {
   const f = FONTS.find(x => x.ps === it.font) || { fam: it.font, sty: "", ps: it.font }, at = [cur, it.side, it.idx], pt = it.size * 72 / S.ppi;
   const fo = fams().map(n => `<option${n === f.fam ? " selected" : ""}>${escH(n)}</option>`).join(""), so = FONTS.filter(x => x.fam === f.fam).map(x => `<option value="${escH(x.ps)}"${x.ps === it.font ? " selected" : ""}>${escH(x.sty)}</option>`).join("");
-  P.innerHTML = `<div class="insp"><div class="nm">Livello di testo</div>
+  P.innerHTML = `<div class="insp"><div class="nm">${tH("editor.tx.livello")}</div>
     <textarea id="ttx" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px"></textarea>
-    <div class="sec">Stile</div>
-    <div class="erow"><select id="tstl" style="width:100%"><option value="">${it.stile ? "(scollega)" : "— nessuno —"}</option>${Object.keys(S.stili || {}).map(n => `<option${n === it.stile ? " selected" : ""}>${escH(n)}</option>`).join("")}</select></div>
-    ${it.stile ? `<div class="empty" style="margin:2px 0 4px">Le modifiche a carattere, corpo, colore e allineamento valgono per tutti i testi con lo stile «${escH(it.stile)}».</div>` : ""}
-    <div class="tools"><button id="tstsave">Salva come stile…</button>${it.stile ? `<button id="tstdel" class="danger" title="Elimina lo stile (i testi restano come sono)">Elimina stile</button>` : ""}</div>
-    <div class="sec">Carattere</div>
+    <div class="sec">${tH("editor.tx.stile")}</div>
+    <div class="erow"><select id="tstl" style="width:100%"><option value="">${tH(it.stile ? "editor.tx.scollega" : "editor.tx.nessuno")}</option>${Object.keys(S.stili || {}).map(n => `<option${n === it.stile ? " selected" : ""}>${escH(n)}</option>`).join("")}</select></div>
+    ${it.stile ? `<div class="empty" style="margin:2px 0 4px">${tH("editor.tx.stile_nota", { nome: it.stile })}</div>` : ""}
+    <div class="tools"><button id="tstsave">${tH("editor.tx.salva_stile")}</button>${it.stile ? `<button id="tstdel" class="danger" title="${tH("editor.tx.elimina_stile_tit")}">${tH("editor.tx.elimina_stile")}</button>` : ""}</div>
+    <div class="sec">${tH("editor.tx.carattere")}</div>
     <div class="erow"><select id="tfam" style="width:100%">${fo}</select></div>
     <div class="erow"><select id="tsty" style="width:100%">${so}</select></div>
-    <div class="sl"><b>Corpo:</b><input id="tsz" type="number" min="3" max="400" step="0.5" value="${pt.toFixed(1)}" style="width:70px"><span class="v">pt</span></div>
-    <div class="sl"><b>Spaziatura:</b><input id="ttr" type="range" min="-100" max="800" step="5" value="${escH(it.tr)}"><span class="v" id="ttrv">${escH(it.tr)}</span></div>
-    <div class="sec">Paragrafo e colore</div>
-    <div class="tools"><span class="seg2"><button id="tal-left" class="${it.al === "left" ? "on" : ""}" title="A sinistra">⇤</button><button id="tal-center" class="${it.al === "center" ? "on" : ""}" title="Centrato">↔</button><button id="tal-right" class="${it.al === "right" ? "on" : ""}" title="A destra">⇥</button></span>
-      <input id="tcol" type="color" value="${hex(it.col)}" style="width:44px;height:28px;padding:0;border:none;background:none" title="Colore"></div>
-    <div class="empty" style="margin:10px 0">Trascinalo sulla pagina come un livello. Le maniglie cambiano la larghezza (il testo va a capo) e l'altezza.</div>
-    <div class="tools"><button id="tdel" class="danger">Elimina il testo</button></div></div>`;
+    <div class="sl"><b>${tH("editor.tx.corpo")}</b><input id="tsz" type="number" min="3" max="400" step="0.5" value="${pt.toFixed(1)}" style="width:70px"><span class="v">pt</span></div>
+    <div class="sl"><b>${tH("editor.tx.spaziatura")}</b><input id="ttr" type="range" min="-100" max="800" step="5" value="${escH(it.tr)}"><span class="v" id="ttrv">${escH(it.tr)}</span></div>
+    <div class="sec">${tH("editor.tx.paragrafo")}</div>
+    <div class="tools"><span class="seg2"><button id="tal-left" class="${it.al === "left" ? "on" : ""}" title="${tH("editor.allinea.sx")}">⇤</button><button id="tal-center" class="${it.al === "center" ? "on" : ""}" title="${tH("editor.tx.centrato")}">↔</button><button id="tal-right" class="${it.al === "right" ? "on" : ""}" title="${tH("editor.allinea.dx")}">⇥</button></span>
+      <input id="tcol" type="color" value="${hex(it.col)}" style="width:44px;height:28px;padding:0;border:none;background:none" title="${tH("editor.side.colore")}"></div>
+    <div class="empty" style="margin:10px 0">${tH("editor.tx.trascina_nota")}</div>
+    <div class="tools"><button id="tdel" class="danger">${tH("editor.tx.elimina")}</button></div></div>`;
   $("ttx").value = it.tx; const set = o => op({ op: "settext", at, ...o });
   let tm = null; $("ttx").oninput = () => { clearTimeout(tm); tm = setTimeout(() => set({ tx: $("ttx").value || " " }), 500); }; $("ttx").onchange = () => { clearTimeout(tm); set({ tx: $("ttx").value || " " }); };
   $("ttx").onkeydown = e => e.stopPropagation();
@@ -1118,8 +1118,8 @@ function closeFpop() { if (fpop) { fpop.remove(); fpop = null; } }
 function fontPopup(anchor, curFam, pick) {
   closeFpop(); const r = anchor.getBoundingClientRect(); fpop = document.createElement("div"); fpop.id = "fpop";
   fpop.style.cssText = `left:${Math.max(6, Math.min(r.left, innerWidth - 300))}px;top:${Math.min(r.bottom + 4, innerHeight - 380)}px`;
-  fpop.innerHTML = `<input placeholder="Cerca un carattere…" id="fq"><div id="fl"></div>`; document.body.appendChild(fpop);
-  const all = fams(), draw = q => { $("fl").innerHTML = all.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 300).map(n => `<div data-f="${escH(n)}" class="${n === curFam ? "on" : ""}"><span style="font-family:'${escH(n.replace(/'/g, ""))}'">${escH(n)}</span></div>`).join("") || `<div class="nof">Nessun carattere</div>`; };
+  fpop.innerHTML = `<input placeholder="${tH("editor.font.cerca")}" id="fq"><div id="fl"></div>`; document.body.appendChild(fpop);
+  const all = fams(), draw = q => { $("fl").innerHTML = all.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 300).map(n => `<div data-f="${escH(n)}" class="${n === curFam ? "on" : ""}"><span style="font-family:'${escH(n.replace(/'/g, ""))}'">${escH(n)}</span></div>`).join("") || `<div class="nof">${tH("editor.font.nessuno")}</div>`; };
   draw(""); $("fq").oninput = () => draw($("fq").value); $("fq").onkeydown = e => { e.stopPropagation(); if (e.key === "Escape") closeFpop(); if (e.key === "Enter") { const f = $("fl").querySelector("[data-f]"); if (f) { pick(f.dataset.f); closeFpop(); } } };
   $("fl").onclick = e => { const d = e.target.closest("[data-f]"); if (d) { pick(d.dataset.f); closeFpop(); } }; $("fq").focus();
   const cu = $("fl").querySelector(".on"); if (cu) cu.scrollIntoView({ block: "center" });
@@ -1130,13 +1130,13 @@ function renderTextBar(it) {
   const B = $("txbar"); if (!it || !S) { B.style.display = "none"; B.innerHTML = ""; closeFpop(); return; }
   const f = FONTS.find(x => x.ps === it.font) || { fam: it.font, sty: "", ps: it.font }, at = [cur, it.side, it.idx], pt = it.size * 72 / S.ppi, set = o => op({ op: "settext", at, ...o });
   const sts = FONTS.filter(x => x.fam === f.fam), lh = Math.round((it.lh || 1.2) * 100);
-  B.innerHTML = `<button id="tb-fam" class="fam" title="Carattere" style="font-family:'${escH(f.fam.replace(/'/g, ""))}'">${escH(f.fam)}<i>▾</i></button>
-    <select id="tb-sty" title="Stile (Regular, Bold, Italic…)">${sts.map(x => `<option value="${escH(x.ps)}"${x.ps === it.font ? " selected" : ""}>${escH(x.sty)}</option>`).join("")}</select>
-    <span class="sep"></span><label title="Corpo (pt)"><b>T</b><input id="tb-sz" type="number" min="3" max="400" step="0.5" value="${+pt.toFixed(1)}"></label><select id="tb-szl" title="Corpi comuni"><option value="">▾</option>${SIZES.map(n => `<option>${n}</option>`).join("")}</select>
-    <label title="Interlinea (% del corpo)"><b>↕</b><input id="tb-lh" type="number" min="60" max="300" step="5" value="${lh}"><u>%</u></label>
-    <label title="Spaziatura tra le lettere"><b>VA</b><input id="tb-tr" type="number" min="-100" max="800" step="5" value="${escH(it.tr)}"></label>
-    <span class="sep"></span><span class="seg2"><button data-al="left" class="${it.al === "left" ? "on" : ""}" title="A sinistra">⇤</button><button data-al="center" class="${it.al === "center" ? "on" : ""}" title="Centrato">↔</button><button data-al="right" class="${it.al === "right" ? "on" : ""}" title="A destra">⇥</button></span>
-    <button id="tb-caps" class="${it.caps ? "on" : ""}" title="Tutto maiuscolo">TT</button><input id="tb-col" type="color" value="${hex(it.col)}" title="Colore">`;
+  B.innerHTML = `<button id="tb-fam" class="fam" title="${tH("editor.font.titolo")}" style="font-family:'${escH(f.fam.replace(/'/g, ""))}'">${escH(f.fam)}<i>▾</i></button>
+    <select id="tb-sty" title="${tH("editor.font.stile_tit")}">${sts.map(x => `<option value="${escH(x.ps)}"${x.ps === it.font ? " selected" : ""}>${escH(x.sty)}</option>`).join("")}</select>
+    <span class="sep"></span><label title="${tH("editor.font.corpo_tit")}"><b>T</b><input id="tb-sz" type="number" min="3" max="400" step="0.5" value="${+pt.toFixed(1)}"></label><select id="tb-szl" title="${tH("editor.font.corpi_tit")}"><option value="">▾</option>${SIZES.map(n => `<option>${n}</option>`).join("")}</select>
+    <label title="${tH("editor.font.interlinea_tit")}"><b>↕</b><input id="tb-lh" type="number" min="60" max="300" step="5" value="${lh}"><u>%</u></label>
+    <label title="${tH("editor.font.spaziatura_tit")}"><b>VA</b><input id="tb-tr" type="number" min="-100" max="800" step="5" value="${escH(it.tr)}"></label>
+    <span class="sep"></span><span class="seg2"><button data-al="left" class="${it.al === "left" ? "on" : ""}" title="${tH("editor.allinea.sx")}">⇤</button><button data-al="center" class="${it.al === "center" ? "on" : ""}" title="${tH("editor.tx.centrato")}">↔</button><button data-al="right" class="${it.al === "right" ? "on" : ""}" title="${tH("editor.allinea.dx")}">⇥</button></span>
+    <button id="tb-caps" class="${it.caps ? "on" : ""}" title="${tH("editor.font.maiuscolo_tit")}">TT</button><input id="tb-col" type="color" value="${hex(it.col)}" title="${tH("editor.side.colore")}">`;
   const wr = $("wrap"), sc = wr.clientWidth / S.W, bx = it.x * sc, by = it.y * sc; B.style.display = "flex";
   const sr = $("stage").getBoundingClientRect(), wl = wr.getBoundingClientRect().left; B.style.left = (Math.max(sr.left + 8, Math.min(wl + bx, sr.right - B.offsetWidth - 14)) - wl) + "px"; B.style.top = (by - B.offsetHeight - 8 < -40 ? by + it.h * sc + 8 : by - B.offsetHeight - 8) + "px";
   B.onpointerdown = e => e.stopPropagation(); B.ondblclick = e => e.stopPropagation(); B.oncontextmenu = e => e.stopPropagation();
@@ -1148,7 +1148,7 @@ function renderTextBar(it) {
   $("tb-col").onchange = () => { const h = $("tb-col").value; set({ col: [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)] }); };
   B.querySelectorAll("input").forEach(i => i.onkeydown = e => { e.stopPropagation(); if (e.key === "Enter") i.blur(); });
 }
-function setTextTool(on) { textTool = on; $("wrap").style.cursor = on ? "text" : ""; if ($("ttxt")) $("ttxt").classList.toggle("on", on); if (on) toast("Strumento Testo: clicca o trascina sulla pagina, poi scrivi"); }
+function setTextTool(on) { textTool = on; $("wrap").style.cursor = on ? "text" : ""; if ($("ttxt")) $("ttxt").classList.toggle("on", on); if (on) toast(t("editor.font.strumento")); }
 function enterEdit(it, selAll = false) {
   const slot = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, it.side, it.idx])); if (!slot) return;
   const sc = $("wrap").clientWidth / S.W, ta = document.createElement("textarea"); ta.className = "tedit"; ta.value = it.tx;
@@ -1197,13 +1197,13 @@ function renderSide() {
     <div class="tools"><button id="crop" class="${cropMode ? "on" : ""}" aria-pressed="${cropMode}" title="${escH(t("editor.sel.ritaglia_tit"))}">${escH(t("editor.menu.sposta_cornice"))}</button><button id="bw" class="${it.bw ? "on" : ""}" aria-pressed="${!!it.bw}">${escH(t("editor.menu.bn"))}</button></div>
     ${DET("luce", t("editor.side.luce"), `<div id="rit">${RITG[0].map(ritRow(it)).join("")}</div>`, `<span class="x" id="tnx" role="button" tabindex="0" title="${escH(t("editor.side.azzera_tit"))}">${escH(t("editor.side.azzera"))}</span>`)}
     ${DET("colore", t("editor.side.colore"), `<div id="rit2">${RITG[1].map(ritRow(it)).join("")}</div>`)}
-    ${DET("cornice", t("editor.side.cornice"), SL("ang", t("editor.side.angolo"), -15, 15, 0.1, it.a, it.a.toFixed(1) + "°", "linear-gradient(90deg,#555,#999 50%,#555)")
+    ${DET("cornice", t("editor.side.cornice"), SL("ang", t("editor.side.angolo"), -15, 15, 0.1, it.a, fN(it.a, 1) + "°", "linear-gradient(90deg,#555,#999 50%,#555)")
       + SL("ocw", t("editor.side.opacita"), 0, 100, 1, it.oc ?? 100, (it.oc ?? 100) + "%", "linear-gradient(90deg,#333,#ddd)")
-      + SL("bdw", t("editor.side.bordo"), 0, 20, 0.5, it.bd ? it.bd[0] : 0, it.bd ? it.bd[0] + " mm" : t("editor.side.no"), "linear-gradient(90deg,#555,#fff)", false)
+      + SL("bdw", t("editor.side.bordo"), 0, 20, 0.5, it.bd ? it.bd[0] : 0, it.bd ? fN(it.bd[0]) + " mm" : t("editor.side.no"), "linear-gradient(90deg,#555,#fff)", false)
       + `<div class="cl">${escH(t("editor.side.colore_bordo"))}</div><div class="cdots bdc ${it.bd ? "" : "off"}" id="bdc">${[["#ffffff", "bianco"], ["#f3ead8", "crema"], ["#9a9a9a", "grigio"], ["#000000", "nero"]].map(([c, n]) => `<i data-c="${c}" style="--c:${c}" title="${escH(t("editor.side.bordo_" + n))}" role="button" tabindex="0" aria-label="${escH(t("editor.side.bordo_" + n))}" class="${it.bd && it.bd[1] === c ? "on" : ""}"></i>`).join("")}</div>`
       + SL("shw", t("editor.side.ombra"), 0, 100, 1, it.sh || 0, it.sh || t("editor.side.no"), "linear-gradient(90deg,#aaa,#000)", false)
       + `<div class="tools"><button id="togrid" ${!it.free ? "disabled" : ""} title="${escH(t("editor.side.griglia_tit"))}">${escH(t("editor.side.griglia"))}</button><button id="delf" class="danger" title="${escH(conTasto(t("editor.menu.togli_spread"), "⌫"))}">${escH(t("editor.side.togli"))}</button></div>`)}
-    ${DET("etichetta", t("editor.side.etichetta") + (col ? " · " + col : ""), `<div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${escH(k)}" role="button" tabindex="0" aria-label="${escH(k)}" class="${col === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" role="button" tabindex="0" title="${escH(t("editor.menu.nessun_colore"))}" aria-label="${escH(t("editor.menu.nessun_colore"))}"></i></div>`)}
+    ${DET("etichetta", t("editor.side.etichetta") + (col ? " · " + nomeCol(col) : ""), `<div class="cdots" id="cdots">${COLS.map(([k, c]) => `<i data-k="${k}" style="--c:${c}" title="${escH(nomeCol(k))}" role="button" tabindex="0" aria-label="${escH(nomeCol(k))}" class="${col === k ? "on" : ""}"></i>`).join("")}<i class="nc" data-k="" role="button" tabindex="0" title="${escH(t("editor.menu.nessun_colore"))}" aria-label="${escH(t("editor.menu.nessun_colore"))}"></i></div>`)}
     ${DET("info", t("editor.side.info"), `<div class="kv" id="info"><span>${escH(t("editor.side.dimensioni"))}</span><span>${it.dim[0]} × ${it.dim[1]} px</span><span>${escH(t("editor.side.usata"))}</span><span>${escH(t(it.uses === 1 ? "editor.side.volta" : "editor.side.volte", { n: it.uses }))}</span><span>${escH(t("editor.side.esp_totale"))}</span><span>${fmt1(it.ev)} EV</span></div>`)}
   </div>`;
   P.querySelectorAll("details").forEach(d => d.ontoggle = () => { if (d.open) DOPEN.add(d.dataset.d); else DOPEN.delete(d.dataset.d); });
@@ -1219,14 +1219,14 @@ function renderSide() {
   $("togrid").onclick = () => op({ op: "snap", at });
   const z = $("z"); z.oninput = () => $("zv").textContent = Math.round(z.value * 100) + "%"; z.onchange = () => op({ op: "set", at, z: +z.value });
   $("zx").onclick = () => op({ op: "set", at, z: 1 });
-  const an = $("ang"); an.oninput = () => { $("angv").textContent = (+an.value).toFixed(1) + "°"; liveSend({ a: +an.value }); }; an.onchange = () => op({ op: "set", at, a: +an.value });
+  const an = $("ang"); an.oninput = () => { $("angv").textContent = fN(+an.value, 1) + "°"; liveSend({ a: +an.value }); }; an.onchange = () => op({ op: "set", at, a: +an.value });
   $("angx").onclick = () => op({ op: "set", at, a: 0 });
   const e = $("evp"); e.oninput = () => { $("evpv").textContent = fmt1(+e.value); liveSend({ ev: +e.value }); }; e.onchange = () => op({ op: "ev", photo: it.name, value: +e.value });
   $("evpx").onclick = () => op({ op: "ev", photo: it.name, value: 0 });
   const oc = $("ocw"); oc.oninput = () => $("ocwv").textContent = oc.value + "%"; oc.onchange = () => op({ op: "set", at, oc: +oc.value }); $("ocwx").onclick = () => op({ op: "set", at, oc: 100 });
   wireRit(it);
   const bcol = () => (it.bd && it.bd[1]) || "#ffffff", bset = (mm, c) => op({ op: "set", at, bd: mm > 0 ? [mm, c] : null });
-  $("bdw").oninput = () => { $("bdwv").textContent = +$("bdw").value ? $("bdw").value + " mm" : t("editor.side.no"); liveSend({ bd: +$("bdw").value > 0 ? [+$("bdw").value, bcol()] : null }); }; $("bdw").onchange = () => bset(+$("bdw").value, bcol());
+  $("bdw").oninput = () => { $("bdwv").textContent = +$("bdw").value ? fN(+$("bdw").value) + " mm" : t("editor.side.no"); liveSend({ bd: +$("bdw").value > 0 ? [+$("bdw").value, bcol()] : null }); }; $("bdw").onchange = () => bset(+$("bdw").value, bcol());
   document.querySelectorAll("#bdc i").forEach(d => d.onclick = () => bset(it.bd ? it.bd[0] : 3, d.dataset.c));
   $("shw").oninput = () => $("shwv").textContent = +$("shw").value || t("editor.side.no"); $("shw").onchange = () => op({ op: "set", at, sh: +$("shw").value });
   document.querySelectorAll("#cdots i").forEach(d => d.onclick = () => { const cur0 = (S.photos.find(x => x.n === it.name) || {}).col; op({ op: "colore", photos: [it.name], value: d.dataset.k && d.dataset.k !== cur0 ? d.dataset.k : null }); });
@@ -1297,7 +1297,7 @@ function renderControlla() {
   const esito = d.pronto ? (d.conta.guarda ? t("editor.ctl.pronto_guarda", { n: d.conta.guarda }) : t("editor.ctl.pronto")) : t("editor.ctl.non_pronto", { n: d.conta.blocca });
   const riga = p => `<button class="pb" data-i="${d.problemi.indexOf(p)}"><i class="${p.livello}"></i><span>${escH(p.testo.replace(/^Spread \d+: /, ""))}<small>${escH(p.s != null ? t("editor.ctl.dove", { n: nomeSpread(p.s) }) + (p.side ? " · " + t(p.side === "L" ? "editor.sbar.sinistra" : "editor.sbar.destra").toLowerCase() : "") : t("editor.ctl.non_usata"))}</small></span>${p.sistema ? `<span class="sis">${escH(t("editor.ctl.si_sistema"))}</span>` : ""}</button>`;
   const gruppo = liv => { const L2 = d.problemi.filter(p => p.livello === liv); return L2.length ? `<h3>${escH(t(LIV[liv] + "_h", { n: L2.length }))}</h3>${L2.slice(0, 200).map(riga).join("")}${L2.length > 200 ? `<div class="empty">${escH(t("editor.ctl.altri", { n: L2.length - 200 }))}</div>` : ""}` : ""; };
-  P.innerHTML = `<div class="insp ctl"><div style="display:flex;align-items:center"><div class="nm" style="flex:1">${escH(t("editor.ctl.titolo"))}</div><button id="ctlx" class="ico piatto" aria-label="${escH(t("comune.chiudi"))}" title="${escH(t("comune.chiudi"))} (Esc)">✕</button></div>
+  P.innerHTML = `<div class="insp ctl"><div style="display:flex;align-items:center"><div class="nm" style="flex:1">${escH(t("editor.ctl.titolo"))}</div><button id="ctlx" class="ico piatto" aria-label="${escH(t("comune.chiudi"))}" title="${escH(conTasto(t("comune.chiudi"), t("editor.tasti.k_esc")))}">✕</button></div>
     <div class="esito ${d.pronto ? "pronto" : "nonpronto"}" role="status">${escH(esito)}</div>
     <div class="conta">${["blocca", "guarda", "info"].map(k => `<span><i class="${k}"></i>${escH(t(LIV[k] + "_n", { n: d.conta[k] }))}</span>`).join("")}</div>
     <div class="azioni"><button id="ctlsis" class="primary${album ? "" : " lock"}" ${nSis ? "" : "disabled"}>${escH(nSis ? t("editor.ctl.sistema_n", { n: nSis }) : t("editor.ctl.sistema"))}</button><button id="ctluni" class="${tonoOk ? "" : "lock"}">${escH(t("editor.ctl.uniforma"))}</button><button id="ctlric">${escH(t("editor.ctl.ricontrolla"))}</button></div>
@@ -1326,7 +1326,7 @@ let flash = [];
 // ---- licenza: un segno discreto in alto quando c'è qualcosa da sapere (prova, sola lettura, chiave che non vale)
 function renderLicenza() {
   const L = S.licenza, b = $("licb"); if (!L) { b.hidden = true; return; }
-  const testo = L.sola_lettura ? t("editor.lic.sola_lettura") : L.stato === "prova" ? (L.giorni === 1 ? t("editor.lic.prova_1") : t("editor.lic.prova", { n: L.giorni })) : L.stato === "non valida" ? t("editor.lic.non_valida") : "";
+  const testo = L.sola_lettura ? t("editor.lic.sola_lettura") : L.stato === "prova" ? (L.giorni === 1 ? t("editor.lic.prova_1") : t("editor.lic.prova", { n: L.giorni })) : /^non valida$/.test(L.stato) ? t("editor.lic.non_valida") : "";      // «non valida» è il codice di stato che manda il server, non un testo
   b.hidden = !testo; b.textContent = testo; b.className = L.sola_lettura ? "ro" : L.stato === "prova" && L.giorni != null && L.giorni <= 3 ? "fine" : ""; b.title = L.messaggio || "";
   b.onclick = () => foglio(L.nome_fascia ? t("editor.lic.titolo_fascia", { fascia: L.nome_fascia }) : t("editor.lic.titolo"), L.messaggio, [{ t: t("comune.chiudi"), v: false }, { t: t("editor.lic.vedi"), v: true, main: true }]).then(v => { if (v) vaiProgetti(); });
   document.body.classList.toggle("solalettura", !!L.sola_lettura);
@@ -1357,7 +1357,7 @@ async function apriBozza() {
   const carica = async () => {
     $("bzok").disabled = true; $("bzl").innerHTML = `<div class="empty">${escH(t("editor.bozza.preparo"))}</div>`;
     try { BZ.d = await api("/api/bozza", Object.assign({ ritmo: BZ.ritmo, stelle: BZ.stelle, seme: BZ.seme }, BZ.per ? { per_spread: BZ.per } : {})); } catch (e) { $("bzl").innerHTML = ""; return; }
-    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: d.spreads.length, foto: d.foto, capitoli: d.capitoli, per: cmF(d.per_spread) });
+    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: d.spreads.length, nfoto: d.foto, capitoli: d.capitoli, per: cmF(d.per_spread) });
     let capo = -1; $("bzl").innerHTML = d.spreads.map((s, n) => { const testa = s.capitolo !== capo ? `<div class="bz-cap">${escH(t("editor.bozza.capitolo", { n: s.capitolo + 1 }))}${s.ora ? ` <span class="mono" style="font-size:12px;color:var(--dim)">${escH(s.ora)}</span>` : ""}</div>` : ""; capo = s.capitolo;
       return testa + `<figure><img loading="lazy" alt="${escH(t("editor.bozza.anteprima", { n: n + 1 }))}" src="/img/bozza/${n}?k=0.08&v=${BZ.seme}-${encU(BZ.ritmo)}-${BZ.per}"><figcaption><b>${nomeSpread(S.spreads.length + n)}</b><span>${escH(t("editor.bozza.foto_n", { n: s.foto.length }))}${s.taglia > 1.25 ? " · ×" + cmF(Math.round(s.taglia * 10) / 10) : ""}</span></figcaption></figure>`; }).join("");
     $("bzok").disabled = !d.spreads.length; $("bzok").textContent = t("editor.bozza.aggiungi_n", { n: d.spreads.length }); $("bzok").focus();
@@ -1365,14 +1365,15 @@ async function apriBozza() {
   o.querySelectorAll("#bzr button").forEach(b => b.onclick = () => { BZ.ritmo = b.dataset.r; o.querySelectorAll("#bzr button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); carica(); });
   $("bzp").onchange = () => { BZ.per = +$("bzp").value; carica(); }; $("bzst").onchange = () => { BZ.stelle = $("bzst").checked; carica(); };
   $("bzn").onclick = () => { BZ.seme = (BZ.seme + 1) % 1000; carica(); }; $("bzx").onclick = close;
-  $("bzok").onclick = async () => { const pos = S.spreads.length, d = await op({ op: "bozza", spreads: BZ.d.spreads, pos }); if (!d) return; close(); view = "album"; cur = pos; sel = null; msel = []; render(); toast(t("editor.bozza.aggiunti", { n: d.esito.spread, foto: d.esito.foto }), false, annullaAz()); };
+  $("bzok").onclick = async () => { const pos = S.spreads.length, d = await op({ op: "bozza", spreads: BZ.d.spreads, pos }); if (!d) return; close(); view = "album"; cur = pos; sel = null; msel = []; render(); toast(t("editor.bozza.aggiunti", { n: d.esito.spread, nfoto: d.esito.foto }), false, annullaAz()); };
   carica();
 }
 
 // ---- ritocco stile Lightroom: luce e colore (si applica all'anteprima, ai JPG/PDF e, come livelli di regolazione, ai PSD)
-const RITG = [[["con", "Contrasto"], ["alt", "Alteluci"], ["omb", "Ombre"], ["bia", "Bianchi"], ["ner", "Neri"]], [["tmp", "Temperatura"], ["tnt", "Tinta"], ["vib", "Vibranza"], ["sat", "Saturazione"]]];
-const RITBG = { con: "linear-gradient(90deg,#8a8a8a,#5a5a5a 50%,#111)", alt: "linear-gradient(90deg,#4a4a4a,#f2f2f2)", omb: "linear-gradient(90deg,#0c0c0c,#8a8a8a)", bia: "linear-gradient(90deg,#6a6a6a,#fff)", ner: "linear-gradient(90deg,#000,#6a6a6a)", tmp: "linear-gradient(90deg,#3b82f6,#ddd,#f59e0b)", tnt: "linear-gradient(90deg,#22c55e,#ddd,#d946ef)", sat: "linear-gradient(90deg,#888,#e11d48)", vib: "linear-gradient(90deg,#888,#0ea5e9)" };
-const ritRow = it => ([k, l]) => { const v = Math.round(((it.rit || {})[k]) || 0); return `<div class="sl rit" data-k="${k}"><b>${l}:</b><input type="range" min="-100" max="100" step="1" value="${v}" ${RITBG[k] ? `style="--rb:${RITBG[k]}"` : ""} title="Doppio clic per azzerare"><span class="v">${v}</span></div>`; };
+const RITG = [[["con", "editor.rit.l_con"], ["alt", "editor.rit.l_alt"], ["omb", "editor.rit.l_omb"], ["bia", "editor.rit.l_bia"], ["ner", "editor.rit.l_ner"]], [["tmp", "editor.rit.l_tmp"], ["tnt", "editor.rit.l_tnt"], ["vib", "editor.rit.l_vib"], ["sat", "editor.rit.l_sat"]]];
+const gr90 = (...c) => "linear-gradient(90deg," + c.join(",") + ")";
+const RITBG = { con: gr90("#8a8a8a", "#5a5a5a 50%", "#111"), alt: gr90("#4a4a4a", "#f2f2f2"), omb: gr90("#0c0c0c", "#8a8a8a"), bia: gr90("#6a6a6a", "#fff"), ner: gr90("#000", "#6a6a6a"), tmp: gr90("#3b82f6", "#ddd", "#f59e0b"), tnt: gr90("#22c55e", "#ddd", "#d946ef"), sat: gr90("#888", "#e11d48"), vib: gr90("#888", "#0ea5e9") };
+const ritRow = it => ([k, l]) => { const v = Math.round(((it.rit || {})[k]) || 0); return `<div class="sl rit" data-k="${k}"><b>${tH(l)}:</b><input type="range" min="-100" max="100" step="1" value="${v}" ${RITBG[k] ? `style="--rb:${RITBG[k]}"` : ""} title="${tH("editor.rit.azzera_tit")}"><span class="v">${v}</span></div>`; };
 // ---- anteprima live: mentre si trascina un cursore la foto nella cornice (e il pannello Tono) si aggiornano subito; al rilascio il valore viene salvato
 const LIVE = { busy: false, next: null, seq: 0, keep: {} };
 function liveFrames(name) { return S.spreads[cur].items.filter(i => i.k !== "t" && i.name === name); }
@@ -1436,14 +1437,14 @@ function startPan(e, it, slotEl) {
   };
   window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);
 }
-function setCrop(on) { cropMode = on; $("hint").textContent = on ? "Ritaglio: trascina la foto per spostare l'immagine dentro la cornice (anche dall'anteprima a destra) · Esc o il bottone per uscire" : HINT; render(); }
+function setCrop(on) { cropMode = on; $("hint").textContent = on ? t("editor.hint.ritaglio") : HINT; render(); }
 
 // ---- righelli (in cm, come in Photoshop) e linee guida
 const HINT = $("hint").textContent;
 let showRulers = true, showGuides = true, magnet = true, lockGuides = false, showCropWarn = false;
 try { magnet = localStorage.getItem("mag") !== "0"; showRulers = localStorage.getItem("rul") !== "0"; showGuides = localStorage.getItem("gui") !== "0"; showCropWarn = localStorage.getItem("crw") === "1"; lockGuides = localStorage.getItem("glk") === "1"; } catch (e) {}
 function setRulers(on) { showRulers = on; try { localStorage.setItem("rul", on ? "1" : "0"); } catch (e) {} render(); }
-function setLock(on) { lockGuides = on; try { localStorage.setItem("glk", on ? "1" : "0"); } catch (e) {} render(); toast(on ? "Guide bloccate: non si spostano più" : "Guide sbloccate"); }
+function setLock(on) { lockGuides = on; try { localStorage.setItem("glk", on ? "1" : "0"); } catch (e) {} render(); toast(t(on ? "editor.vista.bloccate" : "editor.vista.sbloccate")); }
 function setCropWarn(on) { showCropWarn = on; try { localStorage.setItem("crw", on ? "1" : "0"); } catch (e) {} render(); }
 function setGuides(on) { showGuides = on; try { localStorage.setItem("gui", on ? "1" : "0"); } catch (e) {} render(); }
 const cmOf = px => px / S.ppi * 2.54;
@@ -1473,7 +1474,7 @@ function renderGuides() {
 function addGuide(kind, val, i) {
   const d = document.createElement("div"); d.className = "gl " + kind;
   if (kind === "v") d.style.left = val / S.W * 100 + "%"; else d.style.top = val / S.H * 100 + "%";
-  d.title = cmOf(val).toFixed(2) + " cm — trascina per spostare, fuori dallo spread per toglierla";
+  d.title = t("editor.vista.guida_tit", { cm: fN(cmOf(val), 2) });
   d.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); dragGuide(e, kind, i, val); };
   $("guides").appendChild(d);
 }
@@ -1492,7 +1493,7 @@ function dragGuide(e, kind, idx, start) {                // idx = -1: nuova guid
     el.classList.toggle("snap", snapped);
     inside = ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom;
     if (kind === "v") el.style.left = val / S.W * 100 + "%"; else el.style.top = val / S.H * 100 + "%";
-    tip.style.left = ev.clientX + 12 + "px"; tip.style.top = ev.clientY + 12 + "px"; tip.textContent = inside ? cmOf(val).toFixed(2) + " cm" + (snapped ? "  🧲" : "") : "toglie";
+    tip.style.left = ev.clientX + 12 + "px"; tip.style.top = ev.clientY + 12 + "px"; tip.textContent = inside ? fN(cmOf(val), 2) + " cm" + (snapped ? "  🧲" : "") : t("editor.vista.toglie");
     el.style.opacity = inside ? 1 : .35;
   };
   upd(e);
@@ -1506,8 +1507,8 @@ function dragGuide(e, kind, idx, start) {                // idx = -1: nuova guid
   };
   window.addEventListener("pointermove", upd); window.addEventListener("pointerup", up);
 }
-$("rh").onpointerdown = e => { if (e.button === 0) { if (lockGuides) { toast("Guide bloccate: sbloccale per crearne di nuove"); return; } if (!showGuides) setGuides(true); dragGuide(e, "h", -1); } };
-$("rv").onpointerdown = e => { if (e.button === 0) { if (lockGuides) { toast("Guide bloccate: sbloccale per crearne di nuove"); return; } if (!showGuides) setGuides(true); dragGuide(e, "v", -1); } };
+$("rh").onpointerdown = e => { if (e.button === 0) { if (lockGuides) { toast(t("editor.vista.bloccate_nuove")); return; } if (!showGuides) setGuides(true); dragGuide(e, "h", -1); } };
+$("rv").onpointerdown = e => { if (e.button === 0) { if (lockGuides) { toast(t("editor.vista.bloccate_nuove")); return; } if (!showGuides) setGuides(true); dragGuide(e, "v", -1); } };
 new ResizeObserver(() => { if (S) { drawRulers(); } }).observe($("wrap"));
 
 let pBar = null;
@@ -1521,16 +1522,16 @@ function setPoolH() { let st = document.getElementById("prs"); if (!st) { st = d
 function tabsUI() {
   const T = $("ptabs"), mkb = $("poolbar").querySelector(".mk"); if (mkb) T.appendChild(mkb);       // preferita / tolta / colora stanno sulla riga delle linguette
   T.classList.toggle("tono", poolTab === "tono"); if (T.dataset.t === poolTab) return; T.dataset.t = poolTab; const mk0 = T.querySelector(".mk");
-  T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}" title="Clicca per nascondere o mostrare la galleria">Galleria</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="Misura se le foto dello spread hanno lo stesso tono">Tono</button></div>`;
+  T.innerHTML = `<div class="seg"><button data-t="gal" class="${poolTab === "gal" ? "on" : ""}" title="${tH("editor.pool.tab_gal_tit")}">${tH("editor.pool.tab_gal")}</button><button data-t="tono" class="${poolTab === "tono" ? "on" : ""}" title="${tH("editor.pool.tab_tono_tit")}">${tH("editor.pool.tab_tono")}</button></div>`;
   if (mk0) T.appendChild(mk0);
   T.querySelectorAll(".seg button").forEach(b => b.onclick = () => { poolFold = b.dataset.t === poolTab && !poolFold; document.body.classList.toggle("pfold", poolFold); try { localStorage.setItem("poolFold", poolFold ? "1" : "0"); } catch (e) {} poolTab = b.dataset.t; try { localStorage.setItem("poolTab", poolTab); } catch (e) {} renderPool(); setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30); });
 }
 const tkey = () => S && S.spreads.length ? [cur, ...[-1, 0, 1].map(d => (S.spreads[cur + d] || {}).h), (S.tono_escl || []).join("|"), S.tono_L, S.tono_Z].join("~") : "";
-const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + Math.abs(v).toFixed(1).replace(".", ","), fL = v => (v > 0.5 ? "+" : v < -0.5 ? "−" : "") + Math.abs(Math.round(v));
+const fdv = v => (v > 0.04 ? "+" : v < -0.04 ? "−" : "") + fN(Math.abs(v), 1), fL = v => (v > 0.5 ? "+" : v < -0.5 ? "−" : "") + Math.abs(Math.round(v));
 async function loadTono() {
   if (!S || !S.spreads.length) return; const k = tkey();
   if (k === TONOK && TONO) { drawTono(); return; }
-  TONOK = k; if (!TONO || TONO.s !== cur) $("tonopanel").innerHTML = '<span class="empty">Misuro il tono…</span>';
+  TONOK = k; if (!TONO || TONO.s !== cur) $("tonopanel").innerHTML = `<span class="empty">${tH("editor.tono.misuro")}</span>`;
   try { const d = await api("/api/tono?s=" + cur); if (TONOK !== k) return; TONO = d; } catch (e) { return; }
   drawTono(); renderStage();
 }
@@ -1542,59 +1543,58 @@ const tdl = (a, b) => Math.round((b - a) * tonoF * 20) / 20;                    
 const akey = () => S && S.spreads.length ? S.spreads.map(x => x.h).join(",") + "~" + (S.tono_escl || []).join("|") + "~" + S.tono_L + "~" + S.tono_Z : "";
 async function loadTonoAll() { const k = akey(); if (!k || k === TONOALLK) return; TONOALLK = k; try { const d = await api("/api/tono_all"); if (TONOALLK === k) { TONOALL = d; drawTono(); } } catch (e) { TONOALLK = ""; } }
 function albumHtml(C) {
-  if (!TONOALL) return '<div class="tl"><span class="empty">Misuro tutto l\'album…</span></div>';
+  if (!TONOALL) return `<div class="tl"><span class="empty">${tH("editor.tono.misuro_album")}</span></div>`;
   const rows = TONOALL.map(r => { const st = C ? r.c : r.a, bad = st.filter(x => x === "no").length, att = st.filter(x => x === "att").length; return { ...r, st, bad, att, w: bad * 100 + att }; });
   const nb = rows.reduce((a, r) => a + r.bad, 0), na = rows.reduce((a, r) => a + r.att, 0), nsp = rows.filter(r => r.bad || r.att).length, tot = rows.reduce((a, r) => a + r.n, 0);
   const list = tonoSort === "w" ? rows.slice().sort((a, b) => b.w - a.w || a.s - b.s) : rows;
-  const head = nb ? `${nb} foto da sistemare` : na ? `${na} foto da guardare` : "Album in linea";
-  const sub = nb || na ? `${nb ? nb + " da sistemare e " : ""}${na} da guardare, in ${nsp} spread su ${rows.length} (${tot} foto in tutto).` : `Tutte le ${tot} foto sono nello standard.`;
-  const cards = list.map(r => `<div class="tac ${r.s === cur ? "cur" : ""}" data-s="${r.s}" title="Spread ${r.s + 1} · uniformità ${r.score}/100 · clic: vai allo spread${r.sc.some(Boolean) ? " · riquadro blu = scena chiara o scura di proposito" : ""}"><div class="tach"><b>${r.s + 1}</b><span class="tacs ${r.score >= 85 ? "ok" : r.score >= 60 ? "att" : "no"}">${r.score}</span></div><div class="tacd">${r.st.map((x, i) => `<i class="${x}${r.sc[i] ? " sc" : ""}"></i>`).join("")}</div></div>`).join("");
-  return `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><button id="tsort" class="${tonoSort === "w" ? "on" : ""}" title="Mette in cima gli spread con più foto da sistemare">Peggiori prima</button></div><div id="talb">${cards}</div></div>`;
+  const head = nb ? t("editor.tono.da_sistemare", { n: nb }) : na ? t("editor.tono.da_guardare", { n: na }) : t("editor.tono.album_ok");
+  const sub = nb || na ? t(nb ? "editor.tono.album_sub_a" : "editor.tono.album_sub_b", { sis: nb, gua: na, nsp, spread: rows.length, nfoto: tot }) : t("editor.tono.album_tutte", { n: tot });
+  const cards = list.map(r => `<div class="tac ${r.s === cur ? "cur" : ""}" data-s="${r.s}" title="${tH("editor.tono.card_album_tit", { n: r.s + 1, score: r.score })}${r.sc.some(Boolean) ? " · " + tH("editor.tono.card_scena") : ""}"><div class="tach"><b>${r.s + 1}</b><span class="tacs ${r.score >= 85 ? "ok" : r.score >= 60 ? "att" : "no"}">${r.score}</span></div><div class="tacd">${r.st.map((x, i) => `<i class="${x}${r.sc[i] ? " sc" : ""}"></i>`).join("")}</div></div>`).join("");
+  return `<div class="tl"><div class="th"><span class="tt">${escH(head)}</span><span class="ts" title="${escH(sub)}">${escH(sub)}</span><button id="tsort" class="${tonoSort === "w" ? "on" : ""}" title="${tH("editor.tono.peggiori_tit")}">${tH("editor.tono.peggiori")}</button></div><div id="talb">${cards}</div></div>`;
 }
-const fn1 = v => Math.abs(v).toFixed(1).replace(".", ",");
-const RITN = { alt: "luci", omb: "ombre", bia: "bianchi" };
+const fn1 = v => fN(Math.abs(v), 1);
 async function tonoFix(list) {
   const rt = x => Object.fromEntries(Object.entries(x.compl.rit).map(([k, v]) => { const b = (x.rit0 || {})[k] || 0; return [k, b + Math.round((v - b) * tonoF)]; }));
   const items = list.map(x => tonoMode === "c" ? (x.compl ? { photo: x.name, ev: x.evp + tdl(x.evp, x.compl.ev), rit: rt(x) } : null) : { photo: x.name, ev: x.evp + tdl(x.evp, x.nuova) }).filter(Boolean);
   if (!items.length) return; await op({ op: "tono_fix", items });
-  toast(items.length === 1 ? "Foto corretta (⌘Z annulla)" : items.length + " foto corrette (⌘Z annulla)");
+  toast(tn("editor.tono.corrette", items.length, { tasto: tasto("⌘ Z") }));
 }
 function drawTono() {
   const P = $("tonopanel"); if (!TONO || TONO.s !== cur) return; const T = TONO, its = T.items, C = tonoMode === "c";
-  if (!its.length) { P.innerHTML = '<span class="empty">Nessuna foto in questo spread.</span>'; return; }
+  if (!its.length) { P.innerHTML = `<span class="empty">${tH("editor.tono.nessuna")}</span>`; return; }
   const no = its.filter(x => tst(x) === "no"), at = its.filter(x => tst(x) === "att"), okn = its.filter(x => tst(x) === "ok").length;
-  const why = (x, g) => { const q = g ? "troppo" : "un po'";
-    if (Math.abs(x.d) > (x.ze || T.zona) || !C) return `la ${x.n} è ${q} ${x.d < 0 ? "scura" : "chiara"}`;
-    return x.H < T.hz[0] ? `la ${x.n} ha le alte luci spente` : `la ${x.n} ha le alte luci quasi bruciate`; };
+  const why = (x, g) => {
+    if (Math.abs(x.d) > (x.ze || T.zona) || !C) return t("editor.tono.p_" + (x.d < 0 ? "scura" : "chiara") + (g ? "_2" : "_1"), { n: x.n });
+    return t(x.H < T.hz[0] ? "editor.tono.p_spente" : "editor.tono.p_bruciate", { n: x.n }); };
   const parts = no.map(x => why(x, 1)).concat(at.map(x => why(x, 0)));
-  const head = no.length ? `${no.length} foto da sistemare` : at.length ? `${at.length} foto da guardare` : "Tono in linea";
-  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " Le altre sono nello standard." : "") : `Le ${its.filter(x => tst(x) !== "escl").length} foto sono nello standard (L* ${Math.round(T.rif)} ±${T.zona}).`;
+  const head = no.length ? t("editor.tono.da_sistemare", { n: no.length }) : at.length ? t("editor.tono.da_guardare", { n: at.length }) : t("editor.tono.in_linea");
+  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " " + t("editor.tono.altre_ok") : "") : t("editor.tono.sub_ok", { n: its.filter(x => tst(x) !== "escl").length, rif: Math.round(T.rif), zona: T.zona });
   const sc = T.score >= 85 ? "ok" : T.score >= 60 ? "att" : "no", H = 110, k1 = 1.1, lo = Math.round((50 - T.zona * k1) / 100 * H), hi = Math.round((50 + T.zona * k1) / 100 * H);
   const dot = st => st;
   const cols = its.map(x => {
     const stt = tst(x), esc = stt === "escl", L = x.d + T.rif, ze = x.ze || T.zona, de = tdl(x.evp, x.nuova ?? x.evp), sc = x.scena ? (x.scena === "hk" ? "chiara" : "scura") : "";
     const lvl = esc ? -1 : Math.abs(x.d) <= ze ? 2 : x.d < 0 ? (Math.abs(x.d) > ze + 6 ? 0 : 1) : (x.d > ze + 6 ? 4 : 3);
-    const word = esc ? "Esclusa" : lvl === 2 ? (sc ? `Ok, scena ${sc}` : "Ok") : lvl === 0 ? "Troppo scura" : lvl === 1 ? "Un po' scura" : lvl === 3 ? "Un po' chiara" : "Troppo chiara";
+    const word = esc ? t("editor.tono.w_escl") : lvl === 2 ? (sc ? t("editor.tono.w_ok_scena", { scena: t("editor.tono.scena_" + sc) }) : t("editor.tono.w_ok")) : t("editor.tono.w_" + ["troppo_scura", "poco_scura", "", "poco_chiara", "troppo_chiara"][lvl]);
     let act;
-    if (esc) act = "non conta nel calcolo";
-    else if (stt === "ok") act = C && x.sh !== "ok" ? "alte luci al limite" : "niente da fare";
-    else if (!C) act = de ? `Esposizione ${de > 0 ? "+" : "−"}${fn1(de)}${x.bruc ? " · ⚠ luci" : ""}` : "limite luci: ritocca a mano";
-    else if (!x.compl) act = "da guardare";
-    else { const ch = []; const d2 = tdl(x.evp, x.compl.ev); if (d2) ch.push(`Esposizione ${d2 > 0 ? "+" : "−"}${fn1(d2)}`); for (const k in x.compl.rit) { const dv = Math.round((x.compl.rit[k] - ((x.rit0 || {})[k] || 0)) * tonoF); if (dv) ch.push(`${RITN[k][0].toUpperCase() + RITN[k].slice(1)} ${dv > 0 ? "+" : "−"}${Math.abs(dv)}`); } act = (ch.length ? ch.join(" · ") : "nessuna correzione") + (x.compl.bruc ? " · ⚠ luci" : ""); }
+    if (esc) act = t("editor.tono.a_escl");
+    else if (stt === "ok") act = t(C && x.sh !== "ok" ? "editor.tono.a_limite" : "editor.tono.a_niente");
+    else if (!C) act = de ? t("editor.tono.esposizione", { v: (de > 0 ? "+" : "−") + fn1(de) }) + (x.bruc ? " · ⚠ " + t("editor.tono.luci_min") : "") : t("editor.tono.a_limite_mano");
+    else if (!x.compl) act = t("editor.tono.a_guarda");
+    else { const ch = []; const d2 = tdl(x.evp, x.compl.ev); if (d2) ch.push(t("editor.tono.esposizione", { v: (d2 > 0 ? "+" : "−") + fn1(d2) })); for (const k in x.compl.rit) { const dv = Math.round((x.compl.rit[k] - ((x.rit0 || {})[k] || 0)) * tonoF); if (dv) ch.push(`${t("editor.tono.r_" + k)} ${dv > 0 ? "+" : "−"}${fN(Math.abs(dv))}`); } act = (ch.length ? ch.join(" · ") : t("editor.tono.a_nessuna")) + (x.compl.bruc ? " · ⚠ " + t("editor.tono.luci_min") : ""); }
     const seg = [0, 1, 2, 3, 4].map(i => `<i class="${i === lvl ? "on " + (i === 2 ? "ok" : i === 1 || i === 3 ? "att" : "no") : ""}"></i>`).join("");
-    return `<div class="tcol tcard ${stt}${msel.includes(x.side + ":" + x.idx) ? " selc" : ""}" data-at="${x.side}:${x.idx}" title="${escH(x.name)} · luce media L* ${Math.round(L)} (standard ${Math.round(T.rif)}) · alte luci L* ${Math.round(x.H)} · ombre L* ${Math.round(x.S)} · clic: seleziona · clic destro: ${esc ? "includi di nuovo nel calcolo" : "escludi dal calcolo (scura o chiara di proposito)"}"><div class="tth"><img src="/img/thumb/${encU(x.name)}?w=240"><span class="tnn">${x.n}</span></div><div class="tseg">${seg}</div><div class="tnum"><span class="${esc ? "" : lvl === 2 ? "" : lvl === 1 || lvl === 3 ? "att" : "no"}" title="Di quanto la luce media (L* ${Math.round(L)}) si discosta dallo standard (L* ${Math.round(T.rif)}). Sta nello standard fino a ±${Math.round(ze)}">Scarto <b>${esc ? "–" : fL(x.d)}</b></span><span class="${esc ? "" : x.sh}" title="Alte luci (L*): zona ${T.hz[0]}–${T.hz[1]}">Luci <b>${Math.round(x.H)}</b></span><span class="${esc ? "" : x.ss}" title="Ombre (L*): fino a ${T.sz[0]}">Ombre <b>${Math.round(x.S)}</b></span><span class="${x.B > 1 ? "no" : x.B > 0.2 ? "att" : ""}" title="Bianchi bruciati: quota di pixel senza dettaglio. Passa il mouse sulla foto per vedere dove sono (in rosso)">Bruc. <b>${x.B < 0.1 ? "0" : x.B.toFixed(1).replace(".", ",")}%</b></span></div><b class="tw ${stt}">${word}</b><span class="tad2">${act}</span></div>`;
+    return `<div class="tcol tcard ${stt}${msel.includes(x.side + ":" + x.idx) ? " selc" : ""}" data-at="${x.side}:${x.idx}" title="${tH("editor.tono.card_tit", { nome: x.name, luce: Math.round(L), rif: Math.round(T.rif), alte: Math.round(x.H), ombre: Math.round(x.S), azione: t(esc ? "editor.tono.escl_no" : "editor.tono.escl_si") })}"><div class="tth"><img src="/img/thumb/${encU(x.name)}?w=240"><span class="tnn">${x.n}</span></div><div class="tseg">${seg}</div><div class="tnum"><span class="${esc ? "" : lvl === 2 ? "" : lvl === 1 || lvl === 3 ? "att" : "no"}" title="${tH("editor.tono.scarto_tit", { luce: Math.round(L), rif: Math.round(T.rif), zona: Math.round(ze) })}">${tH("editor.tono.scarto")} <b>${esc ? "–" : fL(x.d)}</b></span><span class="${esc ? "" : x.sh}" title="${tH("editor.tono.luci_tit", { a: T.hz[0], b: T.hz[1] })}">${tH("editor.tono.luci")} <b>${Math.round(x.H)}</b></span><span class="${esc ? "" : x.ss}" title="${tH("editor.tono.ombre_tit", { n: T.sz[0] })}">${tH("editor.tono.ombre")} <b>${Math.round(x.S)}</b></span><span class="${x.B > 1 ? "no" : x.B > 0.2 ? "att" : ""}" title="${tH("editor.tono.bruc_tit")}">${tH("editor.tono.bruc")} <b>${x.B < 0.1 ? "0" : fN(x.B, 1)}%</b></span></div><b class="tw ${stt}">${escH(word)}</b><span class="tad2">${escH(act)}</span></div>`;
   }).join("");
-  const vic = (v, n) => v == null ? "" : `<span>Spread ${n}: ${Math.abs(v) < 2 ? "stesso tono" : (v < 0 ? "più scuro" : "più chiaro") + " di " + Math.round(Math.abs(v)) + " L*"}</span>`;
+  const vic = (v, n) => v == null ? "" : `<span>${tH(Math.abs(v) < 2 ? "editor.tono.vic_uguale" : v < 0 ? "editor.tono.vic_scuro" : "editor.tono.vic_chiaro", { n, d: Math.round(Math.abs(v)) })}</span>`;
   const fixable = no.filter(x => !C || x.compl), fixAtt = at.filter(x => !C || x.compl);
   if (tonoView === "a") loadTonoAll();
-  P.innerHTML = tonoView === "a" ? albumHtml(C) + RIGHT() : `<div class="tl"><div class="th"><span class="tt">${head}</span><span class="ts" title="${sub}">${sub}</span><span class="tsc ${sc}" title="100 = tutte le foto nello standard">Uniformità ${T.score} / 100</span></div>
+  P.innerHTML = tonoView === "a" ? albumHtml(C) + RIGHT() : `<div class="tl"><div class="th"><span class="tt">${escH(head)}</span><span class="ts" title="${escH(sub)}">${escH(sub)}</span><span class="tsc ${sc}" title="${tH("editor.tono.uniformita_tit")}">${tH("editor.tono.uniformita", { n: T.score })}</span></div>
     <div id="tchart">${cols}</div><div class="tn">${vic(T.prev, cur)}${vic(T.next, cur + 2)}</div></div>` + RIGHT();
   function RIGHT() { return `<div class="tr">
-      <div class="tbtn2"><button id="tview" class="${tonoView === "a" ? "on" : ""}" title="Tutti gli spread dell'album in un colpo d'occhio">${tonoView === "a" ? "Torna allo spread" : "Vista album"}</button><button id="tset" class="${tonoSet ? "on" : ""}" title="Intensità della correzione, numeri sulle foto, standard e zona">Impostazioni</button></div>
+      <div class="tbtn2"><button id="tview" class="${tonoView === "a" ? "on" : ""}" title="${tH("editor.tono.vista_tit")}">${tH(tonoView === "a" ? "editor.tono.torna" : "editor.tono.vista")}</button><button id="tset" class="${tonoSet ? "on" : ""}" title="${tH("editor.tono.imp_tit")}">${tH("editor.tono.imp")}</button></div>
       ${tonoSet ? `<div class="tsetp">
-      <button id="tpl2" class="${tonoPills ? "on" : ""}" title="Mostra o nascondi i numeri sulle cornici">Numeri sulle foto</button>
-      <div class="rif" title="Luce media standard di una foto (L*) e ampiezza della zona giusta. 50 = grigio al 18%; per ritratti e bambini 52–58. Vale per tutte le foto dell'album."><span>Standard L*</span><input id="trif" type="number" min="30" max="75" step="1" value="${Math.round(T.rif)}"><span>±</span><input id="tzon" type="number" min="4" max="30" step="1" value="${Math.round(T.zona)}"></div>
-      <div class="hlp">Ogni foto è confrontata con lo standard fisso: ritoccarne una non cambia le altre. ⌘Z annulla.</div></div>` : ""}</div>`; }
+      <button id="tpl2" class="${tonoPills ? "on" : ""}" title="${tH("editor.tono.numeri_tit")}">${tH("editor.tono.numeri")}</button>
+      <div class="rif" title="${tH("editor.tono.rif_tit")}"><span>${tH("editor.tono.standard")}</span><input id="trif" type="number" min="30" max="75" step="1" value="${Math.round(T.rif)}"><span>±</span><input id="tzon" type="number" min="4" max="30" step="1" value="${Math.round(T.zona)}"></div>
+      <div class="hlp">${tH("editor.tono.nota", { tasto: tasto("⌘ Z") })}</div></div>` : ""}</div>`; }
   const ch = $("tchart"), box = null; if (box) { const cb = ch.getBoundingClientRect(), bb = box.getBoundingClientRect(); const sc2 = (bb.height - 18) / H, band = $("tband"); band.style.bottom = (cb.bottom - bb.bottom + lo * sc2) + "px"; band.style.height = ((hi - lo) * sc2) + "px"; ch.querySelectorAll(".tb").forEach(b => b.style.height = Math.round(parseFloat(b.style.height) * sc2) + "px"); }
   P.querySelectorAll(".tmode button").forEach(b => b.onclick = () => { tonoMode = b.dataset.m; try { localStorage.setItem("tonoMode", tonoMode); } catch (e) {} drawTono(); renderStage(); });
   P.querySelectorAll(".tcol").forEach(c => { const [side, idx] = c.dataset.at.split(":"), x = its.find(y => y.side === side && y.idx === +idx);
@@ -1614,7 +1614,7 @@ function drawTono() {
 function renderPool() {
   const P = $("poolrow"), PM = new Map(S.photos.map(p => [p.n, p])), freeAll = S.photos.slice();
   if (!pBar) pBar = mkBar($("poolbar"), PF, { filters: PFILT, zmin: 50, zmax: 220, onChange: renderPool, onZoom: setPoolH, assign: v => assignColor(v) });
-  if (!$("poolgrip")) { const gr = document.createElement("div"); gr.id = "poolgrip"; gr.title = "Trascina per alzare o abbassare la galleria (doppio clic: altezza automatica)"; $("pool").prepend(gr);
+  if (!$("poolgrip")) { const gr = document.createElement("div"); gr.id = "poolgrip"; gr.title = t("editor.pool.grip_tit"); $("pool").prepend(gr);
     gr.ondblclick = () => { if (poolTab === "tono") PHT = 0; else PH = 0; try { localStorage.removeItem(poolTab === "tono" ? "poolHT" : "poolH"); } catch (e) {} setPoolH(); after(); };
     const after = () => setTimeout(() => { drawRulers(); if (S && view === "album") renderStage(); }, 30);
     gr.onpointerdown = e => { e.preventDefault(); const y0 = e.clientY, h0 = $("pool").getBoundingClientRect().height; gr.setPointerCapture(e.pointerId);
@@ -1624,9 +1624,9 @@ function renderPool() {
   if (poolTab === "tono") { loadTono(); return; }
   pBar(freeAll);
   const free = filterList(freeAll, PF), keep = P.scrollTop; P.innerHTML = "";
-  if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${freeAll.length ? "Nessuna foto con questi filtri." : "Nessuna foto."}</span>`);
+  if (!free.length) P.insertAdjacentHTML("beforeend", `<span class="empty">${tH(freeAll.length ? "editor.pool.nessuna_filtri" : "editor.pool.nessuna")}</span>`);
   free.forEach(f => {
-    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${encU(n)}?w=${PF.sz > 110 ? 480 : 240}`; im.title = n + " · trascinala sulla pagina"; im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
+    const n = f.n, im = document.createElement("img"); im.src = `/img/thumb/${encU(n)}?w=${PF.sz > 110 ? 480 : 240}`; im.title = t("editor.pool.foto_tit", { nome: n }); im.draggable = false; const used = f.sp != null; if (!used) im.onpointerdown = e => startPhotoDrag(e, n);
     im.ondblclick = () => { if (used) { cur = f.sp; view = "album"; render(); return; } if (view === "album" && S.spreads.length && !S.tolte.includes(n)) op({ op: "putfree", s: cur, photo: n, fx: 0.5, fy: 0.5 }); };       // doppio clic: la foto va nello spread aperto
     im.onmouseenter = () => HOV = n; im.onmouseleave = () => { if (HOV === n) HOV = null; }; im.oncontextmenu = e => libMenu(e, f, POOLSELS.length > 1 && POOLSELS.includes(n) ? POOLSELS.slice() : [n], true);
     im.dataset.n = n; if (POOLSELS.includes(n)) im.classList.add("psel");
@@ -1638,9 +1638,9 @@ function renderPool() {
       P.querySelectorAll("img").forEach(x => x.classList.toggle("psel", POOLSELS.includes(x.dataset.n))); };
     { const ar = f.ar || 1.5; im.style.flex = `${(ar * 100).toFixed(0)} 1 calc(${ar.toFixed(3)} * var(--ph))`; im.style.maxWidth = `calc(${(ar * 1.6).toFixed(3)} * var(--ph))`; }   // righe giustificate: tutte arrivano al bordo, nessuno spazio a destra
     if (f.star) im.classList.add("star");
-    if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + f.col; }
-    if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = n + " · FILE MANCANTE: l'originale non si trova più"; }
-    if (S.tolte.includes(n)) { im.className = "tolta" + (f.star ? " star" : ""); im.title = n + " · tolta apposta: clic per ripristinarla"; im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
+    if (f.col) { im.style.borderBottom = `5px solid ${COLC[f.col]}`; im.title += " · " + nomeCol(f.col); }
+    if ((S.mancanti || []).some(x => x.replace(/\.[^.]+$/, "") === n)) { im.classList.add("manca"); im.title = t("editor.pool.mancante", { nome: n }); }
+    if (S.tolte.includes(n)) { im.className = "tolta" + (f.star ? " star" : ""); im.title = t("editor.pool.tolta_tit", { nome: n }); im.onclick = () => op({ op: "tolta", photo: n, value: false }); }
     if (used) { im.title = n + " · " + t("editor.pool.usata", { n: nomeSpread(f.sp) }); im.classList.add("pused"); im.style.cursor = "pointer";
       const w = document.createElement("span"); w.className = "pw"; w.style.flex = im.style.flex; w.style.maxWidth = im.style.maxWidth; w.appendChild(im); w.insertAdjacentHTML("beforeend", `<span class="u">${nomeSpread(f.sp)}</span>`); P.appendChild(w); }
     else P.appendChild(im);
@@ -1811,7 +1811,7 @@ function startFree(e, it, kind) {
     else { ghost.style.left = rect.x * sc + "px"; ghost.style.top = rect.y * sc + "px"; ghost.style.width = rect.w * sc + "px"; ghost.style.height = rect.h * sc + "px"; }
     document.querySelectorAll("#slots > div.samesz").forEach(x => x.classList.remove("samesz"));
     szm.forEach(m => { const el = [...document.querySelectorAll("#slots > div.slot")].find(d => d.dataset.at === JSON.stringify([cur, m.o.side, m.o.idx])); if (el) el.classList.add("samesz"); });
-    ghost.innerHTML = szm.length ? `<b class="szl">stessa ${szm.map(m => m.d === "w" ? "larghezza" : "altezza").join(" e ")}</b>` : "";
+    ghost.innerHTML = szm.length ? `<b class="szl">${tH(szm.length > 1 ? "editor.sz.entrambe" : szm[0].d === "w" ? "editor.sz.larghezza" : "editor.sz.altezza")}</b>` : "";
     const gbb = grpI.length > 1 && kind === "move" ? { x: Math.min(...grpI.map(o => o.x)) + rect.x - it.x, y: Math.min(...grpI.map(o => o.y)) + rect.y - it.y, w: Math.max(...grpI.map(o => o.x + o.w)) - Math.min(...grpI.map(o => o.x)), h: Math.max(...grpI.map(o => o.y + o.h)) - Math.min(...grpI.map(o => o.y)) } : rect;       // spostando un gruppo le distanze si misurano sul blocco intero
     const edges = edgeMarks(gbb, grpI.length > 1 ? grpI : [it]), key = JSON.stringify([guides, eqm, edges]); if (key === gkey) return; gkey = key;       // guide e misure: si ridisegnano solo quando cambiano
     drawEq(eqm.concat(edges));
@@ -1876,7 +1876,7 @@ function startPhotoDrag(e, n) {
 let aggSeen = null;
 function avvisoAgg(a) {
   const n = (a.nomi || []).length, ar = (a.ar || []).length;
-  toast(`${n} ${n === 1 ? "foto aggiornata" : "foto aggiornate"} (modificate fuori dal programma)${ar ? ` · ${ar} con proporzioni cambiate: controlla il ritaglio` : ""}`, !!ar);
+  toast(tn("editor.fuori.aggiornate", n) + (ar ? " · " + t("editor.fuori.proporzioni", { n: ar }) : ""), !!ar);
 }
 setInterval(async () => { try { const p = await (await rq("/api/ping")).json();
   if (S && S.boot && p.boot !== S.boot && !$("busy").style.display.includes("flex")) { location.reload(); return; }
@@ -1914,12 +1914,13 @@ function mkTile(t, label, onclick) {
   pv.appendChild(document.createElement("b")); c.appendChild(pv); c.insertAdjacentHTML("beforeend", `<span>${escH(label)}</span>`); c.onclick = onclick; return c;
 }
 // ---- filtri, colori, ordinamento e zoom: uguali per la galleria Foto e per la striscia «foto libere» dell'album
+const nomeCol = k => t("editor.col." + k);                      // i nomi dei colori restano nel progetto in italiano: qui si traducono solo per mostrarli
 const COLS = [["rosso", "#ff453a"], ["arancio", "#ff9f0a"], ["giallo", "#ffd60a"], ["verde", "#30d158"], ["azzurro", "#0a84ff"], ["viola", "#bf5af2"], ["rosa", "#ff6bb5"]], COLC = Object.fromEntries(COLS);
-const SORTS = [["ord", "Ordine di import"], ["nome", "Nome A→Z"], ["nomeD", "Nome Z→A"], ["data", "Data scatto ↑"], ["dataD", "Data scatto ↓"], ["col", "Per colore"]];
+const SORTS = [["ord", "editor.ord.ord"], ["nome", "editor.ord.nome"], ["nomeD", "editor.ord.nome_d"], ["data", "editor.ord.data"], ["dataD", "editor.ord.data_d"], ["col", "editor.ord.col"]];
 function mkF(key, sz) { let o = {}; try { o = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) {} return { key, f: o.f || "tutte", o: o.o || "tutte", c: Array.isArray(o.c) ? o.c : [], star: !!o.star, s: o.s || "ord", sz: +o.sz || sz, q: "" }; }
 const saveF = st => { try { localStorage.setItem(st.key, JSON.stringify({ f: st.f, o: st.o, c: st.c, star: st.star, s: st.s, sz: st.sz })); } catch (e) {} };
 const GF = mkF("galleriaFoto2", 140), PF = mkF("stricciaFoto", 100);
-const GFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["used", "Già usate"], ["tolta", "Tolte"], ["manca", "Mancanti"]], PFILT = [["tutte", "Tutte"], ["free", "Da usare"], ["tolta", "Tolte"], ["manca", "Mancanti"]], GORI = [["tutte", "Tutte"], ["v", "Vert."], ["h", "Orizz."]];
+const GFILT = [["tutte", "editor.filtro.tutte"], ["free", "editor.filtro.free"], ["used", "editor.filtro.used"], ["tolta", "editor.filtro.tolta"], ["manca", "editor.filtro.manca"]], PFILT = [["tutte", "editor.filtro.tutte"], ["free", "editor.filtro.free"], ["tolta", "editor.filtro.tolta"], ["manca", "editor.filtro.manca"]], GORI = [["tutte", "editor.filtro.tutte"], ["v", "editor.filtro.v"], ["h", "editor.filtro.h"]];
 const missSet = () => new Set((S.mancanti || []).map(x => x.replace(/\.[^.]+$/, "")));
 const gPass = (p, f, M) => f === "tutte" ? true : f === "free" ? p.sp == null && !p.tolta : f === "used" ? p.sp != null : f === "tolta" ? !!p.tolta : M.has(p.n);
 function filterList(list, st) {          // list: foto del programma; applica filtro, orientamento, colori, ricerca, ordinamento
@@ -1931,29 +1932,29 @@ function filterList(list, st) {          // list: foto del programma; applica fi
 }
 // barra: filtri, orientamento, colori, ordinamento, ricerca, zoom. cfg = { filters, zmin, zmax, onChange(), onZoom(live), assign() }
 function mkBar(el, st, cfg) {
-  el.innerHTML = '<div class="seg gF"></div><div class="seg gO"></div><span class="dots gC"></span><button class="gst" title="Filtro: mostra solo le preferite">Solo ★</button><span class="mk"><button class="mks" title="Segna come preferita le foto scelte (scorciatoia P)">★ Preferita</button><button class="mkt" title="Togli le foto scelte: non verranno più proposte (scorciatoia X). Le ritrovi col filtro «Tolte»">✕ Tolta</button>'+(cfg.assign ? '<span class="dots as"><span class="lb">Colora:</span></span>' : '')+'</span><span class="rt"><select class="gS" title="Ordina per"></select><input class="gQ" type="search" placeholder="Cerca nome…"><span class="zoom"><button class="zm" title="Miniature più piccole">−</button><input class="zr" type="range" title="Dimensione miniature"><button class="zp" title="Miniature più grandi">+</button></span></span>';
+  el.innerHTML = `<div class="seg gF"></div><div class="seg gO"></div><span class="dots gC"></span><button class="gst" title="${tH("editor.mk.solo_tit")}">${tH("editor.mk.solo")}</button><span class="mk"><button class="mks" title="${tH("editor.mk.stella_tit")}">${tH("editor.mk.preferita")}</button><button class="mkt" title="${tH("editor.mk.tolta_tit")}">${tH("editor.mk.tolta")}</button>` + (cfg.assign ? `<span class="dots as"><span class="lb">${tH("editor.mk.colora")}</span></span>` : "") + `</span><span class="rt"><select class="gS" title="${tH("editor.mk.ordina")}"></select><input class="gQ" type="search" placeholder="${tH("editor.mk.cerca")}"><span class="zoom"><button class="zm" title="${tH("editor.mk.piu_piccole")}">−</button><input class="zr" type="range" title="${tH("editor.mk.dimensione")}"><button class="zp" title="${tH("editor.mk.piu_grandi")}">+</button></span></span>`;
   const $q = c => el.querySelector(c), rg = $q(".zr"); rg.min = cfg.zmin; rg.max = cfg.zmax; rg.step = 10;
-  $q(".gS").innerHTML = SORTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join(""); $q(".gS").onchange = e => { st.s = e.target.value; saveF(st); cfg.onChange(); };
+  $q(".gS").innerHTML = SORTS.map(([k, l]) => `<option value="${k}">${tH(l)}</option>`).join(""); $q(".gS").onchange = e => { st.s = e.target.value; saveF(st); cfg.onChange(); };
   $q(".mks").onclick = () => markStar(); $q(".mkt").onclick = () => markTolta();
   $q(".gst").onclick = () => { st.star = !st.star; saveF(st); cfg.onChange(); };
   $q(".gQ").oninput = e => { st.q = e.target.value; cfg.onChange(); }; $q(".gQ").onkeydown = e => e.stopPropagation();
   const zoom = v => { st.sz = Math.max(cfg.zmin, Math.min(cfg.zmax, Math.round(v / 10) * 10)); rg.value = st.sz; saveF(st); cfg.onZoom(); };
   $q(".zm").onclick = () => { zoom(st.sz - 20); cfg.onChange(); }; $q(".zp").onclick = () => { zoom(st.sz + 20); cfg.onChange(); };
   rg.oninput = () => zoom(+rg.value); rg.onchange = () => cfg.onChange();
-  if (cfg.assign) { const A = $q(".as"); COLS.forEach(([k, c]) => { const i = document.createElement("i"); i.style.setProperty("--c", c); i.title = "Colora: " + k; i.onclick = () => cfg.assign(k); A.appendChild(i); }); const x = document.createElement("i"); x.className = "nc"; x.title = "Togli il colore"; x.onclick = () => cfg.assign(null); A.appendChild(x); }
+  if (cfg.assign) { const A = $q(".as"); COLS.forEach(([k, c]) => { const i = document.createElement("i"); i.style.setProperty("--c", c); i.title = t("editor.mk.colora_con", { colore: nomeCol(k) }); i.onclick = () => cfg.assign(k); A.appendChild(i); }); const x = document.createElement("i"); x.className = "nc"; x.title = t("editor.mk.togli_colore"); x.onclick = () => cfg.assign(null); A.appendChild(x); }
   return function refresh(list) {
     const M = missSet(), cnt = f => list.filter(p => gPass(p, f, M)).length;
-    const F = $q(".gF"); F.innerHTML = ""; cfg.filters.forEach(([k, l]) => { if (k === "manca" && !cnt(k) && st.f !== k) return; const b = document.createElement("button"); b.className = st.f === k ? "on" : ""; b.innerHTML = `${l}<span class="c">${cnt(k)}</span>`; b.onclick = () => { st.f = k; saveF(st); cfg.onChange(); }; F.appendChild(b); });
-    const O = $q(".gO"); O.innerHTML = ""; GORI.forEach(([k, l]) => { const b = document.createElement("button"); b.className = st.o === k ? "on" : ""; b.textContent = l; b.onclick = () => { st.o = k; saveF(st); cfg.onChange(); }; O.appendChild(b); });
-    const C = $q(".gC"); C.innerHTML = '<span class="lb">Mostra:</span>'; [...COLS, ["-", ""]].forEach(([k, c]) => { const i = document.createElement("i"); if (k === "-") i.className = "nc"; else i.style.setProperty("--c", c); if (st.c.includes(k)) i.classList.add("on"); i.title = k === "-" ? "Senza colore" : "Mostra solo: " + k; i.onclick = () => { const n = st.c.indexOf(k); if (n >= 0) st.c.splice(n, 1); else st.c.push(k); saveF(st); cfg.onChange(); }; C.appendChild(i); });
+    const F = $q(".gF"); F.innerHTML = ""; cfg.filters.forEach(([k, l]) => { if (k === "manca" && !cnt(k) && st.f !== k) return; const b = document.createElement("button"); b.className = st.f === k ? "on" : ""; b.innerHTML = `${tH(l)}<span class="c">${cnt(k)}</span>`; b.onclick = () => { st.f = k; saveF(st); cfg.onChange(); }; F.appendChild(b); });
+    const O = $q(".gO"); O.innerHTML = ""; GORI.forEach(([k, l]) => { const b = document.createElement("button"); b.className = st.o === k ? "on" : ""; b.textContent = t(l); b.onclick = () => { st.o = k; saveF(st); cfg.onChange(); }; O.appendChild(b); });
+    const C = $q(".gC"); C.innerHTML = `<span class="lb">${tH("editor.mk.mostra")}</span>`; [...COLS, ["-", ""]].forEach(([k, c]) => { const i = document.createElement("i"); if (k === "-") i.className = "nc"; else i.style.setProperty("--c", c); if (st.c.includes(k)) i.classList.add("on"); i.title = k === "-" ? t("editor.mk.senza_colore") : t("editor.mk.mostra_solo", { colore: nomeCol(k) }); i.onclick = () => { const n = st.c.indexOf(k); if (n >= 0) st.c.splice(n, 1); else st.c.push(k); saveF(st); cfg.onChange(); }; C.appendChild(i); });
     $q(".gst").classList.toggle("on", st.star); $q(".gS").value = st.s; rg.value = st.sz;
   };
 }
 const markTargets = () => view === "foto" ? (HOV && !SELP.includes(HOV) ? [HOV] : SELP.length ? SELP.slice() : HOV ? [HOV] : []) : (HOV && !POOLSELS.includes(HOV) ? [HOV] : POOLSELS.length ? POOLSELS.filter(n => S.photos.some(p => p.n === n)) : HOV ? [HOV] : []);       // col mouse sopra una foto vale quella; altrimenti la selezione
-function markStar() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); toast(v ? "★ Preferita" : "Preferita tolta"); }
-function markTolta() { const nn = markTargets(); if (!nn.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } const v = !nn.every(n => S.tolte.includes(n)); if (v && nn.some(n => (S.photos.find(x => x.n === n) || {}).sp != null)) { toast("Una foto già in uno spread non si può togliere: prima toglila dallo spread", true); return; } if (v) SELP = SELP.filter(n => !nn.includes(n)); op({ op: "tolta", photo: nn[0], photos: nn, value: v }); }
+function markStar() { const nn = markTargets(); if (!nn.length) { toast(t("editor.mk.seleziona_prima"), true); return; } const v = !nn.every(n => (S.photos.find(x => x.n === n) || {}).star); op({ op: "stella", photos: nn, value: v }); toast(t(v ? "editor.mk.preferita" : "editor.mk.preferita_tolta")); }
+function markTolta() { const nn = markTargets(); if (!nn.length) { toast(t("editor.mk.seleziona_prima"), true); return; } const v = !nn.every(n => S.tolte.includes(n)); if (v && nn.some(n => (S.photos.find(x => x.n === n) || {}).sp != null)) { toast(t("editor.mk.tolta_no"), true); return; } if (v) SELP = SELP.filter(n => !nn.includes(n)); op({ op: "tolta", photo: nn[0], photos: nn, value: v }); }
 let HOV = null, POOLSEL = null, POOLSELS = [];                                   // foto sotto il mouse: i tasti 1-7 le danno il colore, 0 lo toglie
-function assignColor(v, names) { names = names || markTargets(); if (!names.length) { toast("Seleziona prima una o più foto (o passaci sopra col mouse)", true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
+function assignColor(v, names) { names = names || markTargets(); if (!names.length) { toast(t("editor.mk.seleziona_prima"), true); return; } op({ op: "colore", photos: names.slice(), value: v }); }
 // ---- scelta di una foto libera (sostituisci / aggiungi qui)
 function pickPhoto(titolo, onPick, withUsed) {                  // scelta di una foto: prima quelle da usare, poi «Già nell'album» con lo spread (UX-002: mai vuota)
   let d = $("pickd"); if (d) d.remove(); d = document.createElement("div"); d.id = "pickd"; d.className = "veil"; d.style.display = "flex"; const prima = document.activeElement;
@@ -1980,7 +1981,7 @@ function ctxMenu(e, items, kind = "x") {
     if (it === "-") { host.insertAdjacentHTML("beforeend", '<hr role="separator">'); return; }
     if (it.h) { const h = document.createElement("div"); h.className = "mh"; h.textContent = it.h; host.appendChild(h); return; }
     if (it.chips) { const r = document.createElement("div"); r.className = "chips"; r.innerHTML = `<span>${escH(it.label)}</span>`; it.chips.forEach(([l, f]) => { const b = document.createElement("button"); b.textContent = l; b.setAttribute("role", "menuitem"); b.onclick = () => { close(); f(); }; r.appendChild(b); }); host.appendChild(r); return; }
-    if (it.colors) { const r = document.createElement("div"); r.className = "crow"; r.setAttribute("role", "group"); r.setAttribute("aria-label", t("editor.menu.etichetta")); r.innerHTML = COLS.map(([k, c]) => `<button data-k="${k}" style="--c:${c}" title="${escH(k)}" aria-label="${escH(k)}" role="menuitem"></button>`).join("") + `<button class="nc" data-k="" title="${escH(t("editor.menu.nessun_colore"))}" aria-label="${escH(t("editor.menu.nessun_colore"))}" role="menuitem"></button>`; r.onclick = ev => { const d = ev.target.closest("button"); if (d) { assignColor(d.dataset.k || null, it.colors); close(); } }; host.appendChild(r); return; }
+    if (it.colors) { const r = document.createElement("div"); r.className = "crow"; r.setAttribute("role", "group"); r.setAttribute("aria-label", t("editor.menu.etichetta")); r.innerHTML = COLS.map(([k, c]) => `<button data-k="${k}" style="--c:${c}" title="${escH(nomeCol(k))}" aria-label="${escH(nomeCol(k))}" role="menuitem"></button>`).join("") + `<button class="nc" data-k="" title="${escH(t("editor.menu.nessun_colore"))}" aria-label="${escH(t("editor.menu.nessun_colore"))}" role="menuitem"></button>`; r.onclick = ev => { const d = ev.target.closest("button"); if (d) { assignColor(d.dataset.k || null, it.colors); close(); } }; host.appendChild(r); return; }
     const d = document.createElement("button"); d.className = "mi" + (it.sub ? " sub" : "") + (it.danger ? " danger" : ""); d.setAttribute("role", "menuitem"); d.disabled = !!it.off;
     d.innerHTML = `<span>${escH(it.t)}</span>${it.sub ? '<kbd aria-hidden="true">▸</kbd>' : it.k ? `<kbd>${escH(tasto(it.k))}</kbd>` : ""}`;
     if (it.sub) { d.setAttribute("aria-haspopup", "menu"); const apri = () => apriSub(d, it.sub, row); d.onmouseenter = apri; d.onclick = apri; d.onkeydown = ev => { if (ev.key === "ArrowRight" || ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); apri(); const s = document.querySelector(".csub .mi:not(:disabled)"); if (s) s.focus(); } }; }
@@ -1989,7 +1990,7 @@ function ctxMenu(e, items, kind = "x") {
   };
   items.forEach(it => row(it, m));
   document.body.appendChild(m); m.style.left = Math.max(6, Math.min(e.clientX, innerWidth - m.offsetWidth - 8)) + "px"; m.style.top = Math.max(6, Math.min(e.clientY, innerHeight - m.offsetHeight - 8)) + "px";
-  const vv = host => [...host.querySelectorAll(":scope > .mi:not(:disabled), :scope > .chips button, :scope > .crow button")];
+  const vv = host => [...host.querySelectorAll(":scope > .mi:enabled, :scope > .chips button, :scope > .crow button")];
   const nav = ev => {
     const sub = document.querySelector(".csub"), host = sub && sub.contains(document.activeElement) ? sub : m, v = vv(host), i = v.indexOf(document.activeElement);
     if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); if (host === sub) { const p = sub.padre; sub.remove(); p.focus(); } else close(true); }
@@ -2014,7 +2015,7 @@ function ritoccoSub(names) {                                    // sottomenu «R
   return [{ t: t("editor.rit.copia"), off: !one || !RITCLIPOK(n0), f: () => { RITCLIP = Object.assign({}, RITCLIPSRC(n0)); toast(t("editor.rit.copiato")); } },
     { t: names.length > 1 ? t("editor.rit.incolla_n", { n: names.length }) : t("editor.rit.incolla"), off: !RITCLIP, f: () => op({ op: "rit", photos: names, copia: RITCLIP }).then(() => toast(t("editor.rit.incollato"), false, annullaAz())) },
     { t: t("editor.rit.azzera"), f: () => op({ op: "rit", photos: names, reset: true }) },
-    one && P.col && P.rit && sameCol.length ? { t: t("editor.rit.applica", { col: P.col, n: sameCol.length }), f: () => op({ op: "rit", photos: sameCol, copia: P.rit }).then(() => toast(t("editor.rit.applicato", { n: sameCol.length }), false, annullaAz())) } : null];
+    one && P.col && P.rit && sameCol.length ? { t: t("editor.rit.applica", { col: nomeCol(P.col), n: sameCol.length }), f: () => op({ op: "rit", photos: sameCol, copia: P.rit }).then(() => toast(t("editor.rit.applicato", { n: sameCol.length }), false, annullaAz())) } : null];
 }
 function cartellaItems(names) { const one = names.length === 1, n0 = names[0];
   return [{ t: lblFinder(), off: !one, f: () => api("/api/reveal", { foto: n0 }) }, { t: t("editor.menu.copia_nome"), off: !one, f: () => { try { navigator.clipboard.writeText(n0); toast(t("editor.menu.nome_copiato", { nome: n0 })); } catch (x) {} } }]; }
@@ -2027,7 +2028,7 @@ function libMenu(e, p, names, inPool) {       // galleria o striscia
     !free ? { t: t("editor.menu.vai_spread", { n: nomeSpread(p.sp) }), f: () => { cur = p.sp; view = "album"; render(); } } : null,
     stellaItem(names),
     free ? { t: t(p.tolta ? "editor.menu.ripristina" : "editor.menu.togli_usare"), f: () => op({ op: "tolta", photo: p.n, photos: names, value: !p.tolta }) } : null,
-    p.col && !inPool ? { t: t("editor.menu.seleziona_col", { col: p.col }), f: () => { SELP = S.photos.filter(x => x.col === p.col && x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; view = "foto"; render(); } } : null, "-",
+    p.col && !inPool ? { t: t("editor.menu.seleziona_col", { col: nomeCol(p.col) }), f: () => { SELP = S.photos.filter(x => x.col === p.col && x.sp == null && !x.tolta).map(x => x.n); lastClick = SELP[SELP.length - 1] || null; view = "foto"; render(); } } : null, "-",
     { t: t("editor.menu.ritocco"), sub: ritoccoSub(names) }, "-", ...cartellaItems(names)], "lib");
 }
 function bgMenu(e) {                          // tasto destro su un punto vuoto dello spread
@@ -2092,18 +2093,18 @@ function renderLib() {
   G.style.setProperty("--th", GF.sz + "px"); gBar(S.photos);
   const VIS = visPhotos(), tw = GF.sz > 200 ? 560 : 300;
   const free = S.photos.filter(p => p.sp == null && !p.tolta).length;
-  $("libinfo").textContent = `${S.photos.length} foto · ${free} da usare · ${S.photos.filter(p => p.sp != null).length} già in uno spread`;
-  if (!S.photos.length) { G.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0;line-height:2">Nessuna foto nel progetto.<br>Premi <b>+ Importa cartella…</b> o <b>+ Importa foto…</b> per cominciare.</div>'; }
-  else if (!VIS.length) G.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0">Nessuna foto con questi filtri.</div>';
+  $("libinfo").textContent = t("editor.lib.info", { n: S.photos.length, libere: free, usate: S.photos.filter(p => p.sp != null).length });
+  if (!S.photos.length) { G.innerHTML = `<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0;line-height:2">${tH("editor.lib.vuota")}<br>${tH("editor.lib.premi_a")} <b>${tH("editor.foto.importa_cartella")}</b> ${tH("editor.lib.premi_o")} <b>${tH("editor.foto.importa_foto")}</b> ${tH("editor.lib.premi_fine")}</div>`; }
+  else if (!VIS.length) G.innerHTML = `<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0">${tH("editor.pool.nessuna_filtri")}</div>`;
   const MISS = missSet();
   VIS.forEach(p => {
     const d = document.createElement("div"), k = SELP.indexOf(p.n); d.className = "ph" + (k >= 0 ? " sel" : "") + (p.sp != null ? " used" : "") + (p.tolta ? " tolta" : "") + (MISS.has(p.n) ? " manca" : "");
-    d.innerHTML = `${MISS.has(p.n) ? '<span class="mc">⚠ MANCANTE</span>' : ""}<img src="/img/thumb/${encU(p.n)}?w=${tw}" title="${escH(p.n)} · ${escH(p.dt)}${p.sd ? " (data del file: manca la data di scatto)" : ""}">${p.star ? '<span class="st">★</span>' : ""}${p.col ? `<span class="cl" style="background:${escH(COLC[p.col])}" title="${escH(p.col)}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">${nomeSpread(p.sp)}</span>` : p.tolta ? '<span class="u">tolta · clic per ripristinare</span>' : `<span class="rm" title="Togli questa foto: non verrà più proposta">✕</span>`}`;
+    d.innerHTML = `${MISS.has(p.n) ? `<span class="mc">${tH("editor.lib.mancante")}</span>` : ""}<img src="/img/thumb/${encU(p.n)}?w=${tw}" title="${escH(p.n)} · ${escH(p.dt)}${p.sd ? " " + escH(t("editor.lib.data_file")) : ""}">${p.star ? '<span class="st">★</span>' : ""}${p.col ? `<span class="cl" style="background:${escH(COLC[p.col])}" title="${escH(nomeCol(p.col))}"></span>` : ""}${k >= 0 ? `<span class="n">${k + 1}</span>` : ""}${p.sp != null ? `<span class="u">${nomeSpread(p.sp)}</span>` : p.tolta ? `<span class="u">${tH("editor.lib.tolta_ripristina")}</span>` : `<span class="rm" title="${tH("editor.lib.togli_tit")}">✕</span>`}`;
     const rm = d.querySelector(".rm"); if (rm) rm.onclick = ev => { ev.stopPropagation(); SELP = SELP.filter(x => x !== p.n); op({ op: "tolta", photo: p.n, value: true }); };
     d.onmouseenter = () => HOV = p.n; d.onmouseleave = () => { if (HOV === p.n) HOV = null; }; d.oncontextmenu = e => libMenu(e, p, SELP.includes(p.n) ? SELP : [p.n], false);
     d.onclick = e => {
       if (p.sp != null) { cur = p.sp; view = "album"; render(); return; }
-      if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast("Foto ripristinata: torna tra quelle da usare")); return; }
+      if (p.tolta) { op({ op: "tolta", photo: p.n, value: false }).then(() => toast(t("editor.lib.ripristinata"))); return; }
       if (e.shiftKey && lastClick) {                                  // intervallo dalla foto cliccata prima
         const vis = selectable(), a = vis.indexOf(lastClick), b = vis.indexOf(p.n);
         if (a >= 0 && b >= 0) vis.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(n => { if (!SELP.includes(n)) SELP.push(n); });
@@ -2120,21 +2121,21 @@ let propSeq = 0;
 async function loadProposals() {
   const names = SELP.slice(), seq = ++propSeq, L = $("tplist"), cap = $("tplcap");
   $("tplwhere").style.display = names.length ? "" : "none";
-  if (!names.length) { cap.innerHTML = "Seleziona le foto per uno spread: qui compaiono i modelli adatti.<br><span style='font-size:12px'>Clic = seleziona · Maiusc+clic = intervallo · l'ordine dei numeri è l'ordine di lettura</span>"; L.innerHTML = ""; return; }
+  if (!names.length) { cap.innerHTML = `${tH("editor.lib.seleziona")}<br><span style="font-size:12px">${tH("editor.lib.seleziona_nota", { maiusc: t("editor.tasti.maiusc") })}</span>`; L.innerHTML = ""; return; }
   const d = await api("/api/templates", { photos: names }); if (seq !== propSeq) return;
-  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${names.length} foto selezionate</b> · ${d.tot + (d.utente || []).length} modelli possibili. Clicca per creare lo spread.` : `<b>${names.length} foto</b>: nessun modello (da 1 a 10 foto per spread).`;
+  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${tH("editor.lib.sel_n", { n: names.length })}</b> · ${tH("editor.lib.sel_modelli", { n: d.tot + (d.utente || []).length })}` : `<b>${tH("editor.bozza.foto_n", { n: names.length })}</b>: ${tH("editor.lib.sel_nessun")}`;
   L.innerHTML = "";
   const mk = (t, lab) => mkTile(t, lab, async () => {
     const pos = $("wherenew").value === "after" && S.spreads.length ? cur + 1 : S.spreads.length;
-    await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast("Spread " + (pos + 1) + " aggiunto"); render();
+    await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast(TT("editor.lib.spread_aggiunto", { n: pos + 1 })); render();
   });
   (d.utente || []).forEach(t => L.appendChild(mk(t, "★ " + t.nome)));
   const mkn = (t, lab) => mkTile(t, lab, async () => {
     const pos = $("wherenew").value === "after" && S.spreads.length ? cur + 1 : S.spreads.length;
-    await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast("Spread " + (pos + 1) + " aggiunto"); render();
+    await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast(TT("editor.lib.spread_aggiunto", { n: pos + 1 })); render();
   });
-  d.items.slice(0, 40).forEach((t, n) => L.appendChild(mkn(t, "modello " + (n + 1))));
-  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = `Mostra altri ${d.piu.length} modelli (tagliano di più le foto)`; more.onclick = () => { more.remove(); d.piu.forEach((t, n) => L.appendChild(mkn(t, "taglio maggiore " + (n + 1)))); }; L.appendChild(more); }
+  d.items.slice(0, 40).forEach((t, n) => L.appendChild(mkn(t, TT("editor.lib.modello_n", { n: n + 1 }))));
+  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = t("editor.lib.altri", { n: d.piu.length }); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => L.appendChild(mkn(t, TT("editor.lib.taglio_maggiore", { n: n + 1 })))); }; L.appendChild(more); }
 }
 // ---- titoli dei pulsanti subito (senza attendere quelli lenti del sistema)
 (function () {
@@ -2157,9 +2158,9 @@ async function fbLoad(p) {
 function fbRender() {
   const d = FB.data; $("fbtitle").textContent = "\u202A" + d.path; $("fbup").disabled = !d.parent; $("fbtitle").style.direction = "rtl";
   $("fbplaces").innerHTML = ""; d.places.forEach(pl => { const e = document.createElement("div"); e.className = "pl" + (d.path === pl.p ? " on" : ""); e.textContent = pl.n; e.onclick = () => fbLoad(pl.p); $("fbplaces").appendChild(e); });
-  const alt = document.createElement("div"); alt.className = "pl"; alt.textContent = "Altra cartella…"; alt.title = "Scegli un'altra cartella con la finestra del sistema"; alt.onclick = async () => { try { const r = await api("/api/pick", { kind: "folder" }); if (r.paths[0]) fbLoad(r.paths[0]); } catch (e) {} }; $("fbplaces").appendChild(alt);
+  const alt = document.createElement("div"); alt.className = "pl"; alt.textContent = t("editor.fb.altra"); alt.title = t("editor.fb.altra_tit"); alt.onclick = async () => { try { const r = await api("/api/pick", { kind: "folder" }); if (r.paths[0]) fbLoad(r.paths[0]); } catch (e) {} }; $("fbplaces").appendChild(alt);
   const M = $("fbmain"); M.innerHTML = ""; const g = document.createElement("div"); g.className = "grid"; M.appendChild(g);
-  d.dirs.forEach(n => { const e = document.createElement("div"); e.className = "fbi"; e.innerHTML = '<div class="th">📁</div><div class="nm"></div>'; e.lastChild.textContent = n; e.title = n + " · doppio clic per aprire"; e.ondblclick = () => fbLoad(d.path.replace(/\/$/, "") + "/" + n); e.onclick = () => { if (FB.mode === "folder") fbLoad(d.path.replace(/\/$/, "") + "/" + n); }; g.appendChild(e); });
+  d.dirs.forEach(n => { const e = document.createElement("div"); e.className = "fbi"; e.innerHTML = '<div class="th">📁</div><div class="nm"></div>'; e.lastChild.textContent = n; e.title = t("editor.fb.apri", { nome: n }); e.ondblclick = () => fbLoad(d.path.replace(/\/$/, "") + "/" + n); e.onclick = () => { if (FB.mode === "folder") fbLoad(d.path.replace(/\/$/, "") + "/" + n); }; g.appendChild(e); });
   d.files.forEach((f, i) => { const e = document.createElement("div"); e.className = "fbi" + (FB.sel.includes(f.n) ? " sel" : ""); e.dataset.n = f.n; e.title = f.n; e.innerHTML = '<div class="th"><img loading="lazy"></div><div class="nm"></div>'; e.querySelector("img").src = "/api/fthumb?w=240&p=" + encodeURIComponent(d.path.replace(/\/$/, "") + "/" + f.n); e.lastChild.textContent = f.n;
     e.onclick = ev => {
       if (FB.mode === "folder") return;
@@ -2168,15 +2169,15 @@ function fbRender() {
       else FB.sel = (FB.sel.length === 1 && FB.sel[0] === f.n) ? [] : [f.n];
       FB.last = f.n; fbUpdate();
     }; g.appendChild(e); });
-  if (!d.dirs.length && !d.files.length) { const e = document.createElement("div"); e.className = "empty"; e.style.padding = "30px"; e.textContent = "Cartella vuota (qui si vedono solo sottocartelle e foto JPEG)."; M.appendChild(e); }
+  if (!d.dirs.length && !d.files.length) { const e = document.createElement("div"); e.className = "empty"; e.style.padding = "30px"; e.textContent = t("editor.fb.vuota"); M.appendChild(e); }
   fbUpdate();
 }
 function fbUpdate() {
   document.querySelectorAll("#fbmain .fbi[data-n]").forEach(e => e.classList.toggle("sel", FB.sel.includes(e.dataset.n)));
   const nf = FB.data.files.length, folder = FB.mode === "folder";
-  $("fbhint").textContent = folder ? "Apri la cartella con le foto, poi premi «Importa questa cartella»" : "⌘A tutte · ⌘-clic aggiunge · Maiusc-clic intervallo";
-  $("fbinfo").textContent = folder ? `${nf} foto JPEG in questa cartella (più quelle nelle sottocartelle)` : `${FB.sel.length} selezionate su ${nf}`;
-  $("fbgo").textContent = folder ? "Importa questa cartella" : `Importa ${FB.sel.length || ""} foto`.replace("  ", " "); $("fbgo").disabled = folder ? false : !FB.sel.length;
+  $("fbhint").textContent = folder ? t("editor.fb.hint_cartella") : t("editor.fb.hint_foto", { tutte: tasto("⌘ A"), cmd: tasto("⌘"), maiusc: t("editor.tasti.maiusc") });
+  $("fbinfo").textContent = folder ? t("editor.fb.info_cartella", { n: nf }) : t("editor.fb.info_foto", { sel: FB.sel.length, n: nf });
+  $("fbgo").textContent = folder ? t("editor.fb.importa_cartella") : FB.sel.length ? tn("editor.fb.importa_n", FB.sel.length) : t("editor.fb.importa_foto"); $("fbgo").disabled = folder ? false : !FB.sel.length;
   $("fball").style.display = $("fbnone").style.display = folder ? "none" : "";
 }
 function fbOpen(mode) { gapClose(); FB.mode = mode; $("fbd").style.display = "flex"; $("fbmain").focus(); fbLoad(FB.path || ""); }
@@ -2192,7 +2193,7 @@ async function doImport(paths) {
       if (!res.importate) { toast(res.saltate ? t("editor.imp.nessuna_nuova", { n: res.saltate }) : t("editor.imp.nessuna"), true); return; }
       S = await api("/api/state"); render(); toast(t("editor.imp.fatto", { n: res.aggiunte || res.importate }) + (res.saltate ? " · " + t("editor.imp.saltate", { n: res.saltate }) : "")); return;
     }
-    $("busymsg").innerHTML = `Importo ${res.importate} foto…<br><span style="color:var(--dim);font-size:12px">preparo miniature e riconoscimento volti: ci vuole un po'</span>`; $("busy").style.display = "flex";
+    $("busymsg").innerHTML = `${tH("editor.imp.importo", { n: res.importate })}<br><span style="color:var(--dim);font-size:12px">${tH("editor.imp.importo_nota")}</span>`; $("busy").style.display = "flex";
     const boot = S.boot; await new Promise(r => setTimeout(r, 1500));
     for (let i = 0; i < 600; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); }
   } catch (e) { $("busy").style.display = "none"; }
@@ -2205,26 +2206,26 @@ $("tabF").onclick = () => { view = "foto"; render(); }; $("tabA").onclick = () =
 // ---- galleria modelli (come la scelta dei template di Smart Albums)
 let tplFor = -1;
 async function openTpl() {
-  const T = $("tpl"), mine = tplFor = cur; T.style.display = "block"; document.body.classList.add("tplopen"); $("tplb").classList.add("on"); T.innerHTML = '<div class="empty">Carico i modelli…</div>';
+  const T = $("tpl"), mine = tplFor = cur; T.style.display = "block"; document.body.classList.add("tplopen"); $("tplb").classList.add("on"); T.innerHTML = `<div class="empty">${tH("editor.tpl.carico")}</div>`;
   const d = await api("/api/templates?s=" + mine); if (tplFor !== mine) return;                       // nel frattempo hai cambiato spread: vale l'ultima richiesta
   const ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
   const apply = t => async () => { closeTpl(); sel = null; await op({ op: "template", s: cur, L: t.L, R: t.R }); };
   const mod = async (body, msg) => { try { await api("/api/modelli", body); toast(msg); openTpl(); } catch (e) {} };
-  T.innerHTML = `<div class="bar"><b>Modelli per ${d.n || 0} foto${d.lato ? ` · solo pagina ${d.lato === "L" ? "sinistra" : "destra"}` : ""}</b>${hasPh ? '<button id="tsave" class="primary" title="Salva il layout di questo spread: comparirà per gli spread con lo stesso numero di foto">💾 Salva questo spread come modello…</button>' : ""}<span class="empty">${escH(d.nota || (d.lato ? "L'altra pagina ha il testo e non cambia. " : "") + (d.tot ? d.tot + " possibili · le foto sono già abbinate per orientamento · in verde: quello attuale" : ""))}</span></div>
-    <div id="tut" style="display:none"><div class="sec" style="margin:10px 4px 4px">I tuoi modelli</div><div class="grid" id="gut"></div></div>
-    <div id="tstd" style="display:none"><div class="sec" style="margin:10px 4px 4px">Modelli standard</div><div class="grid" id="gstd"></div></div>
-    <div class="empty" id="tnone" style="display:none">${escH(d.nota || "Nessun modello per questo numero di foto.")}</div>`;
+  T.innerHTML = `<div class="bar"><b>${tH("editor.tpl.per", { n: d.n || 0 })}${d.lato ? " · " + tH(d.lato === "L" ? "editor.prov.solo_sx" : "editor.prov.solo_dx") : ""}</b>${hasPh ? `<button id="tsave" class="primary" title="${tH("editor.tpl.salva_tit")}">${tH("editor.tpl.salva")}</button>` : ""}<span class="empty">${escH(d.nota || (d.lato ? t("editor.tpl.altra_testo") + " " : "") + (d.tot ? t("editor.tpl.possibili", { n: d.tot }) : ""))}</span></div>
+    <div id="tut" style="display:none"><div class="sec" style="margin:10px 4px 4px">${tH("editor.tpl.tuoi")}</div><div class="grid" id="gut"></div></div>
+    <div id="tstd" style="display:none"><div class="sec" style="margin:10px 4px 4px">${tH("editor.tpl.standard")}</div><div class="grid" id="gstd"></div></div>
+    <div class="empty" id="tnone" style="display:none">${escH(d.nota || t("editor.tpl.nessuno"))}</div>`;
   if ($("tsave")) $("tsave").onclick = async () => { if (licenzaNo("modelli_personali")) return; const n = await chiediNome(t("editor.prov.salva_tit"), t("editor.prov.nome")); if (n) mod({ azione: "salva", s: cur, nome: n }, t("editor.prov.salvato", { nome: n })); };
   ut.forEach(t => {
-    const tile = mkTile(t, (t.cur ? t.nome + " · attuale" : t.nome) + (t.progetto ? " · del progetto" : ""), apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
-    (t.progetto ? [["Aggiungi ai miei", "Questo modello è arrivato con il progetto e vale solo qui: aggiungilo ai tuoi per usarlo anche negli altri album", () => mod({ azione: "importa", id: t.id }, "Modello aggiunto ai tuoi")]] :
-    [["Aggiorna", "Sostituisci questo modello con il layout dello spread attuale", async () => { if (await foglio(TT("editor.mod.aggiorna_tit", { nome: t.nome }), TT("editor.mod.aggiorna", { n: d.n }), [{ t: TT("comune.annulla"), v: false }, { t: TT("editor.mod.aggiorna_ok"), v: true, main: true }])) mod({ azione: "aggiorna", s: cur, id: t.id }, "Modello aggiornato"); }],
-     ["Rinomina", "", async () => { const n = await chiediNome(TT("editor.mod.rinomina_tit"), TT("editor.prov.nome"), t.nome); if (n && n !== t.nome) mod({ azione: "rinomina", id: t.id, nome: n }, "Modello rinominato"); }],
-     ["Elimina", "Elimina il modello (gli spread già fatti non cambiano)", async () => { if (await foglio(TT("editor.mod.elimina_tit", { nome: t.nome }), TT("editor.mod.elimina"), [{ t: TT("comune.annulla"), v: false, main: true }, { t: TT("editor.mod.elimina_ok"), v: true, danger: true }])) mod({ azione: "elimina", id: t.id }, "Modello eliminato"); }]]).forEach(([l, ti, fn]) => {
-      const b = document.createElement("button"); b.textContent = l; b.title = ti; b.style.cssText = "font-size:11px;padding:2px 6px"; if (l === "Elimina") b.className = "danger"; b.onclick = ev => { ev.stopPropagation(); fn(); }; bar.appendChild(b); });
+    const tile = mkTile(t, (t.cur ? t.nome + " · " + TT("editor.prov.attuale") : t.nome) + (t.progetto ? " · " + TT("editor.tpl.del_progetto") : ""), apply(t)), bar = document.createElement("div"); bar.style.cssText = "display:flex;gap:4px;margin:4px 2px 0";
+    (t.progetto ? [[TT("editor.tpl.b_aggiungi"), TT("editor.tpl.b_aggiungi_tit"), () => mod({ azione: "importa", id: t.id }, TT("editor.tpl.aggiunto"))]] :
+    [[TT("editor.mod.aggiorna_ok"), TT("editor.tpl.aggiorna_tit"), async () => { if (await foglio(TT("editor.mod.aggiorna_tit", { nome: t.nome }), TT("editor.mod.aggiorna", { n: d.n }), [{ t: TT("comune.annulla"), v: false }, { t: TT("editor.mod.aggiorna_ok"), v: true, main: true }])) mod({ azione: "aggiorna", s: cur, id: t.id }, TT("editor.tpl.aggiornato")); }],
+     [TT("editor.tpl.rinomina"), "", async () => { const n = await chiediNome(TT("editor.mod.rinomina_tit"), TT("editor.prov.nome"), t.nome); if (n && n !== t.nome) mod({ azione: "rinomina", id: t.id, nome: n }, TT("editor.tpl.rinominato")); }],
+     [TT("editor.mod.elimina_ok"), TT("editor.tpl.elimina_tit"), async () => { if (await foglio(TT("editor.mod.elimina_tit", { nome: t.nome }), TT("editor.mod.elimina"), [{ t: TT("comune.annulla"), v: false, main: true }, { t: TT("editor.mod.elimina_ok"), v: true, danger: true }])) mod({ azione: "elimina", id: t.id }, TT("editor.tpl.eliminato")); }]]).forEach(([l, ti, fn]) => {
+      const b = document.createElement("button"); b.textContent = l; b.title = ti; b.style.cssText = "font-size:11px;padding:2px 6px"; if (l === TT("editor.mod.elimina_ok")) b.className = "danger"; b.onclick = ev => { ev.stopPropagation(); fn(); }; bar.appendChild(b); });
     tile.appendChild(bar); $("gut").appendChild(tile); });
-  d.items.forEach((t, n) => $("gstd").appendChild(mkTile(t, t.cur ? "attuale" : "modello " + (n + 1), apply(t))));
-  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = `Mostra altri ${d.piu.length} modelli (tagliano di più le foto)`; more.onclick = () => { more.remove(); d.piu.forEach((t, n) => { const k = mkTile(t, "taglio maggiore " + (n + 1), apply(t)); $("gstd").appendChild(k); }); }; $("tstd").appendChild(more); $("tstd").style.display = ""; }
+  d.items.forEach((t, n) => $("gstd").appendChild(mkTile(t, t.cur ? TT("editor.prov.attuale") : TT("editor.lib.modello_n", { n: n + 1 }), apply(t))));
+  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = TT("editor.lib.altri", { n: d.piu.length }); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => { const k = mkTile(t, TT("editor.lib.taglio_maggiore", { n: n + 1 }), apply(t)); $("gstd").appendChild(k); }); }; $("tstd").appendChild(more); $("tstd").style.display = ""; }
   $("tut").style.display = ut.length ? "" : "none"; $("tstd").style.display = d.items.length || (d.piu || []).length ? "" : "none"; if (!d.items.length && !ut.length) $("tnone").style.display = "";
   if (!ut.length) T.querySelector("#tstd .sec").style.display = "none";
 }
@@ -2239,22 +2240,22 @@ $("nmenu").addEventListener("keydown", e => { const v = [...$("nmenu").querySele
 let pxres = null;
 function prjInfo() {
   const m = S.mancanti || [], n = S.photos.length;
-  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${m.length} foto su ${n} non si trovano</b> (spostate, rinominate o disco scollegato):<br>${escH(m.slice(0, 12).join(", "))}${m.length > 12 ? "…" : ""}<br>Premi «Ricollega foto…» e scegli la cartella dove sono ora.` : `${n} foto · tutte trovate`;
+  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${tH("editor.prj.mancano", { m: m.length, n })}</b> ${tH("editor.prj.mancano_nota")}<br>${escH(m.slice(0, 12).join(", "))}${m.length > 12 ? "…" : ""}<br>${tH("editor.prj.premi")}` : escH(t("editor.prj.tutte", { n }));
 }
-function updMiss() { const m = S.mancanti || [], b = $("missb"); b.style.display = m.length ? "" : "none"; b.textContent = `⚠ ${m.length} foto mancanti`; }
+function updMiss() { const m = S.mancanti || [], b = $("missb"); b.style.display = m.length ? "" : "none"; b.textContent = t("editor.prj.mancanti_btn", { n: m.length }); }
 const openPrj = () => { prjInfo(); $("prjd").style.display = "flex"; };
 $("prjb").onclick = openPrj; $("missb").onclick = openPrj; $("prjclose").onclick = () => $("prjd").style.display = "none";
 $("prelink").onclick = async () => {
   try {
     const r = await api("/api/ricollega", {}); if (r.annullato) return;
     S = await api("/api/state"); render(); prjInfo();
-    toast(r.mancanti.length ? `Ritrovate ${r.trovate}; ${r.mancanti.length} ancora mancanti` : `Ritrovate ${r.trovate} foto: tutto collegato`, !!r.mancanti.length);
+    toast(r.mancanti.length ? t("editor.prj.ritrovate_ancora", { trovate: r.trovate, n: r.mancanti.length }) : t("editor.prj.ritrovate_tutte", { n: r.trovate }), !!r.mancanti.length);
   } catch (e) {}
 };
 $("pcheck").onclick = async () => {
   try { const r = await api("/api/aggiorna_foto", {}); S = await api("/api/state"); aggSeen = S.agg.n; render(); prjInfo();
-    if (!r.aggiornate.length && !r.errori.length) toast("Nessuna foto modificata: è tutto aggiornato"); else avvisoAgg({ nomi: r.aggiornate, ar: r.proporzioni });
-    if (r.errori.length) toast(`Non riuscite (file incompleto?): ${r.errori.join(", ")}`, true); } catch (e) {}
+    if (!r.aggiornate.length && !r.errori.length) toast(t("editor.prj.nessuna_modifica")); else avvisoAgg({ nomi: r.aggiornate, ar: r.proporzioni });
+    if (r.errori.length) toast(t("editor.prj.non_riuscite", { elenco: r.errori.join(", ") }), true); } catch (e) {}
 };
 $("pxgo").onclick = async () => {
   const lg = $("pxlog"); try {
@@ -2269,10 +2270,10 @@ $("pxreveal").onclick = () => pxres && api("/api/reveal", { path: pxres });
 $("vclose").onclick = () => $("verd").style.display = "none";
 $("verb").onclick = async () => {
   $("verd").style.display = "flex"; const l = $("verl"); l.textContent = "…";
-  const v = await api("/api/versioni"); l.textContent = v.length ? "" : "Nessuna versione salvata";
-  v.forEach(x => { const b = document.createElement("button"); b.style.textAlign = "left"; b.textContent = `${x.label}  ·  ${x.spread} spread`;
+  const v = await api("/api/versioni"); l.textContent = v.length ? "" : t("editor.ver.nessuna");
+  v.forEach(x => { const b = document.createElement("button"); b.style.textAlign = "left"; b.textContent = tn("editor.ver.riga", x.spread, { label: x.label });
     b.onclick = async () => { if (!(await foglio(t("editor.ver.torna_tit", { data: x.label }), t("editor.ver.torna", { n: x.spread }), [{ t: t("comune.annulla"), v: false }, { t: t("editor.ver.torna_ok"), v: true, main: true }]))) return;
-      const boot = S.boot; await api("/api/ripristina", { ts: x.ts }); $("verd").style.display = "none"; toast("Ripristino…");
+      const boot = S.boot; await api("/api/ripristina", { ts: x.ts }); $("verd").style.display = "none"; toast(t("editor.ver.ripristino"));
       await new Promise(r => setTimeout(r, 1500)); for (let i = 0; i < 120; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); } };
     l.appendChild(b); });
 };
@@ -2295,7 +2296,7 @@ function rangeNums() {
   const out = []; for (const p of $("erange").value.split(/[,;]/)) { const t = p.trim(); if (!t) continue; const m = t.match(/^(\d+)\s*-\s*(\d+)$/); if (m) { for (let i = Math.min(+m[1], +m[2]); i <= Math.max(+m[1], +m[2]); i++) out.push(i); } else if (/^\d+$/.test(t)) out.push(+t); else return null; }
   return [...new Set(out)];
 }
-function updCount() { const r = rangeNums(), n = S.spreads.length; $("ecount").textContent = !r ? "Scrivi numeri e intervalli, es. 1, 2, 5-7" : r.some(x => x < 1 || x > n) ? `L'album ha ${n} spread` : `${r.length} spread verranno esportati`; }
+function updCount() { const r = rangeNums(), n = S.spreads.length; $("ecount").textContent = !r ? t("editor.exp.scrivi_numeri") : r.some(x => x < 1 || x > n) ? tn("editor.exp.album_ha", n) : tn("editor.exp.verranno", r.length); }
 document.querySelectorAll("#efmt button").forEach(b => b.onclick = () => setFmt(b.dataset.f));
 document.querySelectorAll("input[name=er]").forEach(r => r.onchange = updCount); $("erange").oninput = () => { document.querySelector('input[name=er][value=r]').checked = true; updCount(); };
 $("expb").onclick = openExp; $("ecancel").onclick = () => $("exp").style.display = "none";
@@ -2330,7 +2331,7 @@ $("ereveal").onclick = () => api("/api/reveal", { path: eres });
 let qlName = null, qlSrc = "", qlPref = "";
 function qlook(n, src) {       // anteprima grande di una foto (tasto Z); stesso tasto o Esc o clic la chiude
   const q = $("qlook"); if (!n) { q.style.display = "none"; qlName = null; return; }
-  qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${encU(n)}?w=1800`; q.querySelector("span").textContent = n + (qlSrc === "spread" ? " · spazio o Esc per chiudere" : " · ← → per scorrere · spazio o Esc per chiudere"); q.style.display = "flex";
+  qlName = n; if (src) qlSrc = src; q.querySelector("img").src = `/img/thumb/${encU(n)}?w=1800`; q.querySelector("span").textContent = t(qlSrc === "spread" ? "editor.ql.chiudi" : "editor.ql.scorri", { nome: n }); q.style.display = "flex";
 }
 $("qlook").onclick = () => qlook(null);
 document.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("#slots, #sbarR")) qlPref = "spread"; }, true);
@@ -2357,17 +2358,17 @@ $("stage").addEventListener("pointerdown", e => {
 $("stage").addEventListener("pointermove", e => { if (!panD) return; const st = $("stage"); st.scrollLeft = panD.l - (e.clientX - panD.x); st.scrollTop = panD.t - (e.clientY - panD.y); });
 $("stage").addEventListener("pointerup", () => { panD = null; document.body.classList.remove("panning"); });
 const KEYS = [                                                                  // [gruppo, [[testo, tasti]]]: i tasti come sul Mac, tasto() li scrive per Windows e Linux
-  ["generali", [["salva", "⌘ S"], ["annulla", "⌘ Z · ⇧ ⌘ Z"], ["esporta", "⌘ E"], ["viste", "⌘ 1 · ⌘ 2"], ["controlla", "C"], ["tela_piena", "F"], ["modelli", "M"], ["righelli", "R"], ["guide", "G"], ["lista", "?"], ["cambia_spread", "↑ · ↓"], ["fuoco", "Tab · ⇧ Tab"]]],
-  ["spread", [["altra_disp", "D · ⇧ D"], ["torna_disp", "Esc"], ["sostituisci", "S"], ["bn", "B"], ["sel_tutte", "⌘ A"], ["copia", "⌘ C · ⌘ X · ⌘ V"], ["duplica", "⌘ D"], ["elimina", "⌫"], ["sposta_fine", "← ↑ → ↓"], ["sposta", "⇧ ← ↑ → ↓"], ["livello", "+ · −"], ["livello_alt", "] · ["], ["cima_fondo", "} · {"], ["testo", "T"], ["seleziona", "Invio"]]],
-  ["trascina", [["no_magnete", "tieni ⌥"], ["proporzione", "tieni ⇧"], ["manina", "tieni Spazio"], ["anteprima", "Z · Spazio"], ["anteprima_scorri", "← →"]]],
-  ["galleria", [["preferita", "P"], ["tolta", "X"], ["colore", "1 … 7"], ["no_colore", "0"], ["intervallo", "⇧ clic"], ["sel_tutte_foto", "⌘ A"], ["anteprima", "Z"]]],
+  ["generali", [["salva", "⌘ S"], ["annulla", "⌘ Z · ⇧ ⌘ Z"], ["esporta", "⌘ E"], ["viste", "⌘ 1 · ⌘ 2"], ["controlla", "C"], ["tela_piena", "F"], ["modelli", "M"], ["righelli", "R"], ["guide", "G"], ["lista", "?"], ["cambia_spread", "↑ · ↓"], ["fuoco", "{tab} · ⇧ {tab}"]]],
+  ["spread", [["altra_disp", "D · ⇧ D"], ["torna_disp", "{esc}"], ["sostituisci", "S"], ["bn", "B"], ["sel_tutte", "⌘ A"], ["copia", "⌘ C · ⌘ X · ⌘ V"], ["duplica", "⌘ D"], ["elimina", "⌫"], ["sposta_fine", "← ↑ → ↓"], ["sposta", "⇧ ← ↑ → ↓"], ["livello", "+ · −"], ["livello_alt", "] · ["], ["cima_fondo", "} · {"], ["testo", "T"], ["seleziona", "{invio}"]]],
+  ["trascina", [["no_magnete", "{tieni} ⌥"], ["proporzione", "{tieni} ⇧"], ["manina", "{tieni} {spazio}"], ["anteprima", "Z · {spazio}"], ["anteprima_scorri", "← →"]]],
+  ["galleria", [["preferita", "P"], ["tolta", "X"], ["colore", "1 … 7"], ["no_colore", "0"], ["intervallo", "⇧ {clic}"], ["sel_tutte_foto", "⌘ A"], ["anteprima", "Z"]]],
 ];
 function keysOpen() {
   if ($("keys")) { $("keys").remove(); return; }
   const d = document.createElement("div"); d.id = "keys"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", t("editor.tasti.titolo")); const prima = document.activeElement;
   const close = () => { d.remove(); document.removeEventListener("keydown", esc, true); if (prima && prima.focus) prima.focus(); }, esc = e => { if (e.key === "Escape" || e.key === "?") { e.preventDefault(); e.stopPropagation(); close(); } };
-  const kb = s => tasto(s).split(/( · )/).map(x => x === " · " ? '<i style="opacity:.5;font-style:normal"> · </i>' : x.split(" ").map(k => /^(⌘|⇧|⌥|⌫|Tab|Esc|Invio|Spazio|Canc|Ctrl|Maiusc|Alt|(Ctrl|Maiusc|Alt)\+.*|[A-Z0-9?+−\]\[{}↑↓←→…])$/.test(k) ? `<kbd>${escH(k)}</kbd>` : escH(k)).join(" ")).join("");
-  d.innerHTML = `<div class="kc"><div class="kh"><div><b>${escH(t("editor.tasti.titolo"))}</b><span style="opacity:.55;font-size:12px;margin-left:10px">Impaginatore ${escH(S && S.ver ? S.ver : "")}</span></div><button class="kx" aria-label="${escH(t("comune.chiudi"))}" title="${escH(t("comune.chiudi"))} (Esc)">✕</button></div><div class="kb">` + KEYS.map(([g, r]) => `<div><h4>${escH(t("editor.tasti.g_" + g))}</h4>${r.map(([a, b]) => `<div class="kr"><span>${escH(t("editor.tasti." + a))}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + "</div></div>";
+  const kb = s => tasto(s.replace(/\{(\w+)\}/g, (m, w) => t("editor.tasti.k_" + w))).split(/( · )/).map(x => x === " · " ? '<i style="opacity:.5;font-style:normal"> · </i>' : x.split(" ").map(k => /^(⌘|⇧|⌥|⌫|[A-Z][A-Za-z]*(\+.*)?|[0-9?+−\]\[{}↑↓←→…])$/.test(k) ? `<kbd>${escH(k)}</kbd>` : escH(k)).join(" ")).join("");
+  d.innerHTML = `<div class="kc"><div class="kh"><div><b>${escH(t("editor.tasti.titolo"))}</b><span style="opacity:.55;font-size:12px;margin-left:10px">Impaginatore ${escH(S && S.ver ? S.ver : "")}</span></div><button class="kx" aria-label="${escH(t("comune.chiudi"))}" title="${escH(conTasto(t("comune.chiudi"), t("editor.tasti.k_esc")))}">✕</button></div><div class="kb">` + KEYS.map(([g, r]) => `<div><h4>${escH(t("editor.tasti.g_" + g))}</h4>${r.map(([a, b]) => `<div class="kr"><span>${escH(t("editor.tasti." + a))}</span><span>${kb(b)}</span></div>`).join("")}</div>`).join("") + "</div></div>";
   d.querySelector(".kx").onclick = close; d.onclick = e => { if (e.target === d) close(); };
   document.body.appendChild(d); document.addEventListener("keydown", esc, true); d.querySelector(".kx").focus();
 }
