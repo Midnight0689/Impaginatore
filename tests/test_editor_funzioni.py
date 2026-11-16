@@ -86,7 +86,8 @@ def test_cicli_si_fermano(editor, monkeypatch):
 
 def test_versioni_e_ripristino(editor):
     c = editor; st, names = _due_spread(c)
-    c.post("/api/save"); time.sleep(1.1)
+    c.post("/api/save"); s = int(time.time())
+    attendi(lambda: int(time.time()) > s, 5, 0.02)                       # le versioni hanno il nome dall'ora, al secondo: la prossima in un secondo nuovo
     st = _op(c, st, {"op": "blank", "pos": 2}); c.post("/api/save")
     v = c.get("/api/versioni"); assert len(v) >= 1 and v[0]["spread"] in (0, 2)
     ok, r = c.prova("/api/ripristina", {"ts": "nonvalido"}); assert not ok

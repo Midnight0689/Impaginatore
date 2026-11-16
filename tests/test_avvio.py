@@ -102,7 +102,7 @@ def test_finestra_e_tempi(monkeypatch):
     principale = types.SimpleNamespace(show=lambda: wv.mostrate.append(time.monotonic()))
     pronta = threading.Event(); pronta.set()
     t = a.segui(principale, pronta)
-    time.sleep(0.05); f.events.shown()
+    time.sleep(0.05); f.events.shown()                                   # la schermata compare un momento dopo, mentre il thread aspetta (com'è davvero); nessun controllo dipende dalla durata
     t.join(5)
     assert len(wv.mostrate) == 1 and len(wv.chiuse) == 1 and wv.mostrate[0] - a.visto >= 0.29, "almeno MINIMO secondi di schermata: niente lampi"
     assert wv.mostrate[0] <= wv.chiuse[0], "prima si mostra la finestra, poi si chiude la schermata"

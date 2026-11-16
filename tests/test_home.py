@@ -131,11 +131,9 @@ def test_apri_riusa_editor_gia_attivo(home_srv, editor):
 
 
 def test_esci(home_srv):
-    import time
+    from aiuti import attendi
     assert home_srv.post("/api/esci") == {"ok": True}
-    for _ in range(50):
-        if home_srv.uscite: break
-        time.sleep(0.05)
+    attendi(lambda: home_srv.uscite, 30, 0.05)                           # il server esce poco dopo aver risposto (home/server.py)
     assert home_srv.uscite == [1]
 
 
