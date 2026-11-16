@@ -72,7 +72,7 @@ core = "ctrace"
 impaginatore = ["src/impaginatore", "*/site-packages/impaginatore"]
 
 [tool.coverage.report]
-fail_under = 74            # soglia bloccante della CI = copertura misurata (74,5 %) per difetto; T-104 la porta a 100
+fail_under = 100           # soglia bloccante (righe e rami), l'unica: CI e controlli.py la leggono da qui. Una riga esclusa ha il motivo accanto al pragma
 show_missing = true
 skip_covered = false
 precision = 1

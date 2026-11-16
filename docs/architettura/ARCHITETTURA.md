@@ -143,8 +143,12 @@ Cartelle dei dati: macOS `~/Library/Application Support/Impaginatore` (cache `~/
 
 `pytest` dalla radice; `pytest --cov` per la copertura (anche dei processi figli: `[tool.coverage.run] patch`).
 La copertura si misura con il motore `ctrace` su ogni versione di Python (`[tool.coverage.run] core`): con Python 3.14
-il predefinito `sysmon` segna come parziali dei rami percorsi (`if ...: raise ...` su una riga). Gli script del motore
-senza `main()` si eseguono nello stesso processo con `aiuti.come_script`; runpy su un modulo già importato è un errore.
+il predefinito `sysmon` segna come parziali dei rami percorsi (`if ...: raise ...` su una riga). La soglia è 100 % di
+righe e rami (`[tool.coverage.report] fail_under`, l'unico posto): una riga esclusa ha il motivo accanto al `pragma`. Gli
+script del motore senza `main()` si eseguono nello stesso processo con `aiuti.come_script`; runpy su un modulo già
+importato è un errore. `tests/test_script_motore.py` li prova con un Photoshop finto (registra gli script `.jsx` e
+risponde come lui) e con PSD finti che hanno la forma di quelli di psd-tools (gruppi, maschere vettoriali, regolazioni
+agganciate).
 Marcatori: `photoshop` (saltati se Photoshop manca), `browser` (Chrome/Chromium senza schermo), `lento`.
 Ogni test ha una casa finta (`HOME`, `APPDATA`, `XDG_*`), `IMPAGINATORE_DIALOGHI=nessuno` e aggiornamenti spenti.
 
