@@ -14,6 +14,8 @@ L'editor ne copia una versione nella cartella di ogni progetto che ha cornici li
 1.x): per questo il modulo funziona sia dentro il pacchetto (impaginatore.motore.album_libere) sia da solo, accanto a
 spec.py, con i vecchi script che hanno album.py nel percorso.
 """
+import threading
+
 try: from . import album as _a                   # dentro il pacchetto impaginatore
 except ImportError: import album as _a           # copia nella cartella di un progetto, letta dagli script delle versioni 1.x
 
@@ -96,15 +98,21 @@ def _photo_rot(_orig):
     from PIL import Image
     import math, os
 
-    def _photo(it, K, corrected=False):
+    def _photo(it, K, corrected=False, **kw):           # kw: originale=True (stampa dagli originali, solo con il motore del pacchetto)
         a = it.get("a") or 0
         _CUR[0] = it["i"]
-        if not a: return _orig(it, K, corrected)
-        im = _a.leggi_rgb(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"]))
-        if corrected: im = _a.apply_ev(im, _a.ev_for(it["i"]), _a.WB.get(_a.name(it["i"])))
-        l, t, r, b = _a.zcrop(it); Wo, Ho = max(1, round(it["W"] * K)), max(1, round(it["H"] * K)); iw, ih = im.size
-        sc = (r - l) * iw / Wo; cx, cy = (l + r) / 2 * iw, (t + b) / 2 * ih; th = math.radians(a); c, s = math.cos(th), math.sin(th)
+        if not a: return _orig(it, K, corrected, **kw)
+        l, t, r, b = _a.zcrop(it); Wo, Ho = max(1, round(it["W"] * K)), max(1, round(it["H"] * K)); th = math.radians(a); c, s = math.cos(th), math.sin(th)
+        if kw.get("originale"): im = _a.foto_rgb(it["i"], True, (Wo / max(r - l, 1e-6), Ho / max(b - t, 1e-6)))
+        else: im = _a.leggi_rgb(os.path.join(_a.THUMBS, _a.M[it["i"]]["n"]))
+        iw, ih = im.size; sc = (r - l) * iw / Wo; cx, cy = (l + r) / 2 * iw, (t + b) / 2 * ih
         data = (sc * c, sc * s, cx - sc * (c * Wo / 2 + s * Ho / 2), -sc * s, sc * c, cy - sc * (-s * Wo / 2 + c * Ho / 2))
+        if kw.get("originale"):         # solo la parte della foto che la cornice inclinata mostra (con il margine del filtro): le correzioni costano meno memoria, il risultato è lo stesso
+            px = [data[0] * x + data[1] * y + data[2] for x in (0, Wo) for y in (0, Ho)]; py = [data[3] * x + data[4] * y + data[5] for x in (0, Wo) for y in (0, Ho)]
+            mg = _a.margine_filtro(sc); x0, y0 = max(0, math.floor(min(px)) - mg), max(0, math.floor(min(py)) - mg)
+            im = im.crop((x0, y0, max(x0 + 1, min(iw, math.ceil(max(px)) + mg)), max(y0 + 1, min(ih, math.ceil(max(py)) + mg))))
+            data = (data[0], data[1], data[2] - x0, data[3], data[4], data[5] - y0)
+        if corrected: im = _a.apply_ev(im, _a.ev_for(it["i"]), _a.WB.get(_a.name(it["i"])))
         out = im.transform((Wo, Ho), Image.AFFINE, data, resample=Image.BICUBIC)
         if it.get("bw"):
             from PIL import ImageOps
@@ -114,8 +122,8 @@ def _photo_rot(_orig):
 
 
 def _photo_bordo(_orig):
-    def _photo(it, K, corrected=False):
-        out = _orig(it, K, corrected)
+    def _photo(it, K, corrected=False, **kw):
+        out = _orig(it, K, corrected, **kw)
         bd = it.get("bd")
         if bd:
             from PIL import ImageDraw
@@ -125,14 +133,15 @@ def _photo_bordo(_orig):
     return _photo
 
 
-def _render_ombre(spread, K, corrected=True):
-    """come render del motore, con in più l'ombra morbida sotto le cornici che ce l'hanno (sh 0-100)"""
+def _render_ombre(spread, K, corrected=True, **kw):
+    """come render del motore, con in più l'ombra morbida sotto le cornici che ce l'hanno (sh 0-100); kw: originale=True
+    (stampa dagli originali, solo con il motore del pacchetto)"""
     from PIL import Image, ImageFilter
     S = Image.new("RGB", (round(_a.CW * K), round(_a.CH * K)), "white")
     for it in _a.layout(spread):
         pos = (round(it["x"] * K), round(it["y"] * K))
         if it["k"] == "t": t = _a._text(it, K); S.paste(t, pos, t); continue
-        ph = _a._photo(it, K, corrected)
+        ph = _a._photo(it, K, corrected, **kw)
         sh = it.get("sh")
         if sh:
             blur = max(1.0, (1.5 + sh / 100 * 4.5) / 25.4 * _a.PPI * K); dy = round(blur * 0.55); m = round(blur * 3)
@@ -178,7 +187,17 @@ def tono_job(i):
     return dict(b=t.get("b", 0), w=t.get("w", 255), m=t.get("m", 1.0), c=t.get("c") or []) if tono_attivo(t) else None
 
 
-_CUR = [None]
+class _Corrente(threading.local):
+    """foto che si sta disegnando (le correzioni di apply_ev la leggono): una per thread, così un'esportazione in sottofondo
+    e le anteprime chieste dalla pagina nello stesso momento non si scambiano i ritocchi. Si usa come _CUR[0]"""
+    v = None
+
+    def __getitem__(self, k): return self.v
+
+    def __setitem__(self, k, v): self.v = v
+
+
+_CUR = _Corrente()
 
 # ---- ritocco stile Lightroom (per foto): tmp temperatura, tnt tinta, con contrasto, alt alteluci, omb ombre, bia bianchi, ner neri, vib vibranza, sat saturazione (tutti -100..100)
 RIT_KEYS = ("tmp", "tnt", "con", "alt", "omb", "bia", "ner", "vib", "sat")

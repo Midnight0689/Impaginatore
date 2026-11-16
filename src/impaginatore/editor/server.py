@@ -1510,13 +1510,13 @@ def run_export(o):
         try:
             LOG.append(f"Esporto {len(nums)} spread in {fmt.upper()} → {dest}")
             if fmt == "jpg":
-                K = 1.0 if o.get("res", "stampa") == "stampa" else 0.25; q = qualita; icc = srgb_icc()
+                stampa = o.get("res", "stampa") == "stampa"; K = 1.0 if stampa else 0.25; q = qualita; icc = srgb_icc()
                 fatti = []
                 for k in nums:
                     try:
                         with LOCK: tup = spread_tuple(k - 1)
-                        im = A.render(tup, K, True); b = round(A.B * K)
-                        if b: im = im.crop((b, b, im.width - b, im.height - b))
+                        im = A.render(tup, K, True, originale=stampa); b = round(A.B * K)          # stampa (UX-011): foto dagli originali e abbondanza nel file, come nei PSD
+                        if b and not stampa: im = im.crop((b, b, im.width - b, im.height - b))
                         f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); _scrivi_img(im, f, quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
                         if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
                         fatti.append(k); LOG.append(f"  spread {k}: {os.path.basename(f)}")

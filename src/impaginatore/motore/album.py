@@ -13,7 +13,7 @@ Nessuna foto attraversa la piega: ogni pagina si compone da sola.
 Stato: un progetto per processo. carica_progetto riempie le variabili del modulo (CFG, M, CW, IDX...) che il resto del motore,
 gli script e l'editor leggono; importare il modulo non legge niente dal disco.
 """
-import io, logging, os, struct, sys, time
+import io, logging, math, os, struct, sys, time
 from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -281,8 +281,7 @@ def _build_thumbs(meta, segnaposto=True):
         except ERRORI_FOTO as e:
             rotte.append(m["n"]); log.warning("una foto non si legge (%s)", type(e).__name__); log.debug("foto non letta %s: %s", m["n"], e)
             if not segnaposto: continue
-            w, h = m.get("w") or 3, m.get("h") or 2; f = 300 / max(w, h)
-            Image.new("RGB", (max(1, round(w * f)), max(1, round(h * f))), GRIGIO_SEGNAPOSTO).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
+            riquadro_grigio(m).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
             if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
                 DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
     return rotte
@@ -409,18 +408,60 @@ def leggi_rgb(p):
     return im
 
 
-def _photo(it, K, corrected=False):
-    im = leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"]))
-    if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
-    l, t, r, b = zcrop(it)
-    out = im.resize((max(1, round(it["W"] * K)), max(1, round(it["H"] * K))), Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))
+def riquadro_grigio(m):
+    """riquadro grigio con le proporzioni della foto: al posto della miniatura che non c'è ancora (preparazione in sottofondo)"""
+    w, h = m.get("w") or 3, m.get("h") or 2; f = 300 / max(w, h)
+    return Image.new("RGB", (max(1, round(w * f)), max(1, round(h * f))), GRIGIO_SEGNAPOSTO)
+
+
+def foto_rgb(i, originale=False, serve=None):
+    """la foto i in RGB. Di serie la miniatura (anteprime a schermo; un riquadro grigio se non è ancora pronta). Con
+    originale=True il file originale (stampa, UX-011): letto con il limite di pixel (apri_foto), decodificato alla misura
+    più piccola che basta a `serve` (larghezza, altezza in pixel della foto intera; i JPEG si riducono già in decodifica),
+    raddrizzato dall'EXIF e portato in sRGB come la miniatura. Un originale che manca o è danneggiato (VER-002): ValueError"""
+    m = M[i]
+    if not originale:
+        p = os.path.join(THUMBS, m["n"])
+        return leggi_rgb(p) if os.path.exists(p) else riquadro_grigio(m)
+    src = m.get("src") or ""
+    if m["n"] in DANNEGGIATE: raise ValueError(f"{m['n']}: {DANNEGGIATA}")
+    if not os.path.isfile(src): raise ValueError(f"{m['n']}: l'originale non si trova (ricollega la foto)")
+    with apri_foto(src) as im0:
+        if serve:
+            w, h = (serve[1], serve[0]) if im0.getexif().get(274) in (5, 6, 7, 8) else serve      # la decodifica lavora sul file com'è, prima della rotazione
+            im0.draft("RGB", (max(1, math.ceil(w)), max(1, math.ceil(h))))
+        im = in_srgb(ImageOps.exif_transpose(im0))
+    return im
+
+
+def margine_filtro(scala):
+    """pixel attorno al riquadro che il ricampionamento (LANCZOS, BICUBIC) legge ancora: ritagliando con questo margine il
+    risultato è lo stesso di quello fatto sulla foto intera"""
+    return math.ceil(3 * max(1.0, scala)) + 2
+
+
+def _photo(it, K, corrected=False, originale=False):
+    l, t, r, b = zcrop(it); size = (max(1, round(it["W"] * K)), max(1, round(it["H"] * K)))
+    if originale:          # stampa (UX-011): dall'originale, ricampionato una volta sola; le correzioni (pixel per pixel) solo sulla parte che serve
+        im = foto_rgb(it["i"], True, (size[0] / max(r - l, 1e-6), size[1] / max(b - t, 1e-6)))
+        box = (l * im.width, t * im.height, r * im.width, b * im.height); mg = margine_filtro((box[2] - box[0]) / size[0])
+        x0, y0 = max(0, math.floor(box[0]) - mg), max(0, math.floor(box[1]) - mg)
+        im = im.crop((x0, y0, min(im.width, math.ceil(box[2]) + mg), min(im.height, math.ceil(box[3]) + mg)))
+        if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
+        out = im.resize(size, Image.LANCZOS, box=(box[0] - x0, box[1] - y0, box[2] - x0, box[3] - y0))
+    else:
+        im = foto_rgb(it["i"])
+        if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
+        out = im.resize(size, Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))
     return ImageOps.grayscale(out).convert("RGB") if it.get("bw") else out
-def render(spread, K, corrected=True):
+def render(spread, K, corrected=True, originale=False):
+    """lo spread disegnato alla scala K (1 = pixel del documento, con l'abbondanza). originale=True legge le foto dagli
+    originali (stampa); altrimenti dalle miniature (anteprime)"""
     S = Image.new("RGB", (round(CW * K), round(CH * K)), "white")
     for it in layout(spread):
         pos = (round(it["x"] * K), round(it["y"] * K))
         if it["k"] == "t": t = _text(it, K); S.paste(t, pos, t)
-        else: S.paste(_photo(it, K, corrected), pos)
+        else: S.paste(_photo(it, K, corrected, originale=originale), pos)
     return S
 
 def load_spec(modname="spec"):
