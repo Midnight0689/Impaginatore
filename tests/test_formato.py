@@ -114,6 +114,8 @@ def test_progetto_si_esporta_per_la_1x(tmp_path, apri_editor):
     assert ast.literal_eval(testo.split("\n")[0]) == 'Nome con """ e \\ dentro: 5 spread. Salvato dall\'editor il 01/01/2026 10:00.'
     assert formato_1x.leggi(testo.encode(), prova=True) and len(formato_1x.leggi(testo.encode())) == 5
     vecchio = _album_152()
+    # nella pipeline dei test la storia c'è sempre (fetch-depth 0): lì la prova non si può saltare in silenzio
+    assert vecchio is not None or os.environ.get("GITHUB_WORKFLOW") != "CI", f"storia git della 1.5.2 non trovata ({COMMIT_152[:7]})"
     if vecchio is None: pytest.skip("storia git della 1.5.2 non disponibile")
     shutil.copy(os.path.join(p, "progetto.json"), out / "progetto.json"); shutil.copytree(os.path.join(p, "_cache"), out / "_cache")
     scr = tmp_path / "scripts_152"; scr.mkdir(); (scr / "album.py").write_bytes(vecchio)
@@ -125,9 +127,12 @@ def test_progetto_si_esporta_per_la_1x(tmp_path, apri_editor):
     assert r.stdout.startswith("5 ") and os.path.join(str(out), "album_libere.py") in r.stdout
 
 
+COMMIT_152 = "1e2eabad519a61b370cae74d0d18ea1ed1bed08a"     # la 1.5.2 sul ramo main («Ripristino 1.5.2»)
+
+
 def _album_152():
     """album.py della 1.5.2 dalla storia git (o None)"""
-    try: r = subprocess.run(["git", "-C", RADICE, "show", "957fdf7:motore/scripts/album.py"], capture_output=True, timeout=30)
+    try: r = subprocess.run(["git", "-C", RADICE, "show", f"{COMMIT_152}:motore/scripts/album.py"], capture_output=True, timeout=30)
     except (OSError, subprocess.SubprocessError): return None
     return r.stdout if r.returncode == 0 else None
 
