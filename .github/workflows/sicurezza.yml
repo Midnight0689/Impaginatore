@@ -125,6 +125,6 @@ jobs:
           cache-dependency-glob: |
             uv.lock
             strumenti/controlli.py
-      - name: pip-licenses con Python 3.11 e 3.12
+      - name: pip-licenses con Python 3.11, 3.12 e 3.14 (dipendenze di Linux; macOS e Windows in pacchetti.yml)
         timeout-minutes: 5
         run: uv run --no-project strumenti/controlli.py licenze

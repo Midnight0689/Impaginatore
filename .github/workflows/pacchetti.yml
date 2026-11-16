@@ -1,0 +1,245 @@
+# Pacchetti di installazione (T-302): programma compilato con Nuitka e pacchetto per ogni sistema, provati davvero.
+#     macOS arm64 e Intel   Impaginatore-<v>-mac-arm64.dmg, -mac-x86_64.dmg   (firma ad hoc, senza notarizzazione)
+#     Windows               Impaginatore-<v>-windows.exe                       (Inno Setup, per l'utente, senza firma)
+#     Linux                 Impaginatore-<v>-linux.deb                         (Ubuntu 24.04 e derivate)
+# Come e perché: docs/architettura/DISTRIBUZIONE.md. In locale lo stesso giro è
+#     python strumenti/compila.py  e  python strumenti/verifica_pacchetto.py <eseguibile>
+#
+# Parte a mano (Actions > Pacchetti > Run workflow) o con un tag v*. NON pubblica niente: i pacchetti restano come
+# artefatti di questa esecuzione (30 giorni). La release si prepara e si firma sul computer di chi pubblica con
+# strumenti/rilascio.py: la chiave privata dei rilasci non entra mai qui. Nessun segreto, permessi in sola lettura.
+#
+# Prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), poi un job per pacchetto: compila,
+# impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso, il DMG montato) e avvia
+# il programma installato con strumenti/verifica_pacchetto.py (schermata, editor, esportazioni JPG e PDF, progetto
+# 1.x, server MCP, chiusura; su Linux anche la finestra dentro xvfb). La prova della finestra su macOS e Windows
+# non blocca: dipende dalla sessione grafica dei runner, che GitHub non garantisce.
+#
+# Consumo stimato (prezzi GitHub di novembre 2026: Linux 0,006 $/min, Windows 0,010 $/min, macOS 0,062 $/min), da
+# confermare alla prima esecuzione: finora il workflow non è mai stato eseguito su GitHub.
+#     test        Linux ~20 min, macOS ~20 min, Windows ~25 min                       ~1,6 $
+#     pacchetti   Linux ~40 min, Windows ~50 min, macOS arm64 ~35 min, Intel ~60 min  ~6,5 $ (quasi tutto macOS)
+#     totale ~8 $ a esecuzione: il piano gratuito (12 $ al mese) basta per una sola esecuzione al mese più la CI.
+# Il Mac Intel (macos-15-intel) è il job più caro: si può togliere dalla matrice se non serve (DISTRIBUZIONE.md).
+name: Pacchetti
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON_PREFERENCE: only-managed
+  UV_PROJECT_ENVIRONMENT: .venv-compilazione
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { os: ubuntu-24.04, comando: copertura }
+          - { os: macos-26, comando: test }
+          - { os: windows-2025, comando: test }
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv
+    steps:
+      - name: Fine riga come nel repository
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv e Python 3.12
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Lint
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        run: uv run --no-project strumenti/controlli.py lint
+
+      - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
+        timeout-minutes: 40
+        run: uv run --no-project strumenti/controlli.py ${{ matrix.comando }}
+
+  pacchetto:
+    name: Pacchetto ${{ matrix.chiave }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, chiave: linux }
+          - { os: macos-26, chiave: mac-arm64 }
+          - { os: macos-15-intel, chiave: mac-x86_64 }
+          - { os: windows-2025, chiave: windows }
+    steps:
+      - name: Fine riga come nel repository
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: uv e Python 3.12
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # le dipendenze che ci sono solo su macOS (pyobjc) e su Windows (pythonnet, clr-loader, cffi) entrano nel
+      # programma compilato: sicurezza.yml controlla solo quelle di Linux
+      - name: Licenze delle dipendenze di questo sistema
+        if: runner.os != 'Linux'
+        timeout-minutes: 10
+        run: uv run --no-project strumenti/controlli.py licenze
+
+      - name: Ambiente di compilazione (Python 3.12, finestra, MCP, Nuitka)
+        timeout-minutes: 10
+        run: uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
+
+      - name: Python dell'ambiente
+        id: py
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then echo "python=.venv-compilazione/Scripts/python.exe" >> "$GITHUB_OUTPUT"
+          else echo "python=.venv-compilazione/bin/python" >> "$GITHUB_OUTPUT"; fi
+
+      # Inno Setup 6: strumento di costruzione, non entra nel programma (licenza: uso commerciale libero)
+      - name: Inno Setup
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        run: |
+          if ! command -v iscc >/dev/null && [ ! -f "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" ]; then
+            choco install innosetup --no-progress -y
+          fi
+
+      - name: Compila e impacchetta
+        timeout-minutes: 100
+        run: ${{ steps.py.outputs.python }} strumenti/compila.py
+
+      - name: Installa il pacchetto (Linux, con apt e le sue dipendenze)
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends xvfb xauth ./dist/pacchetti/Impaginatore-*-linux.deb
+          echo "PROGRAMMA=/usr/bin/impaginatore" >> "$GITHUB_ENV"
+
+      - name: Monta il DMG (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 5
+        run: |
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/dmg" dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.dmg
+          codesign --verify --deep --strict "$RUNNER_TEMP/dmg/Impaginatore.app"
+          echo "PROGRAMMA=$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app" >> "$GITHUB_ENV"
+
+      # «//» perché la shell di Git per Windows non scambi le opzioni per percorsi; l'installatore aspetta la fine
+      - name: Installa con l'installatore silenzioso (Windows, per l'utente)
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        run: |
+          ./dist/pacchetti/Impaginatore-*-windows.exe //VERYSILENT //SUPPRESSMSGBOXES //NORESTART //LOG="$RUNNER_TEMP\\installazione.log"
+          DEST="$(cygpath -u "$LOCALAPPDATA")/Programs/Impaginatore"
+          test -f "$DEST/impaginatore.exe"
+          echo "DEST=$DEST" >> "$GITHUB_ENV"
+          echo "PROGRAMMA=$(cygpath -w "$DEST/impaginatore.exe")" >> "$GITHUB_ENV"
+
+      - name: Prova il programma installato
+        timeout-minutes: 20
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
+          else
+            ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
+          fi
+
+      - name: Prova della finestra (non blocca)
+        if: runner.os != 'Linux'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-finestra-${{ matrix.chiave }}.json
+
+      - name: Disinstalla (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        run: |
+          "$DEST/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
+          for i in $(seq 30); do [ ! -f "$DEST/impaginatore.exe" ] && break; sleep 2; done
+          test ! -f "$DEST/impaginatore.exe"
+
+      - name: Smonta il DMG (macOS)
+        if: always() && runner.os == 'macOS'
+        run: hdiutil detach "$RUNNER_TEMP/dmg" || true
+
+      - name: Tempi e misure nel riepilogo
+        if: ${{ !cancelled() }}
+        run: |
+          for f in dist/pacchetti/*.deb dist/pacchetti/*.dmg dist/pacchetti/*.exe; do
+            [ -f "$f" ] && echo "- $(basename "$f"): $(( $(wc -c < "$f") / 1000000 )) MB" >> "$GITHUB_STEP_SUMMARY"
+          done
+          cat dist/pacchetti/verifica-*.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Artefatto
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pacchetto-${{ matrix.chiave }}
+          path: |
+            dist/pacchetti/
+            build/compila/${{ matrix.chiave }}/compilazione.xml
+          if-no-files-found: error
+          retention-days: 30
+
+  wheel:
+    name: Wheel (aggiornamenti delle installazioni Python)
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+          enable-cache: false
+      - name: uv build --wheel
+        run: uv build --wheel --out-dir dist/wheel
+      - name: Artefatto
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheel
+          path: dist/wheel/*.whl
+          if-no-files-found: error
+          retention-days: 30
