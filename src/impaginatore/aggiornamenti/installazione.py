@@ -103,7 +103,8 @@ def estrai(pacchetto, manifesto, dest):
                 out.flush(); os.fsync(out.fileno())
             if h.hexdigest() != attesi[n]: raise Rifiutato("sistema.agg_pacchetto_diverso")
             visti.add(n)
-    if visti != set(attesi): raise Rifiutato("sistema.agg_file_mancanti", n=len(set(attesi) - visti))
+    mancano = len(set(attesi) - visti)
+    if mancano: raise Rifiutato("sistema.agg_file_mancanti_1" if mancano == 1 else "sistema.agg_file_mancanti_n", n=mancano)
 
 
 def controlla_revoche(dest):
