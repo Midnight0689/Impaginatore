@@ -19,6 +19,7 @@ from PIL import Image, ImageOps
 from .. import __version__, formato, formato_1x, giornale, nomi, percorsi, piattaforma, sicurezza
 from .. import validazione as V
 from ..motore import album as A                      # motore: progetto.json, foto, miniature, volti, anteprime
+from ..motore import spazi as SPAZI                  # spazi fra le foto (controllo e «Sistema»)
 from ..motore import testo as TX
 from ..motore import album_libere as FL              # insegna al motore le cornici libere (FREE), senza toccare la skill
 from ..piattaforma import azioni, cartelle, dialoghi, processi
@@ -533,6 +534,8 @@ def apply(o):
             apply(dict(op="template", s=s_, **{k: alt[0][k] for k in "LR" if k in alt[0]}))
     elif t == "disposizione": altra_disposizione(o["s"], o.get("passo", 1), o.get("side"))
     elif t == "sostituisci": sostituisci(o["at"], o["photo"], o.get("adatta", True) is not False)
+    elif t == "spazi": ESITO.update(corretti=correggi_spazi(o["s"], o.get("modo", "std"), o.get("cm")), diversi=stato_spazi(o["s"], o.get("modo", "std"), o.get("cm"))["diversi"])
+    elif t == "sistema": sistema(_elenco_spread(o.get("spread")), o.get("spazi", True) is not False, o.get("tono", True) is not False, o.get("modo", "std"), o.get("cm"))
     elif t == "guides":
         g = GD[o["s"]]
         g["v"] = sorted({round(float(x)) for x in o["v"]}); g["h"] = sorted({round(float(y)) for y in o["h"]})
@@ -778,6 +781,8 @@ def valida(o):
     if t == "disposizione":
         if "s" not in o: raise ValueError("manca lo spread")
         if type(o.get("passo", 1)) is not int or o.get("passo", 1) not in (1, -1): raise ValueError("passo non valido: 1 (avanti) o -1 (indietro)")
+    if t == "spazi" and "s" not in o: raise ValueError("manca lo spread")
+    if t in ("spazi", "sistema"): _riferimento_spazi(o.get("modo", "std"), o.get("cm")); _elenco_spread(o.get("spread"))
     if t == "sostituisci" and not ("at" in o and isinstance(o.get("photo"), str)): raise ValueError("servono la cornice (at) e la foto (photo)")
     if t == "rit" and o.get("copia") is not None:
         if not isinstance(o["copia"], dict) or any(k not in FL.RIT_KEYS or isinstance(v, bool) or not isinstance(v, (int, float)) or abs(v) > 100 for k, v in o["copia"].items()):
@@ -808,7 +813,7 @@ NOMI_OP = dict(                # nome di ogni operazione per «Annulla …» e �
     stile_scollega="Scollega stile", testo="Testo", settext="Modifica testo", addtext="Aggiungi testo", blank="Nuovo spread vuoto",
     new="Nuovo spread", dup="Duplica spread", delete="Elimina spread", swappages="Inverti pagine", newspread="Nuovo spread",
     newspreadsel="Nuovo spread", addtospread="Aggiungi foto allo spread", template="Cambia disposizione", setrects="Disposizione a mano",
-    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", sistema="Sistema album", bozza="Bozza dell'album")
+    module="Cambia modulo", mode="Pagina intera o con margine", disposizione="Altra disposizione", spazi="Correggi spazi", sistema="Sistema album", bozza="Bozza dell'album")
 
 
 def _intero_o_none(x): return x if isinstance(x, int) and not isinstance(x, bool) else None
@@ -1001,6 +1006,124 @@ def sostituisci(at, photo, adatta=True):
         opz = [t for t in tpl_options(photos, cornici_attuali(s, sides), lato, s)["items"] if not t["cur"]]
         buone = sorted((t for t in opz if math.exp(t["worst"]) <= RITAGLIO_MAX), key=lambda t: t["cost"])
         if buone: _metti_disposizione(s, buone[0]); ESITO.update(adattata=True, taglia=round(math.exp(buone[0]["worst"]), 2), lato=lato); return
+
+
+# ------------------------------------------------------------------ controllo e «Sistema» (UX-014)
+def _rett_spread(s):
+    """foto dello spread s come rettangoli in pixel della vista (per motore.spazi), con pagina e posizione"""
+    return [dict(x=e["x"], y=e["y"], w=e["w"], h=e["h"], side=e["side"], idx=e["idx"]) for e in spread_view(s)["items"] if e["k"] != "t"]
+
+
+def _riferimento_spazi(modo="std", cm=None):
+    """(modo, valore in px) del riferimento per gli spazi, controllati: std, freq o custom con cm > 0"""
+    if modo not in ("std", "freq", "custom"): raise ValueError("modo degli spazi non valido: std, freq o custom")
+    if modo != "custom": return modo, 0
+    if isinstance(cm, bool) or not isinstance(cm, (int, float)) or not 0 < cm <= 10: raise ValueError("scrivi lo stacco in cm (più di 0, al massimo 10)")
+    return modo, cm / 2.54 * A.PPI
+
+
+def stato_spazi(s, modo="std", cm=None):
+    m, v = _riferimento_spazi(modo, cm); return SPAZI.stato(_rett_spread(s), A.G, A.PPI, m, v)
+
+
+def correggi_spazi(s, modo="std", cm=None):
+    """porta gli stacchi fra le foto dello spread s al riferimento, come faceva la pagina («Correggi spazi»); quante modifiche"""
+    m, v = _riferimento_spazi(modo, cm); R, ch = SPAZI.correggi(_rett_spread(s), A.G, A.PPI, m, v)
+    if ch:
+        for r in R: _put_px(s, r["side"], r["idx"], r["x"] + BL, r["y"] + BL, r["w"], r["h"])
+    return ch
+
+
+RIS_BLOCCA, RIS_GUARDA = 150, 200          # ppi effettivi: sotto il primo la stampa si vede sgranata, fra i due va guardata
+PIEGA_CM = 1.0                             # un volto più vicino di così alla piega finisce nella rilegatura
+
+
+def _volti_visibili(e):
+    """volti trovati nella foto della cornice e (riquadri in pixel della vista), con la parte che il ritaglio lascia fuori"""
+    l_, t_, r_, b_ = e["box"]; out = []
+    if e["name"] in A.FACE_FIX or r_ <= l_ or b_ <= t_: return out
+    for fl, ft, fr, fb in A.F.get(A.M[A.IDX[e["name"]] - 1]["n"], []):
+        area = max((fr - fl) * (fb - ft), 1e-9); dentro = max(0.0, min(fr, r_) - max(fl, l_)) * max(0.0, min(fb, b_) - max(ft, t_))
+        if dentro <= 0: continue
+        px = lambda u, a0, a1, p0, dim: p0 + (u - a0) / (a1 - a0) * dim
+        out.append(dict(fuori=1 - dentro / area, x0=px(max(fl, l_), l_, r_, e["x"], e["w"]), x1=px(min(fr, r_), l_, r_, e["x"], e["w"])))
+    return out
+
+
+def controlla(spreads=None, tono=True, modo="std", cm=None):
+    """controllo dell'album prima della consegna (UX-014): elenco strutturato dei problemi, dal più grave.
+    livello «blocca» (foto mancante o danneggiata, sotto 150 ppi, fuori dalla pagina), «guarda» (fra 150 e 200 ppi, volto
+    vicino alla piega o tagliato, ritaglio oltre ×1,25, spazi diversi, pagina vuota, foto fuori tono, foto ripetuta),
+    «info» (foto non usate, foto ★ non usate). Ogni problema: {livello, tipo, s, side, idx, foto, testo, sistema}; sistema
+    = True se «Sistema» lo corregge da solo (spazi, tono). spreads: solo quelli (indici); tono=False salta il tono"""
+    with LOCK:
+        P = []; usi = {}; mancanti = set(foto_mancanti()); tutti = range(len(SP)) if spreads is None else spreads
+        piega = A.FOLD - BL; cm1 = PIEGA_CM / 2.54 * A.PPI; conta_sistema = dict(spazi=0, tono=0)
+        for s in range(len(SP)):
+            for pg in SP[s]:
+                for it in pg[1]:
+                    if it["k"] != "t": usi.setdefault(it["i"], []).append(s)
+        for s in tutti:
+            v = spread_view(s); nome_s = f"Spread {s + 1}"
+            add = lambda liv, tipo, testo, e=None, foto=None, sistema=False: P.append(dict(livello=liv, tipo=tipo, s=s, side=e["side"] if e else None, idx=e["idx"] if e else None, foto=foto or (e or {}).get("name"), testo=f"{nome_s}: {testo}", sistema=sistema))
+            for side, pg in zip("LR", SP[s]):
+                if not pg[1]: add("guarda", "pagina_vuota", f"la pagina {'sinistra' if side == 'L' else 'destra'} è vuota")
+            for e in v["items"]:
+                fuori = e["x"] < -BL - 1 or e["y"] < -BL - 1 or e["x"] + e["w"] > VW + BL + 1 or e["y"] + e["h"] > VH + BL + 1
+                if e["k"] == "t":
+                    if is_txt(e) and (e["x"] < 0 or e["y"] < 0 or e["x"] + e["w"] > VW or e["y"] + e["h"] > VH): add("blocca", "fuori_pagina", "un testo esce dalla pagina e si taglia in stampa", e)
+                    continue
+                n = e["name"]; i = A.IDX[n] - 1; m = A.M[i]
+                if m["n"] in mancanti: add("blocca", "mancante", f"la foto {n} non si trova: ricollegala", e)
+                elif m["n"] in A.DANNEGGIATE: add("blocca", "danneggiata", f"la foto {n} è danneggiata e non si stampa", e)
+                elif e["ppi"] < RIS_BLOCCA: add("blocca", "risoluzione", f"{n} è troppo piccola per questa cornice ({e['ppi']} ppi, ne servono almeno {RIS_BLOCCA})", e)
+                elif e["ppi"] < RIS_GUARDA: add("guarda", "risoluzione", f"{n} è al limite per questa cornice ({e['ppi']} ppi)", e)
+                if fuori: add("blocca", "fuori_pagina", f"{n} esce dalla pagina oltre l'abbondanza", e)
+                if e["crop"] / max(e["z"], 1e-9) > RITAGLIO_MAX: add("guarda", "ritaglio", f"{n} è tagliata molto (×{e['crop'] / max(e['z'], 1e-9):.2f}) per stare nella cornice", e)
+                volti = _volti_visibili(e)
+                if any(f["fuori"] > 0.15 for f in volti): add("guarda", "volto_tagliato", f"un volto di {n} è tagliato dal ritaglio", e)
+                if any(f["x0"] < piega + cm1 and f["x1"] > piega - cm1 for f in volti): add("guarda", "volto_piega", f"un volto di {n} è vicino alla piega", e)
+                if len(usi.get(i, [])) > 1 and usi[i][0] != s: add("guarda", "ripetuta", f"{n} è già nello spread {usi[i][0] + 1}", e)
+            sp = stato_spazi(s, modo, cm)
+            if sp["diversi"]: add("guarda", "spazi", f"{sp['diversi']} stacchi su {sp['n']} diversi da {sp['ref'] / A.PPI * 2.54:.2f} cm", sistema=True); conta_sistema["spazi"] += 1
+            if tono:
+                for t in tono_spread(s, light=True)["items"]:
+                    if t["stato"] == "no":
+                        e = next(x for x in v["items"] if x["side"] == t["side"] and x["idx"] == t["idx"])
+                        add("guarda", "tono", f"{t['name']} è {'più chiara' if t['d'] > 0 else 'più scura'} del resto dell'album", e, sistema=True); conta_sistema["tono"] += 1
+        if spreads is None:
+            stelle = set(CFG["stelle"]); tolte = set(CFG.get("tolte", []))
+            for n in unused():
+                if n in tolte: continue
+                stella = n in stelle
+                P.append(dict(livello="info", tipo="stella_non_usata" if stella else "non_usata", s=None, side=None, idx=None, foto=n, sistema=False,
+                              testo=f"{n} {'ha la stella ma ' if stella else ''}non è nell'album"))
+        ordine = ("blocca", "guarda", "info"); P.sort(key=lambda p: ordine.index(p["livello"]))
+        conta = {k: sum(1 for p in P if p["livello"] == k) for k in ordine}
+        return dict(problemi=P, conta=conta, sistema=dict(conta_sistema, restano=sum(1 for p in P if p["livello"] != "info" and not p["sistema"])),
+                    pronto=conta["blocca"] == 0)
+
+
+def sistema(spreads=None, spazi=True, tono=True, modo="std", cm=None):
+    """«Sistema»: le correzioni sicure in un colpo solo (con do_op: un solo passo d'annulla). Spazi come «Correggi spazi»,
+    tono delle foto fuori tono con la correzione completa del pannello Tono. Non cambia disposizioni né foto scelte e non
+    tocca i volti (UX-014). Mette in ESITO quanti spread e quante foto ha corretto"""
+    n_sp = n_tono = 0; correzioni = []
+    for s in (range(len(SP)) if spreads is None else spreads):
+        if spazi and correggi_spazi(s, modo, cm): n_sp += 1
+        if tono:
+            for t in tono_spread(s)["items"]:
+                c = t.get("compl")
+                if t["stato"] == "no" and c and not any(x["photo"] == t["name"] for x in correzioni): correzioni.append(dict(photo=t["name"], ev=c["ev"], rit=c["rit"]))
+    if correzioni: apply(dict(op="tono_fix", items=correzioni)); n_tono = len(correzioni)
+    ESITO.update(spazi=n_sp, tono=n_tono)
+
+
+def _elenco_spread(x):
+    if x is None: return None
+    if not isinstance(x, list) or len(x) > 10000: raise ValueError("spread non validi: un elenco di numeri")
+    for s in x: _intero(s, len(SP), "spread")
+    return sorted(set(x))
 
 
 def tpl_options(photos, cur=None, side=None, s=None):
@@ -2038,6 +2161,9 @@ class H(Gestore):
             body = self.corpo()
             if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
+            elif u.path == "/api/controlla":
+                _riferimento_spazi(body.get("modo", "std"), body.get("cm"))
+                self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono", True) is not False, body.get("modo", "std"), body.get("cm")))
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
                 n, sk = do_import([RADICI.controlla(p, "quella foto o cartella") for p in body["paths"]])
