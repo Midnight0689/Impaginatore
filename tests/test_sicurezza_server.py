@@ -165,7 +165,7 @@ def test_esci_e_aggiorna_solo_con_il_gettone(home_srv):
     c = home_srv
     for p in ("/api/esci", "/api/aggiorna", "/api/ripristina", "/api/controlla"):
         assert c.codice(p, {"codice": "abc1234"}, **{"X-Impaginatore-Gettone": None}) == 401
-    time.sleep(0.6); assert c.uscite == []
+    time.sleep(0.6); assert c.uscite == []                              # controllo negativo: con «ok» l'uscita partirebbe 0,4 s dopo la risposta (home/server.py)
 
 
 # ---------------------------------------------------------------- file di sessione e gettone

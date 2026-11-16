@@ -3,10 +3,9 @@ nell'editor, la domanda del consenso al primo avvio con la licenza beta («No, g
 la finestra «Statistiche d'uso» (interruttore che ripassa dalla domanda, «Cosa condivido», nuovo codice, cancellazione),
 nessun errore in console né blocco della CSP."""
 import json
-import time
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, EDITOR, HOME
 
 from impaginatore import statistiche as S
 from impaginatore.statistiche import invio
@@ -19,14 +18,10 @@ DOMANDA = "getComputedStyle(document.getElementById('vstatc')).display === 'flex
 CONFERMA = "getComputedStyle(document.getElementById('vchiedi')).display === 'flex' && !!document.querySelector('#ch-btns [data-esito=ok]')"
 
 
-def aspetta(b, cond, secondi=10):
-    """il valore della condizione (espressione JavaScript o funzione) appena è vera, o l'ultimo dopo `secondi`: la domanda
-    arriva dopo licenza e stato delle statistiche, che la pagina chiede a parte; nessuna attesa fissa che dipende dalla macchina"""
-    fine = time.time() + secondi
-    while True:
-        v = b.js(cond) if isinstance(cond, str) else cond()
-        if v or time.time() > fine: return v
-        b.pausa(0.1)
+def aspetta(b, cond):
+    """il valore della condizione (espressione JavaScript o funzione Python) appena è vera: la domanda arriva dopo licenza e
+    stato delle statistiche, che la pagina chiede a parte; nessuna attesa fissa che dipende dalla macchina (cdp.Browser.attendi)"""
+    return b.attendi(cond) if isinstance(cond, str) else b.attendi_che(cond)
 
 
 @pytest.fixture(autouse=True)
@@ -42,20 +37,20 @@ def test_domanda_al_primo_avvio_e_impostazioni(home_srv, licenza, tmp_path, monk
     from cdp import Browser
     beta(licenza)
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert aspetta(b, DOMANDA), "con la licenza beta la domanda compare al primo avvio"
         assert b.js("document.getElementById('lic').textContent") == "Beta privata · scade il 31/12/2099"
         assert b.js("document.getElementById('vstatc-t').textContent") == "Questa è una beta privata: ci aiuti a migliorarla condividendo come usi il programma?"
         testo = b.js("document.getElementById('vstatc-d').innerText")
         assert "Cosa non annota mai" in testo and "i nomi di file, cartelle, album e clienti" in testo and "numero di serie" in testo and "Esporta le statistiche…" in testo
         assert b.js("document.activeElement.id") == "sc-no" and b.js("document.getElementById('sc-si').className") == "", "due pulsanti di uguale peso"
-        b.js("document.getElementById('vstatc').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))"); b.pausa(0.3)
-        assert b.js(VISTA % "vstatc") == "none" and S.scelta() is None, "Esc rimanda la domanda: niente salvato"
-        b.apri(home_srv.srv.indirizzo_avvio(), 1); assert aspetta(b, DOMANDA), "e la domanda torna all'avvio dopo"
+        b.js("document.getElementById('vstatc').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))")
+        assert aspetta(b, (VISTA % "vstatc") + " === 'none'") and S.scelta() is None, "Esc rimanda la domanda: niente salvato"
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME); assert aspetta(b, DOMANDA), "e la domanda torna all'avvio dopo"
         b.js("document.getElementById('sc-si').click()")
         assert aspetta(b, S.attive) and aspetta(b, "document.getElementById('avvtxt').textContent.includes('Grazie')") and b.js(VISTA % "vstatc") == "none"
         assert [json.loads(r)["ev"] for r in S._righe_grezze()][:2] == ["consenso", "avvio"]
-        b.apri(home_srv.srv.indirizzo_avvio(), 1); assert aspetta(b, "typeof STAT !== 'undefined' && !!STAT && STAT.scelta === 'si'")
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME); assert aspetta(b, "typeof STAT !== 'undefined' && !!STAT && STAT.scelta === 'si'")
         assert b.js(VISTA % "vstatc") == "none", "scelta fatta: non si chiede più"
         assert aspetta(b, lambda: [json.loads(r)["ev"] for r in S._righe_grezze()][-1] == "finestra"), "la misura della finestra, con le statistiche accese"
         b.js("document.getElementById('altro').click()"); assert aspetta(b, (VOCE % "'Statistiche d'") + " != null")
@@ -89,10 +84,10 @@ def test_domanda_al_primo_avvio_e_impostazioni(home_srv, licenza, tmp_path, monk
 def test_senza_licenza_beta_niente_domanda_ne_voce(home_srv, tmp_path):
     from cdp import Browser
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         assert aspetta(b, "document.getElementById('lic').textContent === 'Licenza Studio'") and b.js(VISTA % "vstatc") == "none"
-        b.js("document.getElementById('altro').click()"); b.pausa(0.2)
-        assert b.js(VOCE % "'Statistiche d'") is None
+        b.js("document.getElementById('altro').click()"); aspetta(b, (VISTA % "menu") + " === 'block'")
+        assert b.js(VOCE % "'Statistiche d'") is None, "il menu è aperto, senza la voce"
         assert not b.problemi(), b.problemi()
     import os
     assert not os.path.exists(S.cartella())
@@ -102,6 +97,6 @@ def test_editor_mostra_la_beta(editor, licenza, tmp_path):
     from cdp import Browser
     beta(licenza)
     with Browser(tmp_path) as b:
-        b.apri(editor.srv.indirizzo_avvio(), 1)
+        b.apri(editor.srv.indirizzo_avvio(), EDITOR)
         assert aspetta(b, "document.getElementById('licb').textContent === 'Beta privata · scade il 31/12/2099'") and b.js("document.getElementById('licb').hidden") is False
         assert not b.problemi(), b.problemi()

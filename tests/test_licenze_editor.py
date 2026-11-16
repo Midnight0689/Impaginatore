@@ -5,7 +5,7 @@ import os
 import time
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, EDITOR, HOME
 from aiuti import attendi_log
 from impaginatore import licenze
 from impaginatore.piattaforma import dialoghi
@@ -108,8 +108,9 @@ def test_lucchetto_della_licenza_senza_blocchi_della_csp(editor, licenza, tmp_pa
     from cdp import Browser
     _spread(editor); licenza.usa(None)
     with Browser(tmp_path) as b:
-        b.apri(editor.srv.indirizzo_avvio(), 2)
-        b.js("openExp()"); b.js("document.querySelector('#efmt [data-f=psd]').click()"); b.pausa(1)
+        b.apri(editor.srv.indirizzo_avvio(), EDITOR)
+        b.js("openExp()"); b.js("document.querySelector('#efmt [data-f=psd]').click()")
+        b.attendi_che(lambda: any(u.endswith("/risorse/lucchetto.svg") for _, u in b.risposte()))    # il browser ha chiesto l'icona del lucchetto
         assert b.js("document.getElementById('ego').classList.contains('lock')") and b.js("document.getElementById('ego').disabled")
         assert "/risorse/lucchetto.svg" in b.js("getComputedStyle(document.getElementById('ego'), '::after').maskImage")
         assert any(s == 200 and u.endswith("/risorse/lucchetto.svg") for s, u in b.risposte()), "l'icona si carica"
@@ -124,16 +125,19 @@ def test_finestra_della_licenza_nel_browser(home_srv, licenza, tmp_path):
     pro = licenza.chiavi.chiave(fascia="pro", intestatario="Studio Verdi", computer=2)
     testo = lambda id_: b.js(f"document.getElementById('{id_}').textContent")
     with Browser(tmp_path) as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
-        assert testo("lic") == "Prova gratuita · 30 giorni"
-        b.js("document.getElementById('lic').click()"); b.pausa(0.5)
-        assert b.js("getComputedStyle(document.getElementById('vlic')).display") == "flex" and testo("lstato").startswith("Prova gratuita: mancano 30 giorni")
-        b.js(f"document.getElementById('lkey').value = {json.dumps(pro.lower())}; document.getElementById('lgo').click()"); b.pausa(0.8)
-        assert testo("lic") == "Licenza Pro" and "«Studio Verdi»" in testo("lstato") and b.js("document.getElementById('lkey').value") == ""
-        b.js("document.getElementById('lrim').click()"); b.pausa(0.4)
-        assert b.js("getComputedStyle(document.getElementById('vchiedi')).display") == "flex", "la conferma è un foglio in pagina, non un confirm()"
-        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(0.8)
-        assert testo("lic").startswith("Prova gratuita") and b.js("document.getElementById('lrim').style.display") == "none"
-        licenza.usa("IMP1-AAAAA"); b.js("loadLic()"); b.pausa(0.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
+        assert b.attendi("document.getElementById('lic').textContent") == "Prova gratuita · 30 giorni"
+        b.js("document.getElementById('lic').click()")
+        b.attendi("document.getElementById('lstato').textContent", lambda t: t.startswith("Prova gratuita: mancano 30 giorni"))
+        assert b.js("getComputedStyle(document.getElementById('vlic')).display") == "flex"
+        b.js(f"document.getElementById('lkey').value = {json.dumps(pro.lower())}; document.getElementById('lgo').click()")
+        b.attendi("!document.getElementById('lgo').disabled && document.getElementById('lic').textContent", lambda t: t == "Licenza Pro")
+        assert "«Studio Verdi»" in testo("lstato") and b.js("document.getElementById('lkey').value") == ""
+        b.js("document.getElementById('lrim').click()")
+        b.attendi("getComputedStyle(document.getElementById('vchiedi')).display === 'flex'")   # la conferma è un foglio in pagina, non un confirm()
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()")
+        b.attendi("document.getElementById('lic').textContent", lambda t: t.startswith("Prova gratuita"))
+        assert b.js("document.getElementById('lrim').style.display") == "none"
+        licenza.usa("IMP1-AAAAA"); b.js("loadLic()")                    # loadLic() è una promessa: js() la aspetta
         assert testo("lic") == "Chiave non valida · prova 30 giorni" and b.js("document.getElementById('lrim').style.display") == ""
         assert not b.problemi(), b.problemi()

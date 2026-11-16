@@ -4,7 +4,7 @@ import os
 import shutil
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, EDITOR, HOME
 
 from impaginatore import formato
 from impaginatore import laboratori as L
@@ -16,6 +16,8 @@ SCEGLI = "(() => {{ const s = document.getElementById('{id}'); s.value = '{v}'; 
 FOGLIO = "document.querySelector('.veil.sheet')"
 BOTTONE = "[...document.querySelectorAll('.veil.sheet .btns button')].find(x => x.textContent === {t!r}).click()"
 RIFIUTO_ATTESO = lambda x: "status of 409" in x and x.endswith("/api/export")       # consegna con problemi che bloccano: la risposta 409 è quella prevista, il browser la scrive fra gli errori
+FINITA = "ESPORTO === false && document.getElementById('toast').textContent !== ''"   # dopo aver vuotato l'avviso: l'esportazione è finita e lo dice
+CONSEGNA = "$('eprodi').textContent = ''; document.querySelector('#efmt [data-f=consegna]').click()"           # la riga del prodotto si riscrive quando arriva l'elenco dei prodotti
 
 
 def album(c, n=2):
@@ -26,27 +28,20 @@ def album(c, n=2):
         c.post("/api/op", dict(op="newspread", pos=s, L=t["L"], R=t["R"]))
 
 
-def attendi(b, condizione, secondi=90):
-    for _ in range(int(secondi * 2)):
-        if b.js(condizione): return True
-        b.pausa(0.5)
-    return False
-
-
 def test_nuovo_album_da_un_prodotto_e_consegna(home_srv, apri_editor, foto_campione, tmp_path):
     from cdp import Browser
     with Browser(tmp_path / "album") as b:
-        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.apri(home_srv.srv.indirizzo_avvio(), HOME)
         b.js("window.aperti = []; openProject = p => window.aperti.push(p.path)")
-        b.js("openNew()"); b.pausa(0.8)
+        b.js("openNew()"); b.attendi("document.querySelectorAll('#prod optgroup').length")     # i cataloghi sono arrivati
         assert b.js("document.getElementById('prod').value") == "" and b.js("document.getElementById('w').disabled") is False, "di serie: formato libero"
         assert b.js("[...document.querySelectorAll('#prod optgroup')].map(g => g.label)") == ["Generico · Nessun laboratorio: formati comuni"]
         b.js(SCEGLI.format(id="prod", v=PRODOTTO))
         assert b.js("['w', 'h', 'abb'].map(k => document.getElementById(k).disabled)") == [True, True, True], "il prodotto dà il formato"
         assert b.js("[document.getElementById('w').value, document.getElementById('h').value, document.getElementById('abb').value]") == ["60", "22,5", "3"]
         assert b.js("document.getElementById('prodi').textContent") == "Nessun laboratorio: formati comuni · pagina 30 × 22,5 cm · abbondanza 3 mm · 300 ppi"
-        b.js("document.getElementById('nome').value = 'Sposi'; document.getElementById('create').click()"); b.pausa(1.5)
-        aperti = b.js("window.aperti"); assert len(aperti) == 1, "creato e aperto"
+        b.js("document.getElementById('nome').value = 'Sposi'; document.getElementById('create').click()")
+        aperti = b.attendi("window.aperti.length && window.aperti"); assert len(aperti) == 1, "creato e aperto"
         cfg = formato.leggi_json(os.path.join(aperti[0], "progetto.json"))
         assert cfg["prodotto"] == L.per_progetto(*L.trova("generico", "orizzontale-30x22")) and (cfg["formato_cm"], cfg["abbondanza_mm"]) == ([60, 22.5], 3)
         assert not b.problemi(), b.problemi()
@@ -54,19 +49,21 @@ def test_nuovo_album_da_un_prodotto_e_consegna(home_srv, apri_editor, foto_campi
     for f in sorted(os.listdir(foto_campione)): shutil.copy2(os.path.join(foto_campione, f), os.path.join(p, "Foto", f))
     c = apri_editor(p); album(c)
     with Browser(tmp_path / "editor") as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
-        b.js("openExp()"); b.js("document.querySelector('#efmt [data-f=consegna]').click()"); b.pausa(0.8)
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
+        b.js("openExp()"); b.js(CONSEGNA); b.attendi("document.getElementById('eprodi').textContent")
         assert b.js("getComputedStyle(document.getElementById('eo-consegna')).display") != "none" and b.js("document.getElementById('ego').textContent") == "Prepara la consegna"
         assert b.js("document.getElementById('eprod').value") == PRODOTTO, "il prodotto scelto alla creazione"
         assert b.js("document.getElementById('eprodi').textContent").startswith("Nessun laboratorio: formati comuni · pagina 30 × 22,5 cm · abbondanza 3 mm · 300 ppi")
-        b.js(SCEGLI.format(id="eprod", v="")); b.pausa(0.8)
-        assert c.get("/api/state")["prodotto"] is None and b.js("document.getElementById('eprodi').textContent").startswith("Scegli il prodotto del laboratorio")
-        b.js(SCEGLI.format(id="eprod", v=PRODOTTO)); b.pausa(0.8)
+        b.js(SCEGLI.format(id="eprod", v=""))
+        b.attendi("document.getElementById('eprodi').textContent", lambda t: t.startswith("Scegli il prodotto del laboratorio"))
+        assert c.get("/api/state")["prodotto"] is None
+        b.js(SCEGLI.format(id="eprod", v=PRODOTTO))
+        b.attendi("document.getElementById('eprodi').textContent", lambda t: t.startswith("Nessun laboratorio: formati comuni"))
         st = c.get("/api/state"); assert st["prodotto"]["prodotto"]["id"] == "orizzontale-30x22" and st["annulla"]["nome"] == "Prodotto del laboratorio"
-        b.js("document.getElementById('ego').click()"); b.pausa(0.8)
-        b.js(BOTTONE.format(t="Consegna lo stesso"))                # le foto di prova sono piccole per 300 ppi: la risoluzione blocca (UX-013)
+        b.js("document.getElementById('ego').click()"); b.attendi(f"!!{FOGLIO}")
+        b.js("$('toast').textContent = ''"); b.js(BOTTONE.format(t="Consegna lo stesso"))   # le foto di prova sono piccole per 300 ppi: la risoluzione blocca (UX-013)
         cartella = os.path.join(p, "Esportazioni", "Consegna")
-        assert attendi(b, "ESPORTO === false && document.getElementById('toast').textContent !== ''"), "la consegna finisce"
+        b.attendi(FINITA, secondi=90)                               # la consegna finisce
         fatte = os.listdir(cartella); assert len(fatte) == 1, "una cartella nuova per ogni consegna"
         assert sorted(os.listdir(os.path.join(cartella, fatte[0]))) == ["Riepilogo consegna.txt", "Sposi - Spread 01.jpg", "Sposi - Spread 02.jpg"]
         assert b.js("document.getElementById('toast').firstChild.textContent") == "Esportazione finita", b.js("document.getElementById('toast').textContent")
@@ -85,9 +82,9 @@ def test_consegna_con_problemi_che_bloccano(home_srv, apri_editor, foto_campione
     assert n > 1 and {x["tipo"] for x in bloccano} == {"risoluzione"} and bloccano[0]["s"] == 0
     cartella = os.path.join(p, "Esportazioni", "Consegna")
     with Browser(tmp_path) as b:
-        b.apri(c.srv.indirizzo_avvio(), 2)
-        apri = lambda: (b.js("openExp(); $('toast').textContent = ''"), b.js("document.querySelector('#efmt [data-f=consegna]').click()"), b.pausa(0.8),
-                        b.js("document.getElementById('ego').click()"), b.pausa(0.8))
+        b.apri(c.srv.indirizzo_avvio(), EDITOR)
+        apri = lambda: (b.js("openExp(); $('toast').textContent = ''"), b.js(CONSEGNA), b.attendi("document.getElementById('eprodi').textContent"),
+                        b.js("document.getElementById('ego').click()"), b.attendi(f"!!{FOGLIO}"))
         apri()
         assert b.js("$('toast').textContent") == "", "niente avviso d'errore: il foglio basta"
         assert b.js(f"{FOGLIO}.querySelector('h3').textContent") == "Problemi che bloccano la stampa"
@@ -95,12 +92,12 @@ def test_consegna_con_problemi_che_bloccano(home_srv, apri_editor, foto_campione
         assert testo.startswith(f"Ci sono {n} problemi che bloccano la stampa: il laboratorio stamperebbe l'album così.\n\n• Spread 01–02: ") and "ppi" in testo, testo
         assert testo.count("\n• ") == min(n, 8), testo
         assert b.js("[...document.querySelectorAll('.veil.sheet .btns button')].map(x => x.textContent)") == ["Consegna lo stesso", "Controlla l'album", "Annulla"]
-        b.js(BOTTONE.format(t="Annulla")); b.pausa(0.5)
+        b.js(BOTTONE.format(t="Annulla")); b.attendi(f"!{FOGLIO}"); b.attendi_rete()     # foglio chiuso, nessuna richiesta in corso
         assert not os.path.exists(cartella) or os.listdir(cartella) == [], "annullata: nessuna cartella"
-        apri(); b.js(BOTTONE.format(t="Controlla l'album")); b.pausa(0.8)
-        assert b.js("document.getElementById('exp').style.display") == "none" and b.js("CTL.aperto") is True
+        apri(); b.js(BOTTONE.format(t="Controlla l'album"))
+        b.attendi("document.getElementById('exp').style.display === 'none' && CTL.aperto")
         apri(); b.js(BOTTONE.format(t="Consegna lo stesso"))
-        assert attendi(b, "ESPORTO === false && document.getElementById('toast').textContent !== ''"), "la consegna finisce"
+        b.attendi(FINITA, secondi=90)                               # la consegna finisce
         fatte = os.listdir(cartella); assert len(fatte) == 1
         assert f"ATTENZIONE: consegna confermata con {n} problemi che bloccano la stampa" in c.get("/api/log")
         assert f"Controllo dell'album: {n} problemi che bloccano" in open(os.path.join(cartella, fatte[0], "Riepilogo consegna.txt"), encoding="utf-8").read()
