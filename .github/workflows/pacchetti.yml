@@ -466,8 +466,6 @@ jobs:
     permissions:
       contents: write                 # solo qui: crea e aggiorna la release in bozza
     env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
       TAG: ${{ github.ref_name }}
     steps:
       - name: Codice
@@ -495,7 +493,11 @@ jobs:
             --note dist/note.md --esito dist/esito.json --esecuzione "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           cat dist/note.md >> "$GITHUB_STEP_SUMMARY"
 
+      # il gettone del giro solo in questo passo, che usa solo gh
       - name: Crea o aggiorna la release in bozza
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           versione=$(jq -r .versione dist/esito.json)
           if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
