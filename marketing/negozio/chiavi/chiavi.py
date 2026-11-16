@@ -18,6 +18,7 @@ Comandi:
   revoca          segna una licenza come revocata (rimborso) e firma revoche.json, da mettere nel prossimo rilascio
   togli-revoca    rimette attiva una licenza revocata (storno chiuso a favore del cliente, errore) e rifirma revoche.json
   revoche         rifirma revoche.json dal registro e lo scrive dove serve (--uscita, per il rilascio dell'app)
+  firma-catalogo  firma il catalogo di un laboratorio (JSON, docs/architettura/CATALOGHI.md): nel programma diventa «verificato»
   stato-lancio    conta le licenze vendute a prezzo di lancio rispetto al tetto di tier.json
   autotest        prova Ed25519 con i vettori della RFC 8032 e il formato con un giro completo
 
@@ -29,6 +30,7 @@ Esempi:
   python3 chiavi.py revoca --seriale 12 --motivo rimborso
   python3 chiavi.py togli-revoca --seriale 12 --motivo storno-a-favore
   python3 chiavi.py revoche --uscita src/impaginatore/licenze/revoche.json
+  python3 chiavi.py firma-catalogo laboratorio-rossi.json --uscita laboratorio-rossi-firmato.json
   python3 chiavi.py stato-lancio --data-inizio 2027-02-23
 """
 from __future__ import annotations
@@ -170,6 +172,7 @@ def ed25519_verifica(pubblica: bytes, msg: bytes, firma: bytes) -> bool:
 PREFISSO = "IMP1-"
 DOMINIO_LICENZA = b"IMPAGINATORE-LICENZA-v1\x00"
 DOMINIO_REVOCHE = b"IMPAGINATORE-REVOCHE-v1\x00"
+DOMINIO_CATALOGO = b"IMPAGINATORE-CATALOGO-v1\x00"
 EPOCA = dt.date(2026, 1, 1)
 TIER_CODICE = {"essenziale": 1, "pro": 2, "studio": 3, "laboratorio": 4}
 CODICE_TIER = {v: k for k, v in TIER_CODICE.items()}
@@ -453,6 +456,32 @@ def cmd_revoche(a: argparse.Namespace) -> int:
     return 0
 
 
+def firma_catalogo(seme: bytes, id_firma: int, corpo: Dict[str, Any]) -> Dict[str, Any]:
+    """il catalogo con «id_firma» e «firma»: Ed25519 di DOMINIO_CATALOGO + JSON canonico (chiavi ordinate, senza spazi, come
+    lo rifà il programma: impaginatore.laboratori.catalogo.canonico) senza «firma». Lo schema del catalogo lo controlla il
+    programma: prima di firmarlo, il catalogo si prova importandolo in Impaginatore"""
+    corpo = {k: v for k, v in corpo.items() if k != "firma"}
+    corpo["id_firma"] = id_firma
+    canonico = json.dumps(corpo, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    corpo["firma"] = ed25519_firma(seme, DOMINIO_CATALOGO + canonico).hex()
+    return corpo
+
+
+def cmd_firma_catalogo(a: argparse.Namespace) -> int:
+    src = Path(a.catalogo)
+    try:
+        corpo = json.loads(src.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise SystemExit(f"Errore: catalogo non letto ({e}).")
+    if not isinstance(corpo, dict) or corpo.get("formato_catalogo") != 1:
+        raise SystemExit("Errore: non è un catalogo del formato 1 («formato_catalogo»: 1).")
+    id_firma, seme = leggi_privata(cartella(a.dir), a.id_firma)
+    uscita = Path(a.uscita) if a.uscita else src.with_name(src.stem + "-firmato.json")
+    uscita.write_text(json.dumps(firma_catalogo(seme, id_firma, corpo), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Catalogo «{corpo.get('id')}» firmato con la chiave {id_firma}: {uscita}")
+    return 0
+
+
 def cmd_stato_lancio(a: argparse.Namespace) -> int:
     lancio = listino()["lancio"]
     inizio = dt.date.fromisoformat(a.data_inizio)
@@ -541,12 +570,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     rv = sub.add_parser("revoche")
     rv.add_argument("--uscita", help="dove scrivere revoche.json (predefinito: la cartella del negozio)")
     rv.add_argument("--id-firma", type=int)
+    fc = sub.add_parser("firma-catalogo")
+    fc.add_argument("catalogo", help="file JSON del catalogo")
+    fc.add_argument("--uscita", help="dove scrivere il catalogo firmato (predefinito: <nome>-firmato.json accanto)")
+    fc.add_argument("--id-firma", type=int)
     s = sub.add_parser("stato-lancio")
     s.add_argument("--data-inizio", default="2027-02-23")
     sub.add_parser("autotest")
     a = ap.parse_args(argv)
     return {"genera-coppia": cmd_genera_coppia, "emetti": cmd_emetti, "verifica": cmd_verifica,
-            "revoca": cmd_revoca, "togli-revoca": cmd_togli_revoca, "revoche": cmd_revoche,
+            "revoca": cmd_revoca, "togli-revoca": cmd_togli_revoca, "revoche": cmd_revoche, "firma-catalogo": cmd_firma_catalogo,
             "stato-lancio": cmd_stato_lancio, "autotest": cmd_autotest}[a.comando](a)
 
 

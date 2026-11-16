@@ -49,6 +49,8 @@ LATI = {"sinistra": "L", "destra": "R"}
 NOMI_LATI = {"L": "sinistra", "R": "destra"}
 RE_ID = re.compile(r"p[0-9a-f]{10}")
 RE_INTERVALLO = re.compile(r"[0-9,;\- ]{0,200}")
+RE_PRODOTTO = re.compile(r"[a-z0-9][a-z0-9-]{0,39}/[a-z0-9][a-z0-9-]{0,39}")      # «catalogo/prodotto» (T-208): solo id, mai un percorso
+MSG_PRODOTTO = "prodotto: l'id che dà elenca_prodotti, per esempio «generico/quadrato-30»"
 
 
 class Rifiuto(Exception):
@@ -163,6 +165,13 @@ def licenza():
     if licenze.consentita("server_mcp", st): return st
     if st["sola_lettura"]: raise Rifiuto(MSG_SOLA_LETTURA)
     raise Rifiuto(f"{licenze.motivo('server_mcp', st)} Trovi la licenza in Impaginatore, pulsante «Licenza».")
+
+
+def _prodotto(pr):
+    """il prodotto del laboratorio dell'album per l'assistente (None se non c'è): id, nomi (dati), verificato, avviso"""
+    if not pr: return None
+    return dict(prodotto=f"{pr['catalogo']}/{pr['prodotto']['id']}", nome=dato(pr["prodotto"]["nome"]), laboratorio=dato(pr["laboratorio"]), verificato=pr["verificato"],
+                da_confermare=pr["stato"] == "da_confermare", **({"avviso": dato(pr["avviso"], 400)} if pr.get("avviso") else {}))
 
 
 def strumento(fn):
@@ -294,7 +303,7 @@ class Assistente:
                     foto=dict(totale=len(f), nell_album=sum(1 for x in f if x["sp"] is not None), libere=sum(1 for x in f if x["sp"] is None and not x["tolta"]),
                               tolte=sum(1 for x in f if x["tolta"]), con_stella=sum(1 for x in f if x["star"]), mancanti=len(st["mancanti"]), non_aperte=len(st["scartate"])),
                     preparazione=st["prep"] if st["prep"].get("attivo") else None, versione=st["rev"], modifiche_da_salvare=bool(st["dirty"]),
-                    annulla=_passo(st["annulla"]), ripeti=_passo(st["ripeti"]), dati_utente=DATI_UTENTE)
+                    annulla=_passo(st["annulla"]), ripeti=_passo(st["ripeti"]), prodotto=_prodotto(st.get("prodotto")), dati_utente=DATI_UTENTE)
 
     @strumento
     def mostra_editor(self, progetto):
@@ -304,13 +313,26 @@ class Assistente:
         return dict(progetto=progetto, aperto=True, messaggio="L'editor è aperto nel browser dell'utente.")
 
     @strumento
-    def crea_progetto(self, nome, larghezza_cm, altezza_cm, abbondanza_mm=0.0, spazio_mm=2.5, margine_mm=10.0, scegli_cartella_foto=False):
-        """progetto nuovo; con scegli_cartella_foto l'utente sceglie la cartella delle foto in una finestra del sistema"""
+    def elenca_prodotti(self):
+        """prodotti dei cataloghi dei laboratori installati: id per crea_progetto e imposta_prodotto, formato, spread, abbondanza, risoluzione"""
+        r = C.avvia_programma().chiedi("/api/cataloghi"); out = []
+        for c in r["cataloghi"]:
+            for p in c["prodotti"]:
+                out.append(dict(prodotto=f"{c['id']}/{p['id']}", nome=dato(p["nome"]), laboratorio=dato(c["laboratorio"]), catalogo=dato(c["nome"]), pagina_cm=p["pagina_cm"],
+                                abbondanza_mm=p["abbondanza_mm"], ppi=p["ppi"], **{k: p[k] for k in ("spread_min", "spread_max") if k in p},
+                                verificato=c["verificato"], da_confermare=c["stato"] == "da_confermare", generico=c["generico"], consentito=c["consentito"]))
+        return dict(prodotti=out, cataloghi_non_letti=len(r["problemi"]), dati_utente=DATI_UTENTE)
+
+    @strumento
+    def crea_progetto(self, nome, larghezza_cm=None, altezza_cm=None, abbondanza_mm=0.0, spazio_mm=2.5, margine_mm=10.0, scegli_cartella_foto=False, prodotto=None):
+        """progetto nuovo, con le misure o con il formato del prodotto di un laboratorio (prodotto: id di elenca_prodotti); con
+        scegli_cartella_foto l'utente sceglie la cartella delle foto in una finestra del sistema"""
         if not isinstance(nome, str) or not 0 < len(nome.strip()) <= 120: raise Rifiuto("nome: da 1 a 120 caratteri")
-        misure = dict(w=larghezza_cm, h=altezza_cm, abb=abbondanza_mm, spazio=spazio_mm, margine=margine_mm)
-        if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in misure.values()): raise Rifiuto("misure: numeri (centimetri per il formato, millimetri per abbondanza, spazio e margine)")
+        if prodotto is not None and (not isinstance(prodotto, str) or not RE_PRODOTTO.fullmatch(prodotto)): raise Rifiuto(MSG_PRODOTTO)
+        misure = dict(spazio=spazio_mm, margine=margine_mm, **({} if prodotto else dict(w=larghezza_cm, h=altezza_cm, abb=abbondanza_mm)))       # col prodotto: formato e abbondanza sono i suoi
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in misure.values()): raise Rifiuto("misure: numeri (centimetri per il formato, millimetri per abbondanza, spazio e margine), oppure il prodotto")
         booleano(scegli_cartella_foto, "scegli_cartella_foto")
-        home = C.avvia_programma(); d = dict({k: str(v) for k, v in misure.items()}, nome=nome)
+        home = C.avvia_programma(); d = dict({k: str(v) for k, v in misure.items()}, nome=nome, **({"prodotto": prodotto} if prodotto else {}))
         if scegli_cartella_foto:
             r = home.chiedi("/api/scegli-foto", {}, timeout=ATTESA_SCELTA)
             if not r.get("path"): return dict(annullato=True, messaggio="L'utente non ha scelto una cartella: il progetto non è stato creato.")
@@ -467,16 +489,25 @@ class Assistente:
         return dict(importate=r["importate"], saltate=r["saltate"], aggiunte=r.get("aggiunte", 0),
                     messaggio="Le miniature si preparano mentre si lavora: le foto nuove sono già in elenca_foto.")
 
+    @strumento
+    def imposta_prodotto(self, progetto, prodotto=None):
+        """prodotto del laboratorio per l'album aperto (id di elenca_prodotti; None = toglierlo): controllo e consegna seguono le sue
+        regole. Il formato dell'album non cambia: un prodotto di un altro formato si rifiuta"""
+        if prodotto is not None and (not isinstance(prodotto, str) or not RE_PRODOTTO.fullmatch(prodotto)): raise Rifiuto(MSG_PRODOTTO)
+        st, _ = self._op(progetto, {"op": "prodotto", "prodotto": prodotto})
+        return self._dopo(st, prodotto=_prodotto(st.get("prodotto")))
+
     # ------------------------------------------------------------ esportazioni
     @strumento
     def esporta(self, progetto, formato, spread="", risoluzione="stampa"):
-        """JPG (un file per spread) o PDF (bozza per il cliente) in una cartella NUOVA dentro Esportazioni: non sovrascrive mai niente"""
-        scelta(formato, ("jpg", "pdf"), "formato"); scelta(risoluzione, ("stampa", "schermo"), "risoluzione")
+        """JPG (un file per spread), PDF (bozza per il cliente) o consegna al laboratorio (i file come li chiede il prodotto
+        dell'album, con il riepilogo) in una cartella NUOVA dentro Esportazioni: non sovrascrive mai niente"""
+        scelta(formato, ("jpg", "pdf", "consegna"), "formato"); scelta(risoluzione, ("stampa", "schermo"), "risoluzione")
         if not isinstance(spread, str) or not RE_INTERVALLO.fullmatch(spread): raise Rifiuto("spread: numeri e intervalli come «1-5, 8» (vuoto = tutti)")
         ed, base = self._editor(progetto)
         with self._lock: prima = self._esportazioni.get(progetto)
         if prima and not self._esito(ed, base, prima)["finita"]: raise Rifiuto("C'è già un'esportazione in corso per questo progetto: guarda stato_esportazione.")
-        cartella = os.path.join(base, "Esportazioni", formato.upper(), "Assistente " + time.strftime("%Y-%m-%d %H.%M.%S")); k = 2
+        cartella = os.path.join(base, "Esportazioni", "Consegna" if formato == "consegna" else formato.upper(), "Assistente " + time.strftime("%Y-%m-%d %H.%M.%S")); k = 2
         while os.path.exists(cartella): cartella = cartella.rsplit(" (", 1)[0] + f" ({k})"; k += 1
         ed.chiedi("/api/export", dict(fmt=formato, range=spread, dest=cartella, res=risoluzione), timeout=120)
         lavoro = dict(formato=formato, cartella=cartella, t=time.monotonic())
