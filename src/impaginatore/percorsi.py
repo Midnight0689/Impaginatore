@@ -24,7 +24,9 @@ class FuoriDalleRadici(ValueError):
 
 
 def reale(p):
-    """percorso assoluto con collegamenti simbolici e «..» risolti (anche se non esiste ancora)"""
+    """percorso assoluto con collegamenti simbolici e «..» risolti (anche se non esiste ancora). Un carattere nullo lo rende
+    impossibile (ValueError) su ogni sistema: realpath di Windows lo lascerebbe passare"""
+    if "\0" in str(p): raise ValueError("carattere nullo nel percorso")          # non tradotto: lo trasformano in un rifiuto i chiamanti
     return os.path.realpath(os.path.abspath(os.path.expanduser(p)))
 
 

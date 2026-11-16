@@ -101,6 +101,11 @@ def test_riservata(casa, tmp_path, monkeypatch):
     for p in (casa / "Immagini" / "x.jpg", tmp_path / "Progetti", casa, "/tmp/x.jpg", casa / "Lavori" / ".nascosta" / "x.jpg"):
         assert not percorsi.riservata(str(p)), p
     assert not percorsi.riservata("") and percorsi.riservata("\0x")
+    # come realpath di Windows, che lascia passare il carattere nullo: il percorso resta impossibile
+    with monkeypatch.context() as m:
+        m.setattr(percorsi.os.path, "realpath", lambda p: p)
+        with pytest.raises(ValueError, match="nullo"): percorsi.reale(str(casa / "a\0b"))
+        assert percorsi.riservata("\0x") and percorsi.riservata(str(casa / "Immagini" / "\0x.jpg")) and not percorsi.dentro(str(casa / "\0x"), str(casa))
     lavori = tmp_path / "Lavori"; lavori.mkdir(); os.makedirs(casa / ".ssh", exist_ok=True)
     r = percorsi.Radici(lambda: [str(casa / ".ssh"), str(lavori)])
     assert r.tutte() == [percorsi.reale(str(lavori))], "le cartelle riservate non diventano radici dal progetto"
