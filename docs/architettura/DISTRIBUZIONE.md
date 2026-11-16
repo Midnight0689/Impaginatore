@@ -289,10 +289,20 @@ il bundle notarizzato (macOS): `InstallazioneCompilata` è il solo punto da camb
   Ogni giro con il pacchetto Windows lo prova anche su Windows 11 ARM (job «windows-arm»). Un push nuovo sullo stesso
   ramo `pacchetti/**` annulla il giro precedente; sui tag no.
 - Runner: `ubuntu-24.04` (linux), `ubuntu-24.04-arm` (linux-arm64), `windows-2025` (windows), `windows-11-arm` (prova
-  su ARM), `macos-15-intel` (mac-x86_64), `macos-15` (mac-arm64). Tutti standard e gratuiti per un repository
-  pubblico. Il Mac arm64 dipende dalla disponibilità delle macchine di GitHub (sotto, «Cosa è provato»): quando un job
-  resta senza runner GitHub lo annulla dopo circa 15 minuti («The job was not acquired by Runner of type hosted even
-  after multiple attempts») e si rilancia il solo job, `gh run rerun <id> --failed`.
+  su ARM), `macos-15-intel` (mac-x86_64 e test macOS), `macos-15` (mac-arm64). Tutti standard e gratuiti per un
+  repository pubblico. I Mac dipendono dalla disponibilità delle macchine di GitHub (sotto, «Cosa è provato»): quando un
+  job resta senza runner GitHub lo annulla dopo circa 15 minuti («The job was not acquired by Runner of type hosted even
+  after multiple attempts») e si rilanciano i soli job annullati o falliti, `gh run rerun <id> --failed`.
+- Test prima dei pacchetti (tag e avvio manuale). Un test **fallito** ferma tutto: nessun pacchetto, nessuna wheel,
+  nessuna bozza. I test su macOS hanno un job loro («test-mac») perché le macchine macOS sono le sole che mancano: se
+  quel job è **annullato** (nessuna macchina libera, o tempo massimo superato) Linux, Linux arm64, Windows, la prova su
+  Windows ARM, la wheel e la bozza vanno avanti, mentre i job dei pacchetti Mac si fermano al primo passo («Test su
+  macOS passati?», su una macchina Linux, senza aspettare un Mac) e la bozza li elenca fra i mancanti. Un pacchetto Mac
+  non entra mai in una release senza i test macOS passati nello stesso giro. Prima del 16/11/2026 un solo job di test
+  per i tre sistemi: un test macOS annullato per mancanza di macchine fermava anche Linux e Windows.
+- Rilanciando i job falliti GitHub rifà anche quelli che dipendono da loro: dopo un test macOS annullato rifà test macOS,
+  tutti i pacchetti (con la cache di Nuitka, pochi minuti), la prova su ARM e la bozza. Gli artefatti si sostituiscono
+  (`overwrite: true`) e la bozza si aggiorna con i file dell'ultimo tentativo.
 - Ogni job di pacchetto: licenze delle dipendenze di quel sistema (macOS e Windows ne hanno di proprie: pyobjc,
   pythonnet…; `sicurezza.yml` controlla quelle di Linux; solo sui tag e con l'avvio manuale), ambiente di compilazione,
   `compila.py`, installazione come la farebbe un utente (`apt install ./….deb`; installatore silenzioso, che si installa
@@ -374,7 +384,9 @@ A ogni versione:
 3. Tag e push del tag: `git tag v<versione>` e `git push origin v<versione>`. La pipeline «Pacchetti» parte da sola.
 4. Aspettare la fine del giro (Actions › Pacchetti): la release in bozza compare in Releases. Se il job «release» è
    rosso, le note della bozza dicono cosa manca (per esempio il Mac con chip Apple senza runner): rilanciare i job
-   falliti con `gh run rerun <id> --failed` finché la bozza è completa.
+   falliti con `gh run rerun <id> --failed` finché la bozza è completa, a distanza di 20–30 minuti se mancano le
+   macchine macOS. Se invece un test è **fallito** non c'è bozza: si corregge, si cancella il tag (`git push origin
+   :refs/tags/v<versione>`) e si ricomincia dal punto 1.
 5. Facoltativo: `python strumenti/rilascio.py pubblica v<versione> --prova` prepara tutto in
    `dist/pubblica-<versione>` (scarica, ricontrolla, firma) senza caricare né pubblicare niente.
 6. `python strumenti/rilascio.py pubblica v<versione> --novita-it "…" --novita-en "…"` (una opzione per riga di
