@@ -183,3 +183,10 @@ macchine vere.
 - Un canale «beta» per chi ha la licenza beta (release marcate «pre-release», lette da `/releases` invece che da
   `/releases/latest`): oggi le pre-release non arrivano a nessuno.
 - Controllo automatico acceso di serie (proposto) e una volta al giorno.
+
+## Stato delle chiavi al 16/11/2026
+
+Nel codice (`aggiornamenti/firmati.py`, `CHIAVI_FIDATE`) c'è la chiave pubblica vera dei rilasci (id 1). La chiave
+privata è stata generata con `strumenti/aggiornamento.py genera-coppia` e sta fuori dal repository, in
+`~/.impaginatore-negozio/aggiornamenti-privata-1.hex` sul computer del titolare: va copiata subito anche offline.
+Resta vuoto `sorgenti.REPOSITORY`: finché non c'è il repository pubblico delle release, nessuna richiesta parte.

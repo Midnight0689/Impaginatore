@@ -124,11 +124,12 @@ registro. Dettagli in `FORMATO-CHIAVE.md`, § 4.
 2. Rigenerare `licenze/revoche.json` con `chiavi.py revoche --uscita …`.
 3. Controllare che `licenze/tier.json` sia uguale a `docs/mercato/tier.json` (lo fa un test).
 
-Il punto 1 è protetto da `tests/test_licenze.py::test_un_rilascio_non_parte_con_il_segnaposto`: con una versione finale
-(`2.0.0`, senza `.dev`, `a`, `b`, `rc`) e il segnaposto, la suite fallisce, quindi la CI e il rilascio si fermano. Quando
-ci sarà la pipeline di rilascio (T-303) conviene ripetere il controllo come passo esplicito prima della costruzione:
+**Stato al 16/11/2026: il punto 1 è fatto.** Nel codice c'è la chiave pubblica vera (id 1); la chiave privata è stata
+generata con `chiavi.py genera-coppia` e sta fuori dal repository, in `~/.impaginatore-negozio/` sul computer del
+titolare (file leggibili solo da lui). Va copiata subito anche offline: senza, non si possono più emettere licenze
+valide per le copie già distribuite. `tests/test_licenze.py::test_un_rilascio_non_parte_con_il_segnaposto` ferma
+chiunque rimetta il segnaposto, in ogni versione; la pipeline di rilascio ripete il controllo:
 `python -c "from impaginatore.licenze import chiave as K; assert not K.problemi_per_il_rilascio()"`.
-Con il segnaposto nessuna chiave è valida: una copia di sviluppo vive di prova gratuita.
 
 Nei test la coppia di firma nasce a ogni sessione (`tests/conftest.py`, fixture `licenza`): ogni test gira con una
 licenza Studio, salvo quelli che provano gli altri stati. Gli editor lanciati come processi a parte non vedono quella
