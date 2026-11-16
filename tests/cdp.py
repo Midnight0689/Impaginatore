@@ -32,6 +32,9 @@ def trova_chrome():
 
 
 CHROME = trova_chrome()
+# opzioni di ogni Chrome dei test. --use-mock-keychain: su macOS Chrome cifra i cookie con una chiave del portachiavi, che
+# su un computer senza nessuno davanti (CI) può essere bloccato e lascia Chrome in attesa; i test non devono toccarlo
+OPZIONI = ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--use-mock-keychain"]
 
 
 class _WebSocket:
@@ -86,11 +89,13 @@ class Browser:
 
     def __enter__(self):
         prof = os.path.join(self.cartella, "chrome-cdp"); os.makedirs(prof, exist_ok=True)
-        self.p = subprocess.Popen([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", f"--user-data-dir={prof}",
-                                   "--remote-debugging-port=0", "--window-size=1600,1000", "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.registro = os.path.join(self.cartella, "chrome-cdp.log")
+        with open(self.registro, "wb") as uscita:                    # quello che Chrome dice: finisce nel messaggio se non parte
+            self.p = subprocess.Popen([CHROME, *OPZIONI, f"--user-data-dir={prof}", "--remote-debugging-port=0", "--window-size=1600,1000", "about:blank"],
+                                      stdout=uscita, stderr=subprocess.STDOUT)
         f = os.path.join(prof, "DevToolsActivePort"); t = time.time() + 30
         while not (os.path.exists(f) and open(f, encoding="utf-8").read().strip()):
-            if time.time() > t: raise OSError("Chrome non parte")
+            if time.time() > t: raise OSError("Chrome non parte: " + self._detto())
             time.sleep(0.1)
         porta = int(open(f, encoding="utf-8").read().split()[0])
         t = time.time() + 30
@@ -99,11 +104,15 @@ class Browser:
                 pagine = [x for x in json.load(urllib.request.urlopen(f"http://127.0.0.1:{porta}/json/list", timeout=5)) if x["type"] == "page"]
                 if pagine: break
             except OSError: pass
-            if time.time() > t: raise OSError("nessuna pagina in Chrome")
+            if time.time() > t: raise OSError("nessuna pagina in Chrome: " + self._detto())
             time.sleep(0.1)
         self.ws = _WebSocket(pagine[0]["webSocketDebuggerUrl"])
         for m in ("Page.enable", "Runtime.enable", "Log.enable", "Network.enable"): self.chiama(m)
         return self
+
+    def _detto(self):
+        """ultime righe dell'uscita di Chrome (per capire perché non parte su un sistema)"""
+        with open(self.registro, encoding="utf-8", errors="replace") as f: return f.read()[-3000:]
 
     def __exit__(self, tipo, *a):
         if tipo is None:                              # ultimi eventi della pagina, poi il controllo generale della CSP

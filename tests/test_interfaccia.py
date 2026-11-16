@@ -4,15 +4,15 @@ import os
 import subprocess
 
 import pytest
-from cdp import CHROME
+from cdp import CHROME, OPZIONI
 from aiuti import attendi, crea_foto
 
 pytestmark = [pytest.mark.browser, pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")]
 
 
 def dom(url, tmp_path):
-    r = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", f"--user-data-dir={tmp_path / 'chrome'}",
-                        "--virtual-time-budget=8000", "--dump-dom", url], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    r = subprocess.run([CHROME, *OPZIONI, f"--user-data-dir={tmp_path / 'chrome'}", "--virtual-time-budget=8000", "--dump-dom", url],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     return r.stdout
 
 
