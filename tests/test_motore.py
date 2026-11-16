@@ -196,6 +196,7 @@ def test_ritocco_saturazione_contrasto_e_livelli(prj):
     try: out = album.apply_ev(scala, 0.0)
     finally: L._CUR[0] = None
     assert out.getpixel((0, 0))[0] < 64 and out.getpixel((1, 0))[0] > 192, "più contrasto: scuri più scuri, chiari più chiari"
+    assert album.apply_ev(scala, 0.0).tobytes() == scala.tobytes(), "senza una foto corrente niente ritocco"
     assert L.rit_curva({"tmp": 20}) is None and L.rit_gains({"tmp": 20})[2] < 1
     lut = L.tono_lut({"b": 20, "w": 235})
     assert (lut[20], lut[128], lut[235]) == (0, 128, 255)
