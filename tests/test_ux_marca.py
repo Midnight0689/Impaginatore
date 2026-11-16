@@ -42,17 +42,17 @@ def test_statici_dai_due_server(server, request):
     with urllib.request.urlopen(urllib.request.Request(c.url("/risorse/Newsreader.woff2"), headers={"X-Impaginatore-Gettone": c.gettone})) as r:
         et = r.headers["ETag"]; assert r.headers["Content-Type"] == "font/woff2" and r.headers["Cache-Control"] == "no-cache" and r.headers["Content-Security-Policy"]
     assert c.codice("/risorse/Newsreader.woff2", **{"If-None-Match": et}) == 304, "non cambiato: non si riscarica"
-    for p in ("/risorse/__init__.py", "/risorse/../risorse/__init__.py", "/risorse/testi/it.json", "/risorse/", "/risorse/vib_lut.npz", "/risorse/%2e%2e%2f__init__.py"):
+    for p in ("/risorse/__init__.py", "/risorse/../risorse/__init__.py", "/risorse/testi/it/comune.json", "/risorse/testi/en/comune.json", "/risorse/", "/risorse/vib_lut.npz", "/risorse/%2e%2e%2f__init__.py"):
         assert c.codice(p) == 404, p
 
 
 def test_testi_dentro_le_pagine(home_srv, editor):
     t = risorse.testi()
-    assert all(isinstance(k, str) and isinstance(v, str) and v for k, v in t.items()) and all(k.split(".")[0] in ("comune", "home", "editor") for k in t)
+    assert all(isinstance(k, str) and isinstance(v, str) and v for k, v in t.items()) and all(k.split(".")[0] in risorse.aree() for k in t)
     for c, pagina, altra in ((home_srv, "home.html", "editor."), (editor, "index.html", "home.")):
         html = c.raw("/").decode("utf-8")
-        assert "__TESTI__" not in html and "__NONCE__" not in html
-        m = re.search(r"const TESTI = (\{.*?\});", html); assert m, "la tabella dei testi è nello script della pagina"
+        assert "__TESTI__" not in html and "__NONCE__" not in html and "__LINGUA__" not in html and '<html lang="it"' in html
+        m = re.search(r'const TESTI = (\{.*?\}), LINGUA = "it", LOCALE = "it-IT";', html); assert m, "la tabella dei testi è nello script della pagina, con la lingua"
         d = json.loads(m.group(1)); assert d == {k: v for k, v in t.items() if k.startswith(("comune.", pagina == "home.html" and "home." or "editor."))}
         assert not any(k.startswith(altra) for k in d), "ogni pagina riceve solo i suoi testi"
 

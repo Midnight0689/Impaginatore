@@ -198,7 +198,7 @@ def test_nessun_testo_italiano_nel_codice_della_pagina():
     corpo = re.sub(r"<style>.*?</style>|<script.*?</script>", "", html, flags=re.S)
     visibile = re.sub(r"<[^>]+>", " ", corpo)
     assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w not in ("Impaginatore", "Created", "Stefano", "Imperato")] == []
-    assert json.loads(json.dumps(risorse.testi()))
+    assert json.loads(json.dumps(risorse.testi())) and json.loads(json.dumps(risorse.testi("en")))
 
 
 def test_assistente_immagini_solo_dopo_la_conferma(home_srv, tmp_path):

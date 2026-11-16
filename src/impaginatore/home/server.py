@@ -17,7 +17,7 @@ import argparse, json, logging, os, shutil, subprocess, sys, threading, time  # 
 import webbrowser  # noqa: F401  (resta come attributo del modulo: lo intercettano i test; il browser si apre con processi.apri_browser)
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, aggiornamenti, archivio, formato, giornale, nomi, percorsi, piattaforma, sicurezza
+from .. import __version__, aggiornamenti, archivio, formato, giornale, lingua, nomi, percorsi, piattaforma, sicurezza
 from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 from .. import licenze                         # T-202: licenza e prova gratuita, controllate su questo computer (docs/architettura/LICENZE.md)
@@ -198,6 +198,17 @@ def riavvia_programma():
     threading.Thread(target=riavvia, daemon=True).start()
 
 
+def assistente():
+    """interruttore delle immagini dell'assistente: stato e, se la licenza non comprende il server MCP, il perché (T-205)"""
+    st = licenze.stato(); ok = licenze.consentita("server_mcp", st)
+    return {"immagini": consenso_mcp.salvato(), "consentito": ok, "motivo": None if ok else licenze.motivo("server_mcp", st)}
+
+
+def lingue():
+    """lingua in uso e lingue tra cui scegliere, ognuna con il suo nome (T-206)"""
+    return {"lingua": lingua.attuale(), "lingue": [{"id": k, "nome": v} for k, v in lingua.LINGUE.items()]}
+
+
 def esci():
     """fine del processo (i test la sostituiscono)"""
     os._exit(0)
@@ -221,7 +232,8 @@ class H(Gestore):
             elif u.path == "/api/aggiornamento": self.send(AGGIORNAMENTI.stato())       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
             elif u.path == "/api/versioni": self.send({"versioni": AGGIORNAMENTI.versioni()})
             elif u.path == "/api/licenza": self.send(licenze.stato())                     # aprire la schermata la prima volta fa partire la prova
-            elif u.path == "/api/assistente": self.send({"immagini": consenso_mcp.salvato()})
+            elif u.path == "/api/assistente": self.send(assistente())
+            elif u.path == "/api/lingua": self.send(lingue())
             elif u.path == "/api/pronto":
                 a = pronto(int(q["porta"][0])); self.send({"pronto": bool(a), "indirizzo": a})
             elif u.path == "/api/cover":
@@ -253,7 +265,9 @@ class H(Gestore):
             elif u.path == "/api/licenza/rimuovi": self.send(licenze.rimuovi())
             elif u.path == "/api/assistente":                  # solo l'utente, da questa pagina (gettone): nessuno strumento MCP passa di qui
                 if not isinstance(d.get("immagini"), bool): raise ValueError("immagini: vero o falso")
-                consenso_mcp.imposta(d["immagini"]); self.send({"immagini": consenso_mcp.salvato()})
+                consenso_mcp.imposta(d["immagini"]); self.send(assistente())
+            elif u.path == "/api/lingua":                     # T-206: la lingua scelta vale per tutto il programma (preferenze dell'utente)
+                lingua.imposta(d.get("lingua")); self.send(lingue())
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
             elif u.path == "/api/rimuovi":
@@ -323,6 +337,7 @@ def main(argv=None):
         print(f"La porta {args.porta} è occupata da un altro programma: scegline un'altra con --porta", file=sys.stderr)
         return 1
     configura(args.progetti, args.porta)
+    lingua.prima_volta()                                   # T-206: al primo avvio la lingua del sistema, che da qui in poi resta
     if args.daemon: processi.stacca(os.path.join(PROGETTI, "impaginatore.log"))       # doppio fork + nuova sessione: non muore quando l'app che l'ha lanciato si chiude
     giornale.configura("home")
     m = desktop.motore() if finestra else None             # None: manca pywebview o il motore del sistema (motivo nel registro): il browser come prima

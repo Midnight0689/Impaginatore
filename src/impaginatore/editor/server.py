@@ -199,6 +199,7 @@ LAYS = [("FULL", "I", False), ("DUO", "I", False), ("VLL", "I", False), ("VLL", 
         ("Q4C", "I", False), ("Q4C", "W", False), ("Q1_3", "I", False), ("Q1_3", "I", True), ("Q1_3", "W", False), ("F5", "I", False), ("F5", "I", True), ("F5", "W", False), ("S6", "I", False), ("S6", "W", False)]
 SP, GD = [], []                                     # spread ([modo, [elementi]] per pagina) e linee guida di ogni spread (px della vista): inizializza
 UNDO, REDO = [], []                                 # passi d'annulla: {snap: stato di prima, nome, s: spread toccato, gruppo, rev} (UX-003)
+ESPORTA = set()                                     # esportazioni in corso (/api/ping «esporta»: la finestra chiede conferma prima di chiudersi)
 ESITO = {}                                          # quello che un'operazione vuole dire a chi l'ha chiesta (disposizione scelta, foto scambiata...): va nella risposta
 CLIP = []                                           # appunti: copia/incolla di elementi tra spread
 LOG = []
@@ -864,6 +865,11 @@ def controlla_stato():
     except ValueError: raise ValueError("Operazione non valida: dà misure impossibili da mostrare") from None
     return st
 
+class Conflitto(ValueError):
+    """l'album è cambiato da un'altra scheda o dall'assistente dopo la versione vista da chi chiede: la risposta ha
+    codice «altra_scheda», che pagina e server MCP riconoscono senza leggere il testo (che segue la lingua)"""
+
+
 def do_op(o):
     """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
     stato resta com'era. Restituisce lo stato per la pagina"""
@@ -872,7 +878,7 @@ def do_op(o):
     with LOCK:
         cid, rev = o.pop("cid", None), o.pop("rev", None)
         if cid and rev is not None and cid != LASTC and rev != REV and LASTC is not None:
-            raise ValueError("Questo progetto è stato modificato da un'altra scheda: ho ricaricato lo stato, riprova.")
+            raise Conflitto("Questo progetto è stato modificato da un'altra scheda: ho ricaricato lo stato, riprova.")
         before = snap(); gruppo = _gruppo(o.pop("gruppo", None))
         if o["op"] in ("undo", "redo"):
             da, a = (UNDO, REDO) if o["op"] == "undo" else (REDO, UNDO); p = da.pop() if da else None
@@ -1938,7 +1944,9 @@ def run_export(o):
                 LOG.append(f"PSD creati: {len(nums) - len(skip) - len(nuovi)} su {len(nums)}" + (f" ({len(skip)} lasciati com'erano perché modificati a mano)" if skip else ""))
                 if len(nums) - len(nuovi) > 0 or skip: LOG.append("RISULTATO:" + dest)
         except Exception as e: LOG.append(f"ERRORE: {_spiega(e)}")
+        finally: ESPORTA.discard(segno)
         LOG.append("[finito]")
+    segno = object(); ESPORTA.add(segno)                                   # in corso finché go() non finisce: la finestra chiede conferma prima di chiudersi
     threading.Thread(target=go, daemon=True).start()
     return len(nums)
 
@@ -2274,7 +2282,7 @@ class H(Gestore):
                 else: self.send({"errore": "foto non trovata"}, code=404)
             elif u.path == "/api/fonts": self.send(dict(fonts=[dict(fam=f["fam"], sty=f["sty"], ps=f["ps"]) for f in TX.fonts()]))
             elif u.path == "/api/ping": self.send({"boot": BOOT, "agg": AGG["n"], "path": PROJ, "rev": REV, "prep": PREP["fatte"],
-                                                        "assistente": str(LASTC or "").startswith("assistente-")})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
+                                                        "assistente": str(LASTC or "").startswith("assistente-"), "esporta": bool(ESPORTA)})          # rev: chi guarda la pagina sa se qualcun altro (MCP) ha cambiato l'album; assistente: l'ultima modifica è dell'assistente AI
             elif u.path == "/api/log": self.send(LOG[-200:])
             elif u.path == "/api/ls": self.send(ls_dir(q.get("p", [""])[0]))
             elif u.path == "/api/fthumb": self.send(file_thumb(q["p"][0], round(numero(q, "w", 200, 16, 600))), "image/jpeg")
@@ -2328,6 +2336,7 @@ class H(Gestore):
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
+        except Conflitto as e: self.send({"errore": str(e), "codice": "altra_scheda"}, code=400)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio

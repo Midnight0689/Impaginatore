@@ -1,6 +1,6 @@
 """Editor ridisegnato con la marca (T-205, passi 3 e 4 di PIANO-UX): zone, barra dello spread e della selezione, provini
 delle disposizioni, «Altra disposizione» (D), «Sostituisci», «Controlla» con «Sistema», bozza, menu per compiti, stati
-vuoti, tastiera, licenza spiegata prima, esportazione in corso visibile, testi tutti dalla tabella."""
+vuoti, tastiera, licenza spiegata prima, esportazione in corso visibile (i testi dalla tabella: test_lingua.py)."""
 import json
 import os
 import re
@@ -12,36 +12,9 @@ from impaginatore import risorse
 
 CHROME = next((shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser", "chrome") if shutil.which(n)), None)
 PAGINA = os.path.join(os.path.dirname(risorse.__file__), "index.html")
-TESTI = os.path.join(os.path.dirname(risorse.__file__), "testi", "it.json")
 
 
 def html(): return open(PAGINA, encoding="utf-8").read()
-
-
-def chiavi_usate(s):
-    """le chiavi della tabella che la pagina usa: quelle scritte per intero e quelle composte (prefisso + elenco noto)"""
-    lit = set(re.findall(r'"((?:editor|comune)\.[a-z0-9_.]+)"', s))
-    lit = {k for k in lit if not k.endswith((".", "_")) and k not in ("editor.vuoto.foto", "editor.vuoto.spread")}
-    din = {f"editor.ctl.{k}_{x}" for k in ("blocca", "guarda", "info") for x in ("h", "n")}
-    din |= {f"editor.vuoto.{k}_{x}" for k in ("foto", "spread") for x in ("tit", "testo")}
-    din |= {"editor.allinea." + x for x in ("sx", "ch", "dx", "su", "cv", "giu", "dh", "dv")}
-    din |= {"editor.bozza.r_" + x for x in ("alterna", "piene", "bianche")}
-    din |= {"editor.sfondo." + x for x in ("tema", "nero", "grigio_scuro", "grigio_chiaro", "bianco")}
-    din |= {"editor.side.bordo_" + x for x in ("bianco", "crema", "grigio", "nero")}
-    din |= {"editor.side.exif_" + x for x in ("profilo", "tempo", "diaframma", "iso", "focale", "data")}
-    m = re.search(r"const KEYS = \[(.*?)\n\];", s, re.S).group(1)
-    din |= {"editor.tasti.g_" + g for g in re.findall(r'\["([a-z_]+)", \[\[', m)} | {"editor.tasti." + a for a in re.findall(r'\["([a-z_]+)", "', m)}
-    return lit | din
-
-
-def test_testi_tutti_nella_tabella():
-    """ogni testo che la pagina chiede c'è in it.json, e in it.json non restano voci dell'editor che nessuno usa"""
-    s, t = html(), json.load(open(TESTI, encoding="utf-8"))
-    usate = chiavi_usate(s)
-    assert sorted(k for k in usate if k not in t) == []
-    assert sorted(k for k in t if k.startswith("editor.") and k not in usate) == []
-    for k in usate:
-        segnaposto = set(re.findall(r"\{(\w+)\}", t[k])); assert all(re.fullmatch(r"[a-z_]+", x) for x in segnaposto), k
 
 
 def test_niente_finestre_del_browser_ne_codice_rischioso():

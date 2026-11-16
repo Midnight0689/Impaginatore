@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-theme="dark">
+<html lang="__LINGUA__" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -516,8 +516,11 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script nonce="__NONCE__">
-const TESTI = __TESTI__;                                                          // testi dell'interfaccia (risorse/testi): li mette il server (T-206: altre lingue)
-const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] ?? m) : s; };
+const TESTI = __TESTI__, LINGUA = "__LINGUA__", LOCALE = "__LOCALE__";           // testi nella lingua in uso, lingua e codice per Intl: li mette il server (T-206, lingua.py)
+const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFractionDigits: 2 } : { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);      // numeri secondo la lingua: 22,5 / 22.5
+const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] == null ? m : typeof p[x] === "number" ? fN(p[x]) : String(p[x])) : s; };      // testo semplice (textContent, title)
+const tn = (k, n, p) => t(k + (n === 1 ? "_1" : "_n"), Object.assign({ n }, p));                  // plurale: chiave_1 / chiave_n
+const tH = (k, p) => escH(t(k, p));                                                                 // per innerHTML: testo e parametri protetti (i testi della tabella non hanno HTML)
 const TT = t;                                                                     // lo stesso, dove «t» è già il nome di una variabile (modelli, testi)
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);

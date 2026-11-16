@@ -5,6 +5,7 @@ richiesta passa dai controlli di sicurezza (Host, Origin, Sec-Fetch-Site, getton
 arrivare a do_GET/do_POST, ogni risposta ha le intestazioni di sicurezza. Il progetto è in docs/architettura/SICUREZZA.md.
 """
 import hashlib
+import html
 import json
 import logging
 import math
@@ -16,15 +17,16 @@ from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import risorse, sicurezza
+from . import lingua, risorse, sicurezza
 
 log = logging.getLogger("impaginatore.server")
 
-PAGINA_NON_AUTORIZZATA = ("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"5\"><title>Impaginatore</title></head>"
-                          "<body style=\"margin:0;padding:48px;background:#1b1b1d;color:#d0d0d6;font:15px/1.5 -apple-system,Segoe UI,sans-serif\">"
-                          "<h1 style=\"font-size:20px\">Impaginatore</h1><p>Questa scheda non è collegata al programma.</p>"
-                          "<p>Apri Impaginatore dal suo collegamento (o un progetto dalla schermata dei progetti): l'indirizzo che si apre da lì "
-                          "vale una volta sola e collega il browser. Se l'hai appena fatto, questa scheda si sistema da sola tra pochi secondi.</p></body></html>")
+def pagina_non_autorizzata():
+    """pagina per chi apre l'indirizzo nudo, senza cookie (401): dice come aprire il programma, nella lingua in uso"""
+    righe = "".join(f"<p>{html.escape(lingua.t(k))}</p>" for k in ("comune.non_collegata_1", "comune.non_collegata_2"))
+    return (f"<!doctype html><html lang=\"{lingua.attuale()}\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"5\"><title>Impaginatore</title></head>"
+            "<body style=\"margin:0;padding:48px;background:#1b1b1d;color:#d0d0d6;font:15px/1.5 -apple-system,Segoe UI,sans-serif\">"
+            f"<h1 style=\"font-size:20px\">Impaginatore</h1>{righe}</body></html>")
 
 
 class ServerLocale(ThreadingHTTPServer):
@@ -141,7 +143,7 @@ class Gestore(BaseHTTPRequestHandler):
         return True
 
     def rifiuta(self, codice, motivo):
-        if codice == 401 and self.command == "GET" and self._navigazione(): self.risposta(PAGINA_NON_AUTORIZZATA, "text/html; charset=utf-8", codice)
+        if codice == 401 and self.command == "GET" and self._navigazione(): self.risposta(pagina_non_autorizzata(), "text/html; charset=utf-8", codice)
         else: self.json({"errore": motivo}, codice)
 
     def _avvio(self, q):
@@ -169,11 +171,13 @@ class Gestore(BaseHTTPRequestHandler):
     def json(self, dati, codice=200): self.risposta(json.dumps(dati), "application/json", codice)
 
     def pagina(self, nome):
-        """pagina HTML delle risorse con il nonce dello script e la tabella dei suoi testi; CSP stretta (SICUREZZA.md). Il
-        gettone non c'è: la pagina lo prende dalla sessionStorage della scheda, dove l'ha lasciato l'URL di avvio (VER-006)"""
-        nonce = secrets.token_urlsafe(18)
-        html = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__TESTI__", risorse.testi_pagina(nome))
-        self._csp = sicurezza.csp(nonce); b = html.encode("utf-8")
+        """pagina HTML delle risorse con il nonce dello script, la lingua in uso e la tabella dei suoi testi in quella lingua;
+        CSP stretta (SICUREZZA.md). Il gettone non c'è: la pagina lo prende dalla sessionStorage della scheda, dove l'ha
+        lasciato l'URL di avvio (VER-006)"""
+        nonce = secrets.token_urlsafe(18); lg, locale = lingua.per_pagina()
+        testo = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__LINGUA__", lg).replace("__LOCALE__", locale)
+        testo = testo.replace("__TESTI__", risorse.testi_pagina(nome, lg))                  # per ultima: i testi non passano da altre sostituzioni
+        self._csp = sicurezza.csp(nonce); b = testo.encode("utf-8")
         self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
         self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)
 

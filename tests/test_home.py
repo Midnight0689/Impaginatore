@@ -277,12 +277,13 @@ def test_interruttore_immagini_dell_assistente(home_srv):
     e il server MCP legge la stessa scelta (mcp/consenso.py)"""
     from impaginatore.mcp import consenso
     c = home_srv
-    assert c.get("/api/assistente") == {"immagini": False} and not consenso.consentite(False)
-    assert c.post("/api/assistente", {"immagini": True}) == {"immagini": True} and consenso.consentite(False)
-    assert c.get("/api/assistente") == {"immagini": True}
+    si = dict(consentito=True, motivo=None)                       # Studio: la licenza comprende l'assistente (T-206: altrimenti si spiega)
+    assert c.get("/api/assistente") == dict(si, immagini=False) and not consenso.consentite(False)
+    assert c.post("/api/assistente", {"immagini": True}) == dict(si, immagini=True) and consenso.consentite(False)
+    assert c.get("/api/assistente") == dict(si, immagini=True)
     assert oct(os.stat(consenso.percorso()).st_mode & 0o777) == "0o600" or os.name == "nt"
     for v in ("true", 1, None):
         ok, r = c.prova("/api/assistente", {"immagini": v}); assert not ok and "vero o falso" in r["errore"]
-    assert c.get("/api/assistente") == {"immagini": True}, "un valore strano non cambia la scelta"
+    assert c.get("/api/assistente") == dict(si, immagini=True), "un valore strano non cambia la scelta"
     assert c.codice("/api/assistente", {"immagini": False}, **{"X-Impaginatore-Gettone": None}) == 401, "solo con il gettone"
-    assert c.post("/api/assistente", {"immagini": False}) == {"immagini": False} and not consenso.consentite(False)
+    assert c.post("/api/assistente", {"immagini": False}) == dict(si, immagini=False) and not consenso.consentite(False)

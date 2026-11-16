@@ -1,0 +1,8 @@
+{
+  "comune.annulla": "Cancel",
+  "comune.chiudi": "Close",
+  "comune.elenco": "{primi} and {ultimo}",
+  "comune.lingua_sconosciuta": "That language isn't available: choose Italian or English.",
+  "comune.non_collegata_1": "This tab isn't connected to Impaginatore.",
+  "comune.non_collegata_2": "Open Impaginatore from its shortcut (or an album from the Albums screen): the address it opens works only once and connects this tab. If you've just done that, this tab will sort itself out in a few seconds."
+}
