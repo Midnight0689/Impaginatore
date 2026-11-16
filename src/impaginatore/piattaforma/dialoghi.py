@@ -17,6 +17,7 @@ import shutil
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 
+from .. import lingua
 from . import sistema
 from .processi import ambiente_figli
 
@@ -37,16 +38,16 @@ class Dialoghi:
     def _scegli(self, tipo, messaggio):
         raise NotImplementedError
 
-    def scegli_cartella(self, messaggio="Scegli la cartella"):
-        return senza_barra((self._scegli("cartella", messaggio) or [""])[0])
+    def scegli_cartella(self, messaggio=None):
+        return senza_barra((self._scegli("cartella", messaggio or lingua.t("sistema.scegli_cartella")) or [""])[0])
 
-    def scegli_zip(self, messaggio="Scegli il file ZIP del progetto"):
-        return (self._scegli("zip", messaggio) or [""])[0]
+    def scegli_zip(self, messaggio=None):
+        return (self._scegli("zip", messaggio or lingua.t("sistema.scegli_zip")) or [""])[0]
 
     def scegli_percorsi(self, cartella=False, messaggio=None):
         """una cartella (cartella=True) o una o più foto (JPEG, PNG, TIFF, WebP, HEIC): elenco di percorsi"""
-        if cartella: return self._scegli("cartella", messaggio or "Scegli la cartella")
-        return self._scegli("foto", messaggio or "Scegli le foto")
+        if cartella: return self._scegli("cartella", messaggio or lingua.t("sistema.scegli_cartella"))
+        return self._scegli("foto", messaggio or lingua.t("sistema.scegli_foto"))
 
 
 class Nessuno(Dialoghi):
@@ -153,6 +154,6 @@ def attuali():
     return _ATTUALE[0] or predefiniti()
 
 
-def scegli_cartella(messaggio="Scegli la cartella"): return attuali().scegli_cartella(messaggio)
-def scegli_zip(messaggio="Scegli il file ZIP del progetto"): return attuali().scegli_zip(messaggio)
+def scegli_cartella(messaggio=None): return attuali().scegli_cartella(messaggio)
+def scegli_zip(messaggio=None): return attuali().scegli_zip(messaggio)
 def scegli_percorsi(cartella=False, messaggio=None): return attuali().scegli_percorsi(cartella, messaggio)

@@ -15,6 +15,7 @@ import shutil
 import stat
 import zipfile
 
+from . import lingua
 from .nomi import componente_valido
 from .validazione import ErroreProgetto
 
@@ -31,16 +32,17 @@ _NOTI_1X = {"album_libere.py", "testo.py", "vib_lut.npz"}           # copie del 
 _UNITA = re.compile(r"^[A-Za-z]:")
 
 
-def _rifiuta(motivo):
-    raise ErroreProgetto(f"Questo file ZIP non è sicuro da importare ({motivo}): non è stato importato.")
+def _rifiuta(chiave, **param):
+    """rifiuta lo ZIP: `chiave` è il motivo (testo della tabella), che va dentro la frase del rifiuto"""
+    raise ErroreProgetto(lingua.t("progetto.zip_non_sicuro", motivo=lingua.t(chiave, **param)))
 
 
 def _parti(nome):
     """pezzi del percorso di un file nello ZIP; errore per i percorsi che potrebbero uscire dalla cartella di destinazione"""
     n = nome.replace("\\", "/")
-    if n.startswith("/") or _UNITA.match(n): _rifiuta(f"percorso assoluto «{nome}»")
+    if n.startswith("/") or _UNITA.match(n): _rifiuta("progetto.zip_percorso_assoluto", nome=nome)
     parti = [p for p in n.split("/") if p not in ("", ".")]
-    if ".." in parti: _rifiuta(f"percorso che esce dalla cartella «{nome}»")
+    if ".." in parti: _rifiuta("progetto.zip_percorso_esce", nome=nome)
     return parti
 
 
@@ -57,17 +59,17 @@ def _scegli(infos, avvisi):
     for i in infos:
         parti = _parti(i.filename)
         tipo = stat.S_IFMT(i.external_attr >> 16)
-        if tipo == stat.S_IFLNK: _rifiuta(f"collegamento simbolico «{i.filename}»")
+        if tipo == stat.S_IFLNK: _rifiuta("progetto.zip_collegamento", nome=i.filename)
         if i.is_dir() or not parti: continue
         if tipo not in (0, stat.S_IFREG) or i.flag_bits & 0x1 or not _ammesso(parti):
             if parti[-1] not in _NOTI_1X and not parti[-1].startswith(".") and parti[0] != "__MACOSX": tralasciati += 1
             continue
-        if i.file_size > SOGLIA_FILE and i.file_size > MAX_RAPPORTO_FILE * max(1, i.compress_size): _rifiuta(f"«{i.filename}» è compresso in modo anomalo")
+        if i.file_size > SOGLIA_FILE and i.file_size > MAX_RAPPORTO_FILE * max(1, i.compress_size): _rifiuta("progetto.zip_file_anomalo", nome=i.filename)
         totale += i.file_size; compresso += i.compress_size
         scelti.append((i, parti))
-    if totale > MAX_TOTALE: _rifiuta(f"estratto occuperebbe {totale / 2**30:.1f} GB")
-    if totale > SOGLIA_TOTALE and totale > MAX_RAPPORTO * max(1, compresso): _rifiuta("è compresso in modo anomalo")
-    if tralasciati and avvisi is not None: avvisi.append(f"{tralasciati} file non previsti in un progetto (programmi, script o altro) non sono stati estratti")
+    if totale > MAX_TOTALE: _rifiuta("progetto.zip_troppo_grande", gb=lingua.num(totale / 2**30, 1, True))
+    if totale > SOGLIA_TOTALE and totale > MAX_RAPPORTO * max(1, compresso): _rifiuta("progetto.zip_anomalo")
+    if tralasciati and avvisi is not None: avvisi.append(lingua.tn("progetto.zip_tralasciati", tralasciati))
     return scelti, totale
 
 
@@ -76,19 +78,19 @@ def estrai(zp, dest, avvisi=None):
     Errori: ErroreProgetto con un messaggio per l'utente. Uno ZIP rifiutato dai controlli non scrive niente; uno che si
     rivela rovinato durante l'estrazione può lasciare dei file in `dest`, che chi chiama cancella"""
     try: z = zipfile.ZipFile(zp)
-    except (zipfile.BadZipFile, OSError) as e: raise ErroreProgetto(f"Il file non è uno ZIP leggibile ({e})") from None
+    except (zipfile.BadZipFile, OSError) as e: raise ErroreProgetto(lingua.t("progetto.zip_illeggibile", dettaglio=str(e))) from None
     with z:
         infos = z.infolist()
-        if len(infos) > MAX_FILE: _rifiuta(f"contiene più di {MAX_FILE} file")
+        if len(infos) > MAX_FILE: _rifiuta("progetto.zip_troppi_file", massimo=str(MAX_FILE))
         scelti, totale = _scegli(infos, avvisi)
         os.makedirs(dest, exist_ok=True)
-        if totale + RISERVA_DISCO > shutil.disk_usage(dest).free: raise ErroreProgetto(f"Non c'è abbastanza spazio sul disco per estrarre il progetto ({totale // 2**20} MB)")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_zip_limiti
+        if totale + RISERVA_DISCO > shutil.disk_usage(dest).free: raise ErroreProgetto(lingua.t("progetto.zip_spazio", mb=totale // 2**20))  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_zip_limiti
         fatti = []
         try:
             for i, parti in scelti:
                 if _estrai_uno(z, i, os.path.join(dest, *parti)): fatti.append("/".join(parti))
-                elif avvisi is not None: avvisi.append(f"«{i.filename}» compare due volte: tenuto il primo")
-        except (zipfile.BadZipFile, NotImplementedError, EOFError, RuntimeError) as e: raise ErroreProgetto(f"Il file ZIP è rovinato ({e})") from None
+                elif avvisi is not None: avvisi.append(lingua.t("progetto.zip_doppio", nome=i.filename))
+        except (zipfile.BadZipFile, NotImplementedError, EOFError, RuntimeError) as e: raise ErroreProgetto(lingua.t("progetto.zip_rovinato", dettaglio=str(e))) from None
         return fatti
 
 

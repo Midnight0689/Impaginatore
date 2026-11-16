@@ -18,7 +18,7 @@ import time
 import urllib.error
 import urllib.request
 
-from .. import sicurezza
+from .. import lingua, sicurezza
 from ..piattaforma import processi, sistema
 
 log = logging.getLogger("impaginatore.mcp")
@@ -34,10 +34,11 @@ class NonRaggiungibile(Exception):
 
 
 class Errore(ValueError):
-    """il server ha risposto con un errore: codice HTTP, messaggio per l'utente, licenza (403 di una funzione di fascia)"""
+    """il server ha risposto con un errore: codice HTTP, messaggio per l'utente, licenza (403 di una funzione di fascia),
+    causa (il «codice» che l'editor aggiunge ai rifiuti che il programma deve riconoscere senza leggere il testo: «altra_scheda»)"""
 
-    def __init__(self, codice, messaggio, licenza=False):
-        super().__init__(messaggio); self.codice, self.licenza = codice, licenza
+    def __init__(self, codice, messaggio, licenza=False, causa=None):
+        super().__init__(messaggio); self.codice, self.licenza, self.causa = codice, licenza, causa
 
 
 def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
@@ -50,12 +51,12 @@ def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
         try: d = json.loads(e.read(65536))
         except ValueError: d = None
         d = d if isinstance(d, dict) else {}
-        raise Errore(e.code, str(d.get("errore") or f"errore {e.code}"), d.get("licenza") is True) from None
-    except (OSError, ValueError) as e: raise NonRaggiungibile(type(e).__name__) from None          # connessione rifiutata, tempo scaduto, porta di un altro programma
-    if len(b) > MAX_RISPOSTA: raise Errore(413, "risposta troppo grande")
+        raise Errore(e.code, str(d.get("errore") or lingua.t("mcp.errore_http", codice=str(e.code))), d.get("licenza") is True, d.get("codice") if isinstance(d.get("codice"), str) else None) from None
+    except (OSError, ValueError) as e: raise NonRaggiungibile(type(e).__name__) from None          # non tradotto: nome tecnico dell'errore, non arriva all'utente          # connessione rifiutata, tempo scaduto, porta di un altro programma
+    if len(b) > MAX_RISPOSTA: raise Errore(413, lingua.t("mcp.risposta_troppo_grande"))
     if binario: return b
     try: return json.loads(b)
-    except ValueError: raise NonRaggiungibile("risposta non JSON") from None
+    except ValueError: raise NonRaggiungibile("risposta non JSON") from None          # non tradotto: motivo tecnico, non arriva all'utente
 
 
 def _vivo(pid):
@@ -116,6 +117,6 @@ def avvia_programma(attesa=ATTESA_AVVIO):
     while time.monotonic() < fine:
         s = programma()
         if s: return s
-        if p.poll() is not None: raise Errore(503, f"Impaginatore non è partito: la porta {PORTA_PROGRAMMA} è occupata da un altro programma. Aprilo tu dal suo collegamento e riprova.")
+        if p.poll() is not None: raise Errore(503, lingua.t("mcp.non_partito", porta=str(PORTA_PROGRAMMA)))
         time.sleep(PASSO)
-    raise Errore(503, "Impaginatore non risponde ancora: aprilo tu dal suo collegamento e riprova.")
+    raise Errore(503, lingua.t("mcp.non_risponde_ancora"))

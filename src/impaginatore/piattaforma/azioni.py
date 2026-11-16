@@ -15,6 +15,7 @@ import shutil
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import urllib.parse
 
+from .. import lingua
 from . import cartelle, sistema
 from .processi import ambiente_figli
 
@@ -32,7 +33,7 @@ def mostra(path):
     if shutil.which("xdg-open"):
         subprocess.Popen(["xdg-open", path if os.path.isdir(path) else os.path.dirname(path) or "."], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, env=ambiente_figli())  # nosec B603, B607  # programma di sistema cercato nel PATH dell'utente (chi lo cambia controlla già il suo account); argomenti in lista, senza shell
         return
-    raise OSError("non trovo un gestore di file da aprire (manca xdg-open)")
+    raise OSError(lingua.t("sistema.manca_gestore_file"))
 
 
 def cestina(path):

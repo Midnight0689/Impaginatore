@@ -15,19 +15,17 @@ import json
 import logging
 import os
 
+from .. import lingua
 from ..piattaforma import cartelle
 
 log = logging.getLogger("impaginatore.mcp")
 
 FILE = "assistente.json"
 
-SPIEGAZIONE = ("Le immagini sono spente: di serie l'assistente riceve solo testo (nomi dei file, proporzioni, date, "
-               "disposizioni, esiti del controllo). Se le accendi, le miniature delle foto e le anteprime degli spread "
-               "(ridotte, al massimo 1200 pixel di lato) vanno all'assistente AI e quindi al suo fornitore, fuori dal tuo "
-               "computer; le foto possono mostrare persone riconoscibili, quindi accendile solo se puoi farlo per i tuoi "
-               "clienti. Per accenderle aggiungi «--consenti-immagini» agli argomenti del server MCP nella configurazione "
-               "dell'assistente (per esempio \"args\": [\"mcp\", \"--consenti-immagini\"]) e riavvia l'assistente. "
-               "L'assistente non può accenderle da solo.")
+def spiegazione():
+    """perché le immagini sono spente e come si accendono (interruttore nella schermata Album, oppure opzione all'avvio),
+    nella lingua in uso"""
+    return lingua.t("mcp.spiegazione")
 
 
 def percorso():

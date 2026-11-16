@@ -7,7 +7,7 @@ Si apre nella finestra del programma (desktop, pywebview) se c'è, altrimenti ne
 I nuovi progetti stanno in  <cartella dei progetti>/<nome>/  (progetto.json + album.json + Foto/ + _cache/); la cartella dei
 progetti è --progetti, IMPAGINATORE_PROGETTI, <checkout>/Progetti (come nelle 1.x) o Documenti/Impaginatore/Progetti.
 Quella cartella È il file di salvataggio del progetto: l'editor la salva da solo mentre lavori.
-Progetti che stanno altrove (es. sul Desktop) si aggiungono con «Apri progetto esistente»: restano dove sono.
+Progetti che stanno altrove (es. sul Desktop) si aggiungono con «Apri album esistente…»: restano dove sono.
 Solo libreria standard: l'editor vero (impaginatore.editor) parte come processo a parte, uno per progetto aperto.
 
 Stato: una schermata per processo, nelle variabili di questo modulo (PROGETTI, PORTA, EDITORS, AGGIORNAMENTI).
@@ -82,30 +82,30 @@ def progetti():
 
 def num(v):
     v = float(str(v).replace(",", ".").strip())
-    if not v > 0: raise ValueError("misura non valida")
+    if not v > 0: raise ValueError(lingua.t("schermata.misura_non_valida"))
     return v
 
 
 def nuovo(d):
     nome = nomi.nome_progetto(d.get("nome"))           # il nome è un dato: si salva in progetto.json, mai dentro codice (SEC-003)
     w, h = num(d.get("w")), num(d.get("h"))
-    if not (5 <= w <= 300 and 5 <= h <= 200): raise ValueError("Misure fuori dal normale: larghezza 5–300 cm, altezza 5–200 cm")
+    if not (5 <= w <= 300 and 5 <= h <= 200): raise ValueError(lingua.t("schermata.misure_fuori"))
     cartella = nomi.nome_cartella(nome)                 # valido su macOS, Windows e Linux
     fotodir = dialoghi.senza_barra((d.get("foto") or "").strip())
     if fotodir:                                          # progetto accanto alle foto del cliente: <cartella cliente>/Impaginatore, le foto restano dove sono
-        if not os.path.isdir(fotodir): raise ValueError("La cartella delle foto non esiste")
+        if not os.path.isdir(fotodir): raise ValueError(lingua.t("schermata.cartella_foto_assente"))
         base, cartella = os.path.dirname(fotodir), "Impaginatore"
     else: base = PROGETTI
     p = os.path.join(base, cartella); k = 2
     while os.path.exists(p): p = os.path.join(base, f"{cartella} {k}"); k += 1
     def mm(key, dflt):
         try: return float(str(d.get(key, dflt)).replace(",", ".") or dflt)
-        except ValueError: raise ValueError(f"Misure non valide: «{d.get(key)}» non è un numero") from None
+        except ValueError: raise ValueError(lingua.t("schermata.misura_non_numero", valore=str(d.get(key)))) from None
     cfg = dict(nome=nome, foto=fotodir or os.path.join(p, "Foto"), foto_extra=[], tolte=[], formato_cm=[round(w, 2), round(h, 2)], dimensioni_esatte=False, ppi=300,
                abbondanza_mm=mm("abb", 0), spazio_mm=mm("spazio", 2.5), margine_mm=mm("margine", 10), uscita_psd=os.path.join(p, "PSD"),
                testo=dict(nome=nome, sottotitolo="", data=""), esposizione=dict(globale=0.0, per_cartella={}, per_foto={}), bilanciamento_bianco={}, centri_volto={})
     try: testo = formato.testo_progetto(cfg)                # misure controllate come all'apertura, PRIMA di creare la cartella (VER-010)
-    except formato.ErroreProgetto as e: raise ValueError(f"Misure non valide: {str(e).removeprefix('progetto.json, ')}") from None
+    except formato.ErroreProgetto as e: raise ValueError(lingua.t("schermata.misure_non_valide", motivo=str(e).removeprefix("progetto.json, "))) from None
     os.makedirs(p if fotodir else os.path.join(p, "Foto"))
     formato.scrivi_atomico(os.path.join(p, "progetto.json"), testo)
     if fotodir: salva_registro(registro() + [p])
@@ -143,7 +143,7 @@ def pronto(pt):
 
 def apri(path):
     path = os.path.abspath(path)
-    if path not in [p["path"] for p in progetti()]: raise ValueError("progetto non in elenco")
+    if path not in [p["path"] for p in progetti()]: raise ValueError(lingua.t("schermata.non_in_elenco"))
     formato.leggi_progetto(path); formato.controlla(path)          # un progetto non valido si spiega qui, prima di avviare l'editor
     with LOCK:
         e = EDITORS.get(path)
@@ -162,14 +162,14 @@ def importa_zip():
     Lo ZIP si estrae con archivio.estrai (percorsi, limiti, solo i tipi di file di un progetto) e il progetto si controlla
     prima di metterlo in elenco: niente del suo contenuto viene eseguito"""
     import tempfile
-    zp = dialoghi.scegli_zip("Scegli il file ZIP del progetto").strip()
+    zp = dialoghi.scegli_zip(lingua.t("schermata.scegli_zip")).strip()
     if not zp: return ""
     tmp = tempfile.mkdtemp(prefix=".importazione-", dir=PROGETTI)
     try:
         avvisi = []; archivio.estrai(zp, tmp, avvisi)
         cand = [tmp] + [os.path.join(tmp, d) for d in sorted(os.listdir(tmp)) if os.path.isdir(os.path.join(tmp, d))]
         src = next((c for c in cand if os.path.exists(os.path.join(c, "progetto.json"))), None)
-        if not src: raise ValueError("Nel file ZIP non c'è un progetto (manca progetto.json)")
+        if not src: raise ValueError(lingua.t("schermata.zip_senza_album"))
         formato.prepara_importato(src)
         for a in avvisi: print("importa ZIP:", a, flush=True)
         nome = nomi.nome_cartella(os.path.basename(src) if src != tmp else os.path.splitext(os.path.basename(zp))[0])
@@ -179,8 +179,8 @@ def importa_zip():
     finally: shutil.rmtree(tmp, ignore_errors=True)
 
 
-def scegli_cartella(msg="Scegli la cartella del progetto (quella con progetto.json)"):
-    return dialoghi.scegli_cartella(msg).strip()
+def scegli_cartella(msg=None):
+    return dialoghi.scegli_cartella(msg or lingua.t("schermata.scegli_cartella_album")).strip()
 
 
 def riavvia_programma():
@@ -240,7 +240,7 @@ class H(Gestore):
                 p = q["path"][0]; n = q["n"][0]
                 if p not in [x["path"] for x in progetti()] or "/" in n or "\\" in n or n in ("", ".", ".."): raise ValueError("no")      # solo un nome di file (anche con le barre di Windows)
                 with open(os.path.join(p, "_cache", "thumbs", n), "rb") as f: self.send(f.read(), "image/jpeg")
-            else: self.send({"errore": "non trovato"}, code=404)
+            else: self.send({"errore": lingua.t("sistema.non_trovato")}, code=404)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
     def do_POST(self):
@@ -248,23 +248,23 @@ class H(Gestore):
         try:
             d = self.corpo()
             if u.path == "/api/nuovo":
-                if str(d.get("foto") or "").strip(): RADICI.controlla(str(d["foto"]).strip(), "quella cartella delle foto")
+                if str(d.get("foto") or "").strip(): RADICI.controlla(str(d["foto"]).strip(), "cartella_foto")
                 self.send({"path": nuovo(d)})
             elif u.path == "/api/apri": self.send({"porta": apri(d["path"])})
             elif u.path == "/api/aggiungi":
                 p = scegli_cartella()
                 if not p: self.send({"annullato": True}); return
-                if not os.path.exists(os.path.join(p, "progetto.json")): raise ValueError("In quella cartella non c'è progetto.json: scegli la cartella del progetto")
+                if not os.path.exists(os.path.join(p, "progetto.json")): raise ValueError(lingua.t("schermata.cartella_senza_album"))
                 salva_registro(registro() + [p]); self.send({"path": p})
             elif u.path == "/api/scegli-foto":
-                p = scegli_cartella("Scegli la cartella con le foto del cliente"); RADICI.scelta(p); self.send({"path": p, "nome": nomi.nome_da_cartella(p)})
+                p = scegli_cartella(lingua.t("schermata.scegli_cartella_foto")); RADICI.scelta(p); self.send({"path": p, "nome": nomi.nome_da_cartella(p)})
             elif u.path == "/api/aggiorna": self.send({"ok": AGGIORNAMENTI.aggiorna()})
             elif u.path == "/api/ripristina": self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
             elif u.path == "/api/controlla": self.send(AGGIORNAMENTI.controlla())
             elif u.path == "/api/licenza/attiva": self.send(licenze.attiva(d.get("chiave")))   # chiave non valida: ValueError con il motivo (400)
             elif u.path == "/api/licenza/rimuovi": self.send(licenze.rimuovi())
             elif u.path == "/api/assistente":                  # solo l'utente, da questa pagina (gettone): nessuno strumento MCP passa di qui
-                if not isinstance(d.get("immagini"), bool): raise ValueError("immagini: vero o falso")
+                if not isinstance(d.get("immagini"), bool): raise ValueError(lingua.t("schermata.immagini_vero_falso"))
                 consenso_mcp.imposta(d["immagini"]); self.send(assistente())
             elif u.path == "/api/lingua":                     # T-206: la lingua scelta vale per tutto il programma (preferenze dell'utente)
                 lingua.imposta(d.get("lingua")); self.send(lingue())
@@ -275,11 +275,11 @@ class H(Gestore):
             elif u.path == "/api/cestino":
                 p = percorsi.reale(d["path"])                 # collegamenti e «..» risolti: deve essere davvero un progetto dentro la cartella dei progetti
                 if p == percorsi.reale(PROGETTI) or not percorsi.dentro(p, PROGETTI) or not os.path.isfile(os.path.join(p, "progetto.json")):
-                    raise ValueError("Solo i progetti creati qui si possono mettere nel Cestino")
+                    raise ValueError(lingua.t("schermata.solo_creati_qui"))
                 azioni.cestina(p); self.send({"ok": True})
-            elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel percorso")); self.send({"ok": True})
+            elif u.path == "/api/finder": azioni.mostra(RADICI.controlla(d["path"], "quel_percorso")); self.send({"ok": True})
             elif u.path == "/api/dialogo":                    # finestra di scelta chiesta da un editor, aperta nella finestra del programma (desktop.dialoghi.Ponte)
-                if not FINESTRA: raise ValueError("la finestra del programma non è aperta")
+                if not FINESTRA: raise ValueError(lingua.t("schermata.finestra_non_aperta"))
                 self.send({"percorsi": desktop_dialoghi.scegli(d.get("tipo"), d.get("messaggio"))})
             elif u.path == "/api/esci":
                 for pr, _ in EDITORS.values():                                   # prima di rispondere: chi riceve «ok» sa che gli editor sono già stati fermati
@@ -287,7 +287,7 @@ class H(Gestore):
                     except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
                 self.send({"ok": True})
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
-            else: self.send({"errore": "non trovato"}, code=404)
+            else: self.send({"errore": lingua.t("sistema.non_trovato")}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 

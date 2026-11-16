@@ -9,6 +9,8 @@ lunghezza limitata (sotto ci vanno ancora _cache/thumbs/<foto>, e Windows ha per
 import re
 import unicodedata
 
+from . import lingua
+
 LUNGHEZZA_NOME = 120                     # caratteri del nome di un progetto
 LUNGHEZZA_CARTELLA = 80                  # caratteri del nome di una cartella
 _VIETATI = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
@@ -24,9 +26,9 @@ def invisibile(ch):
 def nome_progetto(nome):
     """nome di un progetto pulito (spazi esterni tolti, forma NFC) o ValueError con un messaggio per l'utente"""
     nome = unicodedata.normalize("NFC", str(nome or "")).strip()
-    if not nome: raise ValueError("Scrivi il nome del progetto")
-    if len(nome) > LUNGHEZZA_NOME: raise ValueError(f"Il nome è troppo lungo: al massimo {LUNGHEZZA_NOME} caratteri")
-    if any(invisibile(c) for c in nome): raise ValueError("Il nome contiene caratteri non ammessi (a capo, tabulazioni o caratteri invisibili)")
+    if not nome: raise ValueError(lingua.t("progetto.nome_vuoto"))
+    if len(nome) > LUNGHEZZA_NOME: raise ValueError(lingua.t("progetto.nome_lungo", massimo=LUNGHEZZA_NOME))
+    if any(invisibile(c) for c in nome): raise ValueError(lingua.t("progetto.nome_caratteri"))
     return nome
 
 

@@ -28,14 +28,15 @@ import secrets
 import threading
 import time
 
-from .. import __version__
+from .. import __version__, lingua
 from ..piattaforma import cartelle
 from . import chiave as K
 from .chiave import ChiaveNonValida  # noqa: F401  (si usa come licenze.ChiaveNonValida)
 
 log = logging.getLogger("impaginatore.licenze")
 
-STATI = ("prova", "attiva", "scaduta", "revocata", "non valida")
+NON_VALIDA = "non valida"          # non tradotto: nome dello stato (identificativo che leggono il codice e le pagine, non un testo)
+STATI = ("prova", "attiva", "scaduta", "revocata", NON_VALIDA)
 QUI = os.path.dirname(os.path.abspath(__file__))
 FILE_TIER = os.path.join(QUI, "tier.json")
 FILE_REVOCHE = os.path.join(QUI, "revoche.json")      # elenco firmato delle revoche: lo aggiunge il rilascio (LICENZE.md); manca = nessuna revoca
@@ -86,14 +87,13 @@ def funzioni_sola_lettura():
 
 
 def nome_fascia(fascia):
-    if fascia == "laboratorio": return "Laboratorio"
-    return next(x["nome"] for x in tier()["tiers"] if x["id"] == fascia)
+    """nome della fascia («essenziale», «pro», «studio», «laboratorio») nella lingua in uso"""
+    return lingua.t("licenze.fascia_" + fascia)
 
 
 def fasce_con(funzione, senza_limite=False):
     """nomi delle fasce in vendita che comprendono la funzione (senza_limite: solo quelle dove non ha un tetto), es. «Pro e Studio»"""
-    nomi = [x["nome"] for x in tier()["tiers"] if (x["funzioni"].get(funzione) is True if senza_limite else x["funzioni"].get(funzione) not in (False, 0, None))]
-    return " e ".join([", ".join(nomi[:-1]), nomi[-1]] if len(nomi) > 1 else nomi)
+    return lingua.elenco([nome_fascia(x["id"]) for x in tier()["tiers"] if (x["funzioni"].get(funzione) is True if senza_limite else x["funzioni"].get(funzione) not in (False, 0, None))])
 
 
 # ---------------------------------------------------------------- file
@@ -125,9 +125,9 @@ def _verifica(testo):
         if k not in _VERIFICHE:
             if len(_VERIFICHE) > 64: _VERIFICHE.clear()
             try: _VERIFICHE[k] = K.decodifica(testo)
-            except K.ChiaveNonValida as e: _VERIFICHE[k] = str(e)
+            except K.ChiaveNonValida as e: _VERIFICHE[k] = (e.chiave, e.param)          # il testo si compone ogni volta: la lingua può cambiare
         r = _VERIFICHE[k]
-    if isinstance(r, str): raise K.ChiaveNonValida(r)
+    if isinstance(r, tuple): raise K.errore(r[0], **r[1])
     return dict(r)
 
 
@@ -186,36 +186,47 @@ def prova(adesso=None):
 
 
 # ---------------------------------------------------------------- stato
-MSG_SOLA_LETTURA = ("I progetti si aprono in sola lettura: puoi guardarli ed esportarli come progetto (cartella o ZIP), "
-                    "non modificarli né esportare JPG, PDF o PSD.")
-MSG_REVOCATA = ("Questa licenza non è più attiva, di solito dopo un rimborso o un passaggio a un'altra licenza. I tuoi progetti "
-                "restano apribili in sola lettura. Se pensi che sia un errore, scrivici.")
+def msg_sola_lettura():
+    return lingua.t("licenze.sola_lettura")
+
+
+def msg_revocata():
+    return lingua.t("licenze.revocata")
 
 
 def _problema(info, adesso):
     """(stato, motivo) se la chiave, pur firmata, non vale su questo programma oggi; None se vale"""
     v = info["versione_maggiore"]
-    if v > VERSIONE_MAGGIORE: return "non valida", f"Questa chiave è per Impaginatore {v}: aggiorna il programma per usarla."
-    if v < VERSIONE_MAGGIORE:
-        return "non valida", f"Questa chiave è per Impaginatore {v}. Per Impaginatore {VERSIONE_MAGGIORE} serve l'aggiornamento della licenza: trovi il prezzo scontato sul sito."
-    if info["seriale"] in revocate(): return "revocata", MSG_REVOCATA
+    if v > VERSIONE_MAGGIORE: return NON_VALIDA, lingua.t("licenze.chiave_piu_nuova", versione=v)
+    if v < VERSIONE_MAGGIORE: return NON_VALIDA, lingua.t("licenze.chiave_vecchia", versione=v, attuale=VERSIONE_MAGGIORE)
+    if info["seriale"] in revocate(): return "revocata", msg_revocata()
     if info["scade"] and _data(adesso).isoformat() > info["scade"]:
-        chi = f" intestata a «{info['intestatario']}»" if info["intestatario"] else ""
-        return "scaduta", f"La licenza {nome_fascia(info['fascia'])}{chi} è scaduta il {_it(info['scade'])}. {MSG_SOLA_LETTURA} Per rinnovarla rivolgiti a chi te l'ha fornita."
+        chi = " " + lingua.t("licenze.intestata_a", nome=info["intestatario"]) if info["intestatario"] else ""
+        return "scaduta", lingua.t("licenze.scaduta", fascia=nome_fascia(info["fascia"]), chi=chi, data=_it(info["scade"]), sola_lettura=msg_sola_lettura())
     return None
 
 
 def _msg_attiva(info):
-    chi = f", intestata a «{info['intestatario']}»," if info["intestatario"] else ""
-    coda = f" Vale fino al {_it(info['scade'])}." if info["scade"] else f" Tutti gli aggiornamenti della versione {info['versione_maggiore']} sono inclusi."
-    return f"Licenza {nome_fascia(info['fascia'])} attiva{chi} per {info['computer']} computer.{coda}"
+    chi = f", {lingua.t('licenze.intestata_a', nome=info['intestatario'])}," if info["intestatario"] else ""
+    coda = lingua.t("licenze.attiva_fino_al", data=_it(info["scade"])) if info["scade"] else lingua.t("licenze.attiva_aggiornamenti", versione=info["versione_maggiore"])
+    return lingua.t("licenze.attiva", fascia=nome_fascia(info["fascia"]), chi=chi, computer=lingua.tn("licenze.computer", info["computer"]), coda=coda)
+
+
+def _coda_orologio(pr):
+    """frase sull'orologio spostato indietro, con lo spazio davanti, o niente"""
+    return " " + lingua.t("licenze.orologio_indietro") if pr["orologio_indietro"] else ""
+
+
+def _dettaglio_prova(pr):
+    """«mancano 12 giorni (fino al 16/12/2026). Hai le funzioni del Pro…»: la frase della prova dopo i due punti"""
+    f = funzioni_di("prova"); t = tier()["prova"]
+    quando = lingua.t("licenze.prova_ultimo_giorno") if pr["giorni_rimasti"] <= 1 else lingua.t("licenze.prova_mancano", n=pr["giorni_rimasti"])
+    cosa = lingua.t("licenze.prova_cosa_" + ("psd" if f["export_psd_livelli"] else "senza_psd") + "_" + ("filigrana" if t["filigrana_export"] else "pulita"))
+    return lingua.t("licenze.prova_dettaglio", quando=quando, fine=_it(pr["fine"]), cosa=cosa)
 
 
 def _msg_prova(pr):
-    f = funzioni_di("prova"); t = tier()["prova"]
-    quando = "oggi è l'ultimo giorno" if pr["giorni_rimasti"] <= 1 else f"mancano {pr['giorni_rimasti']} giorni"
-    cosa = "Hai le funzioni del Pro" + ("" if f["export_psd_livelli"] else " tranne il PSD a livelli") + ("; le esportazioni JPG e PDF hanno una filigrana." if t["filigrana_export"] else ".")
-    return f"Prova gratuita: {quando} (fino al {_it(pr['fine'])}). {cosa}"
+    return lingua.t("licenze.prova", dettaglio=_dettaglio_prova(pr))
 
 
 def _senza_chiave(base, pr):
@@ -223,7 +234,7 @@ def _senza_chiave(base, pr):
     if pr["in_corso"]:
         return dict(base, stato="prova", sola_lettura=False, filigrana=bool(tier()["prova"]["filigrana_export"]), funzioni=funzioni_di("prova"), messaggio=_msg_prova(pr))
     return dict(base, stato="scaduta", sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(),
-                messaggio=f"La prova gratuita è finita il {_it(pr['fine'])}. {MSG_SOLA_LETTURA} Inserisci una chiave di licenza per continuare da dove eri.")
+                messaggio=lingua.t("licenze.prova_finita", fine=_it(pr["fine"]), sola_lettura=msg_sola_lettura()))
 
 
 def stato(adesso=None):
@@ -239,18 +250,18 @@ def stato(adesso=None):
         info = _verifica(testo)
         base.update({k: info[k] for k in ("fascia", "intestatario", "computer", "seriale", "emessa", "scade", "impronta", "omaggio", "beta")}, nome_fascia=nome_fascia(info["fascia"]))
         problema = _problema(info, adesso)
-    except K.ChiaveNonValida as e: problema = ("non valida", str(e))
+    except K.ChiaveNonValida as e: problema = (NON_VALIDA, str(e))
     if problema is None: return dict(base, stato="attiva", sola_lettura=False, filigrana=False, funzioni=funzioni_di(info["fascia"]), messaggio=_msg_attiva(info))
     tipo, motivo = problema
-    if tipo != "non valida": return dict(base, stato=tipo, sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(), messaggio=motivo, motivo=motivo)
+    if tipo != NON_VALIDA: return dict(base, stato=tipo, sola_lettura=True, filigrana=False, funzioni=funzioni_sola_lettura(), messaggio=motivo, motivo=motivo)
     s = _orologio(_senza_chiave(base, pr))
-    seguito = f"Intanto vale la prova gratuita: {s['messaggio'][len('Prova gratuita: '):]}" if s["stato"] == "prova" else MSG_SOLA_LETTURA
-    return dict(s, stato="non valida", motivo=motivo, messaggio=f"La chiave salvata non vale. {motivo} {seguito}")
+    seguito = lingua.t("licenze.intanto_la_prova", dettaglio=_dettaglio_prova(pr) + _coda_orologio(pr)) if s["stato"] == "prova" else msg_sola_lettura()
+    return dict(s, stato=NON_VALIDA, motivo=motivo, messaggio=lingua.t("licenze.chiave_non_vale", motivo=motivo, seguito=seguito))
 
 
 def _orologio(s):
     if s["prova"]["orologio_indietro"] and s["stato"] in ("prova", "scaduta"):
-        s["messaggio"] += " L'orologio del computer è indietro rispetto all'ultimo uso: per la prova conta la data più recente."
+        s["messaggio"] += _coda_orologio(s["prova"])
     return s
 
 
@@ -288,21 +299,21 @@ def limite(funzione, st=None):
     return None if v is True else 0 if v is False else int(v)
 
 
-NOMI_FUNZIONI = {
-    "editor_completo": "La modifica degli album", "export_jpg": "L'esportazione JPG", "export_pdf": "L'esportazione PDF",
-    "export_psd_livelli": "Il PSD a livelli", "impaginazione_automatica_album": "L'impaginazione automatica dell'album",
-    "correzione_spaziature_album": "La correzione degli spazi su tutto l'album", "uniformita_tono": "Il controllo del tono dell'album",
-    "modelli_personali": "Il salvataggio dei modelli personali", "server_mcp": "Il collegamento con l'assistente AI (MCP)",
-}
+FUNZIONI_CON_NOME = frozenset(("editor_completo", "export_jpg", "export_pdf", "export_psd_livelli", "impaginazione_automatica_album",
+                               "correzione_spaziature_album", "uniformita_tono", "modelli_personali", "server_mcp"))     # nomi in licenze.funzione_<id>
+
+
+def nome_funzione(funzione):
+    """nome della funzione per l'utente, con l'articolo («Il PSD a livelli»)"""
+    return lingua.t("licenze.funzione_" + funzione) if funzione in FUNZIONI_CON_NOME else lingua.t("licenze.funzione_ignota", funzione=funzione)
 
 
 def motivo(funzione, st=None):
     """frase per l'utente: perché la funzione non c'è e dove si trova"""
     st = st or stato()
-    if st["sola_lettura"]: return f"Impaginatore è in sola lettura. {st['messaggio']}"
-    nome = NOMI_FUNZIONI.get(funzione, f"La funzione «{funzione}»")
-    dove = "della prova gratuita" if st["stato"] in ("prova", "non valida") else f"della licenza {st['nome_fascia']}"
-    return f"{nome} non fa parte {dove}: c'è nelle licenze {fasce_con(funzione)}."
+    if st["sola_lettura"]: return lingua.t("licenze.motivo_sola_lettura", messaggio=st["messaggio"])
+    dove = lingua.t("licenze.dove_prova") if st["stato"] in ("prova", NON_VALIDA) else lingua.t("licenze.dove_licenza", fascia=st["nome_fascia"])
+    return lingua.t("licenze.motivo", funzione=nome_funzione(funzione), dove=dove, fasce=fasce_con(funzione))
 
 
 OP_SENZA_MODIFICHE = frozenset({"copia"})                 # appunti dell'editor: non cambiano il progetto
@@ -347,7 +358,7 @@ def controlla_modelli(azione, quanti):
     st = stato(); n = limite("modelli_personali", st)
     if n == 0: raise NonConsentita(motivo("modelli_personali", st))
     if n is not None and quanti >= n:
-        raise NonConsentita(f"La licenza {st['nome_fascia']} comprende {n} modelli personali: per salvarne un altro eliminane uno. Nelle licenze {fasce_con('modelli_personali', senza_limite=True)} sono illimitati.")
+        raise NonConsentita(lingua.tn("licenze.modelli_al_limite", n, fascia=st["nome_fascia"], fasce=fasce_con("modelli_personali", senza_limite=True)))
 
 
 def controlla_lettura(percorso):

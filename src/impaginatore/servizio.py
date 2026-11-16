@@ -104,23 +104,23 @@ class Gestore(BaseHTTPRequestHandler):
     def controlla(self):
         """solleva Rifiuto se la richiesta non deve passare"""
         h, gettone = self.headers, self.server.sessione.gettone
-        if (h.get("Host") or "").lower() not in self._origini(): raise Rifiuto(403, "indirizzo non valido")                   # DNS rebinding
+        if (h.get("Host") or "").lower() not in self._origini(): raise Rifiuto(403, lingua.t("sistema.indirizzo_non_valido"))                   # DNS rebinding
         sito = h.get("Sec-Fetch-Site")
         if sito and sito not in (("same-origin", "same-site", "none") if self.command == "GET" and self._navigazione() else ("same-origin", "none")):
-            raise Rifiuto(403, "richiesta da un altro sito")
+            raise Rifiuto(403, lingua.t("sistema.altro_sito"))
         o = h.get("Origin")
-        if o is not None and o.lower() not in {"http://" + x for x in self._origini()}: raise Rifiuto(403, "richiesta da un'altra origine")
+        if o is not None and o.lower() not in {"http://" + x for x in self._origini()}: raise Rifiuto(403, lingua.t("sistema.altra_origine"))
         p = urlparse(self.path).path
         if self.command == "GET" and p in ("/avvio", "/favicon.ico"): return                       # il codice monouso si controlla nella risposta; l'icona non c'è
         if not sicurezza.uguali(h.get(sicurezza.INTESTAZIONE), gettone):
             if not (self.command == "GET" and (p in self.COOKIE or p.startswith(self.COOKIE_PREFISSI + (STATICI,)))
                     and sicurezza.uguali(self._cookie(), sicurezza.valore_cookie(gettone, self.server.server_address[1]))):
-                raise Rifiuto(401, "non autorizzato")
+                raise Rifiuto(401, lingua.t("sistema.non_autorizzato"))
         if self.command == "POST":
-            if (h.get("Content-Type") or "").split(";")[0].strip().lower() != "application/json": raise Rifiuto(415, "il corpo deve essere JSON")
+            if (h.get("Content-Type") or "").split(";")[0].strip().lower() != "application/json": raise Rifiuto(415, lingua.t("sistema.corpo_json"))
             n = h.get("Content-Length")
-            if h.get("Transfer-Encoding") or n is None or not (n.isascii() and n.isdigit()): raise Rifiuto(411, "manca la lunghezza del corpo")      # «²» è isdigit() ma non un numero (VER-012)
-            if len(n) > 18 or int(n) > sicurezza.MAX_CORPO: raise Rifiuto(413, "richiesta troppo grande")
+            if h.get("Transfer-Encoding") or n is None or not (n.isascii() and n.isdigit()): raise Rifiuto(411, lingua.t("sistema.manca_lunghezza"))      # «²» è isdigit() ma non un numero (VER-012)
+            if len(n) > 18 or int(n) > sicurezza.MAX_CORPO: raise Rifiuto(413, lingua.t("sistema.richiesta_troppo_grande"))
 
     def parse_request(self):
         if not super().parse_request(): return False
@@ -131,7 +131,7 @@ class Gestore(BaseHTTPRequestHandler):
             self.rifiuta(r.codice, str(r)); return False
         except ValueError as e:                    # richiesta malformata (percorso, intestazioni): risposta ordinata, mai una connessione chiusa (VER-012)
             log.info("richiesta non valida (%s): %s", type(e).__name__, self.command)
-            self.rifiuta(400, "richiesta non valida"); return False
+            self.rifiuta(400, lingua.t("sistema.richiesta_non_valida")); return False
         if self.command == "GET" and u.path == "/avvio": self._avvio(parse_qs(u.query)); return False
         if self.command == "GET" and u.path == "/favicon.ico":                                     # il browser la chiede da solo: niente icona, niente errore
             self.send_response(204); self.send_header("Cache-Control", "max-age=86400"); self.end_headers(); return False
@@ -148,7 +148,7 @@ class Gestore(BaseHTTPRequestHandler):
 
     def _avvio(self, q):
         """codice valido: cookie (derivato, VER-006) e pagina che consegna il gettone alla scheda, poi apre /"""
-        if not self.server.sessione.usa((q.get("c") or [""])[0]): self.rifiuta(401, "indirizzo di avvio non valido o già usato"); return
+        if not self.server.sessione.usa((q.get("c") or [""])[0]): self.rifiuta(401, lingua.t("sistema.avvio_non_valido")); return
         porta, nonce = self.server.server_address[1], secrets.token_urlsafe(18); g = self.server.sessione.gettone
         b = sicurezza.pagina_avvio(g, nonce).encode("utf-8"); self._csp = sicurezza.csp(nonce)
         self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
@@ -185,7 +185,7 @@ class Gestore(BaseHTTPRequestHandler):
         """file statico delle pagine (token della marca, caratteri, licenze dei caratteri): solo quelli di
         risorse.statici(), con l'impronta per non riscaricarli (304) finché non cambiano"""
         tipo = risorse.statici().get(nome)
-        if tipo is None: self.json({"errore": "non trovato"}, 404); return
+        if tipo is None: self.json({"errore": lingua.t("sistema.non_trovato")}, 404); return
         b = risorse.leggi(os.path.join("statici", nome)); et = '"%s"' % hashlib.sha256(b).hexdigest()[:20]
         if self.headers.get("If-None-Match") == et:
             self.send_response(304); self.send_header("ETag", et); self.end_headers(); return
@@ -195,7 +195,7 @@ class Gestore(BaseHTTPRequestHandler):
     def corpo(self):
         """corpo JSON della richiesta POST (un oggetto; {} se vuoto), letto con leggi_json. La misura l'ha già controllata controlla()"""
         d = leggi_json(self.rfile.read(int(self.headers["Content-Length"])) or b"{}")
-        if not isinstance(d, dict): raise ValueError("il corpo deve essere un oggetto JSON")
+        if not isinstance(d, dict): raise ValueError(lingua.t("sistema.corpo_oggetto"))
         return d
 
 
@@ -203,12 +203,12 @@ class RichiestaNonValida(ValueError):
     """parametro di una richiesta GET fuori misura o non numerico: i server rispondono 400"""
 
 
-def _costante(v): raise ValueError(f"valore non ammesso nel JSON: {v}")
+def _costante(v): raise ValueError(lingua.t("sistema.json_valore_non_ammesso", valore=v))
 
 
 def _decimale(s):
     v = float(s)
-    if not math.isfinite(v): raise ValueError(f"numero troppo grande nel JSON: {s[:20]}")
+    if not math.isfinite(v): raise ValueError(lingua.t("sistema.json_numero_grande", numero=s[:20]))
     return v
 
 
@@ -217,7 +217,7 @@ def leggi_json(dati):
     (1e400). Sono valori che nessun progetto può salvare: si rifiutano qui, prima di arrivare allo stato (VER-001).
     Errori: sempre ValueError"""
     try: return json.loads(dati, parse_constant=_costante, parse_float=_decimale)
-    except RecursionError: raise ValueError("JSON troppo annidato") from None
+    except RecursionError: raise ValueError(lingua.t("sistema.json_annidato")) from None
 
 
 def numero(q, nome, predefinito, minimo, massimo, intero=False):
@@ -225,6 +225,6 @@ def numero(q, nome, predefinito, minimo, massimo, intero=False):
     un valore che non è un numero (o NaN, infinito) è una RichiestaNonValida"""
     t = (q.get(nome) or [str(predefinito)])[0]
     try: v = int(t) if intero else float(t)
-    except ValueError: raise RichiestaNonValida(f"{nome}: non è un numero") from None
-    if not math.isfinite(v): raise RichiestaNonValida(f"{nome}: non è un numero finito")
+    except ValueError: raise RichiestaNonValida(lingua.t("sistema.parametro_non_numero", nome=nome)) from None
+    if not math.isfinite(v): raise RichiestaNonValida(lingua.t("sistema.parametro_non_finito", nome=nome))
     return min(max(v, minimo), massimo)

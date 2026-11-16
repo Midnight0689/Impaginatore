@@ -19,7 +19,7 @@ import stat
 import tempfile
 import time
 
-from . import formato_1x
+from . import formato_1x, lingua
 from .validazione import FORMATO, PAGINE, ErroreProgetto
 from . import validazione as V
 
@@ -36,19 +36,19 @@ _CONTEGGI = {}                               # percorso -> (mtime, dimensione, n
 def leggi_json(path, massimo=MAX_JSON):
     """contenuto di un file JSON (UTF-8) non più grande di `massimo` byte"""
     with open(path, "rb") as f: dati = f.read(massimo + 1)
-    if len(dati) > massimo: raise ErroreProgetto(f"{os.path.basename(path)} è troppo grande ({len(dati) // 2**20} MB)")
+    if len(dati) > massimo: raise ErroreProgetto(lingua.t("progetto.file_troppo_grande", nome=os.path.basename(path), mb=len(dati) // 2**20))
     return json.loads(dati.decode("utf-8-sig"))
 
 
 def _coppie(coppie):
     d = {}
     for k, v in coppie:
-        if k in d: raise ValueError(f"la chiave «{k}» compare due volte")
+        if k in d: raise ValueError(lingua.t("progetto.chiave_doppia", nome=k))
         d[k] = v
     return d
 
 
-def _costante(v): raise ValueError(f"valore non ammesso: {v}")
+def _costante(v): raise ValueError(lingua.t("progetto.valore_non_ammesso", valore=v))
 
 
 def leggi_json_rigoroso(path, massimo=MAX_ALBUM):
@@ -57,11 +57,11 @@ def leggi_json_rigoroso(path, massimo=MAX_ALBUM):
     nome = os.path.basename(path)
     try:
         with open(path, "rb") as f: dati = f.read(massimo + 1)
-        if len(dati) > massimo: raise ErroreProgetto(f"{nome} è troppo grande (al massimo {massimo // 2**20} MB)")
+        if len(dati) > massimo: raise ErroreProgetto(lingua.t("progetto.file_troppo_grande_max", nome=nome, mb=massimo // 2**20))
         return json.loads(dati.decode("utf-8"), object_pairs_hook=_coppie, parse_constant=_costante)
-    except UnicodeDecodeError as e: raise ErroreProgetto(f"{nome} non è un testo UTF-8 (byte {e.start})") from None
-    except json.JSONDecodeError as e: raise ErroreProgetto(f"{nome} non è un JSON valido (riga {e.lineno}, colonna {e.colno}: {e.msg})") from None
-    except (ValueError, RecursionError) as e: raise ErroreProgetto(f"{nome} non è valido: {e}") from None
+    except UnicodeDecodeError as e: raise ErroreProgetto(lingua.t("progetto.file_non_utf8", nome=nome, byte=str(e.start))) from None
+    except json.JSONDecodeError as e: raise ErroreProgetto(lingua.t("progetto.file_non_json", nome=nome, riga=str(e.lineno), colonna=str(e.colno), motivo=e.msg)) from None
+    except (ValueError, RecursionError) as e: raise ErroreProgetto(lingua.t("progetto.file_non_valido", nome=nome, motivo=str(e))) from None
 
 
 def scrivi_atomico(path, testo):
@@ -210,7 +210,7 @@ def testo_album_controllato(spreads, nome_foto):
     """album.json come testo per l'impaginazione `spreads`, con i controlli della lettura (validazione.album). Un elemento
     rotto (chiavi mancanti, tipi sbagliati) è un ErroreProgetto, non un'eccezione qualsiasi"""
     try: doc = documento(spreads, nome_foto)
-    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e: raise ErroreProgetto(f"un elemento dell'impaginazione non è valido ({e!r})") from None
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e: raise ErroreProgetto(lingua.t("progetto.elemento_non_valido", dettaglio=repr(e))) from None
     V.album(doc)
     return testo_album(doc)
 
@@ -221,7 +221,7 @@ def testo_progetto(cfg):
     try: t = json.dumps(cfg, indent=2, ensure_ascii=False, allow_nan=False)
     except (TypeError, ValueError, RecursionError) as e:
         V.progetto(cfg)                           # NaN o infinito in una chiave nota: il messaggio dice quale
-        raise ErroreProgetto(f"{PROGETTO}: un valore non si può salvare ({e})") from None
+        raise ErroreProgetto(lingua.t("progetto.valore_non_salvabile", file=PROGETTO, dettaglio=str(e))) from None
     V.progetto(json.loads(t))
     return t
 
@@ -281,13 +281,13 @@ def documento_1x(path):
     spreads = formato_1x.leggi_file(path)
 
     def nome_foto(i):
-        if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(A.M): raise ErroreProgetto(f"spec.py: la foto numero {i + 1 if isinstance(i, int) else i} non esiste nel progetto")
+        if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(A.M): raise ErroreProgetto(lingua.t("progetto.spec_foto_inesistente", numero=str(i + 1 if isinstance(i, int) else i)))
         return A.name(i)
     try: doc = documento(spreads, nome_foto)
     except ErroreProgetto: raise
-    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e: raise ErroreProgetto(f"spec.py: un elemento non è valido ({e!r})") from None
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e: raise ErroreProgetto(lingua.t("progetto.spec_elemento_non_valido", dettaglio=repr(e))) from None
     try: return V.album(doc, set(A.IDX))
-    except ErroreProgetto as e: raise ErroreProgetto(f"spec.py non valido: {e}") from None
+    except ErroreProgetto as e: raise ErroreProgetto(lingua.t("progetto.spec_non_valido", motivo=str(e))) from None
 
 
 def converti_1x(cartella):
@@ -331,7 +331,7 @@ def leggi_progetto(cartella):
     """progetto.json controllato (validazione.progetto)"""
     p = os.path.join(cartella, PROGETTO)
     try: cfg = leggi_json(p)
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as e: raise ErroreProgetto(f"{PROGETTO} non è un JSON valido ({e})") from None
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as e: raise ErroreProgetto(lingua.t("progetto.progetto_non_json", file=PROGETTO, dettaglio=str(e))) from None
     return V.progetto(cfg)
 
 

@@ -14,6 +14,7 @@ import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista
 import sys
 import time
 
+from .. import lingua
 from ..piattaforma import processi
 from . import Aggiornamenti
 
@@ -81,21 +82,21 @@ class Git(Aggiornamenti):
     def aggiorna(self):
         """pull + ambiente + riavvio del programma (i progetti sono già salvati: l'editor salva da solo)"""
         r = self._git("pull", "--ff-only", t=120)
-        if r.returncode != 0: raise ValueError("Aggiornamento non riuscito: " + (r.stderr or r.stdout)[:300])
+        if r.returncode != 0: raise ValueError(lingua.t("sistema.agg_non_riuscito", dettaglio=(r.stderr or r.stdout)[:300]))
         self.prepara_ambiente()
         self.riavvia()
         return True
 
     def ripristina(self, codice):
-        if not re.fullmatch(r"[0-9a-f]{7,40}", codice or ""): raise ValueError("versione non valida")
+        if not re.fullmatch(r"[0-9a-f]{7,40}", codice or ""): raise ValueError(lingua.t("sistema.agg_versione_non_valida"))
         if self._git("cat-file", "-e", f"{codice}:{INIT}").returncode != 0:
-            raise ValueError("Questa versione è precedente alla 2.0 (altra struttura e altro installatore): non si può ripristinare da qui")
-        if self._git("status", "--porcelain", "--untracked-files=no").stdout.strip(): raise ValueError("Ci sono modifiche del programma non ancora salvate: chiedi a Claude di salvarle prima")
+            raise ValueError(lingua.t("sistema.agg_precedente"))
+        if self._git("status", "--porcelain", "--untracked-files=no").stdout.strip(): raise ValueError(lingua.t("sistema.agg_modifiche_non_salvate"))
         n = self._git("rev-list", "--count", codice).stdout.strip()
-        if self._git("read-tree", "-u", "--reset", codice).returncode != 0: raise ValueError("Ripristino non riuscito")
-        self._git("-c", "user.name=Impaginatore", "-c", "user.email=impaginatore@local", "commit", "-q", "--allow-empty", "-m", f"Ripristino alla versione {n} ({codice})")
+        if self._git("read-tree", "-u", "--reset", codice).returncode != 0: raise ValueError(lingua.t("sistema.agg_ripristino_non_riuscito"))
+        self._git("-c", "user.name=Impaginatore", "-c", "user.email=impaginatore@local", "commit", "-q", "--allow-empty", "-m", f"Ripristino alla versione {n} ({codice})")          # non tradotto: messaggio del commit, resta nella storia di git e non si mostra all'utente
         p = self._git("push", "-q", t=60)
         err = self.prepara_ambiente()
-        if err: raise ValueError("Versione ripristinata, ma l'ambiente Python non è pronto (" + err + "). Il programma resta com'è: reinstallalo per sistemarlo.")
+        if err: raise ValueError(lingua.t("sistema.agg_ambiente_non_pronto", dettaglio=err))
         self.riavvia()
         return dict(n=n, caricato=p.returncode == 0)

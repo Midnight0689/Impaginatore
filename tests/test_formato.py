@@ -263,7 +263,7 @@ def test_album_json_non_valido(doc, messaggio):
 
 
 def test_foto_che_non_ci_sono(tmp_path):
-    with pytest.raises(validazione.ErroreProgetto, match="la foto «H01» non è nel progetto"): validazione.album(_doc(P0), foto={"H02"})
+    with pytest.raises(validazione.ErroreProgetto, match="la foto «H01» non è nell'album"): validazione.album(_doc(P0), foto={"H02"})
     validazione.album(_doc(P0), foto={"H01"})
 
 

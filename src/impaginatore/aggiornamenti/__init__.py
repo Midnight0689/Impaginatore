@@ -18,7 +18,7 @@ Le richieste che cambiano il programma (aggiorna, ripristina) arrivano solo dall
 import os
 import shutil
 
-from .. import __version__
+from .. import __version__, lingua
 
 
 class Aggiornamenti:
@@ -54,12 +54,17 @@ class Aggiornamenti:
 class NonDisponibili(Aggiornamenti):
     """nessun aggiornamento automatico: mostra la versione installata e lo dice"""
 
-    def __init__(self, motivo="Aggiornamenti automatici non disponibili in questa installazione"):
-        self.motivo = motivo
+    def __init__(self, chiave="sistema.agg_non_disponibili"):
+        self.chiave = chiave
+
+    @property
+    def motivo(self):
+        """perché non ci sono aggiornamenti, nella lingua in uso (si compone a ogni richiesta)"""
+        return lingua.t(self.chiave)
 
     def stato(self):
         return dict(da_aggiornare=False, novita=[], controllato=0, errore="", disponibile=False, motivo=self.motivo, ultima=None,      # non è un errore: la pagina mostra il motivo
-                    attuale=dict(n=__version__, codice="", data="", titolo="versione installata", rel=__version__))
+                    attuale=dict(n=__version__, codice="", data="", titolo=lingua.t("sistema.agg_versione_installata"), rel=__version__))
 
     def controlla(self): return self.stato()
 
@@ -75,7 +80,7 @@ class NonDisponibili(Aggiornamenti):
 def predefiniti(riavvia=None):
     """aggiornamenti adatti a come è installato il programma; riavvia() viene chiamata dopo un aggiornamento riuscito"""
     if os.environ.get("IMPAGINATORE_AGGIORNAMENTI", "").strip().lower() in ("no", "0", "off", "false"):
-        return NonDisponibili("Aggiornamenti automatici spenti (IMPAGINATORE_AGGIORNAMENTI)")
+        return NonDisponibili("sistema.agg_spenti")
     from ..piattaforma import cartelle
     radice = cartelle.radice_checkout()
     if radice and shutil.which("git"):

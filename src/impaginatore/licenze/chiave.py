@@ -28,7 +28,7 @@ import json
 import re
 from typing import NamedTuple
 
-from .. import ed25519
+from .. import ed25519, lingua
 
 PREFISSO = "IMP1-"
 DOMINIO_LICENZA = b"IMPAGINATORE-LICENZA-v1\x00"
@@ -62,20 +62,25 @@ CHIAVI_PUBBLICHE = {1: Pubblica(SEGNAPOSTO)}
 
 
 class ChiaveNonValida(ValueError):
-    """la chiave non si può usare: il messaggio è per l'utente"""
+    """la chiave non si può usare: il messaggio è per l'utente. Se nasce da una chiave della tabella (errore()), la tiene
+    con i suoi parametri: chi mette il verdetto in una cache lo ricompone nella lingua del momento"""
+
+    def __init__(self, testo, chiave=None, param=None):
+        super().__init__(testo); self.chiave, self.param = chiave, param or {}
 
 
-MSG_INCOMPLETA = ("La chiave è incompleta: forse manca un pezzo. Copiala di nuovo dall'email, per intero, oppure usa il "
-                  "pulsante «Attiva in Impaginatore» dell'email.")
+def errore(chiave, **param):
+    """ChiaveNonValida con il testo della chiave nella lingua in uso"""
+    return ChiaveNonValida(lingua.t(chiave, **param), chiave, param)
 
 
 def problemi_per_il_rilascio(pubbliche=None):
     """elenco dei motivi per cui queste chiavi pubbliche non vanno in un rilascio (vuoto = pronte)"""
     pubbliche = CHIAVI_PUBBLICHE if pubbliche is None else pubbliche
-    if not pubbliche: return ["nessuna chiave pubblica di firma"]
+    if not pubbliche: return ["nessuna chiave pubblica di firma"]          # non tradotto: lo legge chi prepara il rilascio, non l'utente
     out = []
     for i, p in sorted(pubbliche.items()):
-        if _bytes_pubblica(p) is None: out.append(f"la chiave pubblica {i} è un segnaposto o non è valida: {p.esadecimale[:24]}…")
+        if _bytes_pubblica(p) is None: out.append(f"la chiave pubblica {i} è un segnaposto o non è valida: {p.esadecimale[:24]}…")          # non tradotto: lo legge chi prepara il rilascio
     return out
 
 
@@ -89,15 +94,15 @@ def _bytes_pubblica(p):
 def da_testo(testo):
     """byte della chiave (payload e firma) dal testo incollato: maiuscole o minuscole, spazi, a capo e trattini non contano;
     vale anche il link impaginatore://attiva?chiave=…"""
-    if not isinstance(testo, str) or not testo.strip(): raise ChiaveNonValida("Incolla la chiave che hai ricevuto per email: inizia con IMP1-.")
-    if len(testo) > MAX_TESTO: raise ChiaveNonValida("Il testo incollato è troppo lungo per essere una chiave: copia solo la chiave, che inizia con IMP1-.")
+    if not isinstance(testo, str) or not testo.strip(): raise errore("licenze.chiave_vuota")
+    if len(testo) > MAX_TESTO: raise errore("licenze.chiave_troppo_lunga")
     t = re.sub(r"[\s\-]", "", testo.strip().upper())
     if t.startswith(LINK): t = t[len(LINK):]
-    if not t.startswith(PREFISSO[:-1]): raise ChiaveNonValida("Questa non è una chiave di Impaginatore: la chiave inizia con IMP1-.")
+    if not t.startswith(PREFISSO[:-1]): raise errore("licenze.chiave_non_di_impaginatore")
     corpo = t[len(PREFISSO) - 1:]
-    if not re.fullmatch(r"[A-Z2-7]+", corpo): raise ChiaveNonValida("La chiave contiene caratteri che non ci vanno: copiala di nuovo dall'email, per intero.")
+    if not re.fullmatch(r"[A-Z2-7]+", corpo): raise errore("licenze.chiave_caratteri")
     try: return base64.b32decode(corpo + "=" * (-len(corpo) % 8))
-    except binascii.Error: raise ChiaveNonValida(MSG_INCOMPLETA) from None
+    except binascii.Error: raise errore("licenze.chiave_incompleta") from None
 
 
 def in_testo(dati):
@@ -115,24 +120,24 @@ def decodifica(testo, pubbliche=None):
     Non guarda revoche, versione e scadenza: sono stati della licenza, non difetti della chiave (licenze.stato)"""
     pubbliche = CHIAVI_PUBBLICHE if pubbliche is None else pubbliche
     dati = da_testo(testo)
-    if len(dati) < 13 + 64: raise ChiaveNonValida(MSG_INCOMPLETA)
+    if len(dati) < 13 + 64: raise errore("licenze.chiave_incompleta")
     payload, firma = dati[:-64], dati[-64:]
-    if payload[0] not in FORMATI: raise ChiaveNonValida("Questa chiave è di un tipo più recente di questa versione di Impaginatore: aggiorna il programma.")
+    if payload[0] not in FORMATI: raise errore("licenze.chiave_tipo_recente")
     n = payload[12]
     coda = 2 if payload[0] == 2 else 0
-    if n > MAX_INTESTATARIO or len(payload) != 13 + n + coda: raise ChiaveNonValida(MSG_INCOMPLETA)
+    if n > MAX_INTESTATARIO or len(payload) != 13 + n + coda: raise errore("licenze.chiave_incompleta")
     p = pubbliche.get(payload[1])
-    if p is None: raise ChiaveNonValida(f"Questa chiave è firmata con una chiave che questa versione di Impaginatore non conosce (n. {payload[1]}): aggiorna il programma o scrivi al supporto.")
+    if p is None: raise errore("licenze.chiave_firma_sconosciuta", numero=payload[1])
     pub = _bytes_pubblica(p)
-    if pub is None: raise ChiaveNonValida("Questa copia di Impaginatore è una versione di sviluppo, senza la chiave pubblica di produzione: non può verificare le chiavi di licenza. Vale la prova gratuita.")
+    if pub is None: raise errore("licenze.chiave_versione_di_sviluppo")
     if not ed25519.verifica(pub, DOMINIO_LICENZA + payload, firma):
-        raise ChiaveNonValida("Questa chiave non è valida: il contenuto non corrisponde alla firma. Copiala di nuovo dall'email, per intero; se il problema resta, scrivi al supporto.")
-    if payload[2] not in FASCE or payload[5] & ~FLAG_NOTI: raise ChiaveNonValida("Questa chiave è per una licenza che questa versione di Impaginatore non conosce: aggiorna il programma.")
+        raise errore("licenze.chiave_firma_non_corrisponde")
+    if payload[2] not in FASCE or payload[5] & ~FLAG_NOTI: raise errore("licenze.chiave_licenza_sconosciuta")
     emessa = _data(int.from_bytes(payload[10:12], "big"))
     if p.emesse_fino and emessa > p.emesse_fino:
-        raise ChiaveNonValida("Questa chiave è stata firmata con una chiave di firma ritirata: scrivi al supporto, ti mandiamo gratis una chiave nuova.")
+        raise errore("licenze.chiave_firma_ritirata")
     try: intestatario = payload[13:13 + n].decode("utf-8")
-    except UnicodeDecodeError: raise ChiaveNonValida(MSG_INCOMPLETA) from None   # firmata così: solo un errore di chi l'ha emessa
+    except UnicodeDecodeError: raise errore("licenze.chiave_incompleta") from None   # firmata così: solo un errore di chi l'ha emessa
     return {
         "formato": payload[0],
         "id_firma": payload[1],
@@ -159,14 +164,14 @@ def revoche(corpo, pubbliche=None):
     """(seriali revocati, data dell'elenco) di un elenco firmato da chiavi.py; ValueError se il formato o la firma non vanno.
     Forma: {"formato": 1, "id_firma": n, "emessa": "…", "seriali": [interi], "firma": "<128 cifre esadecimali>"}"""
     pubbliche = CHIAVI_PUBBLICHE if pubbliche is None else pubbliche
-    if not isinstance(corpo, dict) or corpo.get("formato") != 1: raise ValueError("elenco delle revoche di un formato sconosciuto")
+    if not isinstance(corpo, dict) or corpo.get("formato") != 1: raise ValueError("elenco delle revoche di un formato sconosciuto")          # non tradotto: va solo nel registro (licenze.revocate)
     seriali, emessa, firma = corpo.get("seriali"), corpo.get("emessa"), corpo.get("firma")
     if not isinstance(seriali, list) or not all(isinstance(s, int) and not isinstance(s, bool) for s in seriali) or not isinstance(emessa, str) or not isinstance(firma, str):
-        raise ValueError("elenco delle revoche incompleto")
+        raise ValueError("elenco delle revoche incompleto")          # non tradotto: va solo nel registro (licenze.revocate)
     idf = corpo.get("id_firma")
     p = pubbliche.get(idf) if isinstance(idf, int) else None
     pub = _bytes_pubblica(p) if p is not None else None
     try: f = bytes.fromhex(firma)
     except ValueError: f = b""
-    if pub is None or not ed25519.verifica(pub, DOMINIO_REVOCHE + canonico(corpo), f): raise ValueError("firma dell'elenco delle revoche non valida")
+    if pub is None or not ed25519.verifica(pub, DOMINIO_REVOCHE + canonico(corpo), f): raise ValueError("firma dell'elenco delle revoche non valida")          # non tradotto: va solo nel registro (licenze.revocate)
     return set(seriali), emessa

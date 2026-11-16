@@ -94,7 +94,7 @@ def test_prova_gratuita_dalla_prima_apertura(licenza, ora):
     ora.t = T0 + 30 * GIORNO
     s = licenze.stato()
     assert (s["stato"], s["sola_lettura"], s["filigrana"]) == ("scaduta", True, False) and s["funzioni"] == licenze.funzioni_sola_lettura()
-    assert s["messaggio"].startswith("La prova gratuita è finita il 16/12/2026. I progetti si aprono in sola lettura")
+    assert s["messaggio"].startswith("La prova gratuita è finita il 16/12/2026. Gli album si aprono in sola lettura")
 
 
 def test_la_prova_non_si_allunga_spostando_indietro_l_orologio(licenza, ora):
@@ -162,7 +162,7 @@ def test_chiave_manomessa_vale_la_prova(licenza, ora):
     ora.t = T0 + 40 * GIORNO
     s = licenze.stato()
     assert s["stato"] == "non valida" and s["sola_lettura"] and s["funzioni"] == licenze.funzioni_sola_lettura()
-    assert s["messaggio"] == f"La chiave salvata non vale. {s['motivo']} {licenze.MSG_SOLA_LETTURA}"
+    assert s["messaggio"] == f"La chiave salvata non vale. {s['motivo']} {licenze.msg_sola_lettura()}"
 
 
 @pytest.mark.parametrize("versione,attesa", [(3, "Questa chiave è per Impaginatore 3: aggiorna il programma per usarla."),
@@ -178,7 +178,7 @@ def test_chiave_revocata_con_l_aggiornamento(licenza, ora, revoche):
     assert licenze.revocate() == frozenset(), "senza elenco nel pacchetto non c'è nessuna revoca"
     revoche(licenza.chiavi.revoche([1, 7]))
     s = licenze.stato()
-    assert (s["stato"], s["sola_lettura"], s["messaggio"]) == ("revocata", True, licenze.MSG_REVOCATA) and s["funzioni"] == licenze.funzioni_sola_lettura()
+    assert (s["stato"], s["sola_lettura"], s["messaggio"]) == ("revocata", True, licenze.msg_revocata()) and s["funzioni"] == licenze.funzioni_sola_lettura()
     assert licenze.revocate() is licenze.revocate(), "l'elenco si legge una volta per versione del file"
     with pytest.raises(K.ChiaveNonValida, match="non è più attiva"): licenze.attiva(licenza.chiavi.studio)
     revoche(licenza.chiavi.revoche([7]))                                         # togli-revoca: torna valida con il rilascio successivo
@@ -203,7 +203,7 @@ def test_licenza_a_scadenza(licenza, ora):
     ora.t = dt.datetime(2026, 12, 31, 23, 0).timestamp(); assert licenze.stato()["stato"] == "attiva"
     ora.t = dt.datetime(2027, 1, 1, 9, 0).timestamp(); s = licenze.stato()
     assert (s["stato"], s["sola_lettura"]) == ("scaduta", True)
-    assert s["messaggio"].startswith("La licenza Laboratorio intestata a «Lab Bianchi» è scaduta il 31/12/2026. I progetti si aprono in sola lettura")
+    assert s["messaggio"].startswith("La licenza Laboratorio intestata a «Lab Bianchi» è scaduta il 31/12/2026. Gli album si aprono in sola lettura")
     licenza.usa(licenza.chiavi.chiave(fascia="laboratorio", intestatario="", scadenza="2026-12-31"))
     assert licenze.stato()["messaggio"].startswith("La licenza Laboratorio è scaduta il 31/12/2026.")
     with pytest.raises(K.ChiaveNonValida, match="è scaduta"): licenze.attiva(licenza.chiavi.chiave(fascia="laboratorio", scadenza="2026-12-31"))
