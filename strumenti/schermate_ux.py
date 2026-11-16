@@ -74,6 +74,8 @@ SCENE_HOME = {
     "home-menu": "document.querySelectorAll('#grid .riga')[0].focus(); document.querySelector('#grid .riga [data-a=altro]').click()",
     "home-assistente": "apriAssistente()",
     "home-lingua": "apriLingua()",
+    # «Nuovo album» da un prodotto del catalogo Generico (T-208): il prodotto dà formato e abbondanza
+    "home-prodotto": "openNew(); cataloghi().then(() => { const s = document.getElementById('prod'); s.value = 'generico/orizzontale-30x22'; prodotto(); })",
     "home-cestino": "document.querySelectorAll('#grid .riga')[1].focus(); document.querySelectorAll('#grid .riga')[1].querySelector('[data-a=altro]').click(); [...document.querySelectorAll('#menu button')].find(b => b.className === 'pericolo').click()",
 }
 SCENE_EDITOR = {
@@ -90,6 +92,8 @@ SCENE_EDITOR = {
     "editor-assistente": "go(1); toast(t('editor.msg.assistente_n', { nome: LINGUA === 'en' ? 'Album draft' : 'Bozza dell\\'album' }), false, annullaAz())",
     # stato vuoto: solo nella pagina (lo stato del server resta com'è), per vedere come si presenta un album senza spread
     "editor-vuoto": "S.spreads = []; S.photos.forEach(p => { p.sp = null; }); cur = 0; view = 'album'; render()",
+    # Consegna al laboratorio con il prodotto dell'album (T-208)
+    "editor-consegna": "openExp(); setFmt('consegna')",
 }
 
 
@@ -126,7 +130,7 @@ def main(argv=None):
         progetti = []
         nomi = ("Matrimonio Rossi Bianchi", "Battesimo di Serena", "Comunione Luca") if a.lingua == "it" else ("Wedding Smith Jones", "Serena's christening", "Luke's communion")
         for nome, w, h, nf in zip(nomi, (60, 50, 40), (22.5, 20, 30), (36, 12, 0)):
-            p = H.nuovo({"nome": nome, "w": w, "h": h}); progetti.append(p)
+            p = H.nuovo(dict({"nome": nome, "w": w, "h": h}, **({"prodotto": "generico/orizzontale-30x22"} if not progetti else {}))); progetti.append(p)    # il primo album ha il prodotto del Generico (T-208)
             if nf: foto_finte(os.path.join(p, "Foto"), nf)
         E.inizializza(progetti[0], home=f"http://127.0.0.1:{hs.server_address[1]}")
         es = E.crea_server(0); threading.Thread(target=es.serve_forever, daemon=True).start()
