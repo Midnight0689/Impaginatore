@@ -18,6 +18,7 @@ from fractions import Fraction
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .. import formato as _formato
+from .. import lingua
 from .. import percorsi as _percorsi
 from .. import validazione as _V
 from ..piattaforma import font as _pfont
@@ -28,7 +29,11 @@ CW = CH = PPI = B = G = MG = FOLD = TW = TH = None
 M, F, IDX, ORIGINE, FACE_FIX, WB, _ESP, TXTCFG = [], {}, {}, {}, {}, {}, {}, {}
 SCARTATE = []                                        # foto non aperte all'ultimo caricamento: [{n, motivo}] (le mostra l'editor)
 DANNEGGIATE = {}                                     # foto del progetto che non si decodificano: nome file -> data di modifica del file rovinato (VER-002)
-DANNEGGIATA = "file danneggiato o incompleto: ricopia la foto (il programma la rilegge da solo) o toglila dalla cartella"
+def danneggiata():
+    """perché una foto non si legge, nella lingua in uso (si traduce quando serve, non quando il programma parte)"""
+    return lingua.t("motore.danneggiata")
+
+
 GRIGIO_SEGNAPOSTO = (128, 128, 128)                  # miniatura al posto di una foto che non si legge
 log = logging.getLogger("impaginatore.motore")
 TITLE, INK = ("", "", ""), (58, 54, 51)
@@ -70,7 +75,7 @@ def carica_progetto(cartella, sottofondo=False):
     # foto aggiunte dopo, prese dalle cartelle complete (non nella selezione del cliente): vanno in coda, la numerazione non cambia
     new += _nuove(CFG.get("foto_extra", []), M + new)
     rotte = set() if sottofondo else set(_build_thumbs(new, segnaposto=False))  # una foto nuova che non si decodifica resta fuori e si riprova la volta dopo (VER-002)
-    SCARTATE.extend(dict(n=m["n"], motivo=DANNEGGIATA) for m in new if m["n"] in rotte)
+    SCARTATE.extend(dict(n=m["n"], motivo=danneggiata()) for m in new if m["n"] in rotte)
     new = [m for m in new if m["n"] not in rotte]
     if new:
         first = not M
@@ -199,7 +204,7 @@ def apri_foto(f):
     except Image.DecompressionBombError: im = None
     if im is None or im.width * im.height > lim:
         if im is not None: im.close()
-        raise ValueError(f"{os.path.basename(f)}: foto troppo grande (oltre {lim / 1e6:g} milioni di pixel; il limite si cambia con IMPAGINATORE_MAX_MPIXEL)")
+        raise ValueError(lingua.t("motore.troppo_grande", nome=os.path.basename(f), milioni=lingua.num(lim / 1e6)))
     return im
 
 
@@ -236,7 +241,7 @@ def _cerca_foto(cartella):
         e = os.path.splitext(n)[1].lower()
         if n.startswith(".") or not os.path.isfile(os.path.join(cartella, n)): continue
         if e in estensioni(): out.append(os.path.join(cartella, n))
-        elif e in NON_SUPPORTATE: SCARTATE.append(dict(n=n, motivo=f"formato {e[1:].upper()} non supportato: esportala in JPEG, PNG o TIFF"))
+        elif e in NON_SUPPORTATE: SCARTATE.append(dict(n=n, motivo=lingua.t("motore.formato_non_supportato", formato=e[1:].upper())))
     return out
 
 
@@ -247,10 +252,10 @@ def _nuove(files, meta):
     for f in files:
         n = os.path.basename(f); r = n.rsplit(".", 1)[0]
         if n in noti: continue
-        if r in radici: SCARTATE.append(dict(n=n, motivo=f"c'è già una foto che si chiama «{r}»")); continue
+        if r in radici: SCARTATE.append(dict(n=n, motivo=lingua.t("motore.nome_doppio", nome=r))); continue
         try: out.append(_meta_one(f))
         except ERRORI_FOTO as e:
-            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else "il file non si apre come foto"))
+            SCARTATE.append(dict(n=n, motivo=str(e) if isinstance(e, ValueError) else lingua.t("motore.non_si_apre")))
             log.warning("una foto non si apre (%s)", type(e).__name__); log.debug("foto scartata %s: %s", n, e); continue          # nomi solo a DEBUG (VER-013)
         noti.add(n); radici.add(r)
     return out
@@ -307,7 +312,7 @@ def segna_danneggiata(m):
     p = os.path.join(THUMBS, m["n"])
     riquadro_grigio(m).save(p, "JPEG", quality=85); os.utime(p, (0, 0))
     if os.path.exists(m.get("src") or ""):                                 # c'è ma non si legge (se manca, l'editor la mostra tra le mancanti)
-        DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=DANNEGGIATA))
+        DANNEGGIATE[m["n"]] = os.path.getmtime(m["src"]); SCARTATE.append(dict(n=m["n"], motivo=danneggiata()))
 
 
 def da_preparare():
@@ -453,8 +458,8 @@ def foto_rgb(i, originale=False, serve=None):
         p = os.path.join(THUMBS, m["n"])
         return leggi_rgb(p) if os.path.exists(p) else riquadro_grigio(m)
     src = m.get("src") or ""
-    if m["n"] in DANNEGGIATE: raise ValueError(f"{m['n']}: {DANNEGGIATA}")
-    if not os.path.isfile(src): raise ValueError(f"{m['n']}: l'originale non si trova (ricollega la foto)")
+    if m["n"] in DANNEGGIATE: raise ValueError(f"{m['n']}: {danneggiata()}")
+    if not os.path.isfile(src): raise ValueError(lingua.t("motore.originale_non_trovato", nome=m["n"]))
     with apri_foto(src) as im0:
         if serve:
             w, h = (serve[1], serve[0]) if im0.getexif().get(274) in (5, 6, 7, 8) else serve      # la decodifica lavora sul file com'è, prima della rotazione

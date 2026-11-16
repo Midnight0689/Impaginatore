@@ -131,3 +131,19 @@ def test_progetto_vecchio_con_date_none(home, apri_editor):
 
 def test_cartella_delle_foto_che_non_si_legge(tmp_path):
     assert album._cerca_foto(str(tmp_path / "non-esiste")) == []
+
+
+def test_foto_scartate_e_troppo_grandi_in_inglese(home, apri_editor, monkeypatch):
+    """i motivi delle foto che non si aprono escono nella lingua in uso; il limite di pixel e l'originale mancante pure"""
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "en")
+    p = _progetto(home); fd = os.path.join(p, "Foto")
+    crea_foto(fd, [("A01", 600, 400, "2026:01:01 10:00:00")]); Image.new("RGB", (200, 200)).save(os.path.join(fd, "A01.png"))
+    for n, dati in (("G07.heic", b"\0" * 64), ("rotta.jpg", b"non sono una foto")):
+        with open(os.path.join(fd, n), "wb") as f: f.write(dati)
+    c = apri_editor(p); sc = {x["n"]: x["motivo"] for x in c.get("/api/state")["scartate"]}
+    assert sc == {"A01.png": "there's already a photo called “A01”", "rotta.jpg": "the file doesn't open as a photo",
+                  "G07.heic": "HEIC format isn't supported: export it as one of the formats that open (JPEG, PNG, TIFF, WebP, HEIC)"}
+    monkeypatch.setenv("IMPAGINATORE_MAX_MPIXEL", "0.01")
+    with pytest.raises(ValueError, match=r"^A01.jpg: photo too large \(over 0.01 million pixels; change the limit with IMPAGINATORE_MAX_MPIXEL\)$"): album.apri_foto(os.path.join(fd, "A01.jpg"))
+    monkeypatch.setenv("IMPAGINATORE_LINGUA", "it")
+    with pytest.raises(ValueError, match=r"^A01.jpg: foto troppo grande \(oltre 0,01 milioni di pixel"): album.apri_foto(os.path.join(fd, "A01.jpg"))

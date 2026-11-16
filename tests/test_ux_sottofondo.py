@@ -48,7 +48,7 @@ def test_editor_subito_e_foto_dopo(aperto):
     assert E.prep_stato() == dict(fatte=11, totale=11, volti=True, attivo=False)
     assert not grigio(E.thumb_jpg("H01", 200)) and not grigio(E.spread_jpg(0, 0.1), 0.3), "la miniatura pronta si vede subito (PV cambiata)"
     with open(os.path.join(p, "_cache", "faces.json"), encoding="utf-8") as f: assert set(json.load(f)) == {m["n"] for m in A.M}
-    assert "rotta.jpg" in A.DANNEGGIATE and dict(n="rotta.jpg", motivo=A.DANNEGGIATA) in A.SCARTATE, "in sottofondo la foto rovinata resta, segnata"
+    assert "rotta.jpg" in A.DANNEGGIATE and dict(n="rotta.jpg", motivo=A.danneggiata()) in A.SCARTATE, "in sottofondo la foto rovinata resta, segnata"
     assert not [f for f in os.listdir(thumbs) if f.startswith(".")], "nessun file a metà"
     E.prepara_in_sottofondo(); assert E.PREP["attivo"] is False, "niente da fare: non parte"
 
