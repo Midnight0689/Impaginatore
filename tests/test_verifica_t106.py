@@ -1,7 +1,6 @@
 """T-106, verifica indipendente: un test per ogni nuovo rilievo VER-xxx di docs/audit/VERIFICA-2026-11.md.
 
-Ogni test descrive il comportamento giusto e oggi fallisce: è segnato xfail(strict=True). Quando chi corregge chiude il
-rilievo il test passa, pytest segnala XPASS come errore e il segno xfail va tolto insieme alla correzione.
+Ogni test descrive il comportamento giusto. I rilievi sono chiusi: i test passano e restano come prova.
 Nessun test chiede davvero gigabyte di memoria: le prove di VER-005 girano in un processo figlio con un tetto (RLIMIT_AS)."""
 import http.client
 import json
@@ -21,9 +20,6 @@ from impaginatore import formato
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-def xfail(rilievo, motivo):
-    return pytest.mark.xfail(strict=True, reason=f"T-106: {rilievo} {motivo}")
 
 
 def _spread(c):
