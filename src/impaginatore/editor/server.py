@@ -26,6 +26,7 @@ from ..piattaforma import azioni, cartelle, dialoghi, processi
 from ..piattaforma import font as pfont
 from ..piattaforma import photoshop as pps
 from ..servizio import Gestore, RichiestaNonValida, ServerLocale, numero
+from .. import licenze                               # T-202: fasce, prova gratuita e sola lettura (docs/architettura/LICENZE.md)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = None                                          # cartella del progetto aperto (inizializza)
@@ -859,6 +860,7 @@ def do_op(o):
     """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
     stato resta com'era. Restituisce lo stato per la pagina"""
     global REV, LASTC
+    licenze.controlla_operazione(o)                                 # sola lettura o funzione di un'altra fascia: lo stato non si tocca
     with LOCK:
         cid, rev = o.pop("cid", None), o.pop("rev", None)
         if cid and rev is not None and cid != LASTC and rev != REV and LASTC is not None:
@@ -1215,6 +1217,7 @@ def modelli(o):
     (importa: solo su richiesta, SEC-009); non fa parte di annulla/ripeti"""
     with LOCK:
         lst = ut_load(); a = o["azione"]; nome = str(o.get("nome", "")).strip()[:60]
+        licenze.controlla_modelli(a, len(lst))                                       # modelli personali: quanti ne comprende la fascia
         if a == "importa":
             t = next((x for x in ut_progetto() if x["id"] == o.get("id")), None)
             if not t: raise ValueError("modello non trovato")  # pragma: no branch  # coverage 7.17 con Python 3.11 e 3.12 non vede un raise dentro «with»; provato da test_modelli_arrivati_con_un_progetto
@@ -1747,6 +1750,7 @@ def run_export(o):
     dflt = (CFG.get("uscita_psd") or os.path.join(PROJ, "PSD")) if fmt == "psd" else os.path.join(PROJ, "Esportazioni", fmt.upper())
     dest = os.path.expanduser(o.get("dest") or dflt)
     if fmt not in ("jpg", "pdf", "psd"): raise ValueError(f"Formato sconosciuto: {fmt}")
+    con_filigrana = licenze.controlla_esportazione(fmt)                                                             # formato della fascia; prova: con la filigrana
     qualita = round(numero({"q": [str(o.get("q", 92 if fmt == "jpg" else 80))]}, "q", 92, 1, 100))                  # VER-014: qualità JPEG da 1 a 100
     larghezza = round(numero({"width": [str(o.get("width", 2000))]}, "width", 2000, 500, 6000))                     # PDF: da 500 a 6000 px (la pagina offre 2000, 3500, 5000)
     try: os.makedirs(dest, exist_ok=True)
@@ -1768,6 +1772,7 @@ def run_export(o):
                         with LOCK: tup = spread_tuple(k - 1)
                         im = A.render(tup, K, True, originale=stampa); b = round(A.B * K)          # stampa (UX-011): foto dagli originali e abbondanza nel file, come nei PSD
                         if b and not stampa: im = im.crop((b, b, im.width - b, im.height - b))
+                        if con_filigrana: im = licenze.applica_filigrana(im)
                         f = os.path.join(dest, f"{nome} - Spread {k:02d}.jpg"); _scrivi_img(im, f, quality=q, dpi=(A.PPI * K, A.PPI * K), icc_profile=icc, subsampling=0 if q >= 90 else 2)
                         if os.path.getsize(f) < 1000: raise ValueError("file vuoto")
                         fatti.append(k); LOG.append(f"  spread {k}: {os.path.basename(f)}")
@@ -1783,6 +1788,7 @@ def run_export(o):
                     with LOCK: tup = spread_tuple(k - 1)
                     im = A.render(tup, K, True); b = round(A.B * K)
                     if b: im = im.crop((b, b, im.width - b, im.height - b))
+                    if con_filigrana: im = licenze.applica_filigrana(im)
                     pg = Image.new("RGB", (im.width, im.height + 60), "white"); pg.paste(im, (0, 0)); d = ImageDraw.Draw(pg)
                     d.line([(im.width // 2, 0), (im.width // 2, im.height)], fill=(225, 225, 225), width=1)
                     if o.get("numeri", True): d.text((im.width / 2, im.height + 18), f"Spread {k} / {n}", font=font, fill=(140, 140, 140), anchor="mt")
@@ -1871,6 +1877,7 @@ def file_thumb(path, w):
 
 def do_import(paths):
     """aggiunge le foto al progetto SENZA copiarle: il progetto punta ai file originali (foto_extra)"""
+    licenze.controlla_modifica()                                   # in sola lettura il progetto non cambia
     files = []
     for p in paths:
         p = os.path.expanduser(p)
@@ -2123,6 +2130,7 @@ class H(Gestore):
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
+            licenze.controlla_lettura(u.path)                                   # pannello del tono: solo nelle fasce che lo comprendono
             if u.path == "/": self.pagina("index.html")
             elif u.path == "/api/vai_progetti":                                 # pulsante «Progetti»: indirizzo di avvio monouso della schermata (con il gettone)
                 pt = _porta_home(); a = sicurezza.indirizzo_avvio("home", pt) if pt else None
@@ -2153,6 +2161,7 @@ class H(Gestore):
                 else: self.send(thumb_jpg(n, w), "image/jpeg", etag=et)
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
+        except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
         except Exception as e: self.send({"errore": str(e)}, code=500)
     def do_POST(self):
@@ -2188,6 +2197,7 @@ class H(Gestore):
             elif u.path == "/api/reveal": azioni.mostra(RADICI.controlla(body["path"], "quel percorso") if "path" in body else _src_foto(body["foto"])); self.send({"ok": True})
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
+        except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except Exception as e: self.send({"errore": str(e)}, code=400)
 
 # ------------------------------------------------------------------ avvio

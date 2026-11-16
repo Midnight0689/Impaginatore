@@ -13,9 +13,11 @@ cartella indicata da --dir, oppure dalla variabile IMPAGINATORE_NEGOZIO_DIR, opp
 Comandi:
   genera-coppia   crea la coppia di chiavi di firma (una volta sola) e stampa la chiave pubblica
                   da compilare nell'app
-  emetti          emette una licenza, la stampa e la scrive nel registro
+  emetti          emette una licenza, la stampa e la scrive nel registro (--scadenza: licenza a tempo, formato 2)
   verifica        controlla una licenza e ne mostra il contenuto
-  revoca          segna una licenza come revocata (rimborso) e firma revoche.json da pubblicare
+  revoca          segna una licenza come revocata (rimborso) e firma revoche.json, da mettere nel prossimo rilascio
+  togli-revoca    rimette attiva una licenza revocata (storno chiuso a favore del cliente, errore) e rifirma revoche.json
+  revoche         rifirma revoche.json dal registro e lo scrive dove serve (--uscita, per il rilascio dell'app)
   stato-lancio    conta le licenze vendute a prezzo di lancio rispetto al tetto di tier.json
   autotest        prova Ed25519 con i vettori della RFC 8032 e il formato con un giro completo
 
@@ -23,7 +25,10 @@ Esempi:
   python3 chiavi.py genera-coppia
   python3 chiavi.py emetti --tier pro --intestatario "Studio Rossi" --riferimento "FT 2027/12" --prezzo lancio
   python3 chiavi.py verifica IMP1-AEAQE-...
+  python3 chiavi.py emetti --tier laboratorio --intestatario "Lab Bianchi" --riferimento "C 2027/3" --prezzo convenzione --scadenza 2028-03-31
   python3 chiavi.py revoca --seriale 12 --motivo rimborso
+  python3 chiavi.py togli-revoca --seriale 12 --motivo storno-a-favore
+  python3 chiavi.py revoche --uscita src/impaginatore/licenze/revoche.json
   python3 chiavi.py stato-lancio --data-inizio 2027-02-23
 """
 from __future__ import annotations
@@ -177,15 +182,23 @@ class ChiaveNonValida(ValueError):
 
 
 def componi(id_firma: int, tier: str, versione: int, attivazioni: int, seriale: int,
-            emessa: dt.date, intestatario: str, flag: int = 0) -> bytes:
+            emessa: dt.date, intestatario: str, flag: int = 0, scadenza: Optional[dt.date] = None) -> bytes:
+    """payload della chiave: formato 1 senza scadenza; formato 2 se c'è la scadenza (ultimo giorno valido, compreso),
+    scritta in 2 byte dopo l'intestatario. Un'app che conosce solo il formato 1 rifiuta il formato 2."""
     nome = intestatario.strip().encode("utf-8")
     if len(nome) > MAX_INTESTATARIO:
         raise ValueError(f"intestatario troppo lungo: massimo {MAX_INTESTATARIO} byte UTF-8")
     giorni = (emessa - EPOCA).days
     if not 0 <= giorni < 65536:
         raise ValueError("data di emissione fuori intervallo")
-    return (bytes([1, id_firma, TIER_CODICE[tier], versione, attivazioni, flag])
-            + seriale.to_bytes(4, "big") + giorni.to_bytes(2, "big") + bytes([len(nome)]) + nome)
+    coda = b""
+    if scadenza is not None:
+        fine = (scadenza - EPOCA).days
+        if not giorni <= fine < 65536:
+            raise ValueError("la scadenza deve essere tra la data di emissione e il 2205")
+        coda = fine.to_bytes(2, "big")
+    return (bytes([1 if scadenza is None else 2, id_firma, TIER_CODICE[tier], versione, attivazioni, flag])
+            + seriale.to_bytes(4, "big") + giorni.to_bytes(2, "big") + bytes([len(nome)]) + nome + coda)
 
 
 def in_testo(dati: bytes) -> str:
@@ -213,10 +226,11 @@ def decodifica(testo: str, pubbliche: Dict[int, bytes]) -> Dict[str, Any]:
     if len(dati) < 13 + 64:
         raise ChiaveNonValida("chiave troppo corta")
     payload, firma = dati[:-64], dati[-64:]
-    if payload[0] != 1:
+    if payload[0] not in (1, 2):
         raise ChiaveNonValida(f"formato {payload[0]} non supportato da questa versione")
     n = payload[12]
-    if len(payload) != 13 + n:
+    coda = 2 if payload[0] == 2 else 0
+    if len(payload) != 13 + n + coda:
         raise ChiaveNonValida("lunghezza incoerente")
     pub = pubbliche.get(payload[1])
     if pub is None:
@@ -226,7 +240,7 @@ def decodifica(testo: str, pubbliche: Dict[int, bytes]) -> Dict[str, Any]:
     if payload[2] not in CODICE_TIER:
         raise ChiaveNonValida("fascia sconosciuta")
     return {
-        "formato": 1,
+        "formato": payload[0],
         "id_firma": payload[1],
         "tier": CODICE_TIER[payload[2]],
         "versione_maggiore": payload[3],
@@ -236,6 +250,8 @@ def decodifica(testo: str, pubbliche: Dict[int, bytes]) -> Dict[str, Any]:
         "seriale": int.from_bytes(payload[6:10], "big"),
         "emessa": (EPOCA + dt.timedelta(days=int.from_bytes(payload[10:12], "big"))).isoformat(),
         "intestatario": payload[13:13 + n].decode("utf-8"),
+        "scadenza": ((EPOCA + dt.timedelta(days=int.from_bytes(payload[13 + n:], "big"))).isoformat()
+                     if coda else None),
         "impronta": hashlib.sha256(dati).hexdigest()[:16],
     }
 
@@ -243,7 +259,7 @@ def decodifica(testo: str, pubbliche: Dict[int, bytes]) -> Dict[str, Any]:
 # ----------------------------------------------------------------------------- archivio locale
 
 CAMPI_REGISTRO = ["seriale", "emessa", "tier", "attivazioni", "versione_maggiore", "prezzo", "riferimento",
-                  "intestatario", "impronta", "stato", "nota"]
+                  "intestatario", "impronta", "stato", "nota", "scadenza"]   # «scadenza» in coda: i registri di prima si leggono uguale
 
 
 def cartella(arg: Optional[str]) -> Path:
@@ -326,8 +342,8 @@ def cmd_genera_coppia(a: argparse.Namespace) -> int:
     pub = ed25519_pubblica(seme).hex()
     print(f"Chiave privata {id_firma} scritta in {f} (solo lettura per te).")
     print("FARNE SUBITO UNA COPIA OFFLINE: senza, non si possono più emettere licenze valide per le app già distribuite.")
-    print("\nChiave pubblica da compilare nell'app (non è un segreto):")
-    print(f"  CHIAVI_PUBBLICHE = {{{id_firma}: bytes.fromhex(\"{pub}\")}}")
+    print("\nChiave pubblica da compilare nell'app, in src/impaginatore/licenze/chiave.py (non è un segreto):")
+    print(f"  CHIAVI_PUBBLICHE = {{{id_firma}: Pubblica(\"{pub}\")}}")
     return 0
 
 
@@ -344,13 +360,15 @@ def cmd_emetti(a: argparse.Namespace) -> int:
     seriale = max([int(r["seriale"]) for r in registro] or [0]) + 1
     oggi = dt.date.fromisoformat(a.data) if a.data else dt.date.today()
     flag = (FLAG["omaggio"] if a.prezzo in ("omaggio", "beta") else 0) | (FLAG["beta"] if a.prezzo == "beta" else 0)
-    payload = componi(id_firma, a.tier, a.versione, attivazioni, seriale, oggi, a.intestatario, flag)
+    scadenza = dt.date.fromisoformat(a.scadenza) if a.scadenza else None
+    payload = componi(id_firma, a.tier, a.versione, attivazioni, seriale, oggi, a.intestatario, flag, scadenza)
     testo = in_testo(payload + ed25519_firma(seme, DOMINIO_LICENZA + payload))
     info = decodifica(testo, {id_firma: ed25519_pubblica(seme)})  # controllo di coerenza
     registro.append({"seriale": str(seriale), "emessa": oggi.isoformat(), "tier": a.tier,
                      "attivazioni": str(attivazioni), "versione_maggiore": str(a.versione), "prezzo": a.prezzo,
                      "riferimento": a.riferimento, "intestatario": a.intestatario.strip(),
-                     "impronta": info["impronta"], "stato": "attiva", "nota": a.nota or ""})
+                     "impronta": info["impronta"], "stato": "attiva", "nota": a.nota or "",
+                     "scadenza": info["scadenza"] or ""})
     d.mkdir(parents=True, exist_ok=True)
     scrivi_registro(d, registro)
     if a.json:
@@ -358,7 +376,8 @@ def cmd_emetti(a: argparse.Namespace) -> int:
     else:
         print(testo)
         print(f"\nseriale {seriale} · {a.tier} · {attivazioni} computer · v{a.versione} · intestata a "
-              f"«{info['intestatario']}» · registrata in {d / 'registro.csv'}")
+              f"«{info['intestatario']}»" + (f" · valida fino al {info['scadenza']} compreso" if info["scadenza"] else "")
+              + f" · registrata in {d / 'registro.csv'}")
         print(f"link diretto: impaginatore://attiva?chiave={testo}")
     return 0
 
@@ -381,25 +400,56 @@ def cmd_verifica(a: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_revoca(a: argparse.Namespace) -> int:
-    d = cartella(a.dir)
-    registro = leggi_registro(d)
-    riga = next((r for r in registro if r["seriale"] == str(a.seriale)), None)
-    if riga is None:
-        raise SystemExit(f"Seriale {a.seriale} assente dal registro.")
-    riga["stato"] = "revocata"
-    riga["nota"] = (riga["nota"] + f" revocata {dt.date.today().isoformat()}: {a.motivo}").strip()
-    scrivi_registro(d, registro)
-    id_firma, seme = leggi_privata(d, a.id_firma)
+def firma_revoche(d: Path, registro: List[Dict[str, str]], id_firma: Optional[int], uscita: Path) -> Dict[str, Any]:
+    """firma l'elenco dei seriali revocati del registro e lo scrive in `uscita`. L'app lo legge solo dal proprio pacchetto
+    (src/impaginatore/licenze/revoche.json): arriva con gli aggiornamenti, il programma non scarica niente (LICENZE.md)."""
+    id_firma, seme = leggi_privata(d, id_firma)
     corpo = {"formato": 1, "id_firma": id_firma,
              "emessa": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
              "seriali": sorted(int(r["seriale"]) for r in registro if r["stato"] == "revocata")}
     canonico = json.dumps(corpo, sort_keys=True, separators=(",", ":")).encode("utf-8")
     corpo["firma"] = ed25519_firma(seme, DOMINIO_REVOCHE + canonico).hex()
-    uscita = d / "revoche.json"
+    uscita.parent.mkdir(parents=True, exist_ok=True)
     uscita.write_text(json.dumps(corpo, indent=2) + "\n", encoding="utf-8")
-    print(f"Seriale {a.seriale} revocato. Pubblicare {uscita} all'indirizzo fisso letto dall'app "
-          f"(FORMATO-CHIAVE.md §4).")
+    return corpo
+
+
+AVVISO_RILASCIO = ("Per farlo arrivare agli utenti: «chiavi.py revoche --uscita src/impaginatore/licenze/revoche.json» "
+                   "nella copia del rilascio, poi il rilascio dell'aggiornamento (FORMATO-CHIAVE.md §4).")
+
+
+def _cambia_stato(a: argparse.Namespace, da: str, a_stato: str, parola: str) -> int:
+    d = cartella(a.dir)
+    registro = leggi_registro(d)
+    riga = next((r for r in registro if r["seriale"] == str(a.seriale)), None)
+    if riga is None:
+        raise SystemExit(f"Seriale {a.seriale} assente dal registro.")
+    if riga["stato"] != da:
+        raise SystemExit(f"Il seriale {a.seriale} è «{riga['stato']}», non «{da}»: niente da fare.")
+    riga["stato"] = a_stato
+    riga["nota"] = (riga["nota"] + f" {parola} {dt.date.today().isoformat()}: {a.motivo}").strip()
+    scrivi_registro(d, registro)
+    corpo = firma_revoche(d, registro, a.id_firma, d / "revoche.json")
+    print(f"Seriale {a.seriale} {parola}. Elenco firmato ({len(corpo['seriali'])} seriali) in {d / 'revoche.json'}.")
+    print(AVVISO_RILASCIO)
+    return 0
+
+
+def cmd_revoca(a: argparse.Namespace) -> int:
+    return _cambia_stato(a, "attiva", "revocata", "revocata")
+
+
+def cmd_togli_revoca(a: argparse.Namespace) -> int:
+    """TERMINI-VENDITA B.7: dopo uno storno chiuso a favore del cliente la stessa chiave torna valida con il rilascio
+    successivo dell'elenco. Se il cliente non può aspettare il rilascio, si emette una chiave nuova."""
+    return _cambia_stato(a, "revocata", "attiva", "revoca tolta")
+
+
+def cmd_revoche(a: argparse.Namespace) -> int:
+    d = cartella(a.dir)
+    uscita = Path(a.uscita) if a.uscita else d / "revoche.json"
+    corpo = firma_revoche(d, leggi_registro(d), a.id_firma, uscita)
+    print(f"Elenco firmato delle revoche ({len(corpo['seriali'])} seriali) scritto in {uscita}.")
     return 0
 
 
@@ -439,8 +489,11 @@ def cmd_autotest(_: argparse.Namespace) -> int:
     payload = componi(7, "pro", 2, 2, 42, dt.date(2027, 2, 23), "Studio Fotografico Àlfa", 0)
     testo = in_testo(payload + ed25519_firma(seme, DOMINIO_LICENZA + payload))
     info = decodifica(testo.lower().replace("-", " - "), pub)
-    assert (info["tier"], info["seriale"], info["emessa"], info["intestatario"]) == \
-        ("pro", 42, "2027-02-23", "Studio Fotografico Àlfa")
+    assert (info["tier"], info["seriale"], info["emessa"], info["intestatario"], info["scadenza"]) == \
+        ("pro", 42, "2027-02-23", "Studio Fotografico Àlfa", None)
+    p2 = componi(7, "laboratorio", 2, 2, 43, dt.date(2027, 2, 23), "Lab", 0, dt.date(2028, 2, 29))
+    info2 = decodifica(in_testo(p2 + ed25519_firma(seme, DOMINIO_LICENZA + p2)), pub)
+    assert (info2["formato"], info2["scadenza"]) == (2, "2028-02-29"), "formato 2 con scadenza"
     manomessa = bytearray(da_testo(testo))
     manomessa[2] = TIER_CODICE["studio"]
     try:
@@ -448,7 +501,7 @@ def cmd_autotest(_: argparse.Namespace) -> int:
         raise AssertionError("una chiave manomessa è stata accettata")
     except ChiaveNonValida:
         pass
-    print(f"autotest superato: RFC 8032 (2 vettori), formato e manomissione. Esempio di chiave ({len(testo)} caratteri):")
+    print(f"autotest superato: RFC 8032 (2 vettori), formati 1 e 2, manomissione. Esempio di chiave ({len(testo)} caratteri):")
     print(testo)
     return 0
 
@@ -469,6 +522,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     e.add_argument("--attivazioni", type=int, help="computer, se diverso da tier.json")
     e.add_argument("--data", help="AAAA-MM-GG (predefinito: oggi)")
     e.add_argument("--nota")
+    e.add_argument("--scadenza", help="AAAA-MM-GG, ultimo giorno valido compreso: licenza a tempo (formato 2, "
+                   "laboratori «modello C»; le app che conoscono solo il formato 1 la rifiutano)")
     e.add_argument("--id-firma", type=int)
     e.add_argument("--json", action="store_true")
     v = sub.add_parser("verifica")
@@ -479,12 +534,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--seriale", type=int, required=True)
     r.add_argument("--motivo", required=True, choices=["rimborso", "upgrade", "frode", "errore"])
     r.add_argument("--id-firma", type=int)
+    t = sub.add_parser("togli-revoca")
+    t.add_argument("--seriale", type=int, required=True)
+    t.add_argument("--motivo", required=True, choices=["storno-a-favore", "errore"])
+    t.add_argument("--id-firma", type=int)
+    rv = sub.add_parser("revoche")
+    rv.add_argument("--uscita", help="dove scrivere revoche.json (predefinito: la cartella del negozio)")
+    rv.add_argument("--id-firma", type=int)
     s = sub.add_parser("stato-lancio")
     s.add_argument("--data-inizio", default="2027-02-23")
     sub.add_parser("autotest")
     a = ap.parse_args(argv)
     return {"genera-coppia": cmd_genera_coppia, "emetti": cmd_emetti, "verifica": cmd_verifica,
-            "revoca": cmd_revoca, "stato-lancio": cmd_stato_lancio, "autotest": cmd_autotest}[a.comando](a)
+            "revoca": cmd_revoca, "togli-revoca": cmd_togli_revoca, "revoche": cmd_revoche,
+            "stato-lancio": cmd_stato_lancio, "autotest": cmd_autotest}[a.comando](a)
 
 
 if __name__ == "__main__":
