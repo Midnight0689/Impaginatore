@@ -17,9 +17,9 @@ import shutil
 import subprocess  # nosec B404  # processi lanciati solo con argomenti in lista, mai con la shell
 import sys
 
-from .. import lingua
+from .. import compilato, lingua
 from . import sistema
-from .processi import ambiente_figli
+from .processi import ambiente_figli, cartella_pacchetto
 
 TIPI_FOTO = ("*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.png", "*.PNG", "*.tif", "*.tiff", "*.TIF", "*.TIFF", "*.webp", "*.WEBP", "*.heic", "*.HEIC", "*.heif", "*.HEIF")
 UTI_FOTO = ("public.jpeg", "public.png", "public.tiff", "org.webmproject.webp", "public.heic", "public.heif")      # gli stessi tipi per il Finder
@@ -81,19 +81,25 @@ class Mac(Dialoghi):
         return [x for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []        # la cartella arriva con la barra finale di AppleScript, come prima
 
 
-_TK = r'''
-import sys, tkinter as tk
-from tkinter import filedialog
-r = tk.Tk(); r.withdraw()
-try: r.attributes("-topmost", True)
-except Exception: pass
-k, msg = sys.argv[1], sys.argv[2]
-if k == "cartella": out = [filedialog.askdirectory(title=msg)]
-elif k == "zip": out = [filedialog.askopenfilename(title=msg, filetypes=[("ZIP", "*.zip")])]
-elif k == "catalogo": out = [filedialog.askopenfilename(title=msg, filetypes=[("Catalogo", "*.json")])]
-else: out = list(filedialog.askopenfilenames(title=msg, filetypes=[("Foto", sys.argv[3])]))
-sys.stdout.write("\n".join(x for x in out if x))
-'''
+# il processo figlio di Tk da Python: importa il pacchetto dalla cartella che lo contiene (cwd) e chiama scegli_con_tk
+_TK = "import sys; from impaginatore.piattaforma.dialoghi import scegli_con_tk; sys.exit(scegli_con_tk(sys.argv[1:]))"
+
+
+def scegli_con_tk(argv):
+    """il processo figlio di Tk: argv = tipo, titolo, tipi delle foto. Scrive i percorsi scelti, uno per riga (niente se si
+    annulla). Nel programma compilato è il sottocomando interno «_dialogo»"""
+    import tkinter as tk
+    from tkinter import filedialog
+    r = tk.Tk(); r.withdraw()
+    try: r.attributes("-topmost", True)
+    except tk.TclError: pass  # nosec B110  # un gestore di finestre che non lo permette: la finestra si apre lo stesso
+    k, msg = argv[0], argv[1]
+    if k == "cartella": out = [filedialog.askdirectory(title=msg)]
+    elif k == "zip": out = [filedialog.askopenfilename(title=msg, filetypes=[("ZIP", "*.zip")])]
+    elif k == "catalogo": out = [filedialog.askopenfilename(title=msg, filetypes=[("Catalogo", "*.json")])]
+    else: out = list(filedialog.askopenfilenames(title=msg, filetypes=[("Foto", argv[2])]))
+    sys.stdout.write("\n".join(x for x in out if x)); sys.stdout.flush()
+    return 0
 
 
 class Tk(Dialoghi):
@@ -101,7 +107,8 @@ class Tk(Dialoghi):
     nome = "tk"
 
     def _scegli(self, tipo, messaggio):
-        r = subprocess.run([sys.executable, "-c", _TK, tipo, messaggio, " ".join(TIPI_FOTO)], capture_output=True, text=True, encoding="utf-8", env=ambiente_figli())  # nosec B603  # questo stesso Python con lo script fisso _TK; argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
+        cmd = [sys.executable, "_dialogo"] if compilato.attivo() else [sys.executable, "-c", _TK]
+        r = subprocess.run([*cmd, tipo, messaggio, " ".join(TIPI_FOTO)], capture_output=True, text=True, encoding="utf-8", env=ambiente_figli(), cwd=cartella_pacchetto())  # nosec B603  # questo stesso programma con il codice fisso _TK (o il suo sottocomando); argomenti in lista, senza shell: nessun dato passa da un interprete di comandi
         return [os.path.normpath(x) for x in r.stdout.split("\n") if x.strip()] if r.returncode == 0 else []
 
 

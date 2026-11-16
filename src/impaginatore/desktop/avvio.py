@@ -85,6 +85,7 @@ class Avvio:
 
     def chiudi(self, principale):
         """mostra la finestra del programma e chiude la schermata di avvio (se sono già state chiuse non succede niente)"""
+        principale.hidden = False       # pywebview 6 su GTK: show() rinasconde subito una finestra nata nascosta se `hidden` resta vero
         for azione in (principale.show, self.finestra.destroy):
             try: azione()
             except Exception as e:                          # finestra già chiusa (l'utente è uscito prima) o motore che non risponde

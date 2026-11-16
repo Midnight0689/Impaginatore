@@ -1,8 +1,8 @@
 {
   "sistema.agg_ambiente_non_pronto": "Versione ripristinata, ma l'ambiente Python non è pronto ({dettaglio}). Il programma resta com'è: reinstallalo per sistemarlo.",
-  "sistema.agg_app_compilata": "Il programma installato si aggiornerà con il suo installatore: non ancora disponibile in questa versione",
   "sistema.agg_automatico_vero_falso": "automatico: vero o falso",
   "sistema.agg_canale_non_configurato": "Aggiornamenti non ancora attivi: il canale delle versioni nuove non è configurato in questa versione",
+  "sistema.agg_compilato_a_mano": "Il programma installato si aggiorna con il suo installatore: scarica la versione nuova dalla sua pagina e installala come la prima volta",
   "sistema.agg_durante_esportazione": "Un album sta esportando: aspetta che finisca, poi aggiorna",
   "sistema.agg_file_mancanti_1": "Il pacchetto della versione nuova è incompleto (manca {n} file): non è stato installato",
   "sistema.agg_file_mancanti_n": "Il pacchetto della versione nuova è incompleto (mancano {n} file): non è stato installato",
@@ -19,6 +19,7 @@
   "sistema.agg_non_si_avvia": "La versione nuova non si avvia su questo computer ({dettaglio}): resta quella in uso",
   "sistema.agg_pacchetto_diverso": "Il pacchetto scaricato non è quello firmato (impronta diversa): non è stato installato",
   "sistema.agg_pacchetto_non_valido": "Il pacchetto della versione nuova non si legge: non è stato installato",
+  "sistema.agg_pagina_non_aperta": "Il browser non si è aperto: scarica la versione nuova da {indirizzo}",
   "sistema.agg_precedente": "Questa versione è precedente alla 2.0 (altra struttura e altro installatore): non si può ripristinare da qui",
   "sistema.agg_python_vecchio": "La versione nuova richiede Python {versione} o più recente: reinstalla Impaginatore per averla",
   "sistema.agg_release_incompleta": "La versione pubblicata è incompleta (mancano dei file): riprova più tardi",

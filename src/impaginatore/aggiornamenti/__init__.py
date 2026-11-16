@@ -9,7 +9,7 @@ Implementazioni:
     NonDisponibili             aggiornamenti spenti: niente rete, niente modifiche
 predefiniti() sceglie: IMPAGINATORE_AGGIORNAMENTI=no (o 0/off/false) li spegne; IMPAGINATORE_AGGIORNAMENTI_FINTI=<cartella>
 prende i pacchetti da una cartella locale (prove, docs/architettura/AGGIORNAMENTI.md); da un checkout git -> Git;
-altrimenti PacchettiFirmati (programma compilato: InstallazioneCompilata, non ancora attiva).
+altrimenti PacchettiFirmati (programma compilato: InstallazioneCompilata, che avvisa e apre la pagina dei download).
 
 Lo stato è il dizionario che la pagina si aspetta (home.html):
     da_aggiornare, novita [titoli], controllato (epoch), errore (testo, "" se ok: solo per i controlli falliti),
@@ -127,11 +127,11 @@ def predefiniti(riavvia=None):
         return NonDisponibili("sistema.agg_spenti")
     from . import firmati, installazione, lanciatore, sorgenti
     finta = os.environ.get(lanciatore.VAR_FINTI, "").strip()
+    if getattr(sys, "frozen", False):                       # programma compilato (T-302): si installa a mano con il suo pacchetto; solo le chiavi vere
+        return firmati.PacchettiFirmati(sorgenti.SorgenteFinta(finta) if finta else sorgenti.SorgenteGitHub(), installazione.InstallazioneCompilata(), riavvia)
     if finta:                                               # prove a mano di tutto il giro (AGGIORNAMENTI.md): la firma si controlla lo stesso
         s = sorgenti.SorgenteFinta(finta)
         return firmati.PacchettiFirmati(s, installazione.InstallazionePython(), riavvia, chiavi=firmati.chiavi_con_prova(s))
-    if getattr(sys, "frozen", False):                       # programma compilato (T-302): si sostituisce tutto con l'installatore
-        return firmati.PacchettiFirmati(sorgenti.SorgenteGitHub(), installazione.InstallazioneCompilata(), riavvia)
     from ..piattaforma import cartelle
     radice = cartelle.radice_checkout()
     if radice and shutil.which("git"):

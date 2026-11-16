@@ -7,8 +7,9 @@ NON sta nel repository: vive nella cartella indicata da --dir, oppure da IMPAGIN
 
 Comandi:
   genera-coppia   crea la chiave dei rilasci (una volta sola) e stampa la pubblica da compilare in aggiornamenti/firmati.py
-  firma           scrive manifesto.json e manifesto.json.sig accanto al pacchetto (la wheel costruita con «uv build»)
-  verifica        controlla firma, campi e impronte di una cartella con manifesto, firma e pacchetto
+  firma           scrive manifesto.json e manifesto.json.sig accanto al pacchetto (la wheel costruita con «uv build»);
+                  --compilato chiave=file aggiunge al manifesto i pacchetti del programma compilato (strumenti/compila.py)
+  verifica        controlla firma, campi e impronte di una cartella con manifesto, firma e pacchetti
   finta           prepara una release finta per le prove (IMPAGINATORE_AGGIORNAMENTI_FINTI), con una chiave di prova
 
 Esempi:
@@ -21,6 +22,7 @@ Esempi:
 import argparse
 import json
 import os
+import re
 import secrets
 import stat
 import sys
@@ -63,26 +65,39 @@ def cmd_genera_coppia(a):
     return 0
 
 
+def compilati(voci):
+    """{chiave: {nome, dimensione, sha256}} dai --compilato chiave=file (mac-arm64, mac-x86_64, windows, linux)"""
+    out = {}
+    for v in voci:
+        k, _, f = v.partition("=")
+        if not re.fullmatch(r"(mac-arm64|mac-x86_64|windows|linux)", k) or not f: raise ValueError(f"--compilato vuole chiave=file (mac-arm64, mac-x86_64, windows, linux): {v}")
+        p = Path(f).resolve()
+        out[k] = dict(nome=p.name, dimensione=p.stat().st_size, sha256=firmati.sha256_file(str(p)))
+    return out
+
+
 def cmd_firma(a):
     seme = leggi_privata(cartella(a.dir), a.id)
     pacchetto = Path(a.pacchetto).resolve(); uscita = Path(a.uscita or pacchetto.parent).resolve()
-    dati = rilascio.manifesto(str(pacchetto), novita={"it": a.novita_it, "en": a.novita_en}, python_minimo=a.python_minimo, id_firma=a.id)
+    dati = rilascio.manifesto(str(pacchetto), novita={"it": a.novita_it, "en": a.novita_en}, python_minimo=a.python_minimo, id_firma=a.id, altri=compilati(a.compilato))
     uscita.mkdir(parents=True, exist_ok=True)
     (uscita / firmati.MANIFESTO).write_bytes(dati)
     (uscita / firmati.FIRMA).write_text(rilascio.firma(seme, dati), encoding="utf-8")
     m = json.loads(dati)
     print(f"Versione {m['versione']}: {len(m['file'])} file, pacchetto {m['pacchetti']['python']['nome']} ({m['pacchetti']['python']['dimensione']} byte).")
-    print(f"Da caricare nella release v{m['versione']} su GitHub: {pacchetto.name}, {firmati.MANIFESTO}, {firmati.FIRMA} (in {uscita}).")
+    altri = [p["nome"] for k, p in sorted(m["pacchetti"].items()) if k != "python"]
+    print(f"Da caricare nella release v{m['versione']} su GitHub: {', '.join([pacchetto.name, *altri])}, {firmati.MANIFESTO}, {firmati.FIRMA} (in {uscita}).")
     return 0
 
 
 def cmd_verifica(a):
     d = Path(a.cartella)
     m = firmati.verifica((d / firmati.MANIFESTO).read_bytes(), (d / firmati.FIRMA).read_bytes(), {a.id: a.pubblica})
-    p = m["pacchetti"]["python"]; f = d / p["nome"]
-    if not f.exists() or f.stat().st_size != p["dimensione"] or firmati.sha256_file(str(f)) != p["sha256"]: raise SystemExit(f"Il pacchetto {f} non è quello del manifesto.")
-    if rilascio.file_del_pacchetto(str(f)) != m["file"]: raise SystemExit("I file del pacchetto non sono quelli del manifesto.")
-    print(f"Firma e impronte valide: versione {m['versione']}, {len(m['file'])} file.")
+    for k, p in sorted(m["pacchetti"].items()):
+        f = d / p["nome"]
+        if not f.exists() or f.stat().st_size != p["dimensione"] or firmati.sha256_file(str(f)) != p["sha256"]: raise SystemExit(f"Il pacchetto {f} ({k}) non è quello del manifesto.")
+    if rilascio.file_del_pacchetto(str(d / m["pacchetti"]["python"]["nome"])) != m["file"]: raise SystemExit("I file del pacchetto non sono quelli del manifesto.")
+    print(f"Firma e impronte valide: versione {m['versione']}, {len(m['file'])} file, pacchetti {', '.join(sorted(m['pacchetti']))}.")
     return 0
 
 
@@ -101,6 +116,7 @@ def main(argv=None):
     g = sub.add_parser("genera-coppia"); g.add_argument("--dir"); g.add_argument("--id", type=int, default=1)
     f = sub.add_parser("firma"); f.add_argument("pacchetto"); f.add_argument("--dir"); f.add_argument("--id", type=int, default=1); f.add_argument("--uscita")
     f.add_argument("--novita-it", action="append", default=[]); f.add_argument("--novita-en", action="append", default=[]); f.add_argument("--python-minimo", default="3.11")
+    f.add_argument("--compilato", action="append", default=[], metavar="CHIAVE=FILE", help="pacchetto del programma compilato (si può ripetere)")
     v = sub.add_parser("verifica"); v.add_argument("cartella"); v.add_argument("--pubblica", required=True); v.add_argument("--id", type=int, default=1)
     t = sub.add_parser("finta"); t.add_argument("cartella"); t.add_argument("--versione", required=True); t.add_argument("--seme", help="32 byte in esadecimale (di serie: a caso)")
     t.add_argument("--novita-it", action="append", default=[]); t.add_argument("--novita-en", action="append", default=[])

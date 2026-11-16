@@ -13,12 +13,11 @@ import json
 import logging
 import os
 import subprocess  # nosec B404  # il programma si avvia con argomenti in lista, mai con la shell
-import sys
 import time
 import urllib.error
 import urllib.request
 
-from .. import lingua, sicurezza
+from .. import compilato, lingua, sicurezza
 from ..piattaforma import processi, sistema
 
 log = logging.getLogger("impaginatore.mcp")
@@ -112,7 +111,7 @@ def avvia_programma(attesa=ATTESA_AVVIO):
     s = programma()
     if s: return s
     log.info("avvio di Impaginatore per l'assistente")
-    p = subprocess.Popen([sys.executable, "-m", "impaginatore", "--no-browser", "--porta", str(PORTA_PROGRAMMA)],  # nosec B603  # questo stesso Python (sys.executable -m); argomenti in lista, senza shell
+    p = subprocess.Popen(compilato.comando("impaginatore", "--no-browser", "--porta", str(PORTA_PROGRAMMA)),  # nosec B603  # questo stesso programma (sys.executable, compilato.comando); argomenti in lista, senza shell
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=processi.cartella_pacchetto(), env=processi.ambiente_figli(), **processi.opzioni_staccato())
     fine = time.monotonic() + attesa
     while time.monotonic() < fine:

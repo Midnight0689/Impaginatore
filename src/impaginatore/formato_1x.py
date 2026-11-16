@@ -356,12 +356,22 @@ def testo_spec(spreads, nome, nome_foto, quando=None):
     return "\n".join(lines) + "\n"
 
 
+MOTORE_1X = ("album_libere.py", "testo.py")
+CARTELLA_MOTORE_1X = "motore_1x"                # tra le risorse del programma compilato: <nome>.txt (strumenti/compila.py)
+
+
+def sorgente_motore(nome):
+    """il file da copiare per la 1.x: il modulo del motore (da Python) o, nel programma compilato, che non contiene i .py,
+    la sua copia in testo tra le risorse"""
+    from . import risorse
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "motore", nome)
+    return p if os.path.isfile(p) else risorse.percorso(os.path.join(CARTELLA_MOTORE_1X, nome + ".txt"))
+
+
 def copia_motore(cartella):
     """mette accanto a spec.py le copie di album_libere.py, testo.py e vib_lut.npz (servono agli script delle versioni 1.x)"""
     from . import risorse
-    mot = os.path.join(os.path.dirname(os.path.abspath(__file__)), "motore")
-    shutil.copy2(os.path.join(mot, "album_libere.py"), os.path.join(cartella, "album_libere.py"))
-    shutil.copy2(os.path.join(mot, "testo.py"), os.path.join(cartella, "testo.py"))
+    for nome in MOTORE_1X: shutil.copy2(sorgente_motore(nome), os.path.join(cartella, nome))
     shutil.copy2(risorse.percorso("vib_lut.npz"), os.path.join(cartella, "vib_lut.npz"))
 
 

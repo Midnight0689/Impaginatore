@@ -46,7 +46,7 @@ def prosa(s, pagina=True):
     con l'iniziale maiuscola («Testo») e i titoli («Testo (titolo)»); nel Python servono articoli, preposizioni o accenti
     (lì le parole con la maiuscola sono nomi di cartelle di sistema, intestazioni HTTP, programmi)"""
     s = SEGNAPOSTO.sub(" ", s)
-    if re.fullmatch(r"[a-z0-9_]+(\.[a-z0-9_]+)+|[A-Za-z0-9]+([_-][A-Za-z0-9]+)+", s.strip()): return False         # chiavi, moduli, costanti, codici («it-IT»)
+    if re.fullmatch(r"[a-z0-9_]+(\.[a-z0-9_]+)+|[A-Za-z0-9]+([_-][A-Za-z0-9]+)+|[0-9a-f]{32,}", s.strip()): return False         # chiavi, moduli, costanti, codici («it-IT»), esadecimali (chiavi pubbliche)
     if re.search(r"[{}=\[\]*]|(^|;)\s*[a-z-]+\s*:\s*[^;]+;|^\s*[#.\[/@]|^(data|https?|file|blob|javascript|about|mailto):|--[a-z]|=>|\b(var|calc|rgba?|url)\(", s): return False      # CSS, selettori, percorsi, codice
     if s.count("(") >= 3 or re.match(r"\s*(on run|tell application|POSIX path|with timeout|end run|Dim |import )", s): return False                          # script (AppleScript, VBS, Python)
     parole = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’][A-Za-zÀ-ÖØ-öø-ÿ]+)*", s)
