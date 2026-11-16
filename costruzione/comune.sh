@@ -154,7 +154,11 @@ prova() {
 
 riepilogo() {
   dico "Pronto"
-  ( cd "$USCITA" && ls -lh "$(basename "$PACCHETTO")"* "verifica-$CHIAVE.json" 2>/dev/null | awk '{print "  " $5 "\t" $NF}' )
+  local f
+  for f in "$PACCHETTO" "$PACCHETTO.sha256" "$PACCHETTO.componenti.json" "$USCITA/verifica-$CHIAVE.json"; do
+    # senza prova il rapporto non c'è: si elenca solo quello che esiste
+    [ -f "$f" ] && printf '  %10s byte  %s\n' "$(wc -c < "$f" | tr -d ' ')" "$(basename "$f")"
+  done
   echo "Impronta SHA-256: $(cut -d' ' -f1 "$PACCHETTO.sha256")"
   if [ "$PROVA" = 1 ]; then
     cat <<FINE
