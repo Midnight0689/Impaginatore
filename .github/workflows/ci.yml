@@ -2,16 +2,16 @@
 # Ogni passo chiama strumenti/controlli.py, che in locale esegue gli stessi controlli:
 #     python strumenti/controlli.py lint | test | copertura | tutto   [--python 3.13]
 #
-# Matrice (repository privato: i minuti macOS e Windows costano di più): Linux con Python 3.11 (la minima di
-# pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64) e Windows Server 2025 solo con Python 3.12.
+# Matrice: Linux con Python 3.11 (la minima di pyproject.toml), 3.12, 3.13 e 3.14 (3.12 con copertura); macOS 26 (arm64)
+# e Windows Server 2025 solo con Python 3.12. Un push nuovo sullo stesso ramo annulla l'esecuzione superata (concurrency).
 #
 # Tempi reali (esecuzioni del 16/11/2026, cache di uv calda); i job sono paralleli, un'esecuzione dura quanto il più lungo
-# (~20 minuti). Minuti del piano (repository privato: ogni job arrotondato al minuto intero, Windows conta 2 volte, macOS 10):
-#     lint ~15 s (1) + Linux ~15-17 min per job x 4      = ~66 minuti
-#     Windows senza browser ~15,5-20 min + browser ~6-7  = ~27 min x 2  = ~54 minuti
-#     macOS senza browser ~6,5-7 min + browser ~4-6      = ~13 min x 10 = ~130 minuti
-#     totale ~250 minuti a esecuzione, metà macOS: i 2.000 minuti al mese del piano bastano per ~8 esecuzioni, più quelle
-#     di sicurezza.yml (~1 minuto ciascuna).
+# (~20 minuti):
+#     lint ~15 s + Linux ~15-17 min per job x 4
+#     Windows senza browser ~15,5-20 min + browser ~6-7 min
+#     macOS senza browser ~6,5-7 min + browser ~4-6 min
+# Con il repository pubblico i runner standard non consumano minuti del piano. Da privato ogni job si arrotonda al minuto
+# intero e Windows conta 2 volte, macOS 10: ~66 + ~27 x 2 + ~13 x 10 = ~250 minuti a esecuzione (~8 al mese con 2.000).
 name: CI
 
 on:
@@ -23,6 +23,7 @@ on:
 permissions:
   contents: read
 
+# un push nuovo sullo stesso ramo (o sulla stessa PR) annulla l'esecuzione superata di questo workflow
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
