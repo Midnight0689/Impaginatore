@@ -109,7 +109,7 @@ Le schermate vengono dalla versione 2.0 (T-205, T-206), in italiano e in inglese
 | `controlla`, `-en` | 1460 × 1050 | Pannello «Controlla l'album» accanto allo spread, dopo due ritocchi fatti apposta (una foto schiarita di 0,9 EV, una spostata di 8 pixel della pagina) | funzione «Controlla, poi Sistema» |
 | `esporta-psd`, `-en` | 1120 × 914 | Finestra «Esporta» sulla linguetta «PSD a livelli» | funzione «PSD» (non c'è una schermata di Photoshop) |
 | `nuovo-album`, `-en` | 960 × 1014 | Finestra «Nuovo album» con un prodotto del catalogo dei formati comuni | funzione «Formati e cataloghi» |
-| `assistente`, `-en` | 960 × 904 | Finestra «Assistente AI» della schermata degli album, immagini spente | sezione Claude |
+| `assistente`, `-en` | 960 × 1038 | Finestra «Assistente AI» della schermata degli album, immagini spente | sezione Claude |
 
 Rifarle (Chrome; nessuna rete; casa finta in una cartella temporanea, i dati dell'utente non si toccano):
 
