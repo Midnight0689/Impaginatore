@@ -57,7 +57,7 @@ class Pubblica(NamedTuple):
 # repository. Con il segnaposto nessuna chiave è valida (copia di sviluppo: vale la prova gratuita). Un rilascio con il
 # segnaposto non passa i test: tests/test_licenze.py::test_un_rilascio_non_parte_con_il_segnaposto (vedi LICENZE.md).
 SEGNAPOSTO = "SEGNAPOSTO-CHIAVE-PUBBLICA-DI-PRODUZIONE-DA-SOSTITUIRE-AL-RILASCIO"
-CHIAVI_PUBBLICHE = {1: Pubblica(SEGNAPOSTO)}
+CHIAVI_PUBBLICHE = {1: Pubblica("280d61c82c7b8573d72e6c098a7fe9b32448c8685594bfe6eb1d00a9d6ca4fcb")}
 # ---------------------------------------------------------------------------------------------------------------------
 
 

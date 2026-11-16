@@ -14,6 +14,7 @@ Comandi:
   genera-coppia   crea la coppia di chiavi di firma (una volta sola) e stampa la chiave pubblica
                   da compilare nell'app
   emetti          emette una licenza, la stampa e la scrive nel registro (--scadenza: licenza a tempo, formato 2)
+  emetti-beta     emette le chiavi della beta privata (Studio, segno beta, scadenza), una per tester, in un CSV riservato
   verifica        controlla una licenza e ne mostra il contenuto
   revoca          segna una licenza come revocata (rimborso) e firma revoche.json, da mettere nel prossimo rilascio
   togli-revoca    rimette attiva una licenza revocata (storno chiuso a favore del cliente, errore) e rifirma revoche.json
@@ -27,6 +28,7 @@ Esempi:
   python3 chiavi.py emetti --tier pro --intestatario "Studio Rossi" --riferimento "FT 2027/12" --prezzo lancio
   python3 chiavi.py verifica IMP1-AEAQE-...
   python3 chiavi.py emetti --tier laboratorio --intestatario "Lab Bianchi" --riferimento "C 2027/3" --prezzo convenzione --scadenza 2028-03-31
+  python3 chiavi.py emetti-beta --quante 10 --scadenza 2027-01-31 --intestatari tester.txt
   python3 chiavi.py revoca --seriale 12 --motivo rimborso
   python3 chiavi.py togli-revoca --seriale 12 --motivo storno-a-favore
   python3 chiavi.py revoche --uscita src/impaginatore/licenze/revoche.json
@@ -350,28 +352,41 @@ def cmd_genera_coppia(a: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_emetti(a: argparse.Namespace) -> int:
-    d = cartella(a.dir)
+def _attivazioni(tier: str, scelte: Optional[int]) -> int:
     lst = listino()
     tiers = {t["id"]: t for t in lst["tiers"]}
-    if a.tier not in tiers and a.tier != "laboratorio":
-        raise SystemExit(f"Fascia sconosciuta: {a.tier}")
-    attivazioni = a.attivazioni or (tiers[a.tier]["attivazioni"] if a.tier in tiers
-                                    else lst["laboratorio"]["funzioni"]["computer"])
-    id_firma, seme = leggi_privata(d, a.id_firma)
-    registro = leggi_registro(d)
+    if tier not in tiers and tier != "laboratorio":
+        raise SystemExit(f"Fascia sconosciuta: {tier}")
+    return scelte or (tiers[tier]["attivazioni"] if tier in tiers else lst["laboratorio"]["funzioni"]["computer"])
+
+
+def _nuova(id_firma: int, seme: bytes, registro: List[Dict[str, str]], tier: str, versione: int, attivazioni: int,
+           oggi: dt.date, intestatario: str, prezzo: str, riferimento: str, nota: str,
+           scadenza: Optional[dt.date]) -> Tuple[str, Dict[str, Any]]:
+    """firma una chiave con il seriale successivo e aggiunge la sua riga al registro (in memoria: lo scrive chi chiama)"""
     seriale = max([int(r["seriale"]) for r in registro] or [0]) + 1
-    oggi = dt.date.fromisoformat(a.data) if a.data else dt.date.today()
-    flag = (FLAG["omaggio"] if a.prezzo in ("omaggio", "beta") else 0) | (FLAG["beta"] if a.prezzo == "beta" else 0)
-    scadenza = dt.date.fromisoformat(a.scadenza) if a.scadenza else None
-    payload = componi(id_firma, a.tier, a.versione, attivazioni, seriale, oggi, a.intestatario, flag, scadenza)
+    flag = (FLAG["omaggio"] if prezzo in ("omaggio", "beta") else 0) | (FLAG["beta"] if prezzo == "beta" else 0)
+    payload = componi(id_firma, tier, versione, attivazioni, seriale, oggi, intestatario, flag, scadenza)
     testo = in_testo(payload + ed25519_firma(seme, DOMINIO_LICENZA + payload))
     info = decodifica(testo, {id_firma: ed25519_pubblica(seme)})  # controllo di coerenza
-    registro.append({"seriale": str(seriale), "emessa": oggi.isoformat(), "tier": a.tier,
-                     "attivazioni": str(attivazioni), "versione_maggiore": str(a.versione), "prezzo": a.prezzo,
-                     "riferimento": a.riferimento, "intestatario": a.intestatario.strip(),
-                     "impronta": info["impronta"], "stato": "attiva", "nota": a.nota or "",
+    registro.append({"seriale": str(seriale), "emessa": oggi.isoformat(), "tier": tier,
+                     "attivazioni": str(attivazioni), "versione_maggiore": str(versione), "prezzo": prezzo,
+                     "riferimento": riferimento, "intestatario": intestatario.strip(),
+                     "impronta": info["impronta"], "stato": "attiva", "nota": nota,
                      "scadenza": info["scadenza"] or ""})
+    return testo, info
+
+
+def cmd_emetti(a: argparse.Namespace) -> int:
+    d = cartella(a.dir)
+    attivazioni = _attivazioni(a.tier, a.attivazioni)
+    id_firma, seme = leggi_privata(d, a.id_firma)
+    registro = leggi_registro(d)
+    oggi = dt.date.fromisoformat(a.data) if a.data else dt.date.today()
+    scadenza = dt.date.fromisoformat(a.scadenza) if a.scadenza else None
+    testo, info = _nuova(id_firma, seme, registro, a.tier, a.versione, attivazioni, oggi, a.intestatario, a.prezzo,
+                         a.riferimento, a.nota or "", scadenza)
+    seriale = info["seriale"]
     d.mkdir(parents=True, exist_ok=True)
     scrivi_registro(d, registro)
     if a.json:
@@ -382,6 +397,75 @@ def cmd_emetti(a: argparse.Namespace) -> int:
               f"«{info['intestatario']}»" + (f" · valida fino al {info['scadenza']} compreso" if info["scadenza"] else "")
               + f" · registrata in {d / 'registro.csv'}")
         print(f"link diretto: impaginatore://attiva?chiave={testo}")
+    return 0
+
+
+CAMPI_BETA = ["seriale", "intestatario", "scadenza", "chiave", "link"]
+
+
+def leggi_intestatari(f: Path) -> List[str]:
+    """un intestatario per riga (UTF-8); righe vuote e righe che cominciano con # si saltano"""
+    try:
+        righe = f.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError) as e:
+        raise SystemExit(f"Errore: elenco degli intestatari non letto ({e}).")
+    nomi = [r.strip() for r in righe if r.strip() and not r.strip().startswith("#")]
+    lunghi = [n for n in nomi if len(n.encode("utf-8")) > MAX_INTESTATARIO]
+    if lunghi:
+        raise SystemExit(f"Errore: intestatari oltre {MAX_INTESTATARIO} byte UTF-8: {', '.join(lunghi)}")
+    doppi = sorted({n for n in nomi if nomi.count(n) > 1})
+    if doppi:
+        raise SystemExit(f"Errore: intestatari ripetuti (ogni tester ha la sua chiave): {', '.join(doppi)}")
+    return nomi
+
+
+def fuori_dal_repository(p: Path) -> Path:
+    p = p.expanduser().resolve()
+    try:
+        p.relative_to(RADICE_REPO)
+    except ValueError:
+        return p
+    raise SystemExit(f"Errore: {p} è dentro il repository. Le chiavi emesse devono stare fuori.")
+
+
+def cmd_emetti_beta(a: argparse.Namespace) -> int:
+    """le chiavi della beta privata: una per tester, fascia Studio (tutte le funzioni), segno «beta» (e omaggio), scadenza
+    (formato 2). Dopo la scadenza il programma va in sola lettura e dice che la beta è finita. Tutte o nessuna: il
+    registro si scrive una volta, alla fine; le chiavi vanno in un CSV riservato (0600) fuori dal repository"""
+    d = cartella(a.dir)
+    nomi = leggi_intestatari(Path(a.intestatari))
+    quante = a.quante if a.quante is not None else len(nomi)
+    if quante < 1 or quante != len(nomi):
+        raise SystemExit(f"Errore: --quante {quante} ma l'elenco ha {len(nomi)} intestatari: devono coincidere.")
+    oggi = dt.date.fromisoformat(a.data) if a.data else dt.date.today()
+    scadenza = dt.date.fromisoformat(a.scadenza)
+    if scadenza < oggi:
+        raise SystemExit(f"Errore: la scadenza {scadenza} è prima della data di emissione {oggi}.")
+    attivazioni = _attivazioni("studio", a.attivazioni)
+    id_firma, seme = leggi_privata(d, a.id_firma)
+    registro = leggi_registro(d)
+    riferimento = a.riferimento or f"beta privata fino al {scadenza.isoformat()}"
+    emesse = []
+    for nome in nomi:
+        testo, info = _nuova(id_firma, seme, registro, "studio", a.versione, attivazioni, oggi, nome, "beta",
+                             riferimento, "beta privata", scadenza)
+        emesse.append({"seriale": str(info["seriale"]), "intestatario": info["intestatario"], "scadenza": info["scadenza"],
+                       "chiave": testo, "link": f"impaginatore://attiva?chiave={testo}"})
+    uscita = fuori_dal_repository(Path(a.uscita) if a.uscita
+                                  else d / f"beta-{oggi.isoformat()}-seriali-{emesse[0]['seriale']}-{emesse[-1]['seriale']}.csv")
+    uscita.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(uscita, os.O_WRONLY | os.O_CREAT | os.O_EXCL, stat.S_IRUSR | stat.S_IWUSR)    # un file che c'è già non si sovrascrive
+    scrivi_registro(d, registro)
+    with os.fdopen(fd, "w", newline="", encoding="utf-8") as h:
+        w = csv.DictWriter(h, fieldnames=CAMPI_BETA)
+        w.writeheader()
+        w.writerows(emesse)
+    if a.json:
+        print(json.dumps({"file": str(uscita), "chiavi": emesse}, ensure_ascii=False, indent=2))
+    else:
+        print(f"{len(emesse)} chiavi della beta privata · studio · {attivazioni} computer · v{a.versione} · valide fino al "
+              f"{scadenza.isoformat()} compreso · seriali {emesse[0]['seriale']}–{emesse[-1]['seriale']}")
+        print(f"chiavi e link in {uscita} (solo lettura per te) · registrate in {d / 'registro.csv'}")
     return 0
 
 
@@ -555,6 +639,17 @@ def main(argv: Optional[List[str]] = None) -> int:
                    "laboratori «modello C»; le app che conoscono solo il formato 1 la rifiutano)")
     e.add_argument("--id-firma", type=int)
     e.add_argument("--json", action="store_true")
+    b = sub.add_parser("emetti-beta")
+    b.add_argument("--intestatari", required=True, help="file di testo UTF-8: un tester per riga (righe vuote e # si saltano)")
+    b.add_argument("--scadenza", required=True, help="AAAA-MM-GG, ultimo giorno della beta compreso")
+    b.add_argument("--quante", type=int, help="quante chiavi (controllo: deve essere il numero di intestatari)")
+    b.add_argument("--riferimento", help="nel registro (predefinito: «beta privata fino al <scadenza>»)")
+    b.add_argument("--versione", type=int, default=2)
+    b.add_argument("--attivazioni", type=int, help="computer, se diverso dalla fascia Studio di tier.json")
+    b.add_argument("--data", help="AAAA-MM-GG di emissione (predefinito: oggi)")
+    b.add_argument("--uscita", help="CSV con le chiavi (predefinito: nella cartella del negozio; mai nel repository)")
+    b.add_argument("--id-firma", type=int)
+    b.add_argument("--json", action="store_true")
     v = sub.add_parser("verifica")
     v.add_argument("chiave")
     v.add_argument("--pubblica", help="chiave pubblica esadecimale (per verificare senza la privata)")
@@ -578,7 +673,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     s.add_argument("--data-inizio", default="2027-02-23")
     sub.add_parser("autotest")
     a = ap.parse_args(argv)
-    return {"genera-coppia": cmd_genera_coppia, "emetti": cmd_emetti, "verifica": cmd_verifica,
+    return {"genera-coppia": cmd_genera_coppia, "emetti": cmd_emetti, "emetti-beta": cmd_emetti_beta, "verifica": cmd_verifica,
             "revoca": cmd_revoca, "togli-revoca": cmd_togli_revoca, "revoche": cmd_revoche, "firma-catalogo": cmd_firma_catalogo,
             "stato-lancio": cmd_stato_lancio, "autotest": cmd_autotest}[a.comando](a)
 

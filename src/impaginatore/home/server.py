@@ -27,6 +27,7 @@ from .. import desktop                         # T-201: finestra del programma (
 from ..desktop import dialoghi as desktop_dialoghi
 from ..desktop import finestra as desktop_finestra      # T-207: esportazioni in corso e chiusura ordinata degli editor, anche senza finestra
 from ..mcp import consenso as consenso_mcp      # T-203/T-205: l'interruttore «L'assistente può vedere le immagini» (solo libreria standard)
+from .. import statistiche                      # T-204: statistiche d'uso facoltative, solo con il consenso (docs/architettura/STATISTICHE.md)
 
 PORTA_PREDEFINITA = 8765
 PROGETTI = None                                # cartella dei progetti nuovi (configura)
@@ -226,6 +227,19 @@ def esci():
     os._exit(0)
 
 
+def api_statistiche(percorso, d):
+    """richieste della pagina per le statistiche d'uso (T-204): consenso, «Cosa condivido», esportazione, cancellazione.
+    Solo da questa pagina (gettone), come l'interruttore delle immagini dell'assistente"""
+    if percorso == "/api/statistiche/consenso": return statistiche.imposta(d.get("si"))          # ValueError se non è vero o falso
+    if percorso == "/api/statistiche/azzera": statistiche.azzera_identificativo(); return statistiche.stato()
+    if percorso == "/api/statistiche/cancella": statistiche.cancella(); return statistiche.stato()
+    if percorso == "/api/statistiche/finestra": statistiche.finestra("album", d); return {"ok": True}
+    if percorso == "/api/statistiche/esporta":                   # la cartella la sceglie l'utente con la finestra del sistema
+        p = scegli_cartella(lingua.t("statistiche.scegli_cartella"))
+        return {"file": statistiche.esporta(p)} if p else {"annullato": True}
+    return None
+
+
 class H(Gestore):
     COOKIE = ("/", "/api/cover")                  # pagina e copertine (immagini): anche con il solo cookie
 
@@ -247,6 +261,8 @@ class H(Gestore):
             elif u.path == "/api/assistente": self.send(assistente())
             elif u.path == "/api/lingua": self.send(lingue())
             elif u.path == "/api/cataloghi": self.send(dict(laboratori.elenco(), cartella=laboratori.cartella_utente()))
+            elif u.path == "/api/statistiche": self.send(statistiche.stato())                 # T-204: scelta, se chiedere, quanti eventi
+            elif u.path == "/api/statistiche/registro": self.send(statistiche.righe())        # T-204: «Cosa condivido», le righe così come sono
             elif u.path == "/api/pronto":
                 a = pronto(int(q["porta"][0])); self.send({"pronto": bool(a), "indirizzo": a})
             elif u.path == "/api/cover":
@@ -254,7 +270,7 @@ class H(Gestore):
                 if p not in [x["path"] for x in progetti()] or "/" in n or "\\" in n or n in ("", ".", ".."): raise ValueError("no")      # solo un nome di file (anche con le barre di Windows)
                 with open(os.path.join(p, "_cache", "thumbs", n), "rb") as f: self.send(f.read(), "image/jpeg")
             else: self.send({"errore": lingua.t("sistema.non_trovato")}, code=404)
-        except Exception as e: self.send({"errore": str(e)}, code=400)
+        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=400)          # T-204: tipo e punto del codice, solo con le statistiche accese
 
     def do_POST(self):
         u = urlparse(self.path)
@@ -262,7 +278,7 @@ class H(Gestore):
             d = self.corpo()
             if u.path == "/api/nuovo":
                 if str(d.get("foto") or "").strip(): RADICI.controlla(str(d["foto"]).strip(), "cartella_foto")
-                self.send({"path": nuovo(d)})
+                p = nuovo(d); statistiche.album_nuovo(p, bool(str(d.get("foto") or "").strip())); self.send({"path": p})          # T-204: misure, mai il nome
             elif u.path == "/api/apri": self.send({"porta": apri(d["path"])})
             elif u.path == "/api/aggiungi":
                 p = scegli_cartella()
@@ -275,18 +291,22 @@ class H(Gestore):
             elif u.path == "/api/ripristina": esportazione_in_corso(); self.send(AGGIORNAMENTI.ripristina(d.get("codice")))
             elif u.path == "/api/controlla": self.send(dict(AGGIORNAMENTI.controlla(), automatico=aggiornamenti.automatico()))
             elif u.path == "/api/aggiornamenti/automatico": aggiornamenti.imposta_automatico(d.get("automatico")); self.send({"automatico": aggiornamenti.automatico()})
-            elif u.path == "/api/licenza/attiva": self.send(licenze.attiva(d.get("chiave")))   # chiave non valida: ValueError con il motivo (400)
-            elif u.path == "/api/licenza/rimuovi": self.send(licenze.rimuovi())
+            elif u.path == "/api/licenza/attiva":                                           # chiave non valida: ValueError con il motivo (400)
+                st = licenze.attiva(d.get("chiave")); statistiche.licenza("attivata", st); self.send(st)
+            elif u.path == "/api/licenza/rimuovi": st = licenze.rimuovi(); statistiche.licenza("tolta", st); self.send(st)
             elif u.path == "/api/assistente":                  # solo l'utente, da questa pagina (gettone): nessuno strumento MCP passa di qui
                 if not isinstance(d.get("immagini"), bool): raise ValueError(lingua.t("schermata.immagini_vero_falso"))
                 consenso_mcp.imposta(d["immagini"]); self.send(assistente())
             elif u.path == "/api/lingua":                     # T-206: la lingua scelta vale per tutto il programma (preferenze dell'utente)
                 lingua.imposta(d.get("lingua")); self.send(lingue())
             elif u.path == "/api/importa-zip":
-                p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
+                p = importa_zip()
+                if p: statistiche.importazione("progetto_zip")                          # T-204: è successo, nient'altro
+                self.send({"path": p} if p else {"annullato": True})
             elif u.path == "/api/importa-catalogo":            # T-208: solo l'utente sceglie il file, con la finestra del sistema (nessun percorso dalla pagina)
-                p = dialoghi.scegli_catalogo()
-                self.send(laboratori.importa(p) if p else {"annullato": True})
+                p = dialoghi.scegli_catalogo(); r = laboratori.importa(p) if p else {"annullato": True}
+                if p: statistiche.importazione("catalogo")
+                self.send(r)
             elif u.path == "/api/rimuovi":
                 salva_registro([p for p in registro() if p != d["path"]]); self.send({"ok": True})
             elif u.path == "/api/cestino":
@@ -302,11 +322,12 @@ class H(Gestore):
                 for pr, _ in EDITORS.values():                                   # prima di rispondere: chi riceve «ok» sa che gli editor sono già stati fermati
                     try: pr.terminate()
                     except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
-                self.send({"ok": True})
+                statistiche.chiusura(); self.send({"ok": True})                 # T-204: la durata della sessione, prima di os._exit
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
+            elif u.path.startswith("/api/statistiche/") and (r := api_statistiche(u.path, d)) is not None: self.send(r)
             else: self.send({"errore": lingua.t("sistema.non_trovato")}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
-        except Exception as e: self.send({"errore": str(e)}, code=400)
+        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=400)          # T-204: tipo e punto del codice, solo con le statistiche accese
 
 
 def crea_server(porta=None, gettone=None):
@@ -365,11 +386,14 @@ def main(argv=None):
     except OSError as e: log.warning("conferma della versione non scritta: %s", e)
     indirizzo = f"http://127.0.0.1:{PORTA}/"
     print(f"Impaginatore: {indirizzo}  | progetti: {PROGETTI}", flush=True)
-    if m: return desktop.esegui(m, srv, fermo)            # la finestra apre l'indirizzo di avvio dentro il processo; chiusa la finestra, si chiude tutto
+    statistiche.processo("home"); statistiche.avvio(finestra=bool(m)); statistiche.avvia_invio(fermo)       # T-204: solo con il consenso; l'invio solo con un server (oggi no)
+    if m:
+        try: return desktop.esegui(m, srv, fermo)          # la finestra apre l'indirizzo di avvio dentro il processo; chiusa la finestra, si chiude tutto
+        finally: statistiche.chiusura()
     if not args.no_browser: apri_browser(srv.indirizzo_avvio())                    # anche con --daemon: l'indirizzo semplice che apre Impaginatore.app 1.x non basta più (SICUREZZA.md)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass
-    finally: fermo.set(); srv.server_close()
+    finally: fermo.set(); srv.server_close(); statistiche.chiusura()
     return 0
 
 

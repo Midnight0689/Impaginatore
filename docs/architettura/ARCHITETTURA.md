@@ -24,6 +24,8 @@ src/impaginatore/
 ├── nomi.py             nome del progetto (un dato) e nome di cartella valido su macOS, Windows e Linux
 ├── ed25519.py          firme Ed25519 (RFC 8032) con la sola libreria standard: chiavi di licenza, elenco delle revoche
 ├── licenze/            licenze, fasce di tier.json, prova gratuita, sola lettura, filigrana; tutto in locale (LICENZE.md)
+├── statistiche/        statistiche d'uso della beta privata (T-204): spente di serie, solo dopo il «sì»; registro locale,
+│                       schema chiuso degli eventi (schema.py), invio (invio.py, oggi nessuno) (STATISTICHE.md)
 ├── laboratori/         cataloghi dei laboratori (T-208): formato e firma (catalogo.py), installati e importati, prodotto
 │                       dell'album, file della consegna (consegna.py); cataloghi/generico.json (CATALOGHI.md)
 ├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti, licenza

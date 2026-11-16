@@ -18,3 +18,6 @@ dist/
 build/
 *.egg-info/
 .claude/
+
+# chiavi private di licenze e rilasci: mai nel repository
+/chiavi-private/
