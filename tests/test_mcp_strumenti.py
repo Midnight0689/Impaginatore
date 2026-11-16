@@ -21,6 +21,19 @@ def a():
     return S.Assistente()
 
 
+@pytest.fixture(autouse=True)
+def senza_avvii_veri(request, monkeypatch):
+    """nessun test avvia per sbaglio Impaginatore sulla porta vera (resterebbe acceso dopo il test): chi ha bisogno della
+    schermata dei progetti usa home_srv; solo le prove dell'avvio (test_avvio_*) lanciano il processo, su una porta loro"""
+    if request.node.name.startswith("test_avvio"): return
+
+    def guardia(attesa=C.ATTESA_AVVIO):
+        s = C.programma()
+        assert s is not None, "il test avvierebbe Impaginatore sulla porta vera: usa la fixture home_srv"
+        return s
+    monkeypatch.setattr(C, "avvia_programma", guardia)
+
+
 def pid(c): return S.id_progetto(c.progetto)
 
 
@@ -100,7 +113,7 @@ def test_dal_progetto_alla_bozza_rifinita(editor, home_srv, a, tmp_path):
     assert a.annulla(p)["annullato"] is None and len(E.SP) == 0, "si torna all'album vuoto, un passo alla volta"
 
 
-def test_l_utente_cambia_l_album_intanto(editor, a):
+def test_l_utente_cambia_l_album_intanto(editor, home_srv, a):
     """l'assistente lavora sulla versione che ha visto: se intanto l'utente cambia l'album nell'editor, la modifica si
     rifiuta finché l'assistente non rilegge lo stato (niente indici sbagliati)"""
     p = pid(editor)
