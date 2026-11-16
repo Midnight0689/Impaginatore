@@ -21,9 +21,9 @@ servizio · subito dopo l'emissione della chiave
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | La tua licenza Impaginatore {{fascia}} | 38 | La chiave, il pulsante per attivarla e tre passi fino al primo spread. Conserva questa email. | 93 |
+| A | La tua licenza Impaginatore {{fascia}} | 38 | La chiave, dove inserirla in Impaginatore e tre passi fino al primo spread. Conserva questa email. | 98 |
 | B | Impaginatore {{fascia}}: la tua chiave | 38 | Pagamento ricevuto, fattura in allegato. L’attivazione avviene sul tuo computer, senza internet. | 96 |
-| C | Chiave e fattura di Impaginatore {{fascia}} | 43 | Il pagamento è arrivato. Dentro: la chiave, come installare e il primo spread in cinque minuti. | 95 |
+| C | Chiave e fattura di Impaginatore {{fascia}} | 43 | Il pagamento è arrivato. Dentro: la chiave, dove inserirla e i passi fino al primo spread. | 90 |
 
 ### benvenuto-chiave.en
 
@@ -31,9 +31,9 @@ service · right after the key is issued
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Your Impaginatore {{fascia}} licence | 36 | Your key, the button to activate it and three steps to your first spread. Keep this email. | 90 |
+| A | Your Impaginatore {{fascia}} licence | 36 | Your key, where to enter it in Impaginatore and three steps to your first spread. Keep this email. | 98 |
 | B | Impaginatore {{fascia}}: your key | 33 | Payment received, invoice attached. Activation happens on your computer, with no internet needed. | 97 |
-| C | Your key and invoice for Impaginatore {{fascia}} | 48 | Payment received. Inside: your key, how to install, and your first spread in five minutes. | 90 |
+| C | Your key and invoice for Impaginatore {{fascia}} | 48 | Payment received. Inside: your key, where to enter it, and the steps to your first spread. | 90 |
 
 ### lancio
 
@@ -61,8 +61,8 @@ campagna automatica · giorno 1 della prova
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Il primo spread in cinque minuti | 32 | Tre cose da provare oggi, con l’album di esempio o con le tue foto. Bastano dieci minuti. | 89 |
-| B | Da dove partire con Impaginatore | 32 | Album di esempio, preset del tuo laboratorio, un export da guardare da vicino: tre passi per oggi. | 98 |
+| A | Il primo spread in cinque minuti | 32 | Tre cose da provare oggi, con le tue foto. Bastano dieci minuti. | 64 |
+| B | Da dove partire con Impaginatore | 32 | Una cartella di foto, il formato dell’album, un export da guardare da vicino: tre passi per oggi. | 97 |
 | C | La tua prova di 30 giorni è partita | 35 | Le funzioni del Pro tranne il PSD, nessun limite di spread. Ecco il primo passo. | 80 |
 
 ### prova-giorno-7
@@ -72,7 +72,7 @@ campagna automatica · giorno 7
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
 | A | Una settimana dopo: come va? | 28 | Spaziature uniformi, tono uniforme, modelli personali: tre cose che fanno risparmiare tempo sull’album intero. | 110 |
-| B | Tre funzioni che si scoprono tardi | 34 | Spazi e margini di tutto l’album con un comando, e i tuoi spread salvati come modelli. | 86 |
+| B | Tre funzioni che si scoprono tardi | 34 | Gli spazi di tutto l’album con un comando, e i tuoi spread salvati come modelli. | 80 |
 | C | Che cosa ti sta frenando? | 25 | Una domanda sola, e tre funzioni per l’album intero. Rispondi con una riga: leggo tutto. | 88 |
 
 ### prova-scadenza
@@ -101,9 +101,9 @@ da persona a persona · G1, a mano
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Preset {{nome_laboratorio}} per Impaginatore | 44 | Un preset con i vostri formati, abbondanze e piega, e un video di 90 secondi. | 77 |
-| B | I vostri formati, già impostati per i fotografi | 47 | Un programma per album con il vostro catalogo dentro: i file vi arrivano già conformi. | 86 |
-| C | File dei fotografi conformi alle vostre specifiche | 50 | Abbondanze e piega del {{formato_esempio}} già impostate. Video di 90 secondi. | 78 |
+| A | Preset {{nome_laboratorio}} per Impaginatore | 44 | Un preset con i vostri formati e abbondanze, e un video di 90 secondi. | 70 |
+| B | I vostri formati, già impostati per i fotografi | 47 | Un programma per album con il vostro catalogo dentro: i file vi arrivano con le vostre misure. | 94 |
+| C | File dei fotografi conformi alle vostre specifiche | 50 | Formato e abbondanza del {{formato_esempio}} nel catalogo. Video di 90 secondi. | 79 |
 
 ### laboratori-seguito
 
@@ -121,7 +121,7 @@ campagna · a ogni versione
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Impaginatore {{versione}} è disponibile | 39 | {{novita_1_titolo}}, {{novita_2_titolo}} e altro. Inclusa nella tua licenza: te la propone il programma. | 104 |
+| A | Impaginatore {{versione}} è disponibile | 39 | {{novita_1_titolo}}, {{novita_2_titolo}} e altro. Inclusa nella tua licenza. | 76 |
 | B | Impaginatore {{versione}}: {{novita_1_titolo}} | 46 | Tre novità e le correzioni. L’aggiornamento è incluso nella tua licenza. | 72 |
 | C | Cosa cambia in Impaginatore {{versione}} | 40 | {{novita_1_titolo}} e altre due novità. Progetti, modelli e licenza restano come sono. | 86 |
 
@@ -131,7 +131,7 @@ campaign · every release
 
 | | Oggetto | Car. | Preheader | Car. |
 |---|---|---|---|---|
-| A | Impaginatore {{versione}} is out | 32 | {{novita_1_titolo}}, {{novita_2_titolo}} and more. Included in your licence: the app offers it to you. | 102 |
+| A | Impaginatore {{versione}} is out | 32 | {{novita_1_titolo}}, {{novita_2_titolo}} and more. Included in your licence. | 76 |
 | B | Impaginatore {{versione}}: {{novita_1_titolo}} | 46 | Three new features and the fixes. The update is included in your licence. | 73 |
 | C | What’s new in Impaginatore {{versione}} | 39 | {{novita_1_titolo}} and two more changes. Projects, layouts and licence stay as they are. | 89 |
 
@@ -153,7 +153,7 @@ servizio · risposta dell'assistenza; meglio come risposta al messaggio del clie
 |---|---|---|---|---|
 | A | Sistemiamo l’attivazione di Impaginatore | 40 | Cosa fare, passo per passo. Se non basta, rispondi con uno screenshot. | 70 |
 | B | Re: (l’oggetto scritto dal cliente) | 35 | Cosa fare, passo per passo. Se non basta, rispondi con uno screenshot. | 70 |
-| C | Impaginatore: come attivare la chiave | 37 | La chiave va copiata tutta, circa 200 caratteri. Te la rimandiamo, con il pulsante. | 83 |
+| C | Impaginatore: come attivare la chiave | 37 | La chiave va copiata tutta, circa 200 caratteri. Te la rimandiamo qui sotto. | 76 |
 
 ### assistenza-ore
 

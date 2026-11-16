@@ -1,12 +1,12 @@
-{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per aver installato la prova di Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.
+{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per aver provato Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.
 
 IL PRIMO SPREAD IN CINQUE MINUTI
 
-01 · Parti dall’album di esempio
-Sulla prima schermata scegli «Prova con l’album di esempio». Le foto sono incluse, quindi puoi sbagliare senza toccare le tue.
+01 · Parti da una cartella di foto
+Nella schermata Album premi «Scegli la cartella delle foto…» e scegli la cartella con le foto scelte del servizio (per la bozza ne bastano 10). Le foto restano dove sono: l’album le legge da lì e non le modifica.
 
-02 · Scegli il tuo laboratorio
-Quando crei un album nuovo, scegli laboratorio e formato: abbondanze e piega arrivano già impostate. Se il tuo laboratorio non c’è, inserisci le misure a mano.
+02 · Scegli il formato
+Nella finestra «Nuovo album» premi un formato pronto, per esempio «60 × 22,5», o scrivi le misure. Se hai il catalogo del tuo laboratorio in un file, lo importi con «Importa il catalogo di un laboratorio…»: l’album prende formato e abbondanza del suo prodotto.
 
 03 · Esporta uno spread e guardalo al 100%
 In JPG o PDF: è il modo più rapido per giudicare margini e nitidezza. Durante la prova gli export hanno una filigrana.
@@ -14,10 +14,10 @@ In JPG o PDF: è il modo più rapido per giudicare margini e nitidezza. Durante 
 Guarda la guida al primo album: {{link_manuale}}
 {{#if mcp_disponibile}}
 
-SE VUOI, LA BOZZA LA PREPARA CLAUDE
+SE VUOI, C’È L’ASSISTENTE AI
 
-La prova include il collegamento con Claude: gli chiedi la bozza dell’intero album e poi la rifinisci a mano, spread per spread. Gli spread che hai già sistemato non li tocca.
-Serve un tuo abbonamento a Claude, a parte. Claude riceve i dati dell’album (nomi dei file, proporzioni, data di scatto, posizione dei volti), non le foto: le miniature solo se lo autorizzi tu.
+La prova include il collegamento con un assistente AI tuo, per esempio Claude Desktop: gli chiedi di guardare l’album, controllarlo e proporre una bozza, e ogni modifica si annulla con Ctrl+Z.
+Serve un tuo abbonamento all’assistente, a parte. Di serie riceve solo testo (nomi dei file, misure, testi dell’album), mai le foto originali; le immagini ridotte le accendi solo tu. Quello che riceve va al programma dell’assistente e al suo fornitore (per Claude, Anthropic).
 Come collegarlo: {{link_guida_claude}}
 {{/if}}
 
@@ -28,7 +28,7 @@ Durante la prova ti scrivo altre due volte: fra una settimana e qualche giorno p
 
 --
 Resta tuo.
-Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{email}} e hai confermato la richiesta.
+Ricevi questa email perché hai chiesto i consigli per usare la prova gratuita all’indirizzo {{email}} e hai confermato la richiesta.
 Non vuoi più ricevere queste email? Disiscriviti con un clic: {{link_disiscrizione}}
 Scegli quali ricevere: {{link_preferenze}}
 {{titolare}} · {{indirizzo}} · P. IVA {{partita_iva}}

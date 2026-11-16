@@ -137,9 +137,9 @@ def segnaposto(nome: str, larghezza_css: int, altezza_css: int, titolo: str, des
 SCHERMATE = [
     ("lancio-spread.png", 520, 325, "Spread 07–08 nell’editor, con le quote",
      "Lo spread aperto nell’editor, tema chiaro, con una quota verde «5,0 mm» tra due foto. Album dimostrativo con foto in licenza."),
-    ("benvenuto-primo-spread.png", 520, 293, "Il primo spread dell’album di esempio",
-     "L’album di esempio appena impaginato: primo spread, pannello misure visibile, nessuna filigrana."),
-    ("prova-bozza-claude.png", 520, 325, "La bozza preparata da Claude",
+    ("benvenuto-primo-spread.png", 520, 293, "Il primo spread di un album",
+     "Un album appena impaginato: primo spread, elenco degli spread a sinistra, nessuna filigrana."),
+    ("prova-bozza-claude.png", 520, 325, "La bozza di un album",
      "La colonna degli spread a sinistra con la bozza completa; uno spread rifinito a mano evidenziato."),
     ("aggiornamento-novita.png", 520, 293, "La novità principale della versione",
      "Dettaglio della funzione nuova, ritagliato sul punto che si racconta, una sola annotazione."),

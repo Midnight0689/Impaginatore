@@ -4,9 +4,9 @@
     <mj-title>Il primo spread in cinque minuti</mj-title>
   </mj-head>
   <mj-body>
-    <!-- Sequenza della prova, giorno 1. Solo a chi, scaricando la prova, ha chiesto i consigli via email
+    <!-- Sequenza della prova, giorno 1. Solo a chi, provando il programma, ha chiesto i consigli via email
          (doppia conferma): la prova in sé non chiede l'indirizzo. -->
-    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Tre cose da provare oggi, con l’album di esempio o con le tue foto. Bastano dieci minuti.</div></mj-raw>
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Tre cose da provare oggi, con le tue foto. Bastano dieci minuti.</div></mj-raw>
     <mj-include path="./_base/testata.mjml" />
 
     <mj-section padding="40px 40px 0">
@@ -15,7 +15,7 @@
         <mj-spacer height="12px" />
         <mj-text mj-class="titolo">Il primo spread in cinque minuti.</mj-text>
         <mj-spacer height="16px" />
-        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per aver installato la prova di Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.</mj-text>
+        <mj-text mj-class="attacco">{{#if nome}}Ciao {{nome}}, grazie{{else}}Grazie{{/if}} per aver provato Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.</mj-text>
       </mj-column>
     </mj-section>
 
@@ -25,11 +25,11 @@
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
             <tr>
               <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:3px 0 20px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:16px;line-height:24px;font-weight:500;color:#236743;">01</td>
-              <td valign="top" style="padding:0 0 20px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Parti dall’album di esempio</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Sulla prima schermata scegli <b>Prova con l’album di esempio</b>. Le foto sono incluse, quindi puoi sbagliare senza toccare le tue.</div></td>
+              <td valign="top" style="padding:0 0 20px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Parti da una cartella di foto</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Nella schermata <b>Album</b> premi <b>Scegli la cartella delle foto…</b> e scegli la cartella con le foto scelte del servizio (per la bozza ne bastano 10). Le foto restano dove sono: l’album le legge da lì e non le modifica.</div></td>
             </tr>
             <tr>
               <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:3px 0 20px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:16px;line-height:24px;font-weight:500;color:#236743;">02</td>
-              <td valign="top" style="padding:0 0 20px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Scegli il tuo laboratorio</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Quando crei un album nuovo, scegli laboratorio e formato: abbondanze e piega arrivano già impostate. Se il tuo laboratorio non c’è, inserisci le misure a mano.</div></td>
+              <td valign="top" style="padding:0 0 20px;"><div class="c-testo" style="font-size:16px;line-height:26px;font-weight:600;color:#181715;">Scegli il formato</div><div class="c-sec" style="font-size:15px;line-height:24px;color:#54524E;padding-top:2px;">Nella finestra «Nuovo album» premi un formato pronto, per esempio «60 × 22,5», o scrivi le misure. Se hai il catalogo del tuo laboratorio in un file, lo importi con «Importa il catalogo di un laboratorio…»: l’album prende formato e abbondanza del suo prodotto.</div></td>
             </tr>
             <tr>
               <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:3px 0 0;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:16px;line-height:24px;font-weight:500;color:#236743;">03</td>
@@ -48,14 +48,14 @@
       <mj-column>
         <mj-divider />
         <mj-spacer height="32px" />
-        <mj-text mj-class="titolo2">Se vuoi, la bozza la prepara Claude</mj-text>
+        <mj-text mj-class="titolo2">Se vuoi, c’è l’assistente AI</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>La prova include il collegamento con Claude: gli chiedi la bozza dell’intero album e poi la rifinisci a mano, spread per spread. Gli spread che hai già sistemato non li tocca.</mj-text>
+        <mj-text>La prova include il collegamento con un assistente AI tuo, per esempio Claude Desktop: gli chiedi di guardare l’album, controllarlo e proporre una bozza, e ogni modifica si annulla con Ctrl+Z.</mj-text>
         <mj-spacer height="20px" />
         <!-- SEGNAPOSTO: schermata da produrre. 1040 × 650 px, mostrata a 520 × 325. -->
-        <mj-image src="{{base_immagini}}/segnaposto/prova-bozza-claude.png" width="520px" height="325px" alt="Impaginatore con la bozza di un album preparata da Claude e il pannello degli spread." />
+        <mj-image src="{{base_immagini}}/segnaposto/prova-bozza-claude.png" width="520px" height="325px" alt="Impaginatore con la bozza di un album e il pannello degli spread." />
         <mj-spacer height="16px" />
-        <mj-text mj-class="piccolo">Serve un tuo abbonamento a Claude, a parte. Claude riceve i dati dell’album (nomi dei file, proporzioni, data di scatto, posizione dei volti), non le foto: le miniature solo se lo autorizzi tu. <a class="lnk" href="{{link_guida_claude}}">Come collegarlo</a>.</mj-text>
+        <mj-text mj-class="piccolo">Serve un tuo abbonamento all’assistente, a parte. Di serie riceve solo testo (nomi dei file, misure, testi dell’album), mai le foto originali; le immagini ridotte le accendi solo tu. Quello che riceve va al programma dell’assistente e al suo fornitore (per Claude, Anthropic). <a class="lnk" href="{{link_guida_claude}}">Come collegarlo</a>.</mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>{{/if}}</mj-raw>
@@ -71,7 +71,7 @@
     <mj-include path="./_base/piede-apertura.mjml" />
     <mj-section padding="12px 40px 0">
       <mj-column>
-        <mj-text mj-class="nota">Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{email}} e hai confermato la richiesta.</mj-text>
+        <mj-text mj-class="nota">Ricevi questa email perché hai chiesto i consigli per usare la prova gratuita all’indirizzo {{email}} e hai confermato la richiesta.</mj-text>
       </mj-column>
     </mj-section>
     <mj-include path="./_base/piede-campagna.mjml" />

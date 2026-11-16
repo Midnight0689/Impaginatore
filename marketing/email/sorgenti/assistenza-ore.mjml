@@ -52,7 +52,7 @@
             </tr>
             <tr>
               <td width="36" valign="top" class="mono c-acc" style="width:36px;padding:0 0 12px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:24px;font-weight:500;color:#236743;">02</td>
-              <td valign="top" class="c-testo" style="padding:0 0 12px;font-size:16px;line-height:24px;color:#181715;">l’argomento: installazione, primo album, modelli, preset del laboratorio, o altro;</td>
+              <td valign="top" class="c-testo" style="padding:0 0 12px;font-size:16px;line-height:24px;color:#181715;">l’argomento: installazione, primo album, modelli, cataloghi dei laboratori, o altro;</td>
             </tr>
             <tr>
               <td width="36" valign="top" class="mono c-acc" style="width:36px;font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:24px;font-weight:500;color:#236743;">03</td>
@@ -72,7 +72,7 @@
         <mj-text>
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
             <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">Il tempo si conta a blocchi di 30 minuti.</b> Alla fine di ogni sessione ti scriviamo quante ore restano.</td></tr>
-            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">I difetti del programma non consumano ore.</b> Se il problema è un nostro errore, la correzione è gratuita, come il manuale e le guide video.</td></tr>
+            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:14px;line-height:22px;color:#54524E;"><b class="c-testo" style="color:#181715;">I difetti del programma non consumano ore.</b> Se il problema è un nostro errore, la correzione è gratuita, come il manuale.</td></tr>
           </table>
         </mj-text>
         <mj-spacer height="24px" />

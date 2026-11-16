@@ -1,8 +1,8 @@
-{% if contact.FIRSTNAME %}Ciao {{ contact.FIRSTNAME }}, è{% else %}È{% endif %} passata una settimana da quando hai installato la prova. Se hai già impaginato qualche spread, ecco tre funzioni che si scoprono tardi e fanno risparmiare tempo sull’album intero.
+{% if contact.FIRSTNAME %}Ciao {{ contact.FIRSTNAME }}, è{% else %}È{% endif %} passata una settimana da quando hai cominciato la prova. Se hai già impaginato qualche spread, ecco tre funzioni che si scoprono tardi e fanno risparmiare tempo sull’album intero.
 
-- Spaziature uniformi su tutto l’album. Un solo comando allinea spazi e margini di tutti gli spread, al decimo di millimetro. Utile quando hai spostato molte foto a mano.
-- Tono uniforme fra uno spread e l’altro. Avvicina il tono delle foto scattate con luci diverse, così l’album si sfoglia senza salti.
-- I tuoi modelli. Uno spread che ti piace si salva come modello personale e si riusa nel prossimo album, con le stesse misure.
+- Spaziature uniformi su tutto l’album. Con «Correggi tutto l’album» gli spazi tra le foto diventano uguali in tutti gli spread. Utile quando hai spostato molte foto a mano.
+- Tono uniforme fra uno spread e l’altro. Con «Uniforma il tono» avvicini il tono delle foto scattate con luci diverse, così l’album si sfoglia senza salti.
+- I tuoi modelli. Uno spread che ti piace si salva come modello tuo («Salva questo spread come modello…») e si riusa negli altri album.
 
 Come si fa, passo per passo: [[link_manuale]]
 
@@ -17,7 +17,7 @@ Se preferisci impostare il primo album insieme, in videochiamata, c’è l’ass
 
 --
 Resta tuo.
-Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{ contact.EMAIL }} e hai confermato la richiesta.
+Ricevi questa email perché hai chiesto i consigli per usare la prova gratuita all’indirizzo {{ contact.EMAIL }} e hai confermato la richiesta.
 Non vuoi più ricevere queste email? Disiscriviti con un clic: {{ unsubscribe }}
 Scegli quali ricevere: {{ update_profile }}
 [[titolare]] · [[indirizzo]] · P. IVA [[partita_iva]]

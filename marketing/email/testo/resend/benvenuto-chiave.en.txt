@@ -12,50 +12,33 @@ Registered to “{{{INTESTATARIO}}}” · computers: {{{COMPUTER}}} · request {
 
 ALREADY HAVE IMPAGINATORE, TRIAL INCLUDED?
 
-Open this link: the app opens with the key filled in, and your album stays where it is, without the watermark.
-{{{LINK_ATTIVAZIONE}}}
-
-If nothing opens, use License › Activate and paste the key. Activation happens on your computer: no internet needed.
+Go to step 02, below: paste the key in the “Licence” window. Your album stays where it is and exports come out without the watermark. The key is checked on your computer: no internet needed.
 
 
-DON’T HAVE IMPAGINATORE YET? THREE STEPS, FIVE MINUTES.
+FROM THE KEY TO YOUR FIRST SPREAD
+
+Three steps: install, enter the key, lay out.
 
 01 · Install
 
-A one-line command downloads Impaginatore from our site, checks its integrity and installs it for your user only, with no administrator password.
+Install Impaginatore by following the instructions on the Install page: {{{LINK_INSTALLA}}}
+If you already have it, trial included, go to step 02.
 
-macOS and Linux: open Terminal (on a Mac: Spotlight, then type “Terminal”), paste the line and press Return:
+02 · Enter the key
 
-    {{{COMANDO_MAC}}}
-
-Windows: open PowerShell from the Start menu, paste the line and press Enter:
-
-    {{{COMANDO_WINDOWS}}}
-
-What the command does, line by line: {{{LINK_COSA_FA_COMANDO}}}
-
-Prefer a classic installer?
-macOS: {{{LINK_MAC}}}
-Windows: {{{LINK_WINDOWS}}}
-Linux: {{{LINK_LINUX}}}
-
-Our installers are not signed with Apple or Microsoft certificates, so your system shows a warning the first time. On a Mac: System Settings › Privacy & Security › Open Anyway. On Windows: More info › Run anyway. Step by step: {{{LINK_INSTALLA}}}
-
-02 · Activate
-
-Come back to this email and open the “Activate in Impaginatore” link. Or open the app: if you’ve copied the key it spots it; otherwise go to License › Activate, paste and click Activate. Impaginatore shows the licence tier and owner: check that it says “{{{INTESTATARIO}}}”.
+Open Impaginatore: the Albums screen opens. At the top right, click the licence button, which shows the status: for example “Free trial · 30 days” or “Read-only · enter your licence”. The “Licence” window opens: paste the key in the “Licence key” box and click “Activate”. If you’re inside an album, click “Albums” first. In the last days of the trial, “Licence…” also appears at the bottom of the screen. Once the key is accepted the button reads “{{{FASCIA}}} licence”: check that the owner’s name is “{{{INTESTATARIO}}}”. The key is checked on your computer, without internet, and is not sent to anyone. If you read “Key not valid”, copy it again in full, from IMP1- to the end.
 
 03 · Your first spread
 
-Choose “Try the sample album”: the photos are included. Or drag a folder of your own into the window. Impaginatore suggests a layout for the spread; you move, crop and refine, with gaps and margins to a tenth of a millimetre.
+Click “Choose the photo folder…” and pick the folder with the photos selected for the job. In the “New album” window click a ready-made size, for example “60 × 22,5”, or type the measurements, then “Create”. With Pro and Studio click “Draft the album…” (you need at least 10 photos): the photos go into spreads in order of capture time, and you refine by hand. Every change can be undone with Ctrl+Z.
 
 
 GOOD TO KNOW
 
-- Your licence never expires. It’s registered to “{{{INTESTATARIO}}}” and you can use it on up to {{{COMPUTER}}} of your computers. If you change computer, install Impaginatore on the new one and use the same key.
+- Your licence never expires. It’s registered to “{{{INTESTATARIO}}}” and you can use it on up to {{{COMPUTER}}} of your computers. If you change computer: on the old one open the “Licence” window, click “Remove from this computer” and confirm with “Remove licence”; then enter the same key on the new computer.
 - All version 2 updates are included. No new major version for at least 18 months; if one comes out within 90 days of your purchase, you get it free. Studio already includes the next one; for the other tiers the upgrade is half price.
-- You have 30 days for a full refund, no reason needed: just reply to this email. We transfer the money back and the key is deactivated.
-- The manual, video guides and bug fixes are free. Personal support, by video call or remote session, is sold by the hour: 1 hour €49, 5 hours €249, 10 hours €499, excluding VAT. How it works: {{{LINK_ASSISTENZA}}}
+- You have 30 days for a full refund, no reason needed: just reply to this email. We transfer the money back and the key is revoked. Impaginatore doesn’t check it online: it goes read-only from the first update of the app you install after the revocation, and until then it keeps working.
+- The manual and bug fixes are free. Personal support, by video call or remote session, is sold by the hour: 1 hour €49, 5 hours €249, 10 hours €499, excluding VAT. How it works: {{{LINK_ASSISTENZA}}}
 
 Keep this email: you need the key if you reinstall. If something doesn’t add up, reply: a person reads it.
 

@@ -5,7 +5,7 @@
   </mj-head>
   <mj-body>
     <!-- Risposta dell'assistenza a chi non riesce ad attivare o installare. Si valorizzano solo i casi che
-         servono (se_chiave_non_valida, se_link_attivazione, se_installazione, se_altri_computer): gli altri
+         servono (se_chiave_non_valida, se_dove_inserire, se_installazione, se_altri_computer): gli altri
          paragrafi spariscono. Con Resend, che non ha condizioni, si usa converti.py --rendi. -->
     <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Cosa fare, passo per passo. Se non basta, rispondi con uno screenshot.</div></mj-raw>
     <mj-include path="./_base/testata.mjml" />
@@ -25,7 +25,7 @@
       <mj-column>
         <mj-text mj-class="titolo2">«Questa chiave non è valida»</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con <span class="mono" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;">IMP1-</span>: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero, oppure usa il pulsante.</mj-text>
+        <mj-text>Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con <span class="mono" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:15px;">IMP1-</span>: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero e incollala nel riquadro «Chiave di licenza» della finestra «Licenza».</mj-text>
         <mj-spacer height="16px" />
         <mj-text>
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td class="f-sup b-fil" bgcolor="#FDFCF9" style="background-color:#FDFCF9;border:1px solid #DEDAD2;border-radius:4px;padding:16px 20px;">
@@ -33,18 +33,16 @@
             <div class="mono selez c-testo" style="font-family:'IBM Plex Mono',SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:14px;line-height:24px;font-weight:500;letter-spacing:0.02em;color:#181715;padding-top:8px;overflow-wrap:anywhere;word-break:break-word;-webkit-user-select:all;user-select:all;">{{chiave_licenza}}</div>
           </td></tr></table>
         </mj-text>
-        <mj-spacer height="16px" />
-        <mj-button href="{{link_attivazione}}">Attiva in Impaginatore</mj-button>
       </mj-column>
     </mj-section>
     <mj-raw>{{/if}}</mj-raw>
 
-    <mj-raw>{{#if se_link_attivazione}}</mj-raw>
+    <mj-raw>{{#if se_dove_inserire}}</mj-raw>
     <mj-section padding="32px 40px 0">
       <mj-column>
-        <mj-text mj-class="titolo2">Il pulsante non apre Impaginatore</mj-text>
+        <mj-text mj-class="titolo2">Dove si inserisce la chiave</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>Succede con alcuni programmi di posta e con la posta letta nel browser, che non lasciano aprire le app dai link. Non è un problema della chiave. Copia la chiave dall’email della licenza, apri Impaginatore e usa il menu <b>Licenza › Attiva</b>. Se l’hai appena installato, aprilo una prima volta e poi riprova il pulsante.</mj-text>
+        <mj-text>Apri Impaginatore: si apre la schermata <b>Album</b>. In alto a destra premi il pulsante della licenza (per esempio «Prova gratuita · 30 giorni» o «Sola lettura · inserisci la licenza»). Si apre la finestra <b>Licenza</b>: incolla la chiave nel riquadro <b>Chiave di licenza</b> e premi <b>Attiva</b>. Se sei dentro un album, premi prima «‹ Album».</mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>{{/if}}</mj-raw>
@@ -54,18 +52,7 @@
       <mj-column>
         <mj-text mj-class="titolo2">L’installazione si ferma</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>Con il comando di una riga, copia la riga intera e incollala in <b>Terminale</b> (Mac e Linux) o in <b>PowerShell</b> (Windows); non serve la password di amministratore. Il comando giusto è nella <a class="lnk" href="{{link_installa}}">pagina Installa</a>.</mj-text>
-        <mj-spacer height="12px" />
-        <mj-text>Con l’installer classico, il sistema mostra un avviso perché non è firmato con i certificati di Apple e Microsoft:</mj-text>
-        <mj-spacer height="8px" />
-        <mj-text>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:24px;color:#54524E;"><b class="c-testo" style="color:#181715;">Mac</b> · Impostazioni di Sistema › Privacy e sicurezza, poi <b class="c-testo" style="color:#181715;">Apri comunque</b> accanto al nome di Impaginatore.</td></tr>
-            <tr><td class="riga-fil c-sec" style="border-top:1px solid #DEDAD2;border-bottom:1px solid #DEDAD2;padding:12px 0;font-size:15px;line-height:24px;color:#54524E;"><b class="c-testo" style="color:#181715;">Windows</b> · sulla finestra blu premi <b class="c-testo" style="color:#181715;">Ulteriori informazioni</b>, poi <b class="c-testo" style="color:#181715;">Esegui comunque</b>.</td></tr>
-          </table>
-        </mj-text>
-        <mj-spacer height="12px" />
-        <mj-text mj-class="piccolo">Prima di fidarti, puoi leggere <a class="lnk" href="{{link_cosa_fa_comando}}">cosa fa il comando, riga per riga</a>, con l’impronta dei file da confrontare.</mj-text>
+        <mj-text>Le istruzioni per installare Impaginatore sono nella <a class="lnk" href="{{link_installa}}">pagina Installa</a>. Se non bastano, rispondi con il sistema che usi (macOS, Windows o Linux), il messaggio che leggi e, se puoi, uno screenshot.</mj-text>
       </mj-column>
     </mj-section>
     <mj-raw>{{/if}}</mj-raw>

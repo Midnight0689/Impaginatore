@@ -9,7 +9,7 @@ Licenza: Impaginatore {{ params.fascia }}, revocata
 Di solito un bonifico arriva entro uno o due giorni lavorativi; se è istantaneo, in pochi secondi. Se fra cinque giorni lavorativi non lo vedi, rispondi a questa email.
 
 I TUOI ALBUM RESTANO TUOI
-La chiave è revocata e non va più usata. Impaginatore non si collega a internet per controllarla: l’elenco delle chiavi revocate arriva con gli aggiornamenti del programma, e dal primo aggiornamento che installi passa in sola lettura. I progetti e le foto restano sul tuo computer e si aprono ancora; quello che hai già esportato resta tuo.
+La chiave è revocata e non va più usata. Impaginatore non si collega a internet per controllarla: l’elenco delle chiavi revocate arriva con gli aggiornamenti del programma. Fino al primo aggiornamento che installi dopo la revoca la chiave continua a funzionare; da quel momento il programma passa in sola lettura: gli album si aprono e si guardano, ma non si modificano e non si esportano. I progetti e le foto restano sul tuo computer; quello che hai già esportato resta tuo.
 
 Se ti va, rispondi con una riga su cosa non ha funzionato. Non è obbligatorio, e il rimborso non dipende dalla risposta: ci aiuta a fare meglio.
 

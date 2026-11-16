@@ -19,13 +19,13 @@ Una cosa da sapere: Impaginatore non apre i progetti di altri programmi. Gli alb
 
 PER CHI È IN QUESTA SITUAZIONE: PRO A {{prezzo_rosetta_pro}}, STUDIO A {{prezzo_rosetta_studio}}
 
-Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa {{prezzo_rosetta_pro}} e Studio {{prezzo_rosetta_studio}}, IVA esclusa, fino al {{data_fine_rosetta}}. Anche questa licenza si paga una volta e non scade. Impaginatore gira in modo nativo sui Mac con processore Apple, oltre che su Windows e Linux.
+Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa {{prezzo_rosetta_pro}} e Studio {{prezzo_rosetta_studio}}, IVA esclusa, fino al {{data_fine_rosetta}}. Anche questa licenza si paga una volta e non scade.
 
 Per richiederla, rispondi a questa email con uno screenshot della licenza o della fattura del vecchio programma. Puoi coprire importi e dati che non servono: ci bastano il nome del programma e la licenza perpetua. Usiamo lo screenshot solo per l’offerta e lo cancelliamo dopo averti mandato la chiave.
 
 Come funziona l’offerta: {{link_rosetta}}
 
-Non serve decidere oggi. Puoi anche provare Impaginatore per 30 giorni, senza carta, sul Mac che hai già: {{link_prova}}
+Non serve decidere oggi. Puoi anche provare Impaginatore per 30 giorni, senza carta: {{link_prova}}
 
 {{firma_nome}}
 {{firma_ruolo}}

@@ -9,7 +9,8 @@ IMPAGINATORE [[versione]] IS OUT ([[data_versione]])
 Fixes: [[correzioni]]
 
 HOW TO UPDATE
-Impaginatore offers the update next time you open it. Projects, layouts and licence stay as they are. If it doesn’t appear, the new version is also on the Install page: [[link_installa]]
+The steps to install the new version are on the Install page: [[link_installa]]
+Projects, layouts and licence stay as they are.
 
 What’s new: [[link_note_versione]]
 

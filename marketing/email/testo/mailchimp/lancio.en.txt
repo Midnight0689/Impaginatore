@@ -7,8 +7,8 @@ IMPAGINATORE IS READY. YOU PAY ONCE.
 It’s an app for laying out wedding albums on your own computer, on Mac, Windows or Linux. You buy it once, with a licence that never expires: no subscription.
 
 - Your photos stay on your computer. Impaginatore works on the files you already have. You upload nothing, and it works offline too.
-- To a tenth of a millimetre. Your print lab’s sizes, bleed and gutter are already set up. Before export, Impaginatore checks that everything adds up.
-- Layered PSD, if you retouch in Photoshop. With Pro and Studio every spread opens in Photoshop with each photo on its own layer. Photoshop is not included.
+- A check before printing. Pick a ready-made size or type the measurements, with bleed and margins. Before export, “Check” flags missing photos, photos under 150 ppi and photos outside the page.
+- Layered PSD, if you retouch in Photoshop. With Pro and Studio every spread opens in Photoshop with each photo on its own layer. Photoshop is not included, and it is needed on macOS or Windows, not on Linux.
 
 
 THREE LICENCES, NO SUBSCRIPTION
@@ -17,12 +17,12 @@ Launch price for 60 days, until [[data_fine_lancio]], or until the first 300 lic
 
 PRO · recommended
 €79 until [[data_fine_lancio]], then €99. Once.
-The full editor, unlimited designer and personal layouts; automatic layout of the whole album; even spacing and tone across the whole album; JPG, PDF and layered PSD export; 2 computers, all version 2 updates included.
+The full editor, unlimited layouts of your own; automatic layout of the whole album; even spacing and tone across the whole album; JPG, PDF and layered PSD export; 2 computers, all version 2 updates included.
 Buy Pro: [[link_acquisto_pro]]
 
-ESSENZIALE
+ESSENTIAL
 €39 until [[data_fine_lancio]], then €49.
-30 designer and 5 personal layouts, JPG and PDF export, 1 computer.
+The editor, JPG and PDF export, up to 5 layouts of your own, 1 computer.
 [[link_acquisto_essenziale]]
 
 STUDIO
@@ -30,13 +30,13 @@ STUDIO
 Everything in Pro on 5 computers, the next major version and 1 hour of support included.
 [[link_acquisto_studio]]
 
-For private buyers in Italy, with 22% VAT, at the launch price: Essenziale €47.58, Pro €96.38, Studio €145.18.
+For private buyers in Italy, with 22% VAT, at the launch price: Essential €47.58, Pro €96.38, Studio €145.18.
 
 An album software subscription costs around €20 a month. Pro at full price costs about as much as five of those months; at the launch price, about as much as four. After that you pay nothing more, and the app stays yours.
 (Three yearly album software subscriptions cost between $250 and $290 a year, excluding VAT: roughly €19 to €22 a month. Public prices on 13 November 2026, ECB rate €1 = $1.1052. Sources on the pricing page: [[link_prezzi]])
 
 SUPPORT BY THE HOUR
-1 hour €49 · 5 hours €249 · 10 hours €499, excluding VAT. By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual, video guides and bug fixes.
+1 hour €49 · 5 hours €249 · 10 hours €499, excluding VAT. By video call or remote session, in 30-minute blocks, valid for 12 months. Free for everyone: manual and bug fixes.
 
 HOW BUYING WORKS
 Choose a licence and we send you bank transfer details. Once payment arrives, you get the invoice and your key within 2 business hours. If you change your mind, you have 30 days for a full refund, no questions asked.
