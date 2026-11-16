@@ -69,7 +69,10 @@ def test_xss_da_nomi_ed_exif(home_srv, apri_editor, tmp_path):
     """SEC-006: nome del progetto, nome del file e data EXIF di una foto del cliente arrivano nella pagina come testo"""
     from cdp import Browser
     h = home_srv; p = h.post("/api/nuovo", {"nome": "Album " + CATTIVO, "w": 30, "h": 30})["path"]
-    nome = 'x"><img src=x onerror="document.body.dataset.xss=2">'
+    # Windows non ammette «"», «<» e «>» nel nome di un file: lì il nome prova l'uscita da un attributo tra apici singoli e
+    # un'entità che non deve diventare un elemento (data EXIF e nome dell'album restano quelli con «<img …>»)
+    nome = ("x' autofocus onfocus='document.body.dataset.xss=2' &lt;img src=x onerror=document.body.dataset.xss=2&gt;" if os.name == "nt"
+            else 'x"><img src=x onerror="document.body.dataset.xss=2">')
     crea_foto(os.path.join(p, "Foto"), [("H01", 600, 400, "2026:01:01 10:00:00"), (nome, 500, 500, CATTIVO)])
     c = apri_editor(p)
     with Browser(tmp_path) as b:

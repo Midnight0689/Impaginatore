@@ -91,8 +91,9 @@ class Browser:
         prof = os.path.join(self.cartella, "chrome-cdp"); os.makedirs(prof, exist_ok=True)
         self.registro = os.path.join(self.cartella, "chrome-cdp.log")
         with open(self.registro, "wb") as uscita:                    # quello che Chrome dice: finisce nel messaggio se non parte
-            self.p = subprocess.Popen([CHROME, *OPZIONI, f"--user-data-dir={prof}", "--remote-debugging-port=0", "--window-size=1600,1000", "about:blank"],
-                                      stdout=uscita, stderr=subprocess.STDOUT)
+            self.p = subprocess.Popen([CHROME, *OPZIONI, f"--user-data-dir={prof}", "--remote-debugging-port=0", "--window-size=1600,1000",
+                                       "--enable-logging=stderr", "about:blank"], stdout=uscita, stderr=subprocess.STDOUT)
+        self.profilo = prof
         f = os.path.join(prof, "DevToolsActivePort"); t = time.time() + 30
         while not (os.path.exists(f) and open(f, encoding="utf-8").read().strip()):
             if time.time() > t: raise OSError("Chrome non parte: " + self._detto())
@@ -111,8 +112,9 @@ class Browser:
         return self
 
     def _detto(self):
-        """ultime righe dell'uscita di Chrome (per capire perché non parte su un sistema)"""
-        with open(self.registro, encoding="utf-8", errors="replace") as f: return f.read()[-3000:]
+        """perché Chrome non parte su un sistema: se è ancora in funzione, cosa c'è nel profilo, le ultime righe della sua uscita"""
+        with open(self.registro, encoding="utf-8", errors="replace") as f: uscita = f.read()[-3000:]
+        return f"uscito con {self.p.poll()}, nel profilo {sorted(os.listdir(self.profilo))[:30]}; uscita: {uscita}"
 
     def __exit__(self, tipo, *a):
         if tipo is None:                              # ultimi eventi della pagina, poi il controllo generale della CSP
