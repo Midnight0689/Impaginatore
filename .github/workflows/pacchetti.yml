@@ -115,8 +115,9 @@ jobs:
     needs: test
     # test passati, oppure (solo sui rami pacchetti/**) non eseguiti
     if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
-    # runner e tempo massimo (minuti) per pacchetto
-    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-26","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
+    # runner e tempo massimo (minuti) per pacchetto. I due Mac su macOS 15: la versione minima la decidono le librerie
+    # (macOS 14), e il 16/11/2026 macos-26 arm64 non ha trovato un runner libero in 15 minuti (job annullato da GitHub)
+    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
     timeout-minutes: ${{ fromJSON('{"linux":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
     strategy:
       fail-fast: false
