@@ -2,7 +2,7 @@
 
 Pagine statiche scritte a mano: HTML, un foglio di stile, un piccolo script. Nessun framework, nessuna dipendenza da installare, nessuna risorsa da altri siti (caratteri compresi), nessun cookie, nessun tracciamento. Si aprono anche con un doppio clic su `index.html` e funzionano su qualsiasi hosting statico.
 
-**Stato: modello pronto, non pubblicabile così com'è.** Dominio, indirizzi email, titolare, testi legali, installatori e pagina d'installazione non esistono ancora: l'elenco è sotto, in «Prima di pubblicare». Dal riallineamento T-501 le pagine descrivono solo quello che la versione 2.0 fa oggi; quello che manca è tolto o detto «in arrivo», senza date.
+**Stato: modello pronto, non pubblicabile così com'è.** Dominio, indirizzi email, titolare, testi legali e collegamenti di scaricamento non esistono ancora: l'elenco è sotto, in «Prima di pubblicare». Dal riallineamento T-501 le pagine descrivono solo quello che la versione 2.0 fa oggi; quello che manca è tolto o detto «in arrivo», senza date.
 
 ## Cosa c'è
 
@@ -11,7 +11,7 @@ Pagine statiche scritte a mano: HTML, un foglio di stile, un piccolo script. Nes
 | `index.html` | Pagina principale in italiano |
 | `en/index.html` | La stessa pagina in inglese (`hreflang` reciproci) |
 | `prezzi.html` | Fasce, tabella delle funzioni, aggiornamenti, come si compra, domande sui prezzi |
-| `installa.html`, `en/installa.html` | Per ora solo «gli installatori sono in arrivo»: fuori dai menu e dalla mappa del sito finché non esistono (T-301, T-302). Il testo di prima (comando di una riga, installatore classico, impronte) è nella storia di git |
+| `installa.html`, `en/installa.html` | I file d'installazione per sistema, che cosa è provato (Linux sì, macOS e Windows in collaudo) e l'avviso al primo avvio, senza collegamenti di scaricamento né etichette degli avvisi finché non c'è una release (T-302, `docs/manuale/00-installazione.md`). Fuori dai menu e dalla mappa del sito fino ad allora. Il comando di una riga della prima stesura non si fa (decisione del titolare, `docs/architettura/DISTRIBUZIONE.md`) |
 | `grazie.html` | Conferma dopo la lista d'attesa (`?per=lista`) o la richiesta d'acquisto (`?per=acquisto`); senza JavaScript mostra entrambi i blocchi |
 | `legale.html` | Privacy, condizioni, licenza, assistenza, terze parti, foto delle schermate, titolare: **riassunti segnaposto** |
 | `404.html` | Pagina d'errore, con percorsi dalla radice del sito |
@@ -80,12 +80,12 @@ Pagine allineate a `config.json` e `tier.json`; un solo `h1` e titoli senza salt
 ## Pubblicare
 
 1. Compila `config.json`: `dominio`, `percorso_base`, email, `titolare`, `partita_iva`, `sede`, `requisiti`, `data_lancio`, `data_fine_lancio`; il modulo della lista d'attesa se c'è.
-2. Il giorno del lancio: riscrivi `installa.html` e `en/installa.html` con i file veri e rimettile in `NELLA_MAPPA` (`sito.py`), nei menu e nei piedi; poi `in_vendita: true`, link di download, link alle impronte, eventuali link d'acquisto (vuoti = `mailto:` all'indirizzo `email.vendite`).
+2. Il giorno della prima release: aggiungi a `installa.html` e `en/installa.html` i collegamenti ai file veri e alle impronte (e le etichette degli avvisi, se provate su un Mac e un PC veri) e rimettile in `NELLA_MAPPA` (`sito.py`), nei menu e nei piedi; poi `in_vendita: true`, link di download, link alle impronte, eventuali link d'acquisto (vuoti = `mailto:` all'indirizzo `email.vendite`).
 3. Se il sito non sta nella radice del dominio, cambia `percorso_base` e i percorsi che iniziano con `/` in `404.html`.
 4. `python3 strumenti/sito.py tutto --pubblicazione` deve finire con 0 errori.
 5. `python3 strumenti/sito.py pubblica /percorso/vuoto` e carica il contenuto di quella cartella sull'hosting, con HTTPS. Configura l'hosting perché serva `404.html` per le pagine mancanti.
 6. Intestazioni consigliate: `Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; form-action 'self' <indirizzo del modulo>`, `Referrer-Policy: strict-origin-when-cross-origin`, cache lunga per `font/` e `img/`.
-7. Se la pagina d'installazione tornerà al comando di una riga, `installa.sh` e `installa.ps1` vanno pubblicati nella radice accanto alle pagine (T-302).
+7. Il comando di una riga (`installa.sh`, `installa.ps1`, `link.script_*` in `config.json`) non si fa, per decisione del titolare: i pacchetti si scaricano e si installano come spiega la guida.
 
 ## Segnaposto
 
@@ -94,7 +94,7 @@ Pagine allineate a `config.json` e `tier.json`; un solo `h1` e titoli senza salt
 | `config.json` | Dominio e email (`.example`), `titolare`, `partita_iva`, `sede`, requisiti minimi di memoria e disco, link di download e impronte, modulo della lista d'attesa |
 | `legale.html` | Tutti i testi completi: oggi ci sono riassunti marcati «SEGNAPOSTO» con il documento di origine in `docs/legale/` |
 | `index.html`, `en/index.html` | Sezione delle testimonianze (nascosta, `riprova_sociale`) |
-| `installa.html`, `en/installa.html` | Tutta la pagina: oggi dice «in arrivo» (T-301, T-302) |
+| `installa.html`, `en/installa.html` | Collegamenti ai file e alle impronte della prima release |
 | Confronto dei costi | Le larghezze delle barre (`style="width:…"`) sono scritte a mano su 99 € e 870 €: se cambiano listino o prezzi di mercato, vanno ricalcolate |
 
 ## Schermate
@@ -127,14 +127,14 @@ Nella schermata inglese «Nuovo album» il catalogo dei formati comuni ha ancora
 
 Il sito descrive la 2.0 com'è oggi (verificato su codice, manuale e schermate il 16/11/2026, T-501). Restano cose che dipendono da lavoro non ancora fatto o da decisioni del titolare:
 
-- [ ] **Installatori** per macOS, Windows e Linux (T-301, T-302): non esistono. `installa.html` dice «in arrivo»; i pulsanti di download compaiono solo con `in_vendita`.
-- [ ] **macOS e Windows**: i test automatici girano sui tre sistemi, ma il programma non è mai stato provato su computer Mac e Windows veri; requisiti minimi di memoria e disco non definiti (`config.json`, `requisiti`). Il sito non dice «testato su».
+- [ ] **Installatori** per macOS, Windows e Linux (T-302): i pacchetti esistono, ma non c'è una release da scaricare. `installa.html` li descrive senza collegamenti; i pulsanti di download compaiono solo con `in_vendita`.
+- [ ] **macOS e Windows**: pacchetti e pipeline sono scritti ma mai eseguiti; il programma non è mai stato provato su computer Mac e Windows veri (i test girano su Linux, e i rami per macOS e Windows sono provati simulando il sistema); requisiti minimi di memoria e disco non definiti (`config.json`, `requisiti`). Il sito non dice «testato su».
 - [ ] **Aggiornamenti della versione inclusi** (card «Paghi una volta», FAQ, prezzi): è un impegno commerciale; oggi chi compra non ha un modo per ricevere gli aggiornamenti (niente aggiornamenti automatici, niente installatori).
 - [ ] **Le foto restano sul tuo computer**: vero per il programma; l'eccezione dell'assistente AI con le immagini accese è scritta accanto (card, FAQ, sezione Claude, `legale.html`). La regola di `AGENTS.md` («nessuna funzione può caricarle in rete») e il consenso alle immagini dell'assistente vanno messi d'accordo dal titolare (`docs/legale/DA-DECIDERE.md` §1.15).
 - [ ] **Edizione Laboratorio**: il catalogo importabile esiste; nessun laboratorio vero ha un catalogo, il marchio del laboratorio nel programma è «in arrivo», la copertina è solo descritta nel riepilogo della consegna.
 - [ ] **Storia** («impagina album da più di dieci anni con un programma comprato nel 2012»): da `docs/prodotto/REQUISITI-VOCALI.md` e dallo stylebook; da far rileggere al titolare.
 - [ ] **Prezzi di mercato** (150–290 € l'anno, 450–870 € in tre anni, cambio BCE del 13/11/2026) e righe della tabella di confronto per categorie: da riverificare alla data di pubblicazione.
-- [ ] **Pagamento con bonifico e chiave entro 2 ore lavorative**: percorso di `marketing/negozio/FLUSSO-ACQUISTO.md` §1; se si passa a una piattaforma (§5) cambiano testi e link. `FLUSSO-ACQUISTO.md` parla ancora di link `impaginatore://` e di chiave letta dagli appunti, che il programma non ha.
+- [ ] **Pagamento con bonifico e chiave entro 2 ore lavorative**: percorso di `marketing/negozio/FLUSSO-ACQUISTO.md` §1; se si passa a una piattaforma (§5) cambiano testi e link. `FLUSSO-ACQUISTO.md` è allineato al programma dal 16/11/2026: la chiave si incolla nella finestra «Licenza», niente link `impaginatore://` né chiave letta dagli appunti.
 - [ ] **Manuale**: il sito lo promette gratis; oggi è in `docs/manuale/`, non pubblicato.
 
 ## Punti legali aperti

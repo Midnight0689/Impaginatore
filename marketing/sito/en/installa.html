@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Installing Impaginatore · coming soon</title>
-<meta name="description" content="Impaginatore installers for macOS, Windows and Linux are coming: what exists today and how to hear when they are out.">
+<title>Installing Impaginatore</title>
+<meta name="description" content="Impaginatore installers for macOS, Windows and Linux: what exists, what has been tested and why your system shows a warning the first time.">
 <link rel="canonical" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
 <link rel="alternate" hreflang="it" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="en" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="Impaginatore">
 <meta property="og:locale" content="en_GB">
 <meta property="og:title" content="Installing Impaginatore">
-<meta property="og:description" content="Installers for macOS, Windows and Linux are coming.">
+<meta property="og:description" content="One installer for macOS, Windows and Linux, and the first-launch warning explained.">
 <meta property="og:url" data-url="en/installa.html" content="https://impaginatore.example/en/installa.html">
 <meta property="og:image" data-url="img/og/og-en.jpg" content="https://impaginatore.example/img/og/og-en.jpg">
 <meta property="og:image:width" content="1200">
@@ -76,16 +76,25 @@
 </header>
 
 <main id="contenuto" class="semplice">
-  <!-- Reduced page until the installers exist (T-301, T-302): no commands, no checksums, no guessed macOS or Windows
-       warnings. Rewrite it with the real files on launch day (see README.md). -->
+  <!-- The packages exist (T-302, docs/architettura/DISTRIBUZIONE.md) but there is no release yet: no download links, no
+       checksums, no guessed macOS or Windows warning labels (not tested on real computers). On the day of the first
+       release the page gets the links and the checksums (README.md). -->
   <div class="pagina">
     <div class="testo">
       <span class="etichetta">Installation</span>
-      <h1>The installers are coming.</h1>
-      <p class="attacco">Impaginatore can’t be downloaded yet. Installers for macOS, Windows and Linux are being prepared: when they are ready, this page will explain how to download them and open them the first time.</p>
+      <h1>Installing Impaginatore.</h1>
+      <p class="attacco">There is an installer for each system. You can’t download it from here yet: for now the files go to people taking part in the private beta. When the first version is out, this page will have the links.</p>
 
-      <h2 id="today">What exists today</h2>
-      <p>The app is in development. The automated tests run on macOS, Windows and Linux; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs, because there is no Photoshop.</p>
+      <h2 id="files">One file for each system</h2>
+      <ul>
+        <li><b>Mac with Apple chip and Mac with Intel processor:</b> a <code>.dmg</code> file for each.</li>
+        <li><b>Windows 10 and 11, 64-bit:</b> an <code>.exe</code> installer that doesn’t ask for an administrator password.</li>
+        <li><b>Linux:</b> a <code>.deb</code> package for Ubuntu 24.04 and the distributions based on it.</li>
+      </ul>
+      <p>The Linux package has been tested. The macOS and Windows ones are being tested: we haven’t yet tried them on real Mac and Windows computers, and those tests will set the minimum memory and disk requirements. On Linux you can’t make layered PSDs, because there is no Photoshop.</p>
+
+      <h2 id="first-launch">The warning on first launch</h2>
+      <p>The files are not signed with Apple or Microsoft certificates. So the first time you open Impaginatore, macOS and Windows warn you that they can’t verify who made the program. It isn’t an error: your system is asking you to decide. The installation guide explains step by step how to open it, and how to check the file’s fingerprint first, so you know it is exactly the one we published. No step asks you to turn off your computer’s protections.</p>
 
       <h2 id="notify">Want to know when it’s out?</h2>
       <p>Join the <a href="index.html#waitlist">waiting list</a>: we’ll write on launch day. For any question, write to <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
