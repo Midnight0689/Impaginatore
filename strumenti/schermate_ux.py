@@ -79,6 +79,11 @@ SCENE_EDITOR = {
     "editor-bozza": "typeof apriBozza === 'function' && apriBozza()",
     "editor-foto": "document.getElementById('tabF').click()",
     "editor-scorciatoie": "typeof keysOpen === 'function' && keysOpen()",
+    "editor-menu": "go(1); (() => { const it = slotsOf(1).find(i => i.k !== 't'), r = document.querySelector('#slots .slot').getBoundingClientRect(); frameMenu({ preventDefault() {}, stopPropagation() {}, clientX: r.left + 40, clientY: r.top + 40 }, it); document.querySelector('#cmenu .mi.sub').dispatchEvent(new MouseEvent('mouseenter')); })()",
+    "editor-disposizione": "go(1); altraDisp(1)",
+    "editor-altro": "go(1); document.getElementById('morb').click()",
+    # stato vuoto: solo nella pagina (lo stato del server resta com'è), per vedere come si presenta un album senza spread
+    "editor-vuoto": "S.spreads = []; S.photos.forEach(p => { p.sp = null; }); cur = 0; view = 'album'; render()",
 }
 
 
