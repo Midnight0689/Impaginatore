@@ -224,6 +224,7 @@
 
 <div class="velo" id="vwait"><div class="dlg attesa" role="status"><div class="spin"></div><div id="wmsg"></div></div></div>
 
+<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
 <script nonce="__NONCE__">
 const TESTI = __TESTI__, LINGUA = "__LINGUA__", LOCALE = "__LOCALE__";           // testi nella lingua in uso, lingua e codice per Intl: li mette il server (T-206, lingua.py)
 const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFractionDigits: 2 } : { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);      // numeri secondo la lingua: 22,5 / 22.5
@@ -546,6 +547,5 @@ loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load().catch(errore);
 </script>
-<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
 </body>
 </html>
