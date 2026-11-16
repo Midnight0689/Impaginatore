@@ -117,8 +117,8 @@ Decisione del titolare (15/11/2026): niente conto Apple Developer, niente certif
 
 | Sistema | Cosa succede senza certificato | Come lo risolviamo |
 |---|---|---|
-| macOS | Un'app scaricata dal browser e non notarizzata viene bloccata al primo avvio | **Via principale:** un comando di una riga nel Terminale scarica e installa l'app; i file scaricati così non ricevono il contrassegno di quarantena e l'app si apre normalmente. **Via alternativa:** `.dmg` con firma ad hoc (gratuita, obbligatoria su Apple Silicon) e una pagina illustrata per il consenso una tantum in Impostazioni → Privacy e sicurezza → «Apri comunque» |
-| Windows | SmartScreen mostra un avviso sugli eseguibili scaricati e non firmati | **Via principale:** un comando di una riga in PowerShell scarica e installa; il file non riceve il contrassegno di provenienza dal web. **Via alternativa:** installer `.exe` con la pagina illustrata «Ulteriori informazioni → Esegui comunque» |
+| macOS | Un'app scaricata dal browser e non notarizzata viene bloccata al primo avvio | `.dmg` non firmato con un certificato Apple (firma ad hoc locale, obbligatoria su Apple Silicon). L'avviso del sistema resta com'è; la guida di installazione spiega il consenso una tantum in Impostazioni → Privacy e sicurezza → «Apri comunque» e come verificare l'impronta SHA-256 del file |
+| Windows | SmartScreen mostra un avviso sugli eseguibili scaricati e non firmati | Installatore `.exe` per utente, senza password di amministratore. L'avviso resta com'è; la guida spiega «Ulteriori informazioni → Esegui comunque» e la verifica dell'impronta SHA-256 |
 | Linux | Nessun blocco | AppImage e `.deb` |
 
 - L'integrità non dipende dai certificati commerciali: ogni release è firmata con la nostra chiave Ed25519 e accompagnata dagli SHA-256; i comandi di installazione e l'aggiornamento interno verificano la firma prima di installare.
