@@ -120,8 +120,9 @@ jobs:
     if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
     # runner e tempo massimo (minuti) per pacchetto. La versione minima di macOS la decidono le librerie (14.0), non il
     # runner. Il 16/11/2026, dopo il passaggio del repository a pubblico, GitHub ha annullato tre volte il job arm64 dopo
-    # 15 minuti in coda senza un runner libero (macos-26, macos-15; «capacity constraints» per i Mac arm64): si prova macos-14
-    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-14","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
+    # 15 minuti in coda senza un runner libero (macos-26, macos-15; «capacity constraints» per i Mac arm64); macos-14 non
+    # c'è più («configuration 'macos-14-arm64-us-default' is not supported»)
+    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-15","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
     timeout-minutes: ${{ fromJSON('{"linux":120,"mac-arm64":120,"mac-x86_64":150,"windows":180}')[matrix.chiave] }}
     strategy:
       fail-fast: false
