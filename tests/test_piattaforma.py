@@ -1,5 +1,10 @@
 """Strato piattaforma: ogni sistema simulato cambiando sys.platform; i comandi esterni sono intercettati (non parte
-nessuna finestra, nessun Finder, nessun Photoshop)."""
+nessuna finestra, nessun Finder, nessun Photoshop).
+
+sys.platform si simula, os.path no: resta quello del computer che esegue i test (su Windows os.path.abspath("/a/b") è
+«D:\\a\\b»). Dove il programma passa un percorso calcolato con os.path, l'atteso si calcola con lo stesso os.path: su macOS e
+Linux è identico al percorso scritto nel test. I nomi che Windows non ammette su disco («"», a capo) si provano lì con
+l'elenco del disco simulato, e restano veri file sugli altri sistemi."""
 import json
 import os
 import subprocess
@@ -195,20 +200,23 @@ def test_photoshop_mac(sistema, tmp_path, monkeypatch, reg):
     assert photoshop.esegui_jsx("/tmp/a b.jsx", 60) == "ok"
     cmd = reg.cmd[-1]
     assert cmd[0] == "osascript" and cmd[1:3] == ["-e", "on run argv"] and "with timeout of 60 seconds" in cmd
-    assert 'tell application "Adobe Photoshop 2026" to do javascript (item 1 of argv)' in cmd and cmd[-1] == '$.evalFile(new File("/tmp/a b.jsx"))'
+    assert 'tell application "Adobe Photoshop 2026" to do javascript (item 1 of argv)' in cmd and cmd[-1] == f"$.evalFile(new File({json.dumps(os.path.abspath('/tmp/a b.jsx'))}))"
     assert photoshop.esegui_js('alert("x")') == "ok" and reg.cmd[-1][-1] == 'alert("x")' and "with timeout of 120 seconds" in reg.cmd[-1]
 
 
 def test_photoshop_mac_niente_iniezione(sistema, tmp_path, monkeypatch, reg):
     """SEC-004: percorsi e codice non diventano mai testo dello script AppleScript; il percorso nel JavaScript è una stringa JSON"""
     sistema("mac"); monkeypatch.setattr(photoshop, "CARTELLA_APPLICAZIONI", str(tmp_path))
-    (tmp_path / 'Adobe Photoshop 2026 "x"' / 'Adobe Photoshop 2026 "x".app').mkdir(parents=True)
+    nome = 'Adobe Photoshop 2026 "x"'
+    if os.name == "nt":                     # Windows non ammette «"» nei nomi: l'elenco di /Applications arriva come su macOS
+        monkeypatch.setattr(photoshop.glob, "glob", lambda m: [os.path.join(str(tmp_path), nome, nome + ".app")] if "20*" in m else [])
+    else: (tmp_path / nome / f"{nome}.app").mkdir(parents=True)
     cattivo = '/tmp/a\'b" & (do shell script "touch /tmp/PWN") & "\'); app.system("touch /tmp/PWN2"); (\'.jsx'
     photoshop.esegui_jsx(cattivo, 60); cmd = reg.cmd[-1]
     assert not any("PWN" in a for a in cmd[:-1]), "il percorso è solo nell'ultimo argomento"
     assert 'tell application "Adobe Photoshop 2026 \\"x\\"" to do javascript (item 1 of argv)' in cmd, "nome dell'applicazione quotato"
     js = cmd[-1]; assert js.startswith("$.evalFile(new File(") and js.endswith("))")
-    assert json.loads(js[len("$.evalFile(new File("):-2]) == cattivo, "nel JavaScript il percorso è una sola stringa"
+    assert json.loads(js[len("$.evalFile(new File("):-2]) == os.path.abspath(cattivo), "nel JavaScript il percorso è una sola stringa"
     assert photoshop.quota_applescript('a"b\\c') == '"a\\"b\\\\c"'
 
 
@@ -323,16 +331,16 @@ NOMI_CATTIVI = ['a"b', "a'b", "a\\b", "$HOME $(touch /tmp/PWN) `id`", "Sposi à�
 def test_dati_strani_mai_nel_testo_degli_script(sistema, reg, tmp_path, monkeypatch, nome):
     """SEC-004: virgolette, apici, barre rovesciate, $, accenti e a capo arrivano interi come argomento o variabile d'ambiente,
     mai dentro il testo di AppleScript, PowerShell o JavaScript"""
-    def fuori(cmd): return not any(nome in a for a in cmd[:-1])                           # il dato è solo nell'ultimo argomento
-    p = "/progetti/" + nome
-    sistema("mac"); azioni.cestina(p); cmd = reg.cmd[-1]; assert cmd[-1] == p and fuori(cmd)
+    def fuori(cmd, *dati): return not any(d in a for a in cmd[:-1] for d in (nome, *dati))          # il dato è solo nell'ultimo argomento
+    p = "/progetti/" + nome; ap = os.path.abspath(p)                                      # ap == p su macOS e Linux
+    sistema("mac"); azioni.cestina(p); cmd = reg.cmd[-1]; assert cmd[-1] == ap and fuori(cmd, ap)
     for tipo in ("cartella", "zip", "foto"):
         dialoghi.Mac()._scegli(tipo, nome); cmd = reg.cmd[-1]; assert cmd[-1] == nome and fuori(cmd)
     monkeypatch.setattr(photoshop, "CARTELLA_APPLICAZIONI", str(tmp_path)); (tmp_path / "Adobe Photoshop 2026" / "Adobe Photoshop 2026.app").mkdir(parents=True)
     photoshop.esegui_jsx(p + ".jsx", 60); cmd = reg.cmd[-1]
-    assert fuori(cmd) and json.loads(cmd[-1][len("$.evalFile(new File("):-2]) == p + ".jsx", "nel JavaScript il percorso è un letterale JSON"
-    sistema("windows"); azioni.cestina("C:/x/" + nome); cmd = reg.cmd[-1]
-    assert not any(nome in a for a in cmd) and reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"].endswith(nome)
+    assert fuori(cmd, ap) and json.loads(cmd[-1][len("$.evalFile(new File("):-2]) == os.path.abspath(p + ".jsx"), "nel JavaScript il percorso è un letterale JSON"
+    sistema("windows"); azioni.cestina("C:/x/" + nome); cmd = reg.cmd[-1]; wp = os.path.normpath(os.path.abspath("C:/x/" + nome))
+    assert not any(d in a for a in cmd for d in (nome, wp)) and reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"] == wp
 
 
 def test_dialoghi_mac_messaggio_come_argomento(reg):
@@ -346,7 +354,7 @@ def test_dialoghi_mac_messaggio_come_argomento(reg):
 
 # ---------------------------------------------------------------- azioni
 def test_mostra_per_sistema(sistema, reg, monkeypatch, tmp_path):
-    sistema("mac"); azioni.mostra("/a/b.jpg"); assert reg.cmd[-1] == ["open", "-R", "/a/b.jpg"]
+    sistema("mac"); azioni.mostra("/a/b.jpg"); assert reg.cmd[-1] == ["open", "-R", os.path.abspath("/a/b.jpg")]
     sistema("windows"); azioni.mostra("C:/a/b.jpg"); assert reg.cmd[-1][:2] == ["explorer", "/select,"]
     sistema("linux"); monkeypatch.setattr(azioni.shutil, "which", lambda n: "/usr/bin/" + n)
     azioni.mostra(str(tmp_path / "a b.jpg")); assert reg.cmd[-1][0] == "gdbus" and "a%20b.jpg" in " ".join(reg.cmd[-1])
@@ -359,13 +367,13 @@ def test_mostra_per_sistema(sistema, reg, monkeypatch, tmp_path):
 def test_cestina_per_sistema(sistema, reg, monkeypatch):
     cattivo = '/a/b" & (do shell script "touch /tmp/PWN") & "'
     sistema("mac"); azioni.cestina(cattivo); cmd = reg.cmd[-1]
-    assert cmd[0] == "osascript" and cmd[-1] == cattivo and "on run argv" in cmd and not any("PWN" in a for a in cmd[:-1]), "SEC-004: il percorso è un argomento"
+    assert cmd[0] == "osascript" and cmd[-1] == os.path.abspath(cattivo) and "on run argv" in cmd and not any("PWN" in a for a in cmd[:-1]), "SEC-004: il percorso è un argomento"
     cattivo = "C:/a/b'; Remove-Item -Recurse C:/ ; '"
     sistema("windows"); azioni.cestina(cattivo); cmd = reg.cmd[-1]
     assert cmd[0] == "powershell" and "SendToRecycleBin" in cmd[-1] and "$env:IMPAGINATORE_PERCORSO" in cmd[-1] and not any("Remove-Item" in a for a in cmd)
     assert reg.kw[-1]["env"]["IMPAGINATORE_PERCORSO"] == os.path.normpath(os.path.abspath(cattivo)), "il percorso passa dall'ambiente"
     sistema("linux"); monkeypatch.setattr(azioni.shutil, "which", lambda n: "/usr/bin/gio")
-    azioni.cestina("/a/b"); assert reg.cmd[-1] == ["gio", "trash", "--", "/a/b"]
+    azioni.cestina("/a/b"); assert reg.cmd[-1] == ["gio", "trash", "--", os.path.abspath("/a/b")]
     reg.rc = 1; usati = []
     monkeypatch.setattr(azioni, "cestina_freedesktop", lambda p: usati.append(p))
     azioni.cestina("/a/c"); assert usati == ["/a/c"]
