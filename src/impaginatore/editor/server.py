@@ -870,7 +870,7 @@ NOMI_OP = dict(                # chiave del nome di ogni operazione per «Annull
     zorder="server.op_zorder", crosspage="server.op_crosspage", putfree="server.op_putfree", fullpage="server.op_fullpage",
     guides="server.op_guides", colore="server.op_colore", stella="server.op_stella", tolta="server.op_tolta", face="server.op_face", pan="server.op_pan",
     ev="server.op_ev", evg="server.op_evg", rit="server.op_rit", tono="server.op_tono", tono_escl="server.op_tono_escl", tono_fix="server.op_tono_fix",
-    tono_L="server.op_tono_L", stile_applica="server.op_stile_applica", stile_elimina="server.op_stile_elimina", stile_salva="server.op_stile_salva",
+    tono_L="server.op_tono_riferimento", stile_applica="server.op_stile_applica", stile_elimina="server.op_stile_elimina", stile_salva="server.op_stile_salva",
     stile_scollega="server.op_stile_scollega", testo="server.op_testo", settext="server.op_settext", addtext="server.op_addtext", blank="server.op_blank",
     new="server.op_new", dup="server.op_dup", delete="server.op_delete", swappages="server.op_swappages", newspread="server.op_newspread",
     newspreadsel="server.op_newspreadsel", addtospread="server.op_addtospread", template="server.op_template", setrects="server.op_setrects",

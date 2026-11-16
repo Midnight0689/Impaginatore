@@ -758,7 +758,7 @@ def test_esito_con_spread_saltati_in_inglese(apri, monkeypatch):
                                        saltati=[dict(spread=1, motivo="file is empty"), dict(spread=2, motivo="the disk is full: free up space or choose another disk")])
     monkeypatch.setenv("IMPAGINATORE_LINGUA", "it"); c.post("/api/export", {"fmt": "jpg", "res": "bozza", "range": "1"}); attendi_log(c)
     assert c.get("/api/esito")["saltati"] == [dict(spread=1, motivo="il disco è pieno: libera spazio o scegli un altro disco")]
-    assert c.get("/api/esito")["errori"] == ["1 spread non esportato (vedi sopra)"]
+    assert c.get("/api/esito")["errori"] == ["1 spread non esportati (vedi sopra)"]
 
 
 def test_esito_errore_del_pdf_e_progetto_esportato(apri, monkeypatch, tmp_path):
