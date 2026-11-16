@@ -188,7 +188,7 @@ def test_tema_scuro_predefinito_e_si_ricorda(home_srv, tmp_path):
 
 
 def test_nessun_testo_italiano_nel_codice_della_pagina():
-    """i testi visibili passano da t(): nell'HTML restano solo il marchio e il nome dell'autore"""
+    """i testi visibili passano da t(): nell'HTML resta solo il marchio (il piede dice «Impaginatore v<versione>», T-207)"""
     import re
     from impaginatore import risorse
     html = risorse.leggi("home.html").decode("utf-8")
@@ -197,7 +197,7 @@ def test_nessun_testo_italiano_nel_codice_della_pagina():
     assert "backdrop-filter" not in html and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgba?\(", html.split("</style>")[0]), "solo i token della marca"
     corpo = re.sub(r"<style>.*?</style>|<script.*?</script>", "", html, flags=re.S)
     visibile = re.sub(r"<[^>]+>", " ", corpo)
-    assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w not in ("Impaginatore", "Stefano", "Imperato")] == []
+    assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w != "Impaginatore"] == [] and "Imperato" not in html
     assert json.loads(json.dumps(risorse.testi())) and json.loads(json.dumps(risorse.testi("en")))
 
 

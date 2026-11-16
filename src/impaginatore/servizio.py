@@ -17,7 +17,7 @@ from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import lingua, risorse, sicurezza
+from . import __version__, lingua, risorse, sicurezza
 
 log = logging.getLogger("impaginatore.server")
 
@@ -171,11 +171,11 @@ class Gestore(BaseHTTPRequestHandler):
     def json(self, dati, codice=200): self.risposta(json.dumps(dati), "application/json", codice)
 
     def pagina(self, nome):
-        """pagina HTML delle risorse con il nonce dello script, la lingua in uso e la tabella dei suoi testi in quella lingua;
-        CSP stretta (SICUREZZA.md). Il gettone non c'è: la pagina lo prende dalla sessionStorage della scheda, dove l'ha
-        lasciato l'URL di avvio (VER-006)"""
+        """pagina HTML delle risorse con il nonce dello script, la lingua in uso, la versione del programma e la tabella dei suoi
+        testi in quella lingua; CSP stretta (SICUREZZA.md). Il gettone non c'è: la pagina lo prende dalla sessionStorage della
+        scheda, dove l'ha lasciato l'URL di avvio (VER-006)"""
         nonce = secrets.token_urlsafe(18); lg, locale = lingua.per_pagina()
-        testo = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__LINGUA__", lg).replace("__LOCALE__", locale)
+        testo = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__LINGUA__", lg).replace("__LOCALE__", locale).replace("__VERSIONE__", __version__)
         testo = testo.replace("__TESTI__", risorse.testi_pagina(nome, lg))                  # per ultima: i testi non passano da altre sostituzioni
         self._csp = sicurezza.csp(nonce); b = testo.encode("utf-8")
         self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))

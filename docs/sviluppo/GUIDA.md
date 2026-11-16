@@ -96,7 +96,7 @@ uv run pytest -m "not lento and not browser and not finestra and not photoshop" 
 
 I test segnati `browser`, `finestra` e `photoshop` si saltano da soli se manca quello che serve, e il riepilogo dice
 perché (`-ra` è già nelle opzioni). Su Linux con Chrome la suite completa fa 1113 test e ne salta 3 (finestra senza
-pywebview, due con Photoshop), in circa 23 minuti con la copertura.
+pywebview, due con Photoshop), in circa 25 minuti con la copertura.
 
 ### Le fixture principali (`tests/conftest.py`)
 
@@ -137,7 +137,7 @@ Lo script gira con il Python del sistema (3.9 o successivo) e usa uv per l'ambie
 |---|---|---|
 | `python3 strumenti/controlli.py lint` | ruff e forma di `CHANGELOG.md` | sì: ok |
 | `python3 strumenti/controlli.py test` | pytest | sì, tramite `copertura` |
-| `python3 strumenti/controlli.py copertura` | pytest con copertura | sì: ok, 1110 passati, 3 saltati, 100 % |
+| `python3 strumenti/controlli.py copertura` | pytest con copertura | sì: ok, 1242 passati, 3 saltati, 100 % |
 | `python3 strumenti/controlli.py bandit` | analisi statica di `src/` | sì: ok |
 | `python3 strumenti/controlli.py dipendenze` | pip-audit sulle versioni di `uv.lock` | no: con uv 0.6.6 lo script dice «NON ESEGUITO» e chiede uv 0.8 |
 | `python3 strumenti/controlli.py segreti` | gitleaks su tutta la storia (lo scarica la prima volta) | sì: ok |

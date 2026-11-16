@@ -2,6 +2,7 @@
 l'editor vero parte come processo a parte solo in test_processi.py)."""
 import json
 import os
+import sys
 import types
 import zipfile
 
@@ -149,6 +150,8 @@ class _Processo:
         if self.rotto: raise ProcessLookupError("già chiuso")
         self.fermato = True
 
+    def wait(self, attesa=None): return 0                    # il riavvio dopo un aggiornamento aspetta la chiusura (desktop.finestra.chiudi_editor)
+
 
 def test_apri_riusa_editor_lanciato_da_qui(home, monkeypatch):
     """apri: un editor del progetto lanciato da qui e ancora aperto si riusa; se è chiuso si cerca un editor già attivo"""
@@ -216,40 +219,64 @@ def test_porte(home):
     assert servizio.porta_libera(occupata)
 
 
-def test_aggiornamenti_spenti_e_predefiniti(monkeypatch):
+def test_aggiornamenti_spenti_e_predefiniti(monkeypatch, tmp_path):
     assert isinstance(aggiornamenti.predefiniti(), aggiornamenti.NonDisponibili)
     monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "")
+    from impaginatore.aggiornamenti import firmati, installazione, sorgenti
     from impaginatore.piattaforma import cartelle
     monkeypatch.setattr(cartelle, "radice_checkout", lambda: None)
-    a = aggiornamenti.predefiniti(); assert isinstance(a, aggiornamenti.NonDisponibili) and "installazione" in a.motivo
+    a = aggiornamenti.predefiniti()
+    assert isinstance(a, firmati.PacchettiFirmati) and isinstance(a.sorgente, sorgenti.SorgenteGitHub) and isinstance(a.installazione, installazione.InstallazionePython)
+    assert a.stato()["disponibile"] is False and "non è configurato" in a.stato()["motivo"], "pacchetto Python: i pacchetti firmati, finché il canale non c'è spenti"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    c = aggiornamenti.predefiniti(); assert isinstance(c.installazione, installazione.InstallazioneCompilata) and "installatore" in c.stato()["motivo"]
+    monkeypatch.delattr(sys, "frozen")
     monkeypatch.setattr(cartelle, "radice_checkout", lambda: "/repo")
     monkeypatch.setattr(aggiornamenti.shutil, "which", lambda n: "/usr/bin/git")
     from impaginatore.aggiornamenti.git import Git
     g = aggiornamenti.predefiniti(); assert isinstance(g, Git) and g.radice == "/repo"
+    monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI_FINTI", str(tmp_path))
+    (tmp_path / "chiave-prova.txt").write_text("ab" * 32, encoding="utf-8")
+    f = aggiornamenti.predefiniti()
+    assert isinstance(f.sorgente, sorgenti.SorgenteFinta) and f.sorgente.cartella == str(tmp_path) and f.chiavi[0] == "ab" * 32, "prove a mano: la release in una cartella"
     import threading
-    e = threading.Event(); e.set(); a.ciclo(e)
+    e = threading.Event(); e.set(); aggiornamenti.NonDisponibili().ciclo(e)
     with pytest.raises(NotImplementedError): aggiornamenti.Aggiornamenti().stato()
     for m in ("controlla", "versioni", "aggiorna"):
         with pytest.raises(NotImplementedError): getattr(aggiornamenti.Aggiornamenti(), m)()
     with pytest.raises(NotImplementedError): aggiornamenti.Aggiornamenti().ripristina("x")
 
 
-def test_contratto_pacchetti_firmati(monkeypatch):
-    """SEC-007: il contratto degli aggiornamenti firmati esiste ma non fa niente: non disponibile, nessuna rete, niente installazione"""
-    import threading
+def test_controllo_automatico_dalla_pagina(home_srv):
+    """«Controlla da solo se ci sono versioni nuove» (T-207): lo stato lo dice, la pagina lo cambia con il gettone"""
+    c = home_srv
+    assert c.get("/api/aggiornamento")["automatico"] is True and c.post("/api/controlla")["automatico"] is True
+    assert c.post("/api/aggiornamenti/automatico", {"automatico": False}) == {"automatico": False} and aggiornamenti.automatico() is False
+    assert c.get("/api/aggiornamento")["automatico"] is False
+    for v in ("no", 0, None):
+        ok, r = c.prova("/api/aggiornamenti/automatico", {"automatico": v}); assert not ok and "vero o falso" in r["errore"]
+    assert c.codice("/api/aggiornamenti/automatico", {"automatico": True}, **{"X-Impaginatore-Gettone": None}) == 401, "solo con il gettone"
+    assert aggiornamenti.automatico() is False
 
-    from impaginatore.aggiornamenti import firmati
-    p = firmati.PacchettiFirmati("https://esempio.invalid")
-    assert isinstance(p, aggiornamenti.Aggiornamenti) and firmati.CHIAVI_FIDATE == ()
-    s = p.stato(); assert s["disponibile"] is False and s["errore"] == "" and "firmati" in s["motivo"] and p.controlla() == s
-    assert p.versioni() == [] and p.fonte == "https://esempio.invalid" and p.riavvia() is None
-    for f in (p.manifesto, lambda: p.verifica(b"x", b"y"), lambda: p.scarica({})):
-        with pytest.raises(NotImplementedError): f()
-    for f in (p.aggiorna, lambda: p.ripristina("abc")):
-        with pytest.raises(ValueError, match="non ancora attivi"): f()
-    e = threading.Event(); assert p.ciclo(e) is None
-    monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "")
-    assert not isinstance(aggiornamenti.predefiniti(), firmati.PacchettiFirmati), "predefiniti() non lo sceglie"
+
+def test_non_si_aggiorna_durante_un_esportazione(home_srv, monkeypatch):
+    """il riavvio interromperebbe l'esportazione: aggiorna e ripristina aspettano"""
+    from impaginatore.desktop import finestra
+    chiesti = []
+    monkeypatch.setattr(home_srv.modulo, "AGGIORNAMENTI", types.SimpleNamespace(aggiorna=lambda: chiesti.append(1) or True, ripristina=lambda c: chiesti.append(c)))
+    monkeypatch.setattr(finestra, "esportazioni", lambda editors: 1 if editors is home_srv.modulo.EDITORS else 1 / 0)
+    for u, b in (("/api/aggiorna", {}), ("/api/ripristina", {"codice": "x"})):
+        ok, r = home_srv.prova(u, b); assert not ok and r["errore"] == "Un album sta esportando: aspetta che finisca, poi aggiorna"
+    assert chiesti == []
+
+
+def test_la_pagina_degli_album_e_pronta(home_srv, monkeypatch):
+    """GET /api/progetti (la pagina degli album ha i suoi dati) segna PRONTA: la schermata di avvio lascia il posto alla finestra"""
+    import threading
+    monkeypatch.setattr(home_srv.modulo, "PRONTA", threading.Event())
+    assert not home_srv.modulo.PRONTA.is_set()
+    home_srv.get("/api/aggiornamento"); assert not home_srv.modulo.PRONTA.is_set()
+    home_srv.get("/api/progetti"); assert home_srv.modulo.PRONTA.is_set()
 
 
 def test_riavvio_dopo_aggiornamento(home, monkeypatch):
@@ -262,8 +289,11 @@ def test_riavvio_dopo_aggiornamento(home, monkeypatch):
     monkeypatch.setattr(home.threading, "Thread", lambda target, daemon: type("T", (), {"start": lambda s: target()})())
     monkeypatch.setattr(home.time, "sleep", lambda s: None)
     monkeypatch.setattr(home, "SERVER", None)
+    from impaginatore.desktop import finestra
+    chiusi = []; monkeypatch.setattr(finestra, "chiudi_editor", chiusi.append)
     home.riavvia_programma()
     assert lanci[0][0][1:3] == ["-m", "impaginatore"] and "--no-browser" in lanci[0][0] and uscite == [1]
+    assert chiusi == [home.EDITORS], "gli editor salvano e si chiudono prima del riavvio"
     assert lanci[0][1] is None, "senza server niente gettone da passare"
     from impaginatore import servizio
     srv = servizio.ServerLocale(("127.0.0.1", 0), None); monkeypatch.setattr(home, "SERVER", srv)

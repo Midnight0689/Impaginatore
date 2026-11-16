@@ -79,7 +79,15 @@
   .prova { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: var(--imp-app-barra); border-top: 1px solid var(--imp-app-bordo); }
   .prova span { color: var(--imp-attenzione); font-weight: 500; }
   body.con-prova main { padding-bottom: 80px; }
-  #credit { position: fixed; right: 18px; bottom: 12px; z-index: 6; font-size: 12px; color: var(--imp-app-testo-tenue); pointer-events: none; user-select: none; } #credit b { color: inherit; font-weight: 600; }
+  #credit { position: fixed; right: 18px; bottom: 12px; z-index: 6; font: 400 12px/1.3 var(--imp-font-numeri); color: var(--imp-app-testo-tenue); pointer-events: none; user-select: none; }
+
+  /* T-207: avviso di una versione nuova (filetto sinistro e fondo tinto, come gli avvisi della marca) */
+  .agg-nuova { display: flex; align-items: flex-start; gap: 16px; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--imp-app-bordo); border-left: 3px solid var(--imp-app-accento); border-radius: var(--imp-raggio-grande); background: color-mix(in srgb, var(--imp-app-accento) 9%, var(--imp-app-pannello)); }
+  .agg-nuova .tx { flex: 1; min-width: 0; }
+  .agg-nuova b { display: block; font-size: 14px; font-weight: 600; }
+  .agg-nuova ul { margin: 6px 0; padding-left: 18px; line-height: 1.5; } .agg-nuova ul:empty { display: none; }
+  .agg-nuova .nota { color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .agg-nuova .az { display: flex; flex: none; align-items: center; gap: 12px; }
 
   /* menu */
   #menu { position: fixed; z-index: 20; display: none; min-width: 200px; padding: 4px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-grande); background: var(--imp-app-sollevato); box-shadow: var(--imp-ombra-sollevato); }
@@ -138,6 +146,10 @@
   <button id="altro" type="button" class="icona" aria-haspopup="menu" data-t-aria="home.altre_azioni" data-t-title="home.altre_azioni">⋯</button>
 </header>
 <main>
+  <section class="agg-nuova" id="aggav" hidden aria-labelledby="aggav-t"><!-- T-207: versione nuova -->
+    <div class="tx"><b id="aggav-t"></b><ul id="aggav-l"></ul><span class="nota" data-t="home.agg_avviso_nota"></span></div>
+    <div class="az"><button id="aggav-dopo" type="button" class="link" data-t="home.agg_piu_tardi"></button><button id="aggav-ok" type="button" class="primario" data-t="home.agg_ok"></button></div>
+  </section>
   <div class="nuova" id="nuova">
     <div class="tx"><b data-t="home.crea_titolo"></b><span data-t="home.crea_frase"></span></div>
     <button id="scegli" type="button" data-t="home.scegli_cartella"></button>
@@ -165,6 +177,7 @@
 <div class="velo" id="vver"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vver-t">
   <h3 id="vver-t" data-t="home.versione_dlg"></h3>
   <div id="vbody" class="corpo"></div>
+  <label class="interr" id="vautor" hidden><input type="checkbox" id="vauto" role="switch"><span data-t="home.agg_automatico"></span></label>
   <div style="margin-top:12px"><button id="vhist" type="button" class="link" aria-expanded="false"></button><div id="vlist" class="vers"></div></div>
   <div class="btns"><button id="vchk" type="button" data-t="home.controlla_aggiornamenti"></button><button id="vgo" type="button" class="primario" style="display:none" data-t="home.aggiorna_ora"></button><button id="vclose" type="button" data-t="comune.chiudi"></button></div>
 </div></div>
@@ -229,9 +242,10 @@
 
 <div class="velo" id="vwait"><div class="dlg attesa" role="status"><div class="spin"></div><div id="wmsg"></div></div></div>
 
-<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
+<div id="credit"></div>
 <script nonce="__NONCE__">
 const TESTI = __TESTI__, LINGUA = "__LINGUA__", LOCALE = "__LOCALE__";           // testi nella lingua in uso, lingua e codice per Intl: li mette il server (T-206, lingua.py)
+const VERSIONE = "__VERSIONE__";                                                 // __version__ del programma in uso (servizio.pagina)
 const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFractionDigits: 2 } : { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);      // numeri secondo la lingua: 22,5 / 22.5
 const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] == null ? m : typeof p[x] === "number" ? fN(p[x]) : String(p[x])) : s; };      // testo semplice (textContent, title)
 const tn = (k, n, p) => t(k + (n === 1 ? "_1" : "_n"), Object.assign({ n }, p));                  // plurale: chiave_1 / chiave_n
@@ -254,6 +268,7 @@ function applicaTema(v) {
 }
 function temaSalvato() { try { const v = localStorage.getItem(TEMA_CHIAVE); return v === "light" || v === "dark" ? v : "dark"; } catch (e) { return "dark"; } }
 applicaTema(temaSalvato());
+$("credit").textContent = "Impaginatore v" + VERSIONE;                           // non tradotto: nome del programma e numero di versione
 $("tema").onclick = () => { const n = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; try { localStorage.setItem(TEMA_CHIAVE, n); } catch (e) {} applicaTema(n); };
 
 const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
@@ -514,12 +529,42 @@ async function checkUpd() { try { showVer(await (await rq("/api/aggiornamento"))
 async function aggiorna() {
   const novita = ($("upd").dataset.n || "");
   const r = await chiedi(t("home.agg_titolo"), (novita ? t("home.agg_novita", { elenco: novita }) + "\n\n" : "") + t("home.agg_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.agg_ok"), ruolo: "primario" }]);
-  if (r !== "ok") return; attesa(t("home.aggiorno"));
-  try { await api("/api/aggiorna", {}); schermataFinale(t("home.aggiornato")); setTimeout(() => location.reload(), 6000); } catch (e) { fineAttesa(); errore(e); }
+  if (r !== "ok") return; await aggiornaOra();
+}
+async function aggiornaOra() {                                                   // T-207: scarica, verifica, installa; poi il programma si riavvia e la pagina si riapre
+  attesa(t("home.aggiorno"));
+  try { await api("/api/aggiorna", {}); schermataFinale(t("home.aggiornato")); riapriQuandoPronto(); } catch (e) { fineAttesa(); errore(e); }
+}
+async function riapriQuandoPronto() {                                            // il programma si chiude e si rilancia sulla stessa porta (stesso gettone): si ricarica quando risponde di nuovo
+  const ping = async () => { try { return (await rq("/api/ping", { cache: "no-store" })).ok; } catch (e) { return false; } };
+  const pausa = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; i < 60 && await ping(); i++) await pausa(500);
+  for (let i = 0; i < 240 && !await ping(); i++) await pausa(500);
+  location.reload();
 }
 $("upd").onclick = () => aggiorna().catch(errore);
+// ---- T-207: avviso di una versione nuova nella schermata Album («Più tardi» vale per questa sessione) e annuncio dopo il riavvio
+const AGG_DOPO = "impaginatore_agg_dopo", AGG_ANNUNCIO = "impaginatore_agg_annuncio";
+function sessione(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) {} return null; }
+function avvisoAgg(r) {
+  const v = r.ultima && r.ultima.n, vista = !!(r.da_aggiornare && v && !r.scartata && r.disponibile !== false && sessione(AGG_DOPO) !== String(v));
+  $("aggav").hidden = !vista; if (!vista) return;
+  $("aggav").dataset.v = v; $("aggav-t").textContent = t("home.agg_avviso", { versione: v });
+  const L = $("aggav-l"); L.textContent = "";
+  (r.novita || []).slice(0, 5).forEach(x => { const li = document.createElement("li"); li.textContent = x; L.appendChild(li); });
+}
+function annuncioAgg(r) {
+  const a = r.annuncio; if (!a || sessione(AGG_ANNUNCIO) === a.id) return;
+  sessione(AGG_ANNUNCIO, a.id); avviso(t(a.tipo === "tornato" ? "home.agg_tornato" : "home.agg_fatto", { versione: a.versione }), "ok");
+}
+$("aggav-dopo").onclick = () => { sessione(AGG_DOPO, $("aggav").dataset.v || ""); $("aggav").hidden = true; };
+$("aggav-ok").onclick = () => aggiornaOra().catch(errore);
+$("vauto").onchange = async () => {
+  const v = $("vauto").checked;
+  try { $("vauto").checked = (await api("/api/aggiornamenti/automatico", { automatico: v })).automatico !== false; } catch (e) { $("vauto").checked = !v; errore(e); }
+};
 const nomeV = v => v.rel ? t("home.versione_build", { rel: v.rel, n: v.n }) : String(v.n), brev = v => v.rel || v.n;
-const fmtV = v => v ? `<b>${esc(t("home.versione_n", { n: nomeV(v) }))}</b> · ${esc(v.data)} · ${esc(v.titolo)} <span class="tenue num">(${esc(v.codice)})</span>` : "—";
+const fmtV = v => v ? `<b>${esc(t("home.versione_n", { n: nomeV(v) }))}</b>` + [v.data, v.titolo].filter(Boolean).map(x => ` · ${esc(x)}`).join("") + (v.codice ? ` <span class="tenue num">(${esc(v.codice)})</span>` : "") : "—";
 function showVer(r) {
   const vb = $("verb"), spenti = r.disponibile === false; vb.className = spenti ? "" : r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
   const v = r.attuale ? brev(r.attuale) : "";
@@ -532,6 +577,8 @@ function showVer(r) {
     : r.da_aggiornare ? `${esc(t("home.disponibile"))} ${fmtV(r.ultima)}<br><b>${esc(t("home.novita"))}</b><br>${novita.map(x => "• " + esc(x)).join("<br>")}`
     : `<span class="ok">✓ ${esc(t("home.ultima_versione"))}</span>`) + `<br><span class="tenue">${esc(t("home.ultimo_controllo", { quando: ago }))}</span>`;
   $("vgo").style.display = r.da_aggiornare ? "" : "none"; $("vchk").style.display = spenti ? "none" : "";
+  $("vautor").hidden = spenti; $("vauto").checked = r.automatico !== false;
+  avvisoAgg(r); annuncioAgg(r);
 }
 $("verb").onclick = async () => { apri("vver"); try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} };
 function vhistStato(on) { $("vlist").style.display = on ? "block" : "none"; $("vhist").setAttribute("aria-expanded", String(on)); $("vhist").textContent = (on ? "▾ " : "▸ ") + t("home.versioni_precedenti"); }
@@ -542,12 +589,12 @@ $("vhist").onclick = async () => {
     const r = await (await rq("/api/versioni")).json(); L.textContent = "";
     r.versioni.forEach(v => {
       const d = document.createElement("div");
-      d.innerHTML = `<span><b>${esc(t("home.versione_n", { n: v.n }))}</b> · ${esc(v.data)}<br><span class="tenue">${esc(v.titolo)}</span></span>` + (v.attuale ? `<span class="ok">${esc(t("home.in_uso_tag"))}</span>` : `<button type="button">${esc(t("home.torna_a_questa"))}</button>`);
+      d.innerHTML = `<span><b>${esc(t("home.versione_n", { n: v.n }))}</b>${v.data ? " · " + esc(v.data) : ""}<br><span class="tenue">${esc(v.titolo)}</span></span>` + (v.attuale ? `<span class="ok">${esc(t("home.in_uso_tag"))}</span>` : `<button type="button">${esc(t("home.torna_a_questa"))}</button>`);
       const b = d.querySelector("button");
       if (b) b.onclick = async () => {
         const c = await chiedi(t("home.torna_titolo", { n: v.n }), t("home.torna_testo", { titolo: v.titolo }), [PRM_ANNULLA(), { id: "ok", testo: t("home.torna_ok"), ruolo: "primario" }]);
         if (c !== "ok") return; b.disabled = true; b.textContent = t("home.ripristino");
-        try { const x = await api("/api/ripristina", { codice: v.codice }); schermataFinale(t("home.tornato", { n: x.n }) + (x.caricato ? "" : " " + t("home.tornato_non_caricata"))); setTimeout(() => location.reload(), 6000); } catch (err) { errore(err); b.disabled = false; b.textContent = t("home.torna_a_questa"); }
+        try { const x = await api("/api/ripristina", { codice: v.codice }); schermataFinale(t("home.tornato", { n: x.n }) + (x.caricato ? "" : " " + t("home.tornato_non_caricata"))); riapriQuandoPronto(); } catch (err) { errore(err); b.disabled = false; b.textContent = t("home.torna_a_questa"); }
       };
       L.appendChild(d);
     });
@@ -578,7 +625,7 @@ $("lrim").onclick = async () => {
 };
 $("vtxt").textContent = t("home.versione_attesa");
 loadLic();
-checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
+checkUpd(); setInterval(checkUpd, 600000);                                       // il controllo in rete lo fa il programma (all'avvio e poi da solo, se l'utente non l'ha spento): la pagina legge lo stato
 load().catch(errore);
 </script>
 </body>
