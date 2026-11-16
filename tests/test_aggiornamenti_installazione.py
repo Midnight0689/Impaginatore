@@ -187,6 +187,9 @@ def test_programma_compilato_e_interfaccia(monkeypatch):
 
 
 @pytest.mark.parametrize("sistema, macchina, chiave", [("mac", "arm64", "mac-arm64"), ("mac", "AARCH64", "mac-arm64"), ("mac", "x86_64", "mac-x86_64"),
-                                                       ("windows", "AMD64", "windows"), ("linux", "x86_64", "linux")])
+                                                       ("windows", "AMD64", "windows"), ("windows", "ARM64", "windows"), ("linux", "x86_64", "linux"),
+                                                       ("linux", "aarch64", "linux-arm64")])
 def test_chiave_del_pacchetto(sistema, macchina, chiave):
+    """Windows su ARM esegue il pacchetto x64 in emulazione (e Python vi legge l'architettura vera, ARM64): la chiave resta
+    «windows». Linux arm64 ha un pacchetto suo"""
     assert installazione.chiave_pacchetto(sistema, macchina) == chiave

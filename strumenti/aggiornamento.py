@@ -22,7 +22,6 @@ Esempi:
 import argparse
 import json
 import os
-import re
 import secrets
 import stat
 import sys
@@ -65,12 +64,15 @@ def cmd_genera_coppia(a):
     return 0
 
 
+CHIAVI_COMPILATI = ("mac-arm64", "mac-x86_64", "windows", "linux", "linux-arm64")      # installazione.chiave_pacchetto()
+
+
 def compilati(voci):
-    """{chiave: {nome, dimensione, sha256}} dai --compilato chiave=file (mac-arm64, mac-x86_64, windows, linux)"""
+    """{chiave: {nome, dimensione, sha256}} dai --compilato chiave=file (una chiave di CHIAVI_COMPILATI)"""
     out = {}
     for v in voci:
         k, _, f = v.partition("=")
-        if not re.fullmatch(r"(mac-arm64|mac-x86_64|windows|linux)", k) or not f: raise ValueError(f"--compilato vuole chiave=file (mac-arm64, mac-x86_64, windows, linux): {v}")
+        if k not in CHIAVI_COMPILATI or not f: raise ValueError(f"--compilato vuole chiave=file ({', '.join(CHIAVI_COMPILATI)}): {v}")
         p = Path(f).resolve()
         out[k] = dict(nome=p.name, dimensione=p.stat().st_size, sha256=firmati.sha256_file(str(p)))
     return out

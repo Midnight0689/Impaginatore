@@ -376,11 +376,13 @@ def test_strumento_della_release(tmp_path):
     assert r.returncode != 0 and "dentro il repository" in r.stderr
     # T-302: i pacchetti del programma compilato nello stesso manifesto, ognuno con misura e impronta
     (tmp_path / "dist" / "Impaginatore-2.0.1-linux.deb").write_bytes(b"deb"); (tmp_path / "dist" / "Impaginatore-2.0.1-windows.exe").write_bytes(b"exe!")
-    r = esegui("firma", pk, "--compilato", f"linux={tmp_path / 'dist' / 'Impaginatore-2.0.1-linux.deb'}", "--compilato", f"windows={tmp_path / 'dist' / 'Impaginatore-2.0.1-windows.exe'}")
-    assert r.returncode == 0 and "Impaginatore-2.0.1-linux.deb, Impaginatore-2.0.1-windows.exe" in r.stdout, r.stderr
+    (tmp_path / "dist" / "Impaginatore-2.0.1-linux-arm64.deb").write_bytes(b"deb arm")
+    r = esegui("firma", pk, "--compilato", f"linux={tmp_path / 'dist' / 'Impaginatore-2.0.1-linux.deb'}", "--compilato", f"windows={tmp_path / 'dist' / 'Impaginatore-2.0.1-windows.exe'}",
+               "--compilato", f"linux-arm64={tmp_path / 'dist' / 'Impaginatore-2.0.1-linux-arm64.deb'}")
+    assert r.returncode == 0 and "Impaginatore-2.0.1-linux.deb, Impaginatore-2.0.1-linux-arm64.deb, Impaginatore-2.0.1-windows.exe" in r.stdout, r.stderr
     with open(tmp_path / "dist" / "manifesto.json", encoding="utf-8") as f: m = json.load(f)
-    assert m["pacchetti"]["windows"] == dict(nome="Impaginatore-2.0.1-windows.exe", dimensione=4, sha256=hashlib.sha256(b"exe!").hexdigest()) and set(m["pacchetti"]) == {"python", "linux", "windows"}
-    r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode == 0 and "pacchetti linux, python, windows" in r.stdout, r.stderr
+    assert m["pacchetti"]["windows"] == dict(nome="Impaginatore-2.0.1-windows.exe", dimensione=4, sha256=hashlib.sha256(b"exe!").hexdigest()) and set(m["pacchetti"]) == {"python", "linux", "linux-arm64", "windows"}
+    r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode == 0 and "pacchetti linux, linux-arm64, python, windows" in r.stdout, r.stderr
     (tmp_path / "dist" / "Impaginatore-2.0.1-linux.deb").write_bytes(b"altro")
     r = esegui("verifica", str(tmp_path / "dist"), "--pubblica", pub); assert r.returncode != 0 and "(linux) non è quello del manifesto" in r.stderr
     r = esegui("firma", pk, "--compilato", "android=x.apk"); assert r.returncode != 0 and "--compilato vuole chiave=file" in r.stderr

@@ -104,14 +104,16 @@ class InstallazioneCompilata(Installazione):
 
 def chiave_pacchetto(sistema=None, macchina=None):
     """chiave del pacchetto di questo computer in manifesto["pacchetti"] (e nel nome dei file della release, compila.py):
-    mac-arm64 (Apple Silicon), mac-x86_64 (Intel), windows, linux"""
+    mac-arm64 (Apple Silicon), mac-x86_64 (Intel), windows (x64: anche sui PC Windows con processore ARM, che lo eseguono
+    in emulazione; un pacchetto nativo arm64 non c'è, DISTRIBUZIONE.md), linux (x86_64), linux-arm64"""
     import platform
 
     from .. import piattaforma
     s = sistema or piattaforma.sistema()
-    if s != "mac": return s
-    m = (macchina or platform.machine()).lower()
-    return "mac-arm64" if m in ("arm64", "aarch64") else "mac-x86_64"
+    if s == "windows": return s
+    arm = (macchina or platform.machine()).lower() in ("arm64", "aarch64")
+    if s == "linux": return "linux-arm64" if arm else "linux"
+    return "mac-arm64" if arm else "mac-x86_64"
 
 
 # ---------------------------------------------------------------- estrazione e prova

@@ -43,16 +43,21 @@ def test_ordine_delle_versioni_debian_come_pep440():
 
 def test_nomi_dei_pacchetti():
     assert compila.nome_pacchetto("2.0.1", "linux") == "Impaginatore-2.0.1-linux.deb"
+    assert compila.nome_pacchetto("2.0.1", "linux-arm64") == "Impaginatore-2.0.1-linux-arm64.deb"
     assert compila.nome_pacchetto("2.0.1", "windows") == "Impaginatore-2.0.1-windows.exe"
     assert compila.nome_pacchetto("2.0.1", "mac-arm64") == "Impaginatore-2.0.1-mac-arm64.dmg"
     from impaginatore.aggiornamenti import sorgenti
     assert all(sorgenti._NOME.fullmatch(compila.nome_pacchetto("2.0.1rc1", k)) for k in rilascio.SISTEMI), "nomi che il programma accetta come asset"
     assert compila.chiave() in rilascio.SISTEMI and compila.sistema() in ("linux", "mac", "windows")
+    import aggiornamento
+    assert set(aggiornamento.CHIAVI_COMPILATI) == set(rilascio.SISTEMI) == set(rilascio.ESTENSIONI) == set(rilascio.DESCRIZIONI), "una chiave per pacchetto, ovunque"
+    assert set(compila.ARCHITETTURA_DEB) == {k for k in rilascio.SISTEMI if k.startswith("linux")} and set(compila.MACOS_MINIMO) == {k for k in rilascio.SISTEMI if k.startswith("mac")}
 
 
-@pytest.mark.parametrize("sis", ["linux", "mac", "windows"])
-def test_argomenti_di_nuitka(sis, tmp_path):
-    a = compila.argomenti_nuitka(sis, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
+@pytest.mark.parametrize("k", ["linux", "linux-arm64", "mac-arm64", "mac-x86_64", "windows"])
+def test_argomenti_di_nuitka(k, tmp_path):
+    sis = k.split("-")[0]
+    a = compila.argomenti_nuitka(k, "2.0.1", tmp_path, tmp_path / "r.xml", tmp_path / "m1x")
     assert a[:5] == [sys.executable, "-X", "utf8", "-m", "nuitka"] and a[-1] == str(compila.ENTRATA), "Nuitka in modalità UTF-8: il programma compilato la eredita"
     assert ("--mode=app" in a) == (sis == "mac") and ("--mode=standalone" in a) == (sis != "mac")
     for o in ("--include-package=impaginatore", "--include-package-data=impaginatore", "--python-flag=no_docstrings", "--nofollow-import-to=gi", "--noinclude-data-files=webview/lib/*.jar",
@@ -64,6 +69,8 @@ def test_argomenti_di_nuitka(sis, tmp_path):
     assert ("--nofollow-import-to=tkinter" in a) == (sis != "windows") and ("--enable-plugin=tk-inter" in a) == (sis == "windows")
     if sis == "windows": assert "--file-version=2.0.1.0" in a and "--windows-console-mode=attach" in a
     if sis == "mac": assert f"--macos-signed-app-name={compila.ID_MAC}" in a and "--macos-app-version=2.0.1" in a
+    assert [x for x in a if x.startswith("--macos-app-macos-min-version=")] == ([f"--macos-app-macos-min-version={'13.0' if k == 'mac-arm64' else '14.0'}"] if sis == "mac" else []), \
+        "Info.plist dichiara la versione minima vera: 13.0 sui Mac con chip Apple, 14.0 sui Mac Intel"
     if sis == "linux": assert any(x.startswith("--linux-icon=") for x in a)
     assert f"--output-filename={'impaginatore' if sis == 'windows' else 'impaginatore-app'}" in a, "mai come la cartella dei dati impaginatore/ (Nuitka la rifiuta)"
     for x in a:
@@ -196,6 +203,7 @@ def test_ripete_i_comandi_che_a_volte_non_vanno(monkeypatch):
 def test_testi_del_pacchetto_deb():
     c = compila.controllo_deb("2.0.0.dev0", 123456)
     assert "Version: 2.0.0~~dev0\n" in c and "Installed-Size: 123456\n" in c and "Depends: python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1\n" in c
+    assert "Architecture: amd64\n" in c and "Architecture: arm64\n" in compila.controllo_deb("2.0.0", 1, "linux-arm64")
     assert c.endswith("\n") and all(r.startswith(" ") or ":" in r for r in c.strip().splitlines()), "campi e righe di continuazione"
     v = compila.voce_desktop(); assert "Exec=impaginatore\n" in v and v.startswith("[Desktop Entry]\n")
     d = compila.definizioni_iss("C:\\P", "C:\\U", "2.0.1rc1")
@@ -206,13 +214,14 @@ def test_testi_del_pacchetto_deb():
 
 
 @pytest.mark.skipif(not shutil.which("dpkg-deb") or os.name == "nt", reason="serve dpkg-deb")
-def test_pacchetto_deb(tmp_path):
+@pytest.mark.parametrize("k, arch", [("linux", "amd64"), ("linux-arm64", "arm64")])
+def test_pacchetto_deb(tmp_path, k, arch):
     prog = tmp_path / "Impaginatore"; prog.mkdir()
     (prog / "impaginatore-app").write_bytes(b"#!/bin/sh\n"); (prog / "impaginatore-app").chmod(0o700); (prog / "libx.so").write_bytes(b"x")
-    out = compila.pacchetto_deb(prog, tmp_path, "2.0.1rc1")
-    assert out.name == "Impaginatore-2.0.1rc1-linux.deb"
+    out = compila.pacchetto_deb(prog, tmp_path, "2.0.1rc1", k)
+    assert out.name == f"Impaginatore-2.0.1rc1-{k}.deb"
     info = subprocess.run(["dpkg-deb", "-f", str(out), "Version", "Package", "Architecture"], capture_output=True, text=True).stdout
-    assert info.split() == ["Version:", "2.0.1~rc1", "Package:", "impaginatore", "Architecture:", "amd64"]
+    assert info.split() == ["Version:", "2.0.1~rc1", "Package:", "impaginatore", "Architecture:", arch]
     elenco = subprocess.run(["dpkg-deb", "-c", str(out)], capture_output=True, text=True).stdout
     assert re.search(r"-rwxr-xr-x root/root .* \./opt/impaginatore/impaginatore-app\n", elenco) and re.search(r"-rw-r--r-- root/root .* \./opt/impaginatore/libx\.so\n", elenco)
     assert "./usr/bin/impaginatore -> /opt/impaginatore/impaginatore-app" in elenco and "./usr/share/applications/impaginatore.desktop" in elenco
@@ -357,6 +366,65 @@ def test_versione_minima_di_macos():
     assert compila.minos(otool) == [(14, 0), (10, 13)], "solo macOS (platform 1), mai le versioni delle librerie"
 
 
+def _otool(minos):
+    return "\n".join(["Load command 9", "      cmd LC_BUILD_VERSION", " platform 1", f"    minos {minos}", "      sdk 15.2"])
+
+
+def _bundle(tmp_path, minimo, binari):
+    """un Impaginatore.app finto: Info.plist con LSMinimumSystemVersion e file Mach-O (solo la testa) con il loro minos"""
+    import plistlib
+    prog = tmp_path / "Impaginatore.app"; (prog / "Contents" / "MacOS").mkdir(parents=True)
+    with open(prog / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"CFBundleName": "Impaginatore", **({"LSMinimumSystemVersion": minimo} if minimo else {})}, f)
+    for n, testa in binari.items(): (prog / "Contents" / "MacOS" / n).write_bytes(testa + b"\0" * 8)
+    (prog / "Contents" / "MacOS" / "dati.xml").write_bytes(b"<xml/>")
+    (prog / "Contents" / "MacOS" / "collegamento").symlink_to("impaginatore-app") if os.name != "nt" else None
+    return prog
+
+
+def test_versione_minima_dichiarata_e_controllata(monkeypatch, tmp_path):
+    """macOS: Info.plist dichiara MACOS_MINIMO e nessun binario del bundle chiede di più (otool -l su ogni Mach-O)"""
+    minos = {"impaginatore-app": "11.0", "libnumpy.dylib": "11.0", "cv2.so": "13.0", "universale.so": None, "x": "14.0"}
+    prog = _bundle(tmp_path, "13.0", {"impaginatore-app": b"\xcf\xfa\xed\xfe", "libnumpy.dylib": b"\xcf\xfa\xed\xfe", "cv2.so": b"\xca\xfe\xba\xbe", "universale.so": b"\xcf\xfa\xed\xfe"})
+    letti = []
+    def otool(cmd, capture_output, text, check):
+        assert cmd[:2] == ["otool", "-l"]; n = os.path.basename(cmd[2]); letti.append(n)
+        return types.SimpleNamespace(stdout=_otool(minos[n]) if minos[n] else "Load command 1\n cmd LC_SEGMENT_64")
+    monkeypatch.setattr(compila.subprocess, "run", otool)
+    assert compila.controlla_macos(prog, "mac-arm64") == {"macos_minimo": "13.0", "macos_minimo_binari": "13.0"}
+    assert sorted(letti) == ["cv2.so", "impaginatore-app", "libnumpy.dylib", "universale.so"], "solo i Mach-O, non i dati né i collegamenti"
+    minos["libnumpy.dylib"] = "14.0"
+    with pytest.raises(SystemExit, match=r"più di macOS 13.0: \{'Contents/MacOS/libnumpy.dylib': '14.0'\}"): compila.controlla_macos(prog, "mac-arm64")
+    assert compila.controlla_macos(_bundle(tmp_path / "intel", "14.0", {"x": b"\xcf\xfa\xed\xfe"}), "mac-x86_64")["macos_minimo"] == "14.0"
+    with pytest.raises(SystemExit, match="LSMinimumSystemVersion=11.0, non 13.0"): compila.controlla_macos(_bundle(tmp_path / "b", "11.0", {}), "mac-arm64")
+    with pytest.raises(SystemExit, match="Nessun binario Mach-O"): compila.controlla_macos(_bundle(tmp_path / "c", "13.0", {}), "mac-arm64")
+
+
+def test_obiettivo_di_macos_uguale_al_minimo_dichiarato():
+    compila.controlla_obiettivo_macos("mac-arm64", {}); compila.controlla_obiettivo_macos("mac-arm64", {"MACOSX_DEPLOYMENT_TARGET": "13.0"})
+    with pytest.raises(SystemExit, match="MACOSX_DEPLOYMENT_TARGET=14.0, ma il minimo dichiarato per mac-arm64 è 13.0"):
+        compila.controlla_obiettivo_macos("mac-arm64", {"MACOSX_DEPLOYMENT_TARGET": "14.0"})
+
+
+@pytest.mark.parametrize("k", ["linux", "linux-arm64", "mac-arm64", "windows"])
+def test_impacchetta(monkeypatch, tmp_path, k):
+    """il pacchetto del sistema giusto, con impronta ed elenco dei componenti accanto (su macOS con la versione minima)"""
+    fatti = []
+    monkeypatch.setattr(compila, "controlla_programma", lambda prog: fatti.append("controllo"))
+    monkeypatch.setattr(compila, "controlla_macos", lambda prog, k: dict(macos_minimo="13.0", macos_minimo_binari="13.0"))
+    monkeypatch.setattr(compila, "scrivi_licenze", lambda prog, sis, rapporto, altro=None: dict(componenti=[1, 2], sistema=k, **(altro or {})))
+    def finto(estensione):
+        def f(prog, uscita, versione, *chiave):
+            fatti.append((estensione, *chiave)); out = uscita / compila.nome_pacchetto(versione, k); out.write_bytes(b"pacchetto"); return out
+        return f
+    monkeypatch.setattr(compila, "pacchetto_deb", finto("deb")); monkeypatch.setattr(compila, "pacchetto_dmg", finto("dmg")); monkeypatch.setattr(compila, "pacchetto_exe", finto("exe"))
+    out = compila.impacchetta(tmp_path / "prog", k, tmp_path / "u", tmp_path / "r.xml")
+    assert out.name == compila.nome_pacchetto(__version__, k) and fatti[0] == "controllo"
+    assert fatti[1] == {"linux": ("deb", "linux"), "linux-arm64": ("deb", "linux-arm64"), "mac-arm64": ("dmg", "mac-arm64"), "windows": ("exe",)}[k]
+    assert (tmp_path / "u" / f"{out.name}.sha256").read_text(encoding="utf-8") == f"{hashlib.sha256(b'pacchetto').hexdigest()}  {out.name}\n"
+    c = json.loads((tmp_path / "u" / f"{out.name}.componenti.json").read_text(encoding="utf-8"))
+    assert c.get("macos_minimo") == ("13.0" if k.startswith("mac") else None)
+
+
 # ---------------------------------------------------------------- verifica_pacchetto.py: rapporto e finestra
 def test_un_errore_inatteso_e_un_controllo_che_non_va(monkeypatch):
     """un errore della prova (o una risposta inattesa del programma) non ferma la prova: il controllo risulta «no», con il
@@ -398,3 +466,27 @@ def test_comando_della_fotografia_dello_schermo(tmp_path):
     w = verifica.comando_foto("C:\\Prove\\l'album\\f.png", "win32")
     assert w[:4] == ["powershell", "-NoProfile", "-NonInteractive", "-Command"] and w[4].endswith("$b.Save('C:\\Prove\\l''album\\f.png')"), "apice raddoppiato per PowerShell"
     assert verifica.comando_foto(tmp_path / "f.png", "linux") is None and verifica.fotografa_schermo(None) == "nessuna cartella per le immagini"
+
+
+def test_architettura_dell_eseguibile(tmp_path):
+    """dalla testa del file: ELF (Linux), PE (Windows), Mach-O anche universale (macOS). Il pacchetto x64 su Windows ARM
+    gira in emulazione: la prova scrive l'architettura dell'eseguibile accanto a quella della macchina"""
+    import struct
+    def scrivi(nome, dati): p = tmp_path / nome; p.write_bytes(dati + b"\0" * 64); return p
+    elf = lambda m: b"\x7fELF\x02\x01\x01" + b"\0" * 11 + struct.pack("<H", m)
+    assert verifica.architetture(scrivi("a", elf(0x3E))) == ["x86_64"] and verifica.architetture(scrivi("b", elf(0xB7))) == ["arm64"]
+    assert verifica.architetture(scrivi("big", b"\x7fELF\x02\x02\x01" + b"\0" * 11 + struct.pack(">H", 0x2B))) == ["altra"]
+    pe = lambda m: b"MZ" + b"\0" * 58 + struct.pack("<I", 0x80) + b"\0" * 0x40 + b"PE\0\0" + struct.pack("<H", m)
+    assert [verifica.architetture(scrivi(f"pe{m}", pe(m))) for m in (0x8664, 0xAA64, 0x14C)] == [["x86_64"], ["arm64"], ["x86"]]
+    assert verifica.architetture(scrivi("dos", b"MZ" + b"\0" * 58 + struct.pack("<I", 0x80) + b"\0" * 0x44)) == [], "MZ senza PE"
+    assert verifica.architetture(scrivi("m", b"\xcf\xfa\xed\xfe" + struct.pack("<I", 0x0100000C))) == ["arm64"]
+    fat = b"\xca\xfe\xba\xbe" + struct.pack(">I", 2) + struct.pack(">5I", 0x01000007, 3, 4096, 10, 12) + struct.pack(">5I", 0x0100000C, 0, 8192, 10, 14)
+    assert verifica.architetture(scrivi("u", fat)) == ["x86_64", "arm64"] and verifica.architetture(scrivi("t", b"#!/bin/sh\n")) == []
+
+
+def test_versione_minima_dal_bundle(tmp_path):
+    import plistlib
+    assert verifica.macos_minimo(tmp_path) is None, "fuori da macOS non c'è Info.plist"
+    (tmp_path / "Contents").mkdir()
+    with open(tmp_path / "Contents" / "Info.plist", "wb") as f: plistlib.dump({"LSMinimumSystemVersion": "13.0"}, f)
+    assert verifica.macos_minimo(tmp_path) == "13.0"

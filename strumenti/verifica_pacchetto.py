@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Prova il programma compilato vero (T-302), come lo usa un fotografo, senza rete e senza toccare i suoi dati.
 
-    python strumenti/verifica_pacchetto.py PROGRAMMA [--finestra] [--rapporto file.json] [--immagini CARTELLA] [--riepilogo file.md]
+    python strumenti/verifica_pacchetto.py PROGRAMMA [--finestra] [--architettura x86_64|arm64] [--rapporto file.json]
+                                           [--immagini CARTELLA] [--riepilogo file.md]
 
 PROGRAMMA è l'eseguibile: build/compila/linux/Impaginatore/impaginatore-app, /usr/bin/impaginatore (dopo il .deb),
 Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginatore.exe. Tutto gira in una cartella temporanea
@@ -9,7 +10,9 @@ Impaginatore.app/Contents/MacOS/impaginatore-app, …\\Impaginatore\\impaginator
 
 Controlli, in ordine:
     file          nessun .py del programma; tutti i file di dati del pacchetto del sorgente (pagine, testi, statistiche,
-                  licenza beta…), copie del motore per la 1.x, licenze, file di OpenCV per i volti
+                  licenza beta…), copie del motore per la 1.x, licenze, file di OpenCV per i volti; con --architettura,
+                  l'architettura dell'eseguibile (dalla sua testa: il pacchetto x64 su Windows ARM gira in emulazione e il
+                  rapporto lo dice, con «macchina» della prova accanto); su macOS la versione minima di Info.plist
     versione      «impaginatore --versione»
     avvio         la pagina della schermata di avvio («_avvio», la stessa della finestra) con versione e licenza: prova
                   gratuita, sola lettura dopo una prova finita, in italiano e in inglese
@@ -173,8 +176,36 @@ def dati_mancanti(sorgente, pacchetto):
                   if p.is_file() and p.suffix not in (".py", ".pyc") and "__pycache__" not in p.parts and not p.name.startswith(".") and not (pacchetto / p.relative_to(sorgente)).is_file())
 
 
+ELF = {0x3E: "x86_64", 0xB7: "arm64"}                       # e_machine
+PE = {0x8664: "x86_64", 0xAA64: "arm64", 0x14C: "x86"}       # IMAGE_FILE_HEADER.Machine
+MACHO = {0x01000007: "x86_64", 0x0100000C: "arm64"}          # cputype
+
+
+def architetture(percorso):
+    """le architetture del codice di un eseguibile, lette dalla sua testa (ELF, PE, Mach-O anche universale): un programma
+    x86_64 su una macchina arm64 gira in emulazione (Windows su ARM) e la prova lo deve dire"""
+    with open(percorso, "rb") as f: t = f.read(4096)
+    if t[:4] == b"\x7fELF": return [ELF.get(struct.unpack("<H" if t[5] == 1 else ">H", t[18:20])[0], "altra")]
+    if t[:2] == b"MZ":
+        pe = struct.unpack("<I", t[0x3C:0x40])[0]
+        if t[pe:pe + 4] == b"PE\0\0": return [PE.get(struct.unpack("<H", t[pe + 4:pe + 6])[0], "altra")]
+    if t[:4] == b"\xcf\xfa\xed\xfe": return [MACHO.get(struct.unpack("<I", t[4:8])[0], "altra")]
+    if t[:4] == b"\xca\xfe\xba\xbe":
+        n = struct.unpack(">I", t[4:8])[0]
+        return [MACHO.get(struct.unpack(">I", t[8 + 20 * i:12 + 20 * i])[0], "altra") for i in range(n)]
+    return []
+
+
+def macos_minimo(d):
+    """LSMinimumSystemVersion di Info.plist del bundle (None fuori da macOS)"""
+    import plistlib
+    info = d / "Contents" / "Info.plist"
+    if not info.is_file(): return None
+    with open(info, "rb") as f: return plistlib.load(f).get("LSMinimumSystemVersion")
+
+
 @controllo("file")
-def prova_file(exe):
+def prova_file(exe, architettura=None):
     d = programma_dir(exe)
     sorgenti = [str(p.relative_to(d)) for p in d.rglob("*") if p.suffix in (".py", ".pyc") and "impaginatore" in p.relative_to(d).parts]
     deve(not sorgenti, f"file sorgente del programma nel pacchetto: {sorgenti[:5]}")
@@ -183,10 +214,15 @@ def prova_file(exe):
     mancano = dati_mancanti(RADICE / "src" / "impaginatore", next(d.rglob("avvio.html")).parent.parent)
     deve(not mancano, f"file di dati del pacchetto che mancano nel programma: {mancano[:5]}")
     componenti = json.loads(next(d.rglob("componenti.json")).read_text(encoding="utf-8"))
+    arch = architetture(Path(exe).resolve())
     RAPPORTO["misure"] = dict(programma_mb=round(sum(p.stat().st_size for p in d.rglob("*") if p.is_file()) / 1e6, 1),
                               file=sum(1 for p in d.rglob("*") if p.is_file()), eseguibile_mb=round(Path(exe).stat().st_size / 1e6, 1),
-                              componenti=len(componenti.get("componenti", [])), python=componenti.get("python"))
-    if componenti.get("macos_minimo"): RAPPORTO["misure"]["macos_minimo"] = componenti["macos_minimo"]
+                              componenti=len(componenti.get("componenti", [])), python=componenti.get("python"), eseguibile_architettura="+".join(arch),
+                              macchina=platform.machine())
+    m = macos_minimo(d)
+    if m: RAPPORTO["misure"]["macos_minimo"] = m
+    if componenti.get("macos_minimo_binari"): RAPPORTO["misure"]["macos_minimo_binari"] = componenti["macos_minimo_binari"]
+    deve(architettura is None or arch == [architettura], f"l'eseguibile è {'+'.join(arch) or 'di un formato sconosciuto'}, non {architettura}")
 
 
 @controllo("versione")
@@ -509,7 +545,7 @@ def esegui_controlli(pr, a, attesa, cartella):
     def fai(f, *x):
         try: return f(*x)
         except NonVa: falliti.append(f.nome); return None
-    fai(prova_file, a.programma)
+    fai(prova_file, a.programma, a.architettura)
     fai(prova_versione, pr, attesa)
     fai(prova_avvio, pr, attesa)
     segno = copia_finta(pr)
@@ -580,6 +616,7 @@ def cartella_di_lavoro(piattaforma=sys.platform):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="verifica_pacchetto", description=__doc__.split("\n")[0])
     ap.add_argument("programma"); ap.add_argument("--finestra", action="store_true"); ap.add_argument("--rapporto")
+    ap.add_argument("--architettura", choices=sorted(set(ELF.values()) | set(PE.values()) | set(MACHO.values())), help="architettura attesa dell'eseguibile")
     ap.add_argument("--immagini", help="dove salvare fotografie e diagnosi (di serie la cartella del rapporto)")
     ap.add_argument("--riepilogo", help="file a cui aggiungere il rapporto in Markdown (GITHUB_STEP_SUMMARY)")
     ap.add_argument("--versione", help="versione attesa (di serie quella di src/impaginatore/__init__.py)")
