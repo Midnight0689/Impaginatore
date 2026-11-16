@@ -5,6 +5,7 @@ import json
 import os
 import types
 
+import pytest
 from PIL import Image
 
 from aiuti import attendi_log
@@ -294,3 +295,38 @@ def test_consegna_licenza_e_spread_saltati(editor, monkeypatch):
     E.CFG["prodotto"] = g; E.CFG["abbondanza_mm"] = 3
     assert c.prova("/api/export", {"fmt": "consegna", "range": "1", "dest": d("e")})[0] is True, "il Generico è di tutti"
     attendi_log(c)
+
+
+# ---------------------------------------------------------------- assistente AI (MCP)
+def test_assistente_prodotti_e_consegna(editor, home_srv, monkeypatch):
+    from impaginatore.mcp import collegamento as MC
+    from impaginatore.mcp import strumenti as S
+    monkeypatch.setattr(MC, "avvia_programma", lambda attesa=None: MC.programma())          # la schermata di questo test, mai il programma vero
+    a = S.Assistente(); p = S.id_progetto(editor.progetto)
+    installa(catalogo(stato="da_confermare", laboratorio="Lab <b>Rossi</b>", prodotti=[prodotto(spread_max=40)]))
+    installa({"rotto": True}, "rotto.json")
+    el = a.elenca_prodotti()
+    assert el["cataloghi_non_letti"] == 1 and "generico/quadrato-30" in [x["prodotto"] for x in el["prodotti"]]
+    assert el["prodotti"][-1] == dict(prodotto="lab-prova/album-30", nome="Album 30 × 22,5", laboratorio="Lab <b>Rossi</b>", catalogo="Album di prova", pagina_cm=[30, 22.5],
+                                      abbondanza_mm=0, ppi=150, spread_max=40, verificato=False, da_confermare=True, generico=False, consentito=True)
+    for cattivo in ("../x", "lab-prova/album-30/x", 7, "/etc/passwd"):
+        with pytest.raises(S.Rifiuto, match="prodotto: l'id che dà elenca_prodotti"): a.imposta_prodotto(p, cattivo)
+        with pytest.raises(S.Rifiuto, match="prodotto: l'id che dà elenca_prodotti"): a.crea_progetto("X", prodotto=cattivo)
+    with pytest.raises(S.Rifiuto, match="misure: numeri .*oppure il prodotto"): a.crea_progetto("X")
+    assert a._riassunto(p)["prodotto"] is None
+    r = a.imposta_prodotto(p, "lab-prova/album-30")
+    assert r["prodotto"] == dict(prodotto="lab-prova/album-30", nome="Album 30 × 22,5", laboratorio="Lab <b>Rossi</b>", verificato=False, da_confermare=True)
+    assert r["annulla"]["nome"] == "Prodotto del laboratorio" and editor.E.UNDO[-1]["assistente"] is True
+    assert a._riassunto(p)["prodotto"]["prodotto"] == "lab-prova/album-30"
+    with pytest.raises(S.Rifiuto, match="il formato di un album fatto non si cambia"): a.imposta_prodotto(p, "generico/quadrato-30")
+    album(editor, 1)
+    e = a.esporta(p, "consegna")
+    assert e["finita"] is True and e["spread_esportati"] == 1 and e["errori"] == [] and e["cartella"].startswith(os.path.join("Esportazioni", "Consegna", "Assistente "))
+    assert sorted(os.listdir(os.path.join(editor.progetto, e["cartella"]))) == ["LAB_Prova_01.jpg", "Riepilogo consegna.txt"]
+    assert a.imposta_prodotto(p, None)["prodotto"] is None
+    with pytest.raises(S.Rifiuto, match="non ha ancora il prodotto del laboratorio"): a.esporta(p, "consegna")
+    altro = L.per_progetto(*L.trova("lab-prova", "album-30")); altro["prodotto"]["pagina_cm"] = [20, 20]; editor.E.CFG["prodotto"] = altro
+    assert a._riassunto(p)["prodotto"]["avviso"].startswith("L'album ha pagine di 30 × 22,5 cm")
+    r = a.crea_progetto("Dal laboratorio", prodotto="lab-prova/album-30")
+    cfg = formato.leggi_json(os.path.join(home_srv.modulo.PROGETTI, r["cartella"], "progetto.json"))
+    assert (cfg["formato_cm"], cfg["prodotto"]["prodotto"]["id"]) == ([60, 22.5], "album-30")
