@@ -103,6 +103,8 @@
   .dlg .err { min-height: 16px; margin-top: 12px; color: var(--imp-errore); font-size: 12px; }
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   .dlg .corpo { line-height: 1.7; }
+  .dlg label.interr { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; color: var(--imp-app-testo); font-size: 14px; cursor: pointer; }
+  .dlg label.interr input { width: 18px; height: 18px; margin: 0; accent-color: var(--imp-accento); }
   .dlg .corpo .ok { color: var(--imp-successo); } .dlg .corpo .ko { color: var(--imp-errore); }
   .dlg .testo { white-space: pre-line; line-height: 1.5; }
   .vers { display: none; max-height: 220px; overflow: auto; margin-top: 8px; }
@@ -193,6 +195,15 @@
   <div class="info" data-t="home.lic_senza_internet"></div>
   <div class="err" id="lerr" role="alert"></div>
   <div class="btns"><button id="lrim" type="button" style="display:none" data-t="home.lic_togli"></button><button id="lclose" type="button" data-t="comune.chiudi"></button><button id="lgo" type="button" class="primario" data-t="home.lic_attiva"></button></div>
+</div></div>
+
+<div class="velo" id="vassist"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vassist-t">
+  <h3 id="vassist-t" data-t="home.assist_titolo"></h3>
+  <div class="corpo" data-t="home.assist_testo"></div>
+  <label class="interr"><input type="checkbox" id="aimg" role="switch" aria-describedby="anota"><span data-t="home.assist_immagini"></span></label>
+  <div class="info" id="anota" data-t="home.assist_nota"></div>
+  <div class="err" id="aerr" role="alert"></div>
+  <div class="btns"><button id="aclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
 </div></div>
 
 <div class="velo" id="vchiedi"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="ch-titolo" aria-describedby="ch-testo">
@@ -416,8 +427,20 @@ async function chiudiProgramma() {
   const r = await chiedi(t("home.chiudi_titolo"), t("home.chiudi_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.chiudi_ok"), ruolo: "primario" }]);
   if (r !== "ok") return; try { await api("/api/esci", {}); } catch (e) {} schermataFinale(t("home.chiuso"));
 }
+// ---- assistente AI (MCP): di serie riceve solo testo; le immagini ridotte solo se l'utente accende l'interruttore
+async function apriAssistente() {
+  $("aerr").textContent = ""; const d = await api("/api/assistente"); $("aimg").checked = d.immagini === true; apri("vassist", $("aimg"));
+}
+$("aimg").onchange = async () => {
+  const v = $("aimg").checked; $("aerr").textContent = "";
+  if (v && await chiedi(t("home.assist_conferma_titolo"), t("home.assist_nota"), [PRM_ANNULLA(), { id: "ok", testo: t("home.assist_accendi"), ruolo: "primario" }]) !== "ok") { $("aimg").checked = false; return; }
+  try { $("aimg").checked = (await api("/api/assistente", { immagini: v })).immagini === true; }
+  catch (e) { $("aimg").checked = !v; $("aerr").textContent = e.message || String(e); }
+};
+$("aclose").onclick = () => chiudi("vassist");
 $("altro").onclick = e => { e.stopPropagation(); apriMenu($("altro"), [
-  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.chiudi_programma"), fn: chiudiProgramma },
+  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente },
+  "-", { testo: t("home.chiudi_programma"), fn: chiudiProgramma },
 ]); };
 
 // ---- versione e aggiornamenti

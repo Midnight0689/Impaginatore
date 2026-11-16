@@ -105,7 +105,7 @@ def test_chiudi_programma_chiede_in_pagina(home_srv, tmp_path):
     with Browser(tmp_path) as b:
         b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
         b.js("document.getElementById('altro').click()"); b.pausa(0.3)
-        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Chiudi programma"]
+        assert [x.strip() for x in b.js("[...document.querySelectorAll('#menu button')].map(x => x.textContent)")] == ["Apri album esistente…", "Importa ZIP…", "Assistente AI…", "Chiudi programma"]
         b.js(VOCE % "'Chiudi programma'" + ".click()"); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "flex"; b.js(ESC); b.pausa(0.3)
         assert mostra(b, "vchiedi") == "none" and home_srv.uscite == []
@@ -199,3 +199,28 @@ def test_nessun_testo_italiano_nel_codice_della_pagina():
     visibile = re.sub(r"<[^>]+>", " ", corpo)
     assert [w for w in re.findall(r"[A-Za-zÀ-ÿ]{3,}", visibile) if w not in ("Impaginatore", "Created", "Stefano", "Imperato")] == []
     assert json.loads(json.dumps(risorse.testi()))
+
+
+def test_assistente_immagini_solo_dopo_la_conferma(home_srv, tmp_path):
+    """menu ⋯ › Assistente AI…: l'interruttore è spento, accenderlo chiede conferma con il testo che dice dove vanno le
+    immagini; «Annulla» lo lascia spento, «Accendi» salva la scelta, spegnerlo non chiede niente"""
+    from cdp import Browser
+    from impaginatore.mcp import consenso
+    with Browser(tmp_path) as b:
+        b.apri(home_srv.srv.indirizzo_avvio(), 1.5)
+        b.js("document.getElementById('altro').click()"); b.pausa(0.2)
+        b.js(VOCE % "'Assistente AI'" + ".click()"); b.pausa(0.4)
+        assert mostra(b, "vassist") == "flex" and b.js("document.activeElement.id") == "aimg"
+        assert b.js("document.getElementById('aimg').checked") is False and b.js("document.getElementById('aimg').getAttribute('role')") == "switch"
+        assert "fuori dal tuo computer" in b.js("document.getElementById('anota').textContent")
+        b.js("document.getElementById('aimg').click()"); b.pausa(0.3)
+        assert mostra(b, "vchiedi") == "flex" and "fuori dal tuo computer" in b.js("document.getElementById('ch-testo').textContent")
+        b.js("document.querySelector('#vchiedi [data-esito=annulla]').click()"); b.pausa(0.3)
+        assert b.js("document.getElementById('aimg').checked") is False and not consenso.salvato()
+        b.js("document.getElementById('aimg').click()"); b.pausa(0.3)
+        b.js("document.querySelector('#vchiedi [data-esito=ok]').click()"); b.pausa(0.5)
+        assert b.js("document.getElementById('aimg').checked") is True and consenso.salvato()
+        b.js("document.getElementById('aimg').click()"); b.pausa(0.5)
+        assert mostra(b, "vchiedi") == "none" and b.js("document.getElementById('aimg').checked") is False and not consenso.salvato()
+        b.js(ESC); b.pausa(0.2); assert mostra(b, "vassist") == "none"
+        assert not b.problemi(), b.problemi()

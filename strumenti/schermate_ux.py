@@ -70,6 +70,7 @@ SCENE_HOME = {
     "home-licenza": "document.getElementById('lic').click()",
     "home-riga": "document.querySelectorAll('#grid .riga')[0].focus()",
     "home-menu": "document.querySelectorAll('#grid .riga')[0].focus(); document.querySelector('#grid .riga [data-a=altro]').click()",
+    "home-assistente": "document.getElementById('altro').click(); [...document.querySelectorAll('#menu button')].find(b => b.textContent.startsWith('Assistente')).click()",
     "home-cestino": "document.querySelectorAll('#grid .riga')[1].focus(); document.querySelectorAll('#grid .riga')[1].querySelector('[data-a=altro]').click(); [...document.querySelectorAll('#menu button')].find(b => b.className === 'pericolo').click()",
 }
 SCENE_EDITOR = {
@@ -82,6 +83,8 @@ SCENE_EDITOR = {
     "editor-menu": "go(1); (() => { const it = slotsOf(1).find(i => i.k !== 't'), r = document.querySelector('#slots .slot').getBoundingClientRect(); frameMenu({ preventDefault() {}, stopPropagation() {}, clientX: r.left + 40, clientY: r.top + 40 }, it); document.querySelector('#cmenu .mi.sub').dispatchEvent(new MouseEvent('mouseenter')); })()",
     "editor-disposizione": "go(1); altraDisp(1)",
     "editor-altro": "go(1); document.getElementById('morb').click()",
+    # avviso dopo una modifica dell'assistente AI (MCP): solo nella pagina, con lo stesso testo e lo stesso pulsante
+    "editor-assistente": "go(1); toast(t('editor.msg.assistente_n', { nome: 'Bozza dell\\'album' }), false, annullaAz())",
     # stato vuoto: solo nella pagina (lo stato del server resta com'è), per vedere come si presenta un album senza spread
     "editor-vuoto": "S.spreads = []; S.photos.forEach(p => { p.sp = null; }); cur = 0; view = 'album'; render()",
 }
