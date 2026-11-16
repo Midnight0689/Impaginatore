@@ -8,7 +8,8 @@ aggiornamento). Esistono anche da Python, così i test li provano come li usa il
 scrive la pagina della schermata di avvio come la mostra la finestra (versione e stato della licenza): serve alla prova
 del programma installato (strumenti/verifica_pacchetto.py), che non può guardare dentro la finestra.
 
-All'avvio del programma compilato prepara() mette sys.frozen (lo guardano desktop.finestra, che spegne gli strumenti di
+All'avvio del programma compilato prepara() mette in sys.executable il programma stesso (Nuitka ci mette un «python»
+accanto al programma, che non esiste), mette sys.frozen (lo guardano desktop.finestra, che spegne gli strumenti di
 sviluppo, e pywebview), dà sempre uno stdout e uno stderr (Windows senza console) e su Linux trova PyGObject del
 sistema per la finestra con WebKitGTK. Come si costruisce il programma: docs/architettura/DISTRIBUZIONE.md.
 """
@@ -88,8 +89,11 @@ def cartella_gi(cartelle=CARTELLE_GI):
 
 
 def prepara(cartelle_gi=CARTELLE_GI):
-    """all'avvio del programma compilato (cli.main): sys.frozen, flussi standard, PyGObject del sistema su Linux"""
+    """all'avvio del programma compilato (cli.main): sys.executable, sys.frozen, flussi standard, PyGObject del sistema su
+    Linux"""
     from .piattaforma import sistema
+    eseguibile = getattr(globals().get("__compiled__"), "process_exe", None)       # il programma, collegamenti risolti
+    if eseguibile: sys.executable = eseguibile
     sys.frozen = True
     for nome in ("stdout", "stderr"):                        # Windows senza console: print() tace già, ma chi scrive su sys.stderr no
         if getattr(sys, nome) is None: setattr(sys, nome, open(os.devnull, "w", encoding="utf-8"))  # noqa: SIM115  # resta aperto finché c'è il processo

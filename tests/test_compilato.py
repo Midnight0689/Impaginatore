@@ -102,12 +102,15 @@ def test_prepara(tmp_path, monkeypatch):
     from impaginatore import piattaforma
     _gi_finto(tmp_path / "sys")
     monkeypatch.setattr(sys, "frozen", False, raising=False)
+    monkeypatch.setattr(sys, "executable", "/opt/impaginatore/python")                     # quello che mette Nuitka: non esiste
+    monkeypatch.setitem(vars(compilato), "__compiled__", types.SimpleNamespace(process_exe="/opt/impaginatore/impaginatore-app"))
     monkeypatch.setattr(sys, "meta_path", list(sys.meta_path))
     monkeypatch.setattr(sys, "stdout", None); monkeypatch.setattr(sys, "stderr", None)
     monkeypatch.setattr(piattaforma.sys, "platform", "linux")
     try:
         compilato.prepara((str(tmp_path / "sys"),))
         assert sys.frozen is True and sys.stdout is not None and sys.stderr is not None
+        assert sys.executable == "/opt/impaginatore/impaginatore-app" and compilato.comando("impaginatore.editor")[0] == sys.executable, "i processi lanciano il programma"
         print("non si perde e non si ferma: Windows senza console"); sys.stderr.write("idem\n")
         trovati = [f for f in sys.meta_path if isinstance(f, compilato.SoloGi)]
         assert len(trovati) == 1 and trovati[0].cartella == str(tmp_path / "sys") and sys.meta_path[-1] is trovati[0], "in fondo: prima i moduli compilati"
@@ -123,6 +126,8 @@ def test_prepara(tmp_path, monkeypatch):
     monkeypatch.setattr(piattaforma.sys, "platform", "linux")
     compilato.prepara((str(tmp_path / "manca"),))
     assert not any(isinstance(f, compilato.SoloGi) for f in sys.meta_path), "nessun PyGObject adatto: niente"
+    monkeypatch.delitem(vars(compilato), "__compiled__"); monkeypatch.setattr(sys, "executable", "/usr/bin/python3")
+    compilato.prepara((str(tmp_path / "manca"),)); assert sys.executable == "/usr/bin/python3", "altri impacchettatori (sys.frozen): resta il loro"
 
 
 # ---------------------------------------------------------------- riavvii
