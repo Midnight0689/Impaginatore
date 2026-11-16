@@ -29,6 +29,7 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+    branches: ["pacchetti/**"]      # prova dei pacchetti senza tag: l'avvio manuale vale solo quando il file è sul ramo principale
 
 permissions:
   contents: read

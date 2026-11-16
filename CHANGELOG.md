@@ -62,6 +62,9 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-052` **licenze** — `chiavi.py emetti-beta` emette una chiave per tester (Studio, beta, a scadenza) in un CSV 0600 fuori dal repository. _File:_ `marketing/negozio/chiavi/chiavi.py`, `marketing/negozio/chiavi/FORMATO-CHIAVE.md`. _Rif:_ `T-204`.
 - `AGG-053` **piattaforma** — Statistiche d'uso facoltative per la beta privata: spente di serie, domanda esplicita al primo avvio, solo eventi e numeri (mai nomi, percorsi, testi o immagini), registro locale leggibile, esportazione, nuovo codice, cancellazione, nessun invio automatico. _File:_ `src/impaginatore/statistiche/__init__.py`, `src/impaginatore/statistiche/schema.py`, `src/impaginatore/statistiche/invio.py`, `docs/architettura/STATISTICHE.md`. _Rif:_ `T-204`.
 - `AGG-054` **test** — `strumenti/statistiche_beta.py`: riepilogo per tester e complessivo (KPI, percorso, funzioni, tempi, errori). _File:_ `strumenti/statistiche_beta.py`, `tests/test_statistiche_beta.py`. _Rif:_ `T-204`.
+- `AGG-055` **installer** — Compilazione con Nuitka e pacchetti per Linux (`.deb`), macOS (`.dmg`, Apple Silicon e Intel) e Windows (installatore per utente), non firmati con certificati; prova automatica del pacchetto compilato; controllo pre-rilascio e manifesto firmato con le impronte; pipeline `pacchetti.yml` su tag e sui rami `pacchetti/**`. _File:_ `strumenti/compila.py`, `strumenti/verifica_pacchetto.py`, `strumenti/rilascio.py`, `.github/workflows/pacchetti.yml`. _Rif:_ `T-302`, `T-303`.
+- `AGG-056` **pacchetto** — Il programma compilato lancia se stesso per editor, PSD, finestre di scelta, riavvio e schermata di avvio (sottocomandi interni). _File:_ `src/impaginatore/compilato.py`. _Rif:_ `T-302`.
+- `AGG-057` **aggiornamenti** — Il programma compilato avvisa della versione nuova e apre la pagina della release. _File:_ `src/impaginatore/aggiornamenti/`. _Rif:_ `T-302`.
 
 ### Modificato
 
@@ -85,6 +88,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-018` **editor** — La consegna al laboratorio con problemi che bloccano la stampa non parte: la pagina li elenca e chiede («Consegna lo stesso», «Controlla l'album», «Annulla»), l'assistente li riceve (`esporta` con `conferma_problemi`); la consegna confermata è scritta nel registro. _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`, `src/impaginatore/mcp/strumenti.py`, `src/impaginatore/mcp/server.py`, `docs/manuale/08-esportare.md`. _Rif:_ `UX-013`.
 - `MOD-019` **brand** — Nel piede della schermata Album solo «Impaginatore v<versione>»; tolto il credito dell'autore. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/servizio.py`. _Rif:_ `T-207`.
 - `MOD-020` **aggiornamenti** — Aprire la schermata Album non fa più un controllo in rete: lo fa il programma; aggiornare e tornare indietro si rifiutano durante un'esportazione. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/home/server.py`. _Rif:_ `T-207`.
+- `MOD-021` **ci** — Extra `compilazione` (Nuitka) fuori dal programma distribuito; nome di un passaggio in `sicurezza.yml`. _File:_ `pyproject.toml`, `uv.lock`, `.github/workflows/sicurezza.yml`. _Rif:_ `T-302`.
 
 ### Corretto
 
@@ -121,6 +125,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-031` **documenti** — Le foto sintetiche delle schermate sono di tre momenti della giornata, così la bozza mostrata ha i capitoli. _File:_ `strumenti/schermate_ux.py`, `tests/test_ux_bozza.py`.
 - `COR-032` **editor** — L'avviso dell'importazione dice, al singolare e al plurale, quante foto non sono entrate perché hanno il nome di una foto già nell'album, e che cosa fare. _File:_ `src/impaginatore/risorse/index.html`, `src/impaginatore/risorse/testi/it/editor.json`, `docs/manuale/03-foto.md`.
 - `COR-033` **test** — La prova con la finestra vera cerca gli album nelle righe dell'elenco (cercava le vecchie schede e falliva). _File:_ `tests/prova_finestra.py`. _Rif:_ `T-201`.
+- `COR-034` **desktop** — Su Linux la finestra del programma compare dopo la schermata di avvio (restava nascosta). _File:_ `src/impaginatore/desktop/avvio.py`, `tests/test_avvio.py`, `tests/prova_finestra.py`. _Rif:_ `T-207`.
+- `COR-035` **pacchetto** — Nel compilato: eseguibile giusto per i processi figli, modelli di OpenCV per i volti e moduli per la finestra su Linux inclusi. _File:_ `src/impaginatore/compilato.py`, `strumenti/compila.py`. _Rif:_ `T-302`.
 
 ### Sicurezza
 
@@ -201,3 +207,4 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `DOC-043` **test** — Senza l'extra `mcp` i test che importano l'SDK si saltano con il motivo; guida e LEGGIMI dicono l'ambiente della suite completa (`uv sync --locked --extra dev --extra mcp`) e quanti test fa. _File:_ `tests/test_import.py`, `docs/sviluppo/GUIDA.md`, `LEGGIMI.md`.
 - `DOC-044` **documenti** — `AGGIORNAMENTI.md`: come si pubblica una release firmata, cosa è vero e cosa è finto, cosa manca per il programma compilato; architettura e sicurezza aggiornate. _File:_ `docs/architettura/AGGIORNAMENTI.md`, `docs/architettura/ARCHITETTURA.md`, `docs/architettura/SICUREZZA.md`. _Rif:_ `T-207`.
 - `DOC-045` **documenti** — Informativa in bozza riallineata alle statistiche facoltative (§ 4-bis, riga F), accordo con i tester in bozza, decisioni aperte, capitolo 14 del manuale. _File:_ `docs/legale/PRIVACY.md`, `docs/legale/PRIVACY.en.md`, `docs/legale/ACCORDO-BETA.md`, `docs/legale/DA-DECIDERE.md`, `docs/manuale/14-beta-e-statistiche.md`. _Rif:_ `T-204`.
+- `DOC-046` **documenti** — Guida di installazione per i tre sistemi (avvisi del sistema spiegati, verifica dell'impronta, disinstallazione) e `DISTRIBUZIONE.md` (cosa protegge la compilazione e cosa no, misure reali su Linux). _File:_ `docs/manuale/00-installazione.md`, `docs/architettura/DISTRIBUZIONE.md`, `docs/architettura/AGGIORNAMENTI.md`. _Rif:_ `T-402`, `T-302`.
