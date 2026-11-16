@@ -11,6 +11,7 @@ Dopo T-101 il formato dei progetti è `album.json` (solo dati): vedi «Formato d
 src/impaginatore/
 ├── __init__.py          __version__ (unico posto della versione: lo leggono pyproject, home, editor, aggiornamenti)
 ├── __main__.py, cli.py  comando «impaginatore»: schermata dei progetti, oppure «impaginatore editor ...» o «impaginatore mcp»
+├── compilato.py        programma compilato con Nuitka (T-302, DISTRIBUZIONE.md): attivo(), riga di comando dei processi, sottocomandi _psd/_dialogo/_rilancia
 ├── servizio.py          ServerLocale (ThreadingHTTPServer su 127.0.0.1), Gestore (controlli di sicurezza di ogni richiesta), porta_libera()
 ├── sicurezza.py         gettone di sessione, URL di avvio monouso, file di sessione per i client locali (docs/architettura/SICUREZZA.md)
 ├── percorsi.py          radici consentite: i percorsi che arrivano dalla pagina restano nelle cartelle del progetto o scelte dall'utente
@@ -49,7 +50,7 @@ src/impaginatore/
 │   ├── lanciatore.py    prima cosa di cli.main: quale copia avviare (base installata o versione aggiornata), puntatore, ritorno da solo
 │   ├── firmati.py       PacchettiFirmati: manifesto firmato Ed25519, controllo, scaricamento, installazione, ritorno indietro, annuncio
 │   ├── sorgenti.py      SorgenteGitHub (API delle release, solo https, limiti) e SorgenteFinta (una cartella, per le prove)
-│   ├── installazione.py InstallazionePython (estrazione sicura, prova di avvio, puntatore) e InstallazioneCompilata (da fare)
+│   ├── installazione.py InstallazionePython (estrazione sicura, prova di avvio, puntatore) e InstallazioneCompilata (a mano: apre la pagina della release)
 │   ├── rilascio.py      manifesto, firma e release finta per chi pubblica e per i test (strumenti/aggiornamento.py)
 │   └── git.py           Git: aggiornamenti da un checkout (sviluppo, Mac dell'ideatore)
 ├── desktop/             finestra del programma con pywebview (T-201; extra «desktop»): pywebview si carica solo in motore()
@@ -87,6 +88,8 @@ impaginatore [--porta 8765] [--browser | --no-browser] [--progetti DIR] [--daemo
                        └─ Photoshop: osascript «do javascript» (Mac) / cscript + COM (Windows); su Linux si ferma prima
 ```
 
+- Programma compilato (T-302): al posto di `python -m <modulo>` il programma lancia se stesso con un sottocomando
+  (`impaginatore editor …`, `impaginatore _psd …`, `impaginatore _rilancia …`): `compilato.comando`, `DISTRIBUZIONE.md`.
 - Porta libera: si prova ad aprirla davvero (bind); su macOS e Linux si controlla anche che nessuno risponda. Niente
   `lsof`, niente `connect_ex` su 99 porte (su Windows costava secondi per porta).
 - Un'istanza sola: se la porta della home risponde a `/api/ping` (con il gettone del suo file di sessione), il comando apre
@@ -189,8 +192,8 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 - **Aggiornamenti** (T-207, fatto per il pacchetto Python): `aggiornamenti.Aggiornamenti` (stato, controlla, versioni,
   aggiorna, ripristina, ciclo) passato a `home.server.configura(aggiorna=...)` o scelto da `aggiornamenti.predefiniti()`.
   `PacchettiFirmati` prende una `Sorgente` (da dove: GitHub o una cartella) e una `Installazione` (come si sostituisce il
-  codice): il programma compilato (T-302) aggiunge la sua `InstallazioneCompilata` senza toccare il resto. Come si
-  pubblica una release: `AGGIORNAMENTI.md`.
+  codice): il programma compilato (T-302) usa `InstallazioneCompilata`, che oggi apre solo la pagina della release. Come
+  si pubblica una release: `AGGIORNAMENTI.md`; come si costruiscono i pacchetti: `DISTRIBUZIONE.md`.
 - **Licenze** (T-202): il punto d'ingresso unico è `cli.main` (e `home.server.main` / `editor.server.main`); le funzioni a
   pagamento passano tutte dalle richieste HTTP (`H.do_POST` di home ed editor) e dalle funzioni `run_export`, `esporta_progetto`:
   lì va il controllo della fascia (`docs/mercato/tier.json`).
@@ -254,6 +257,10 @@ riavvia nella versione nuova, torna indietro). I processi che eseguono copie del
 coverage (sarebbero file estranei al rapporto).
 
 ## Cosa non è verificato
+
+Pacchetti di installazione (T-302): programma compilato, `.deb`, installazione e prova del programma installato
+provati solo su Linux; macOS e Windows scritti e affidati alla pipeline `pacchetti.yml`, mai eseguita
+(`DISTRIBUZIONE.md`, «Cosa è provato»).
 
 Tutto è stato provato su Linux (Python 3.12). Su macOS e Windows i rami del codice sono provati simulando il sistema
 (`sys.platform`) e intercettando i comandi; l'esecuzione vera (osascript, COM di Photoshop, PowerShell, tkinter su Windows,

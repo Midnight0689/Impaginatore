@@ -3,7 +3,8 @@
 Stato al 16/11/2026: il giro completo (controllo, scaricamento, verifica, installazione, riavvio nella versione nuova,
 ritorno alla precedente) funziona per il programma installato come pacchetto Python ed è provato su Linux con processi
 veri e una release in una cartella. **Non è ancora acceso per gli utenti**: mancano la chiave pubblica vera dei rilasci e
-il repository delle release (vedi «Prima del primo rilascio»). Il programma compilato (T-302) ha solo l'interfaccia.
+il repository delle release (vedi «Prima del primo rilascio»). Il programma compilato (T-302) controlla e avvisa allo
+stesso modo, ma si aggiorna a mano con il suo pacchetto (sotto, «Programma compilato»).
 
 Regole di sicurezza e dove sono nel codice: `SICUREZZA.md`, «Aggiornamenti».
 
@@ -21,6 +22,10 @@ Regole di sicurezza e dove sono nel codice: `SICUREZZA.md`, «Aggiornamenti».
   è tornato alla versione …»). Una versione lasciata così non ricompare nell'avviso (resta «Aggiorna ora» nella finestra).
 - Se una versione nuova non riesce a partire per 3 volte, alla quarta il programma torna da solo alla precedente.
 - I progetti non cambiano: un aggiornamento sostituisce solo il codice del programma.
+- Programma compilato: lo stesso avviso, con «Scarica la versione nuova» al posto di «Aggiorna e riavvia» e la nota «Si apre
+  la pagina dei download: si installa come la prima volta, album e impostazioni restano.». Il pulsante apre nel browser la
+  pagina della release; niente si scarica né si sostituisce dal programma. «Versioni precedenti» elenca solo la versione
+  in uso: per tornare indietro si reinstalla il pacchetto della versione voluta.
 
 ## Come funziona
 
@@ -89,7 +94,10 @@ solo l'ultima release pubblicata che non è né l'una né l'altra) con tre asset
 
 Nome, testo e misure della release su GitHub non contano: tutto ciò che il programma usa sta nel manifesto firmato. Le
 novità si mostrano nella lingua in uso (altrimenti in inglese, poi in italiano), al massimo 30 righe di 300 caratteri.
-`pacchetti` può avere anche un pacchetto per sistema (`mac`, `windows`, `linux`) per il programma compilato.
+`pacchetti` può avere anche un pacchetto per sistema (`mac-arm64`, `mac-x86_64`, `windows`, `linux`: le chiavi di
+`installazione.chiave_pacchetto()`) per il programma compilato, con misura e sha256 come la wheel. Li aggiunge
+`aggiornamento.py firma … --compilato chiave=file` (una volta per pacchetto), di solito attraverso
+`strumenti/rilascio.py prepara`, che fa anche `SHA256SUMS` e le note (`DISTRIBUZIONE.md`, «Rilascio»).
 
 ## Come si pubblica
 
@@ -153,15 +161,27 @@ non valida»). Per ripartire: cancellare `<dati>/programma/`.
 | Release | finte, in una cartella (`SorgenteFinta`) |
 | Chiave pubblica dei rilasci | segnaposto |
 | Repository delle release | vuoto |
-| Programma compilato (`InstallazioneCompilata`) | solo l'interfaccia: dice «si aggiornerà con il suo installatore: non ancora disponibile» |
+| Programma compilato (`InstallazioneCompilata`) | aggiornamento a mano: controllo e avviso veri, il pulsante apre la pagina della release (provato con test e nel programma compilato su Linux) |
 
-## Cosa manca per il programma compilato (T-302)
+## Programma compilato (T-302)
 
-`InstallazioneCompilata` riceve il pacchetto del suo sistema (`pacchetti.mac`, `pacchetti.windows`), già verificato con
-misura e sha256 del manifesto firmato, e deve: macOS, sostituire il bundle `.app` (fuori dal processo in corso, con un
-piccolo aiutante; firma e notarizzazione Apple controllate); Windows, avviare l'installatore firmato (Authenticode) in modo
-silenzioso e chiudere il programma; poi `precedente()`/`torna()` sul pacchetto precedente tenuto da parte. Va provato su
-macchine vere.
+Il programma compilato con Nuitka (`DISTRIBUZIONE.md`) **non si sostituisce da solo**. `predefiniti()` gli dà
+`PacchettiFirmati(SorgenteGitHub(), InstallazioneCompilata(), …)`: il controllo legge e verifica il manifesto firmato
+come per il pacchetto Python (con `IMPAGINATORE_AGGIORNAMENTI_FINTI` legge la cartella finta, ma sempre con le chiavi
+vere: la chiave di prova non vale nel compilato), e lo stato dice `manuale: true`. `aggiorna` non scarica niente: chiama
+`InstallazioneCompilata.a_mano`, che apre nel browser `PAGINA_SCARICAMENTO` (con `{versione}`) o, se vuota, la pagina
+della release `https://github.com/<REPOSITORY>/releases/tag/v<versione>`, e risponde `{pagina, versione}`. Se il browser
+non si apre, l'errore dice l'indirizzo («Il browser non si è aperto: scarica la versione nuova da …»). `installa` e
+`torna` rifiutano: in un programma compilato non ci sono copie da installare né da cui tornare, e il lanciatore non
+avvia mai copie dalla cartella dei dati.
+
+Perché a mano, su tutti e tre i sistemi: senza firma Authenticode e senza ID sviluppatore Apple, sostituire il
+programma da dentro il programma vorrebbe dire eseguire un installatore non firmato scaricato in silenzio (Windows) o
+riscrivere un bundle che Gatekeeper rimette in quarantena (macOS), senza un modo sicuro di tornare indietro se si ferma
+a metà. Installato a mano, l'aggiornamento passa dagli stessi controlli del sistema della prima installazione e
+dall'impronta pubblicata. Con i certificati si cambierà solo `InstallazioneCompilata` (Windows: installatore firmato in
+modo silenzioso e chiusura del programma; macOS: sostituzione del bundle notarizzato con un piccolo aiutante; poi
+`torna` sul pacchetto precedente tenuto da parte), da provare su macchine vere.
 
 ## Limiti
 

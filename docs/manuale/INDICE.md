@@ -8,7 +8,7 @@ con foto di prova.
 
 ## Capitoli
 
-0. [Installare il programma](00-installazione.md) *(da scrivere)*
+0. [Installare il programma](00-installazione.md) *(beta privata: senza certificati, con gli avvisi del sistema spiegati)*
 1. [Il primo album in dieci minuti](01-primo-album.md)
 2. [La schermata Album](02-schermata-album.md)
 3. [Le foto: importare e scegliere](03-foto.md)
