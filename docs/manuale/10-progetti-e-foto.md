@@ -25,7 +25,7 @@ le trova: rimetti il nome di prima.
 ## Mandare un album a un altro computer
 
 1. Nell'album, premi «⋯» › «Progetto e foto…».
-2. In «Copia del progetto» scegli:
+2. In «Copia dell'album» scegli:
    - «con le foto»: le foto vanno nella copia. Senza, chi riceve deve avere le foto e ricollegarle;
    - «in un file ZIP»: oltre alla cartella crea un file ZIP, comodo da mandare;
    - «anche per la versione 1.x»: solo se chi riceve usa ancora Impaginatore 1.x.
