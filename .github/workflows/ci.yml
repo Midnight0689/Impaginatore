@@ -102,13 +102,6 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      # TEMPORANEO: in quali condizioni Chrome apre la porta del protocollo su Windows; se non parte come lo avvia
-      # tests/cdp.py il job si ferma qui. Da togliere con strumenti/diagnosi_chrome.py
-      - name: Diagnosi di Chrome (temporanea)
-        if: runner.os == 'Windows' && matrix.parte == 'browser'
-        timeout-minutes: 5
-        run: uv run --no-project python strumenti/diagnosi_chrome.py
-
       # «copertura» esegue tutti i test con la misura della copertura e fallisce sotto fail_under (pyproject.toml)
       - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
         timeout-minutes: 25
