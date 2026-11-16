@@ -3,44 +3,65 @@
 #     Windows               Impaginatore-<v>-windows.exe                       (Inno Setup, per l'utente, senza firma)
 #     Linux                 Impaginatore-<v>-linux.deb                         (Ubuntu 24.04 e derivate)
 # Come e perché: docs/architettura/DISTRIBUZIONE.md. In locale lo stesso giro è
-#     python strumenti/compila.py  e  python strumenti/verifica_pacchetto.py <eseguibile>
+#     python strumenti/compila.py  e  python strumenti/verifica_pacchetto.py <eseguibile> --finestra
 #
-# Parte a mano (Actions > Pacchetti > Run workflow) o con un tag v*. NON pubblica niente: i pacchetti restano come
-# artefatti di questa esecuzione (30 giorni). La release si prepara e si firma sul computer di chi pubblica con
-# strumenti/rilascio.py: la chiave privata dei rilasci non entra mai qui. Nessun segreto, permessi in sola lettura.
+# Quando parte e quali pacchetti fa (un giro costa: vedi «Consumo» sotto; i minuti macOS valgono 10, Windows 2):
+#     tag v*                         tutti e quattro, dopo i test, con la wheel: è il giro di un rilascio
+#     avvio manuale                  quelli scelti (di serie solo Linux), dopo i test, con la wheel; vale solo quando il
+#                                    file è sul ramo principale (Actions > Pacchetti > Run workflow)
+#     push su pacchetti/<chiave>     un solo pacchetto, senza test né wheel: pacchetti/linux, pacchetti/windows,
+#                                    pacchetti/mac-arm64, pacchetti/mac-x86_64; pacchetti/tre = Linux, Mac chip Apple e
+#                                    Windows; pacchetti/tutti = anche il Mac Intel; ogni altro pacchetti/** = solo Linux
+# Un push nuovo sullo stesso ramo di prova annulla il giro precedente (sui tag mai). NON pubblica niente: i pacchetti
+# restano come artefatti dell'esecuzione (30 giorni sui tag, 7 altrimenti). La release si prepara e si firma sul computer
+# di chi pubblica con strumenti/rilascio.py: la chiave privata dei rilasci non entra mai qui. Nessun segreto, permessi in
+# sola lettura.
 #
-# Prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), poi un job per pacchetto: compila,
-# impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso, il DMG montato) e avvia
-# il programma installato con strumenti/verifica_pacchetto.py (schermata di avvio con lo stato della licenza, schermata,
-# editor, esportazioni JPG e PDF, progetto 1.x, PSD fino a Photoshop, server MCP, chiusura; su Linux anche la finestra
-# dentro xvfb, che deve vedersi dopo la schermata di avvio, con le due fotografie nell'artefatto). La prova della
-# finestra su macOS e Windows non blocca: dipende
-# dalla sessione grafica dei runner, che GitHub non garantisce.
+# Sui tag e con l'avvio manuale prima i test (gli stessi di ci.yml: copertura su Linux, test su macOS e Windows), che
+# devono passare; sui rami pacchetti/** i test non girano (li fa ci.yml sui rami prodotto/**) e si compila subito. Poi un
+# job per pacchetto: compila, impacchetta, installa il pacchetto come farebbe un utente (apt, l'installatore silenzioso,
+# il DMG montato) e avvia il programma installato con strumenti/verifica_pacchetto.py --finestra: schermata di avvio con
+# lo stato della licenza, schermata, editor, esportazioni JPG e PDF, progetto 1.x, PSD fino a Photoshop, server MCP,
+# chiusura e la finestra vera, con la schermata Album caricata dentro (Linux dentro xvfb, con le fotografie giudicate;
+# macOS e Windows nella sessione grafica del runner, con la fotografia dello schermo come documento). Esiti, tempi e
+# misure nel riepilogo dell'esecuzione; fotografie, rapporto e, se qualcosa non va, diagnosi-*.txt nell'artefatto.
 #
-# Consumo stimato (prezzi GitHub di novembre 2026: Linux 0,006 $/min, Windows 0,010 $/min, macOS 0,062 $/min), da
-# confermare alla prima esecuzione: finora il workflow non è mai stato eseguito su GitHub.
-#     test        Linux ~20 min, macOS ~20 min, Windows ~25 min                       ~1,6 $
-#     pacchetti   Linux ~40 min, Windows ~50 min, macOS arm64 ~35 min, Intel ~60 min  ~6,5 $ (quasi tutto macOS)
-#     totale ~8 $ a esecuzione: il piano gratuito (12 $ al mese) basta per una sola esecuzione al mese più la CI.
-# Il Mac Intel (macos-15-intel) è il job più caro: si può togliere dalla matrice se non serve (DISTRIBUZIONE.md).
+# Cache: uv (ruote, e su Mac Intel la cryptography costruita dal sorgente) e Nuitka (NUITKA_CACHE_DIR: ccache su Linux e
+# macOS, clcache di Nuitka su Windows). La cache di Nuitka si salva subito dopo la compilazione, anche se dopo qualcosa
+# non va: la compilazione successiva rifà solo i file C cambiati.
+#
+# Consumo: stima per un giro di un pacchetto in DISTRIBUZIONE.md («Pipeline»), da rifare con i tempi veri. In breve:
+# un giro senza cache dura 70-95 minuti sui 2 core dei runner Linux e Windows dei repository privati (minuti fatturati
+# circa 80 Linux, 170 Windows), 35-45 sul Mac arm64 e 55-70 sul Mac Intel (350-450 e 550-700 fatturati); con la cache di
+# Nuitka circa un terzo. Ogni job ha un tempo massimo per sistema, così un blocco non consuma ore di Mac.
 name: Pacchetti
 
 on:
   workflow_dispatch:
+    inputs:
+      pacchetti:
+        description: "Pacchetti da costruire: linux, windows, mac-arm64, mac-x86_64, tre (Linux, Mac chip Apple, Windows) o tutti"
+        type: choice
+        options: [linux, windows, mac-arm64, mac-x86_64, tre, tutti]
+        default: linux
   push:
     tags: ["v*"]
-    branches: ["pacchetti/**"]      # prova dei pacchetti senza tag: l'avvio manuale vale solo quando il file è sul ramo principale
+    branches: ["pacchetti/**"]      # prova dei pacchetti senza tag, un sistema per ramo (sopra)
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 env:
   UV_PYTHON_PREFERENCE: only-managed
   UV_PROJECT_ENVIRONMENT: .venv-compilazione
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+  CCACHE_MAXSIZE: 2G
 
 defaults:
   run:
@@ -49,15 +70,15 @@ defaults:
 jobs:
   test:
     name: Test (${{ matrix.os }})
+    # obbligatori sui tag e con l'avvio manuale; sui rami pacchetti/** no (sotto, «pacchetto» e «wheel»). Linux sempre
+    # (con la copertura), macOS e Windows solo se fra i pacchetti scelti c'è il loro (sui tag tutti e tre)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - { os: ubuntu-24.04, comando: copertura }
-          - { os: macos-26, comando: test }
-          - { os: windows-2025, comando: test }
+        os: ${{ fromJSON('{"tag":["ubuntu-24.04","macos-26","windows-2025"],"tutti":["ubuntu-24.04","macos-26","windows-2025"],"tre":["ubuntu-24.04","macos-26","windows-2025"],"linux":["ubuntu-24.04"],"windows":["ubuntu-24.04","windows-2025"],"mac-arm64":["ubuntu-24.04","macos-26"],"mac-x86_64":["ubuntu-24.04","macos-26"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || inputs.pacchetti] || fromJSON('["ubuntu-24.04","macos-26","windows-2025"]') }}
     env:
       UV_PROJECT_ENVIRONMENT: .venv
     steps:
@@ -83,23 +104,23 @@ jobs:
         timeout-minutes: 5
         run: uv run --no-project strumenti/controlli.py lint
 
-      - name: ${{ matrix.comando == 'copertura' && 'Test con copertura' || 'Test' }}
+      - name: ${{ runner.os == 'Linux' && 'Test con copertura' || 'Test' }}
         timeout-minutes: 40
-        run: uv run --no-project strumenti/controlli.py ${{ matrix.comando }}
+        run: uv run --no-project strumenti/controlli.py ${{ runner.os == 'Linux' && 'copertura' || 'test' }}
 
   pacchetto:
     name: Pacchetto ${{ matrix.chiave }}
     needs: test
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
+    # test passati, oppure (solo sui rami pacchetti/**) non eseguiti
+    if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && startsWith(github.ref, 'refs/heads/pacchetti/'))) }}
+    # runner e tempo massimo (minuti) per pacchetto: i Mac costano 10 volte Linux, il limite è stretto
+    runs-on: ${{ fromJSON('{"linux":"ubuntu-24.04","mac-arm64":"macos-26","mac-x86_64":"macos-15-intel","windows":"windows-2025"}')[matrix.chiave] }}
+    timeout-minutes: ${{ fromJSON('{"linux":130,"mac-arm64":80,"mac-x86_64":100,"windows":150}')[matrix.chiave] }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { os: ubuntu-24.04, chiave: linux }
-          - { os: macos-26, chiave: mac-arm64 }
-          - { os: macos-15-intel, chiave: mac-x86_64 }
-          - { os: windows-2025, chiave: windows }
+        # quali pacchetti (testa del file): tag -> tutti; avvio manuale -> la scelta; pacchetti/<chiave> -> quello; altro -> linux
+        chiave: ${{ fromJSON('{"tag":["linux","mac-arm64","mac-x86_64","windows"],"tutti":["linux","mac-arm64","mac-x86_64","windows"],"tre":["linux","mac-arm64","windows"],"linux":["linux"],"windows":["windows"],"mac-arm64":["mac-arm64"],"mac-x86_64":["mac-x86_64"],"pacchetti/tutti":["linux","mac-arm64","mac-x86_64","windows"],"pacchetti/tre":["linux","mac-arm64","windows"],"pacchetti/linux":["linux"],"pacchetti/windows":["windows"],"pacchetti/mac-arm64":["mac-arm64"],"pacchetti/mac-x86_64":["mac-x86_64"]}')[startsWith(github.ref, 'refs/tags/') && 'tag' || (github.event_name == 'workflow_dispatch' && inputs.pacchetti || github.ref_name)] || fromJSON('["linux"]') }}
     steps:
       - name: Fine riga come nel repository
         if: runner.os == 'Windows'
@@ -118,15 +139,27 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      # le dipendenze che ci sono solo su macOS (pyobjc) e su Windows (pythonnet, clr-loader, cffi) entrano nel
-      # programma compilato: sicurezza.yml controlla solo quelle di Linux
-      - name: Licenze delle dipendenze di questo sistema
-        if: runner.os != 'Linux'
+      # cryptography (server MCP, via pyjwt) non ha ruote per i Mac Intel dalla 49: uv la costruisce dal sorgente con il
+      # Rust del runner e l'OpenSSL 3 di Homebrew, collegato in modo statico (nessuna libreria di Homebrew nel programma:
+      # chiederebbero la versione di macOS del runner). La ruota costruita resta nella cache di uv
+      - name: OpenSSL per costruire cryptography (Mac Intel)
+        if: matrix.chiave == 'mac-x86_64'
         timeout-minutes: 10
+        run: |
+          brew list --versions openssl@3 >/dev/null || brew install openssl@3
+          command -v cargo >/dev/null || brew install rust
+          { echo "OPENSSL_DIR=$(brew --prefix openssl@3)"; echo "OPENSSL_STATIC=1"; } >> "$GITHUB_ENV"
+
+      # le dipendenze che ci sono solo su macOS (pyobjc) e su Windows (pythonnet, clr-loader, cffi) entrano nel
+      # programma compilato: sicurezza.yml controlla solo quelle di Linux. Sui tag e con l'avvio manuale, non nelle prove
+      # dei rami pacchetti/** (tre ambienti da installare: minuti di Mac)
+      - name: Licenze delle dipendenze di questo sistema
+        if: runner.os != 'Linux' && !startsWith(github.ref, 'refs/heads/pacchetti/')
+        timeout-minutes: 20
         run: uv run --no-project strumenti/controlli.py licenze
 
       - name: Ambiente di compilazione (Python 3.12, finestra, MCP, Nuitka)
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
 
       - name: Python dell'ambiente
@@ -134,8 +167,26 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then echo "python=.venv-compilazione/Scripts/python.exe" >> "$GITHUB_OUTPUT"
           else echo "python=.venv-compilazione/bin/python" >> "$GITHUB_OUTPUT"; fi
+          echo "NUITKA_CACHE_DIR=$RUNNER_TEMP/nuitka" >> "$GITHUB_ENV"
 
-      # Inno Setup 6: strumento di costruzione, non entra nel programma (licenza: uso commerciale libero)
+      # ccache: strumento di costruzione, non entra nel programma. Su Windows Nuitka usa con MSVC il suo clcache
+      - name: ccache
+        if: runner.os != 'Windows'
+        timeout-minutes: 10
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ccache
+          else brew list --versions ccache >/dev/null || brew install ccache; fi
+          ccache --version | head -1
+
+      - name: Cache di Nuitka (ripristino)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/nuitka
+          key: nuitka-${{ matrix.chiave }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: nuitka-${{ matrix.chiave }}-
+
+      # Inno Setup 6: strumento di costruzione, non entra nel programma (licenza: uso commerciale libero). C'è già
+      # sull'immagine windows-2025 di GitHub; se manca si installa
       - name: Inno Setup
         if: runner.os == 'Windows'
         timeout-minutes: 10
@@ -145,14 +196,25 @@ jobs:
           fi
 
       - name: Compila e impacchetta
-        timeout-minutes: 100
-        run: ${{ steps.py.outputs.python }} strumenti/compila.py
+        id: compila
+        timeout-minutes: ${{ fromJSON('{"linux":110,"mac-arm64":60,"mac-x86_64":80,"windows":125}')[matrix.chiave] }}
+        run: |
+          inizio=$(date +%s)
+          ${{ steps.py.outputs.python }} strumenti/compila.py
+          echo "COMPILAZIONE_S=$(( $(date +%s) - inizio ))" >> "$GITHUB_ENV"
+          if command -v ccache >/dev/null; then CCACHE_DIR="$(find "$NUITKA_CACHE_DIR/ccache" -mindepth 1 -maxdepth 1 -type d | head -1)" ccache -s || true; fi
+
+      - name: Cache di Nuitka (salvataggio, anche se le prove dopo non vanno)
+        if: always() && steps.compila.outcome != 'skipped'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/nuitka
+          key: nuitka-${{ matrix.chiave }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Installa il pacchetto (Linux, con apt e le sue dipendenze)
         if: runner.os == 'Linux'
         timeout-minutes: 10
         run: |
-          sudo apt-get update -q
           sudo apt-get install -y -q --no-install-recommends xvfb xauth x11-apps ./dist/pacchetti/Impaginatore-*-linux.deb
           echo "PROGRAMMA=/usr/bin/impaginatore" >> "$GITHUB_ENV"
 
@@ -161,7 +223,7 @@ jobs:
         timeout-minutes: 5
         run: |
           hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/dmg" dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.dmg
-          codesign --verify --deep --strict "$RUNNER_TEMP/dmg/Impaginatore.app"
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/dmg/Impaginatore.app"
           echo "PROGRAMMA=$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app" >> "$GITHUB_ENV"
 
       # «//» perché la shell di Git per Windows non scambi le opzioni per percorsi; l'installatore aspetta la fine
@@ -169,46 +231,44 @@ jobs:
         if: runner.os == 'Windows'
         timeout-minutes: 10
         run: |
-          ./dist/pacchetti/Impaginatore-*-windows.exe //VERYSILENT //SUPPRESSMSGBOXES //NORESTART //LOG="$RUNNER_TEMP\\installazione.log"
+          installatore=(./dist/pacchetti/Impaginatore-*-windows.exe)
+          "${installatore[0]}" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART //LOG="$RUNNER_TEMP\\installazione.log"
           DEST="$(cygpath -u "$LOCALAPPDATA")/Programs/Impaginatore"
           test -f "$DEST/impaginatore.exe"
           echo "DEST=$DEST" >> "$GITHUB_ENV"
           echo "PROGRAMMA=$(cygpath -w "$DEST/impaginatore.exe")" >> "$GITHUB_ENV"
 
+      # tutti i controlli e la finestra vera; Linux dentro xvfb (con le fotografie giudicate)
       - name: Prova il programma installato
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a -s "-screen 0 1280x800x24" ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
-          else
-            ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json
-          fi
-
-      - name: Prova della finestra (non blocca)
-        if: runner.os != 'Linux'
-        continue-on-error: true
-        timeout-minutes: 10
-        run: ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra --rapporto dist/pacchetti/verifica-finestra-${{ matrix.chiave }}.json
+          prima=(); [ "$RUNNER_OS" = "Linux" ] && prima=(xvfb-run -a -s "-screen 0 1280x800x24")
+          "${prima[@]}" ${{ steps.py.outputs.python }} strumenti/verifica_pacchetto.py "$PROGRAMMA" --finestra \
+            --rapporto dist/pacchetti/verifica-${{ matrix.chiave }}.json --riepilogo "$GITHUB_STEP_SUMMARY"
 
       - name: Disinstalla (Windows)
         if: runner.os == 'Windows'
         timeout-minutes: 5
         run: |
           "$DEST/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
-          for i in $(seq 30); do [ ! -f "$DEST/impaginatore.exe" ] && break; sleep 2; done
+          for _ in $(seq 30); do [ ! -f "$DEST/impaginatore.exe" ] && break; sleep 2; done
           test ! -f "$DEST/impaginatore.exe"
 
       - name: Smonta il DMG (macOS)
         if: always() && runner.os == 'macOS'
         run: hdiutil detach "$RUNNER_TEMP/dmg" || true
 
-      - name: Tempi e misure nel riepilogo
+      - name: Pacchetto e tempi nel riepilogo
         if: ${{ !cancelled() }}
         run: |
-          for f in dist/pacchetti/*.deb dist/pacchetti/*.dmg dist/pacchetti/*.exe; do
-            [ -f "$f" ] && echo "- $(basename "$f"): $(( $(wc -c < "$f") / 1000000 )) MB" >> "$GITHUB_STEP_SUMMARY"
-          done
-          cat dist/pacchetti/verifica-*.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          {
+            echo "#### Pacchetto ${{ matrix.chiave }} ($ImageOS, $RUNNER_ARCH)"
+            for f in dist/pacchetti/*.deb dist/pacchetti/*.dmg dist/pacchetti/*.exe; do
+              [ -f "$f" ] && echo "- $(basename "$f"): $(( $(wc -c < "$f") / 1000000 )) MB ($(wc -c < "$f") byte)"
+            done
+            [ -n "${COMPILAZIONE_S:-}" ] && echo "- compilazione e pacchetto: $(( COMPILAZIONE_S / 60 )) min $(( COMPILAZIONE_S % 60 )) s"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Artefatto
         if: ${{ !cancelled() }}
@@ -219,11 +279,13 @@ jobs:
             dist/pacchetti/
             build/compila/${{ matrix.chiave }}/compilazione.xml
           if-no-files-found: error
-          retention-days: 30
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
 
   wheel:
     name: Wheel (aggiornamenti delle installazioni Python)
     needs: test
+    # solo sui tag e con l'avvio manuale, dopo i test: serve al rilascio, non alle prove dei pacchetti
+    if: ${{ !cancelled() && needs.test.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -245,4 +307,4 @@ jobs:
           name: wheel
           path: dist/wheel/*.whl
           if-no-files-found: error
-          retention-days: 30
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 30 || 7 }}
