@@ -30,6 +30,7 @@ from ..piattaforma import photoshop as pps
 from ..servizio import Gestore, RichiestaNonValida, ServerLocale, numero
 from .. import licenze                               # T-202: fasce, prova gratuita e sola lettura (docs/architettura/LICENZE.md)
 from .. import laboratori as LAB                     # T-208: cataloghi dei laboratori, prodotto del progetto (docs/architettura/CATALOGHI.md)
+from .. import statistiche                           # T-204: statistiche d'uso facoltative, solo con il consenso (docs/architettura/STATISTICHE.md)
 from ..laboratori import consegna as CONSEGNA
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -212,8 +213,11 @@ _ESITO_LOCK = threading.Lock()
 
 def azzera_registro():
     """un'esportazione (anche quella del progetto) comincia: registro ed esito ripartono da zero"""
-    LOG.clear()
+    LOG.clear(); _T_ESP[0] = time.monotonic()                   # inizio dell'esportazione: la durata va nelle statistiche d'uso (T-204)
     with _ESITO_LOCK: ESITO_ESP.clear(); ESITO_ESP.update(dest="", formato="", totale=0, fatti=0, saltati=[], errori=[], risultato=None, finito=False)
+
+
+_T_ESP = [0.0]
 
 
 def _esito(**kw):
@@ -243,6 +247,8 @@ def _log_risultato(percorso):
 def _log_finito():
     with _ESITO_LOCK:
         ESITO_ESP["finito"] = True; LOG.append("[finito]")  # non tradotto: riga di protocollo (la leggono la pagina e i test)
+        esito = copy.deepcopy(ESITO_ESP)
+    statistiche.esportazione(esito, time.monotonic() - _T_ESP[0])          # formato, quanti, durata: mai la cartella né i nomi (T-204)
 
 
 def _esito_saltato_psd(k, codice):
@@ -928,6 +934,19 @@ class Conflitto(ValueError):
 
 
 def do_op(o):
+    """esegue un'operazione della pagina (_do_op) e la conta per le statistiche d'uso, se l'utente le ha accese (T-204):
+    nome, durata, esito e chi l'ha chiesta (pagina o assistente), mai gli argomenti. Le statistiche non cambiano niente di
+    quello che l'operazione fa, e un loro errore non arriva mai qui (statistiche.sicura)"""
+    t0 = time.perf_counter(); d = o if isinstance(o, dict) else {}
+    nome, assistente = d.get("op"), str(d.get("cid") or "").startswith("assistente-")
+    try: st = _do_op(o)
+    except Exception as e:
+        statistiche.operazione(nome, time.perf_counter() - t0, e, assistente); raise
+    statistiche.operazione(nome, time.perf_counter() - t0, None, assistente, len(SP), st.get("esito"))
+    return st
+
+
+def _do_op(o):
     """esegue un'operazione della pagina come una transazione: o riesce tutta (stato coerente, salvabile e riapribile) o lo
     stato resta com'era. Restituisce lo stato per la pagina"""
     global REV, LASTC
@@ -2117,7 +2136,7 @@ def run_export(o):
                 creati = len(nums) - len(skip) - len(nuovi); _esito(fatti=creati)
                 LOG.append(lingua.t("server.log_psd_creati_a_mano", n=creati, totale=len(nums), a_mano=len(skip)) if skip else lingua.t("server.log_psd_creati", n=creati, totale=len(nums)))
                 if len(nums) - len(nuovi) > 0 or skip: _log_risultato(dest)
-        except Exception as e: _log_errore(_spiega(e))
+        except Exception as e: _log_errore(_spiega(e)); statistiche.errore(e, attesi=True)
         finally: ESPORTA.discard(segno)
         _log_finito()
     segno = object(); ESPORTA.add(segno)                                   # in corso finché go() non finisce: la finestra chiede conferma prima di chiudersi
@@ -2184,7 +2203,7 @@ def file_thumb(path, w):
 def do_import(paths):
     """aggiunge le foto al progetto SENZA copiarle: il progetto punta ai file originali (foto_extra)"""
     licenze.controlla_modifica()                                   # in sola lettura il progetto non cambia
-    files = []
+    files = []; t0 = time.perf_counter()
     for p in paths:
         p = os.path.expanduser(p)
         if os.path.isdir(p):
@@ -2201,6 +2220,7 @@ def do_import(paths):
         have.add(os.path.basename(f).lower()); n += 1; new.append(os.path.abspath(f))
     if new:
         with LOCK: CFG["foto_extra"] = list(dict.fromkeys(list(CFG.get("foto_extra", [])) + new)); save(backup=False)
+    statistiche.importazione("foto", n, skipped, time.perf_counter() - t0)          # quante, mai quali (T-204)
     return n, skipped
 
 CARTELLE_PROGRAMMA = ("_cache", "_backup_editor")         # cartelle che il programma scrive in ogni progetto: dentro non ci sono originali (UX-004)
@@ -2403,6 +2423,7 @@ def ripristina(ts):
 def riavvia_processo():
     """riparte da capo con gli stessi argomenti (il motore rilegge foto e progetto). Chi usa l'editor dentro un altro
     processo (test, finestra desktop) può sostituire questa funzione"""
+    statistiche.svuota()                                         # T-204: i conteggi in memoria non si perdono con il riavvio
     processi.riesegui()
 
 def restart():
@@ -2474,17 +2495,20 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except RichiestaNonValida as e: self.send({"errore": str(e)}, code=400)
-        except Exception as e: self.send({"errore": str(e)}, code=500)
+        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=500)          # T-204: tipo e punto del codice, solo con le statistiche accese
     def do_POST(self):
         u = urlparse(self.path)
         try:
             body = self.corpo()
             if u.path == "/api/op": self.send(do_op(body))
             elif u.path == "/api/templates": self.send(templates_for(body["photos"]))
-            elif u.path == "/api/bozza": self.send(bozza(body))
+            elif u.path == "/api/bozza":
+                t0 = time.perf_counter(); p = bozza(body); statistiche.bozza_proposta(p, body.get("ritmo", "alterna"), time.perf_counter() - t0); self.send(p)
             elif u.path == "/api/controlla":
                 _riferimento_spazi(body.get("modo", "std"), body.get("cm"))
-                self.send(controlla(_elenco_spread(body.get("spread")), body.get("tono"), body.get("modo", "std"), body.get("cm")))
+                t0 = time.perf_counter(); sp = _elenco_spread(body.get("spread")); r = controlla(sp, body.get("tono"), body.get("modo", "std"), body.get("cm"))
+                statistiche.controllo(r, time.perf_counter() - t0, len(SP) if sp is None else len(sp)); self.send(r)          # quanti problemi per tipo, mai i testi (T-204)
+            elif u.path == "/api/statistiche/finestra": statistiche.finestra("editor", body); self.send({"ok": True})          # T-204: misura della finestra, annotata solo con le statistiche accese
             elif u.path == "/api/pick": self.send({"paths": pick(body["kind"])})
             elif u.path == "/api/import":
                 n, sk = do_import([RADICI.controlla(p, "foto_o_cartella") for p in body["paths"]])
@@ -2513,7 +2537,7 @@ class H(Gestore):
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)
         except licenze.NonConsentita as e: self.send({"errore": str(e), "licenza": True}, code=403)
         except Conflitto as e: self.send({"errore": str(e), "codice": "altra_scheda"}, code=400)
-        except Exception as e: self.send({"errore": str(e)}, code=400)
+        except Exception as e: statistiche.errore(e); self.send({"errore": str(e)}, code=400)          # T-204: tipo e punto del codice, solo con le statistiche accese
 
 # ------------------------------------------------------------------ avvio
 def inizializza(progetto, home="", sottofondo=False):
@@ -2522,6 +2546,7 @@ def inizializza(progetto, home="", sottofondo=False):
     pronto con i soli metadati; miniature e volti si preparano mentre si lavora (prepara_in_sottofondo)"""
     ferma_preparazione()
     global PROJ, HOME, CFG, UT_FILE, SP, GD, UNDO, REDO, CLIP, LOG, SAVED, REV, LASTC, BL, VW, VH, BOOT, TONO_C, TONO_IM, CACHE, PV, AGG, TH, INFO, FT
+    t0 = time.perf_counter()
     with LOCK:
         PROJ = os.path.abspath(progetto); HOME = home or ""
         _ripara_percorsi()
@@ -2547,6 +2572,7 @@ def inizializza(progetto, home="", sottofondo=False):
         AGG = dict(n=0, t=0, nomi=[], ar=[])
         LAST.update(op=0.0, backup=0.0); SAVE_ERR[0] = ""; LASTDIR[0] = None
         PREP.update(fatte=0, totale=0, volti=True, attivo=False)
+    statistiche.album_aperto(len(A.M), len(SP), CFG.get("formato_cm"), A.PPI, time.perf_counter() - t0)          # T-204: solo numeri dell'album
     if sottofondo: prepara_in_sottofondo()
 
 
@@ -2579,13 +2605,16 @@ def prepara_in_sottofondo():
 
 
 def _prepara(gen, mini, volti, cartella):
+    t0 = time.perf_counter()
     try: trovati = _prepara_foto(gen, mini, volti, cartella)
     except Exception as ex:                                             # disco pieno, cartella sparita…: si smette, l'editor resta com'è
-        trovati = None; LOG.append(lingua.t("server.preparazione_interrotta", motivo=ex))
+        trovati = None; LOG.append(lingua.t("server.preparazione_interrotta", motivo=ex)); statistiche.errore(ex, attesi=True)
     with LOCK:
-        if PREP["gen"] == gen:
+        uguale = PREP["gen"] == gen
+        if uguale:
             if trovati is None: PREP["attivo"] = False
             else: _volti_pronti(trovati)
+    statistiche.preparazione(len(mini), len(volti), time.perf_counter() - t0, trovati is None or not uguale)          # T-204: quante foto e quanto tempo
 
 
 def _prepara_foto(gen, mini, volti, cartella):
@@ -2651,7 +2680,7 @@ def avvia_cicli():
 def ferma():
     """ferma i cicli di sottofondo e la preparazione delle foto (il server si chiude con shutdown()/server_close())"""
     while _FERMI: _FERMI.pop().set()
-    ferma_preparazione()
+    ferma_preparazione(); statistiche.svuota()                   # T-204: i conteggi delle operazioni in sospeso
 
 
 def main(argv=None):
@@ -2663,7 +2692,7 @@ def main(argv=None):
                     help="apre subito: miniature e volti si preparano mentre si lavora (UX-012; predefinito). --no-sottofondo: li prepara prima di aprire")
     ap.add_argument("--scripts", help=argparse.SUPPRESS)            # versioni 1.x: cartella degli script della skill (ora il motore è nel pacchetto)
     args = ap.parse_args(argv)
-    giornale.configura("editor")
+    giornale.configura("editor"); statistiche.processo("editor")
     inizializza(args.progetto, args.home, args.sottofondo)
     avvia_cicli()
     srv = crea_server(args.porta, sicurezza.gettone_del_processo())          # stesso gettone dopo un riavvio (os.execv): la pagina resta collegata

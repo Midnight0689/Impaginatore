@@ -49,12 +49,12 @@ def test_statici_dai_due_server(server, request):
 def test_testi_dentro_le_pagine(home_srv, editor):
     t = risorse.testi()
     assert all(isinstance(k, str) and isinstance(v, str) and v for k, v in t.items()) and all(k.split(".")[0] in risorse.aree() for k in t)
-    for c, pagina, altra in ((home_srv, "home.html", "editor."), (editor, "index.html", "home.")):
+    for c, prefissi, altre in ((home_srv, ("comune.", "home.", "statistiche."), ("editor.",)), (editor, ("comune.", "editor."), ("home.", "statistiche."))):
         html = c.raw("/").decode("utf-8")
         assert "__TESTI__" not in html and "__NONCE__" not in html and "__LINGUA__" not in html and '<html lang="it"' in html
         m = re.search(r'const TESTI = (\{.*?\}), LINGUA = "it", LOCALE = "it-IT";', html); assert m, "la tabella dei testi è nello script della pagina, con la lingua"
-        d = json.loads(m.group(1)); assert d == {k: v for k, v in t.items() if k.startswith(("comune.", pagina == "home.html" and "home." or "editor."))}
-        assert not any(k.startswith(altra) for k in d), "ogni pagina riceve solo i suoi testi"
+        d = json.loads(m.group(1)); assert d == {k: v for k, v in t.items() if k.startswith(prefissi)}
+        assert not any(k.startswith(altre) for k in d), "ogni pagina riceve solo i suoi testi (le statistiche d'uso solo la schermata Album)"
 
 
 def test_testi_non_escono_dallo_script(monkeypatch):

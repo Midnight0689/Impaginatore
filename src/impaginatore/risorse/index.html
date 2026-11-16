@@ -2495,6 +2495,8 @@ $("stgsw").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key ==
 setStg((() => { try { const v = localStorage.getItem("stgBg2"); return v === null ? "" : v; } catch (_) { return ""; } })());
 api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = "album"; render(); applicaTesti(); tema();
   if ((S.scartate || []).length) toast(t("editor.msg.scartate", { n: S.scartate.length, elenco: S.scartate.slice(0, 3).map(x => x.n + " (" + x.motivo + ")").join(" · ") + (S.scartate.length > 3 ? " …" : "") }), true); });
+// statistiche d'uso (T-204): la misura della finestra; il server la annota solo se l'utente ha acceso le statistiche, altrimenti non scrive niente
+rq("/api/statistiche/finestra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ larghezza: innerWidth, altezza: innerHeight, scala: devicePixelRatio, schermo_larghezza: screen.width, schermo_altezza: screen.height }) }).catch(() => {});
 </script>
 </body>
 </html>

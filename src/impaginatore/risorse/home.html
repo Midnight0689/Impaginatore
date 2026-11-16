@@ -124,6 +124,10 @@
 
   @media (max-width: 1100px) { .scaffale { --colonne: 96px minmax(0, 1fr) 104px 200px 156px; } .c-sp, .c-fo { display: none; } #verb { max-width: 180px; } }
   @media (max-width: 760px) { .scaffale { --colonne: 96px minmax(0, 1fr) 170px; } .c-fm, .c-md { display: none; } .barra { padding: 0 12px; gap: 6px; } #cerca { width: 120px; } }
+
+  /* statistiche d'uso (T-204): domanda del consenso, impostazioni, registro */
+  .dlg.stat { width: 560px; } .dlg.stat .corpo { line-height: 1.5; } .dlg.stat .corpo p { margin: 0 0 10px; } .dlg.stat ul { margin: 4px 0 10px; padding-left: 20px; }
+  .dlg.stat .info.testo { white-space: pre-line; } #sregt { height: 280px; white-space: pre; overflow: auto; } .dlg .btns.sx { justify-content: flex-start; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -219,6 +223,38 @@
   <div class="info" data-t="home.lingua_nota"></div>
   <div class="err" id="lgerr" role="alert"></div>
   <div class="btns"><button id="lgclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
+</div></div>
+
+<!-- statistiche d'uso (T-204): impostazioni, «Cosa condivido» e la domanda del consenso (sopra la finestra della licenza) -->
+<div class="velo" id="vstat"><div class="dlg stat" role="dialog" aria-modal="true" aria-labelledby="vstat-t">
+  <h3 id="vstat-t" data-t="statistiche.titolo"></h3>
+  <div class="corpo"><p data-t="statistiche.chiedi_testo"></p></div>
+  <label class="interr"><input type="checkbox" id="sint" role="switch" aria-describedby="sinfo"><span data-t="statistiche.interruttore"></span></label>
+  <div class="info testo" id="sinfo"></div>
+  <div class="btns sx"><button id="sregb" type="button" data-t="statistiche.cosa_condivido"></button><button id="sesp" type="button" data-t="statistiche.esporta"></button><button id="sazz" type="button" data-t="statistiche.azzera"></button><button id="scanc" type="button" data-t="statistiche.cancella"></button></div>
+  <div class="err" id="serr" role="alert"></div>
+  <div class="btns"><button id="sclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
+</div></div>
+<div class="velo" id="vsreg"><div class="dlg stat" role="dialog" aria-modal="true" aria-labelledby="vsreg-t">
+  <h3 id="vsreg-t" data-t="statistiche.registro_titolo"></h3>
+  <div class="info" data-t="statistiche.registro_testo"></div>
+  <textarea id="sregt" readonly spellcheck="false" data-t-aria="statistiche.registro_titolo"></textarea>
+  <div class="info testo" id="sregi"></div>
+  <div class="btns"><button id="sregc" type="button" class="primario" data-t="comune.chiudi"></button></div>
+</div></div>
+<div class="velo" id="vstatc"><div class="dlg stat" role="dialog" aria-modal="true" aria-labelledby="vstatc-t" aria-describedby="vstatc-d">
+  <h3 id="vstatc-t" data-t="statistiche.chiedi_titolo"></h3>
+  <div class="corpo" id="vstatc-d">
+    <p data-t="statistiche.chiedi_testo"></p>
+    <b data-t="statistiche.cosa_si_titolo"></b>
+    <ul><li data-t="statistiche.si_funzioni"></li><li data-t="statistiche.si_numeri"></li><li data-t="statistiche.si_errori"></li><li data-t="statistiche.si_computer"></li><li data-t="statistiche.si_id"></li></ul>
+    <b data-t="statistiche.cosa_no_titolo"></b>
+    <p data-t="statistiche.no"></p>
+    <p data-t="statistiche.seriale"></p>
+    <p id="sc-dove"></p>
+    <p data-t="statistiche.cambia"></p>
+  </div>
+  <div class="btns"><button id="sc-no" type="button" data-t="statistiche.no_grazie"></button><button id="sc-si" type="button" data-t="statistiche.si_condividi"></button></div>
 </div></div>
 
 <div class="velo" id="vchiedi"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="ch-titolo" aria-describedby="ch-testo">
@@ -505,7 +541,7 @@ async function cambiaLingua(id) {
 }
 $("lgclose").onclick = () => chiudi("vlingua");
 $("altro").onclick = e => { e.stopPropagation(); apriMenu($("altro"), [
-  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente }, { testo: t("home.lingua_menu"), fn: apriLingua },
+  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente }, { testo: t("home.lingua_menu"), fn: apriLingua }, ...vociStatistiche(),
   "-", { testo: t("home.chiudi_programma"), fn: chiudiProgramma },
 ]); };
 
@@ -567,6 +603,7 @@ function showLic(s) {
   $("prova").hidden = !vista; document.body.classList.toggle("con-prova", vista);
   if (vista) $("provatxt").textContent = n <= 1 ? t("home.prova_ultimo") : t("home.prova_restano", { n });
   if (s.beta && s.riga_beta && !s.sola_lettura) b.textContent = s.riga_beta;          // licenza beta privata: «Beta privata · scade il …», composta dal server
+  if (s.beta && s.stato === "attiva") chiediStatistiche();                             // T-204: con la licenza beta, la domanda sulle statistiche (se non c'è ancora una scelta)
 }
 async function loadLic() { try { showLic(await api("/api/licenza")); } catch (e) {} }
 function showLicFinestra() { $("lerr").textContent = ""; $("lkey").value = ""; apri("vlic", $("lkey")); loadLic(); }
@@ -581,6 +618,62 @@ $("vtxt").textContent = t("home.versione_attesa");
 loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load().catch(errore);
+
+// ---- statistiche d'uso (T-204): spente di serie; con la licenza beta la domanda al primo avvio; il registro si legge, si esporta, si cancella
+let STAT = null, _statChiesta = false, _sc = null;
+const kB = b => fN(Math.max(0.1, (b || 0) / 1024), 1);
+async function caricaStatistiche() { try { STAT = await api("/api/statistiche"); } catch (e) { STAT = null; } return STAT; }
+function vociStatistiche() { return STAT && STAT.disponibili ? [{ testo: t("statistiche.menu"), fn: apriStatistiche }] : []; }
+function consensoStatistiche() {                                                      // true «Sì, condividi», false «No, grazie», null con Esc (si richiede la volta dopo)
+  if (_sc) sceltaStatistiche(null);
+  $("sc-dove").textContent = STAT && STAT.invio.attivo ? t("statistiche.dove_invio", { server: STAT.invio.server }) : t("statistiche.dove_manuale");
+  return new Promise(ok => { _sc = ok; apri("vstatc", $("sc-no")); });
+}
+function sceltaStatistiche(v) { const f = _sc; _sc = null; chiudi("vstatc"); if (f) f(v); }
+$("sc-si").onclick = () => sceltaStatistiche(true); $("sc-no").onclick = () => sceltaStatistiche(false);
+$("vstatc").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); sceltaStatistiche(null); } });
+async function chiediStatistiche() {
+  if (_statChiesta || !(await caricaStatistiche()) || !STAT.chiedere) return;
+  _statChiesta = true; const v = await consensoStatistiche(); if (v === null) return;
+  try { STAT = await api("/api/statistiche/consenso", { si: v }); if (v) avviso(t("statistiche.grazie"), "ok"); } catch (e) { errore(e); }
+}
+function mostraStatistiche() {
+  const s = STAT, r = [s.attive ? (s.eventi ? tn("statistiche.eventi", s.eventi, { kb: kB(s.byte) }) : t("statistiche.registro_vuoto")) : t("statistiche.spente")];
+  if (!s.attive && s.eventi) r.push(tn("statistiche.eventi", s.eventi, { kb: kB(s.byte) }));
+  r.push(s.id ? t("statistiche.codice", { id: s.id }) : t("statistiche.codice_nessuno"));
+  if (s.serie != null) r.push(t("statistiche.seriale_info", { serie: s.serie }));
+  r.push(s.invio.attivo ? t("statistiche.invio_auto", { server: s.invio.server, kb: kB(s.invio.in_coda) }) : t("statistiche.invio_manuale"));
+  $("sint").checked = s.attive; $("sinfo").textContent = r.join("\n");
+  $("sregb").disabled = $("sesp").disabled = $("scanc").disabled = !s.eventi; $("sazz").disabled = !s.id;
+}
+async function apriStatistiche() { $("serr").textContent = ""; if (!(await caricaStatistiche())) return; mostraStatistiche(); apri("vstat", $("sint")); }
+const erroreStat = e => { $("serr").textContent = e.message || String(e); };
+$("sint").onchange = async () => {
+  const v = $("sint").checked; $("serr").textContent = "";
+  if (v && await consensoStatistiche() !== true) { $("sint").checked = false; return; }          // accenderle passa sempre dalla domanda, con tutto quello che c'è da sapere
+  try { STAT = await api("/api/statistiche/consenso", { si: v }); mostraStatistiche(); } catch (e) { $("sint").checked = !v; erroreStat(e); }
+};
+$("sregb").onclick = async () => {
+  try {
+    const r = await api("/api/statistiche/registro"); $("sregt").value = r.righe.join("\n");
+    $("sregi").textContent = (r.totale > r.righe.length ? t("statistiche.registro_ultime", { n: r.righe.length, totale: r.totale }) + "\n" : "") + t("statistiche.dove_registro", { cartella: STAT.cartella });
+    apri("vsreg", $("sregc"));
+  } catch (e) { erroreStat(e); }
+};
+$("sregc").onclick = () => chiudi("vsreg");
+$("sesp").onclick = async () => { $("serr").textContent = ""; try { const r = await api("/api/statistiche/esporta", {}); if (!r.annullato) avviso(t("statistiche.esportate", { file: r.file }), "ok"); } catch (e) { erroreStat(e); } };
+$("sazz").onclick = async () => {
+  if (await chiedi(t("statistiche.azzera_titolo"), t("statistiche.azzera_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("statistiche.azzera"), ruolo: "primario" }]) !== "ok") return;
+  try { STAT = await api("/api/statistiche/azzera", {}); mostraStatistiche(); } catch (e) { erroreStat(e); }
+};
+$("scanc").onclick = async () => {
+  const testo = t("statistiche.cancella_testo") + (STAT.invio.attivo ? " " + t("statistiche.cancella_server") : "");
+  if (await chiedi(t("statistiche.cancella_titolo"), testo, [PRM_ANNULLA(), { id: "ok", testo: t("statistiche.cancella_ok"), ruolo: "pericolo" }]) !== "ok") return;
+  try { STAT = await api("/api/statistiche/cancella", {}); mostraStatistiche(); avviso(t("statistiche.cancellate"), "ok"); } catch (e) { erroreStat(e); }
+};
+$("sclose").onclick = () => chiudi("vstat");
+caricaStatistiche();
+rq("/api/statistiche/finestra", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ larghezza: innerWidth, altezza: innerHeight, scala: devicePixelRatio, schermo_larghezza: screen.width, schermo_altezza: screen.height }) }).catch(() => {});       // annotata solo con le statistiche accese
 </script>
 </body>
 </html>
