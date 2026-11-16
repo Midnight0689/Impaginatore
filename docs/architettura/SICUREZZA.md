@@ -28,18 +28,24 @@ Il gettone si presenta in due modi:
 1. **Intestazione `X-Impaginatore-Gettone`**: la usano tutte le `fetch` della pagina (funzione `rq` in `index.html` e
    `home.html`) e i client locali. Tutte le API la vogliono.
 2. **Cookie `impaginatore_<porta>`** (`HttpOnly; SameSite=Strict; Path=/`): vale solo per le richieste GET della pagina
-   (`/`), delle immagini (`/img/…`, `/api/fthumb`, `/api/cover`) e dei rimandi (`/vai/…`), cioè per ciò che il browser
-   carica da solo (`<img>`, sfondi CSS, navigazione) e non può portare un'intestazione. Il nome contiene la porta perché i
-   cookie non distinguono le porte.
+   (`/`) e delle immagini (`/img/…`, `/api/fthumb`, `/api/cover`), cioè per ciò che il browser carica da solo (`<img>`,
+   sfondi CSS, navigazione) e non può portare un'intestazione. Il nome contiene la porta perché i cookie non distinguono
+   le porte. **Il valore non è il gettone** (VER-006): è `HMAC-SHA256(gettone, "impaginatore-pagina:<porta>")`
+   (`sicurezza.valore_cookie`). Il browser manda i cookie di `127.0.0.1` a ogni porta, quindi anche al server di un altro
+   programma che l'utente visita: chi lo riceve non ne ricava il gettone, e con il cookie le API rispondono 401.
 
-Il cookie si ottiene una volta sola dall'**URL di avvio** `http://127.0.0.1:<porta>/avvio?c=<codice>`: il codice è casuale,
-vale una volta e per `DURATA_CODICE` (120 s); il server risponde con il cookie e un rimando 303 a `/`. La pagina servita
-contiene il gettone in `<meta name="gettone">` (risposta `no-store`, leggibile solo dalla stessa origine). Chi apre
-l'indirizzo nudo senza cookie vede una pagina che spiega come aprire il programma (401), mai i dati.
+Il cookie e il gettone si ottengono una volta sola dall'**URL di avvio** `http://127.0.0.1:<porta>/avvio?c=<codice>`: il
+codice è casuale, vale una volta e per `DURATA_CODICE` (120 s). Il server risponde con il cookie e una piccola pagina
+(`sicurezza.pagina_avvio`, `no-store`, script con nonce) che lascia il gettone nella `sessionStorage` della scheda (chiave
+`impaginatore_gettone`) e apre `/` con `location.replace`. La pagina `/` **non contiene il gettone**: lo legge dalla
+`sessionStorage`, che nessun server riceve. Chi apre l'indirizzo nudo senza cookie vede una pagina che spiega come aprire
+il programma (401); una scheda con il cookie ma senza gettone (indirizzo scritto a mano in una scheda nuova) mostra lo
+stesso messaggio, mai i dati. Ricaricare la scheda la tiene collegata.
 
 Chi crea gli URL di avvio: la schermata quando apre il browser (`main`), la schermata per l'editor (`/api/pronto` →
-`indirizzo`, a cui la pagina naviga), l'editor per il pulsante «Progetti» (`/vai/progetti` → 303 a un URL di avvio della
-schermata), e qualunque client con il gettone (`POST /api/avvio`).
+`indirizzo`, a cui la pagina naviga), l'editor per il pulsante «Progetti» (`GET /api/vai_progetti`, con il gettone
+nell'intestazione → `indirizzo`, a cui la pagina naviga; prima era `/vai/progetti`, aperto anche dal cookie), e qualunque
+client con il gettone (`POST /api/avvio`). Nessun percorso aperto dal cookie restituisce il gettone o un URL di avvio.
 
 ### Perché cookie con URL monouso e non un parametro firmato
 
@@ -54,6 +60,11 @@ schermata), e qualunque client con il gettone (`POST /api/avvio`).
 - **Finestra incorporata (pywebview, T-201)**: funziona allo stesso modo (la finestra apre l'URL di avvio e tiene il
   cookie nel suo archivio); in più può aggiungere l'intestazione da sola. Il motore della finestra (WebKit su macOS,
   WebView2 su Windows) gestisce `SameSite=Strict` e `HttpOnly` come un browser.
+
+Rischio residuo noto (VER-006): il cookie che arriva al server di un altro programma su `127.0.0.1` gli apre ancora la
+pagina (che non contiene segreti) e **le immagini** (miniature, spread, copertine, `/api/fthumb` dentro le radici) finché
+la sessione è viva. Le API, i file e le esportazioni no. Toglierlo del tutto vuol dire il parametro firmato in ogni
+indirizzo di immagine (vedi sopra, scartato per ora): decisione aperta.
 
 Rischio residuo noto: su Linux (e dove `ps` mostra gli argomenti degli altri utenti) il **codice** di avvio compare per un
 attimo sulla riga di comando del browser lanciato da `webbrowser.open`. Un altro utente che lo legge e lo usa prima del
@@ -114,7 +125,7 @@ Passo successivo: spostare gli stili dei modelli in classi o in `elemento.style`
   `~/Library/Application Support/Impaginatore`, Windows `%APPDATA%\Impaginatore`, Linux `$XDG_DATA_HOME/impaginatore`.
 - **Schermata → editor**: `gia_attivo` e `/api/pronto` leggono `editor-<porta>.json`, interrogano l'editor con il suo gettone
   e gli chiedono un URL di avvio, che la pagina apre.
-- **Editor → schermata**: `/api/aggiornamento` e `/vai/progetti` dell'editor leggono `home-<porta>.json` (porta presa da
+- **Editor → schermata**: `/api/aggiornamento` e `/api/vai_progetti` dell'editor leggono `home-<porta>.json` (porta presa da
   `--home`). Prima la pagina dell'editor chiamava la schermata direttamente grazie a `Access-Control-Allow-Origin: *`.
 - **Un'istanza sola**: `impaginatore` con la porta occupata usa `home-<porta>.json` per riconoscere la propria schermata e
   apre un URL di avvio nuovo.

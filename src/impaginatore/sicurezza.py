@@ -2,9 +2,12 @@
 
 Ogni server ha un gettone di sessione casuale (secrets) e lo chiede a OGNI richiesta:
 - le fetch della pagina e i client locali lo mandano nell'intestazione X-Impaginatore-Gettone;
-- pagina, immagini e navigazione usano il cookie «impaginatore_<porta>» (HttpOnly, SameSite=Strict), che il server
-  imposta quando si apre il suo URL di avvio monouso http://127.0.0.1:<porta>/avvio?c=<codice> (vale una volta sola e
-  per DURATA_CODICE secondi); la pagina servita contiene il gettone per l'intestazione delle fetch.
+- la pagina e le immagini (che non possono mandare intestazioni) usano il cookie «impaginatore_<porta>» (HttpOnly,
+  SameSite=Strict). Il suo valore NON è il gettone ma un segreto derivato (valore_cookie), perché il browser manda i
+  cookie di 127.0.0.1 a ogni porta, anche al server di un altro programma (VER-006): con il cookie si hanno la pagina
+  (che non contiene il gettone) e le immagini, mai le API.
+- l'URL di avvio monouso http://127.0.0.1:<porta>/avvio?c=<codice> (vale una volta sola e per DURATA_CODICE secondi)
+  imposta il cookie e consegna il gettone alla scheda, che lo tiene in sessionStorage (pagina_avvio).
 Il gettone non passa mai dalla riga di comando: un server che si riavvia da solo (os.execv, aggiornamento) lo ritrova
 nella variabile d'ambiente VARIABILE; gli altri processi figli non la ricevono (piattaforma.processi.ambiente_figli).
 
@@ -12,6 +15,7 @@ Client locali fidati (l'altro server, il futuro server MCP; stessa macchina e st
 scrive <dati dell'utente>/sessioni/<tipo>-<porta>.json (cartella 0700, file 0600) con porta, gettone, pid e progetto.
 Il progetto completo, con le alternative scartate, è in docs/architettura/SICUREZZA.md.
 """
+import hashlib
 import hmac
 import json
 import logging
@@ -55,6 +59,24 @@ def uguali(a, b):
 def nome_cookie(porta):
     """i cookie non distinguono le porte: ogni server ha il suo nome"""
     return f"impaginatore_{porta}"
+
+
+def valore_cookie(gettone, porta):
+    """valore del cookie della pagina: HMAC del gettone, diverso per ogni porta. Chi lo riceve (ogni server di 127.0.0.1
+    che il browser visita) non ne ricava il gettone (VER-006)"""
+    return hmac.new(gettone.encode("utf-8"), f"impaginatore-pagina:{int(porta)}".encode("ascii"), hashlib.sha256).hexdigest()
+
+
+CHIAVE_SESSIONE = "impaginatore_gettone"         # chiave di sessionStorage dove la pagina tiene il gettone delle API
+
+
+def pagina_avvio(gettone, nonce):
+    """pagina che l'URL di avvio restituisce una volta sola: lascia il gettone nella sessionStorage della scheda (che
+    nessun server riceve) e apre la pagina vera. json.dumps con «<» protetto: il gettone resta una stringa JS"""
+    g = json.dumps(gettone).replace("<", "\\u003c")
+    return ("<!doctype html><html lang=\"it\"><head><meta charset=\"utf-8\"><title>Impaginatore</title></head><body>"
+            f"<script nonce=\"{nonce}\">try {{ sessionStorage.setItem({json.dumps(CHIAVE_SESSIONE)}, {g}); }} catch (e) {{}} location.replace(\"/\");</script>"
+            "</body></html>")
 
 
 def gettone_del_processo():

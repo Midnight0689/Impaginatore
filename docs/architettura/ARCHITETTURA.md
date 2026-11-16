@@ -65,9 +65,10 @@ impaginatore [--porta 8765] [--no-browser] [--progetti DIR] [--daemon]
 - Un'istanza sola: se la porta della home risponde a `/api/ping` (con il gettone del suo file di sessione), il comando apre
   solo la pagina, con un URL di avvio nuovo.
 - `--porta 0`: porta libera qualsiasi (test, finestra desktop futura); l'indirizzo vero è nella prima riga stampata.
-- Ogni richiesta vuole il gettone del suo server (intestazione o, per pagina e immagini, cookie dato dall'URL di avvio):
-  `docs/architettura/SICUREZZA.md`. La pagina dell'editor chiede aggiornamenti (`/api/aggiornamento`) e ritorno ai progetti
-  (`/vai/progetti`) al suo server, che li chiede alla home con il gettone della home (niente più CORS `*`).
+- Ogni richiesta vuole il gettone del suo server (intestazione o, per pagina e immagini, cookie derivato dato dall'URL di
+  avvio, che lascia il gettone nella `sessionStorage` della scheda): `docs/architettura/SICUREZZA.md`. La pagina dell'editor
+  chiede aggiornamenti (`/api/aggiornamento`) e ritorno ai progetti (`/api/vai_progetti`) al suo server, che li chiede alla
+  home con il gettone della home (niente più CORS `*`).
 - Uscita: `/api/esci` termina gli editor lanciati da quella home e chiude il processo (`home.server.esci`).
 - Dopo un aggiornamento: la home chiude gli editor, rilancia `python -m impaginatore --porta <stessa> --no-browser` dopo 1,5 s
   (processo staccato) ed esce; la pagina si ricarica da sola.

@@ -1759,7 +1759,7 @@ def stato_aggiornamenti():
 # ------------------------------------------------------------------ http
 class H(Gestore):
     COOKIE = ("/", "/api/fthumb")                     # pagina e immagini (img, CSS): anche con il solo cookie
-    COOKIE_PREFISSI = ("/img/", "/vai/")
+    COOKIE_PREFISSI = ("/img/",)                      # non /api/vai_progetti: dà un URL di avvio della schermata (VER-006)
     def send(self, body, ctype="application/json", code=200, etag=None):
         if isinstance(body, (dict, list)): body = json.dumps(body).encode()
         elif isinstance(body, str): body = body.encode()
@@ -1770,9 +1770,9 @@ class H(Gestore):
         u = urlparse(self.path); q = parse_qs(u.query)
         try:
             if u.path == "/": self.pagina("index.html")
-            elif u.path == "/vai/progetti":                                     # pulsante «Progetti»: indirizzo di avvio monouso della schermata
+            elif u.path == "/api/vai_progetti":                                 # pulsante «Progetti»: indirizzo di avvio monouso della schermata (con il gettone)
                 pt = _porta_home(); a = sicurezza.indirizzo_avvio("home", pt) if pt else None
-                self.send_response(303); self.send_header("Location", a or HOME or "/"); self.send_header("Content-Length", "0"); self.end_headers()
+                self.send({"indirizzo": a or HOME or "/"})
             elif u.path == "/api/aggiornamento": self.send(stato_aggiornamenti())
             elif u.path == "/api/state": self.send(state())
             elif u.path == "/api/tono_all": self.send(tono_all())

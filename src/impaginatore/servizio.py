@@ -69,8 +69,9 @@ class Rifiuto(Exception):
 
 class Gestore(BaseHTTPRequestHandler):
     """base dei gestori HTTP. Le sottoclassi scrivono do_GET/do_POST e dicono in COOKIE/COOKIE_PREFISSI quali percorsi GET
-    si aprono anche con il solo cookie (la pagina, le immagini, la navigazione): tutto il resto vuole l'intestazione
-    INTESTAZIONE con il gettone. /avvio (GET, codice monouso) e /api/avvio (POST, nuovo URL di avvio) li gestisce questa base."""
+    si aprono anche con il solo cookie (la pagina e le immagini, mai un percorso che dà il gettone o un URL di avvio:
+    VER-006): tutto il resto vuole l'intestazione INTESTAZIONE con il gettone. /avvio (GET, codice monouso) e /api/avvio
+    (POST, nuovo URL di avvio) li gestisce questa base."""
     timeout = 60                                   # secondi di silenzio dopo cui si chiude la connessione (client lenti o fermi)
     COOKIE = ("/",)
     COOKIE_PREFISSI = ()
@@ -105,7 +106,8 @@ class Gestore(BaseHTTPRequestHandler):
         p = urlparse(self.path).path
         if self.command == "GET" and p in ("/avvio", "/favicon.ico"): return                       # il codice monouso si controlla nella risposta; l'icona non c'è
         if not sicurezza.uguali(h.get(sicurezza.INTESTAZIONE), gettone):
-            if not (self.command == "GET" and (p in self.COOKIE or p.startswith(self.COOKIE_PREFISSI)) and sicurezza.uguali(self._cookie(), gettone)):
+            if not (self.command == "GET" and (p in self.COOKIE or p.startswith(self.COOKIE_PREFISSI))
+                    and sicurezza.uguali(self._cookie(), sicurezza.valore_cookie(gettone, self.server.server_address[1]))):
                 raise Rifiuto(401, "non autorizzato")
         if self.command == "POST":
             if (h.get("Content-Type") or "").split(";")[0].strip().lower() != "application/json": raise Rifiuto(415, "il corpo deve essere JSON")
@@ -137,10 +139,13 @@ class Gestore(BaseHTTPRequestHandler):
         else: self.json({"errore": motivo}, codice)
 
     def _avvio(self, q):
+        """codice valido: cookie (derivato, VER-006) e pagina che consegna il gettone alla scheda, poi apre /"""
         if not self.server.sessione.usa((q.get("c") or [""])[0]): self.rifiuta(401, "indirizzo di avvio non valido o già usato"); return
-        self.send_response(303); self.send_header("Location", "/")
-        self.send_header("Set-Cookie", f"{sicurezza.nome_cookie(self.server.server_address[1])}={self.server.sessione.gettone}; Path=/; HttpOnly; SameSite=Strict")
-        self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", "0"); self.end_headers()
+        porta, nonce = self.server.server_address[1], secrets.token_urlsafe(18); g = self.server.sessione.gettone
+        b = sicurezza.pagina_avvio(g, nonce).encode("utf-8"); self._csp = sicurezza.csp(nonce)
+        self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
+        self.send_header("Set-Cookie", f"{sicurezza.nome_cookie(porta)}={sicurezza.valore_cookie(g, porta)}; Path=/; HttpOnly; SameSite=Strict")
+        self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)
 
     # ------------------------------------------------------------ risposte
     def end_headers(self):
@@ -158,9 +163,10 @@ class Gestore(BaseHTTPRequestHandler):
     def json(self, dati, codice=200): self.risposta(json.dumps(dati), "application/json", codice)
 
     def pagina(self, nome):
-        """pagina HTML delle risorse con il nonce dello script e il gettone per le fetch; CSP stretta (SICUREZZA.md)"""
+        """pagina HTML delle risorse con il nonce dello script; CSP stretta (SICUREZZA.md). Il gettone non c'è: la pagina lo
+        prende dalla sessionStorage della scheda, dove l'ha lasciato l'URL di avvio (VER-006)"""
         nonce = secrets.token_urlsafe(18)
-        html = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__GETTONE__", self.server.sessione.gettone)
+        html = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce)
         self._csp = sicurezza.csp(nonce); b = html.encode("utf-8")
         self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
         self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)

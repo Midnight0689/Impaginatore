@@ -130,7 +130,6 @@ def test_esporta_progetto_non_porta_via_file_esterni(apri_editor, progetto, tmp_
 
 
 # ------------------------------------------------------------------ VER-006
-@xfail("VER-006", "il cookie della pagina vale come gettone delle API e il browser lo manda a ogni porta di 127.0.0.1")
 def test_cookie_della_pagina_non_e_il_gettone(home_srv):
     url = home_srv.srv.indirizzo_avvio()
     c = http.client.HTTPConnection("127.0.0.1", home_srv.porta, timeout=30)

@@ -115,18 +115,15 @@ def test_stato_dice_il_sistema_e_le_scartate(editor):
 
 def test_progetti_e_aggiornamenti_dalla_schermata(editor, home_srv):
     """«Progetti» porta alla schermata con un indirizzo di avvio monouso; gli aggiornamenti si chiedono alla schermata con il suo gettone"""
-    import http.client
     c = editor; E = c.E; vecchio = E.HOME
     try:
         E.HOME = f"http://127.0.0.1:{home_srv.porta}"
-        k = http.client.HTTPConnection("127.0.0.1", c.porta, timeout=30); k.request("GET", "/vai/progetti", headers={"X-Impaginatore-Gettone": c.gettone})
-        r = k.getresponse(); assert r.status == 303 and r.headers["Location"].startswith(f"http://127.0.0.1:{home_srv.porta}/avvio?c="); k.close()
+        assert c.get("/api/vai_progetti")["indirizzo"].startswith(f"http://127.0.0.1:{home_srv.porta}/avvio?c=")
         a = c.get("/api/aggiornamento"); assert a["disponibile"] is False and "motivo" in a
         E.HOME = "http://127.0.0.1:9"
         assert c.get("/api/aggiornamento") == {}, "schermata spenta (nessun file di sessione)"
         sicurezza.scrivi_sessione("home", 9, "x"); assert c.get("/api/aggiornamento") == {}, "file di sessione ma nessuno risponde"
         E.HOME = "http://127.0.0.1:boh"; assert c.get("/api/aggiornamento") == {}
-        k = http.client.HTTPConnection("127.0.0.1", c.porta, timeout=30); k.request("GET", "/vai/progetti", headers={"X-Impaginatore-Gettone": c.gettone})
-        r = k.getresponse(); assert r.status == 303 and r.headers["Location"] == "http://127.0.0.1:boh"; k.close()
+        assert c.get("/api/vai_progetti") == {"indirizzo": "http://127.0.0.1:boh"}
         E.HOME = ""; assert c.get("/api/aggiornamento") == {}
     finally: E.HOME = vecchio
