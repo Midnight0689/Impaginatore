@@ -37,7 +37,8 @@ def _raccogli_foto():                                # foto importate in <proget
         if not os.path.isdir(d) or os.path.abspath(d) == os.path.abspath(c.get("foto", "")): return
         have = set(c.get("foto_extra", [])); new = [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.lower().endswith(A.estensioni()) and not f.startswith(".") and os.path.join(d, f) not in have]
         if new: c["foto_extra"] = list(c.get("foto_extra", [])) + new; formato.scrivi_progetto(PROJ, c)
-    except Exception as e: print("raccogli foto:", e, flush=True)
+    except (OSError, ValueError, TypeError, AttributeError) as e:             # progetto.json o cartella Foto illeggibili: l'editor si apre lo stesso (VER-015)
+        log.warning("foto di Foto non raccolte (%s)", type(e).__name__); log.debug("raccogli foto: %s", e)
 def _ripara_percorsi():
     """progetto spostato o copiato (altro Mac, disco esterno): ritrova da solo le cartelle e le foto che stanno dentro la cartella del progetto (…/Foto);
     quelle altrove si ricollegano dal pulsante «Progetto» dell'editor"""
@@ -65,7 +66,8 @@ def _ripara_percorsi():
                     for d in dirs:
                         if os.path.exists(os.path.join(d, x["n"])): x["src"] = os.path.join(d, x["n"]); mc = True; break
             if mc: formato.scrivi_json(mp, m)
-    except Exception as ex: print("ripara percorsi:", ex, flush=True)
+    except (OSError, ValueError, TypeError, AttributeError, KeyError) as ex:   # impostazioni o cache illeggibili: le controlla poi il motore (VER-015)
+        log.warning("percorsi del progetto non riparati (%s)", type(ex).__name__); log.debug("ripara percorsi: %s", ex)
 LOCK = threading.RLock()
 CFG = None                                           # impostazioni del progetto (progetto.json): è A.CFG, la prepara inizializza
 
@@ -1664,6 +1666,13 @@ def ricollega(cartella):
         formato.scrivi_json(os.path.join(A.CACHE, "meta.json"), A.M); save(backup=False)
         return dict(trovate=trovate, mancanti=ancora, totale=len(A.M))
 
+def _scrivi_testo(p, testo):
+    with open(p, "w", encoding="utf-8") as f: f.write(testo)
+
+def _leggi_testo(p):
+    with open(p, encoding="utf-8", errors="replace") as f: testo = f.read()
+    return testo
+
 def _src_foto(n):
     """file di una foto del progetto che si trova (fidato dall'apertura: motore.album._src_fidate), altrimenti ValueError"""
     s = A.M[A.IDX[n] - 1]["src"]
@@ -1700,8 +1709,8 @@ def esporta_progetto(o):
             if modelli_prj: formato.scrivi_json(os.path.join(out, UT_PRJ), modelli_prj, ensure_ascii=False, indent=1); LOG.append("  modelli salvati copiati")
             usati = sorted({it["font"] for sp in SP for pg in sp for it in pg[1] if it.get("kind") == "txt" and it.get("font")} | {cfg.get("testo", {}).get("font_testo_ps", "")} - {""})
             fam = {f["ps"]: f["fam"] + " " + f["sty"] for f in TX.fonts()}
-            open(os.path.join(out, "font_usati.txt"), "w", encoding="utf-8").write("Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
-            open(os.path.join(out, "LEGGIMI.txt"), "w", encoding="utf-8").write(f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
+            _scrivi_testo(os.path.join(out, "font_usati.txt"), "Font usati nei testi (da installare sul computer dove apri il progetto):\n" + "\n".join(f"  {fam.get(p, p)}  [{p}]" for p in usati) + "\n")
+            _scrivi_testo(os.path.join(out, "LEGGIMI.txt"), f"Progetto «{cfg.get('nome', nome)}» esportato dall'Impaginatore.\n\nPer aprirlo: nell'Impaginatore, Progetti → Apri progetto esistente → scegli questa cartella"
                 + (" (o Importa ZIP se hai il file .zip)" if zipf else "") + ".\n" + ("Le foto sono nella cartella Foto: i percorsi si sistemano da soli." if con_foto else "Le foto NON sono incluse: all'apertura premi «Progetto» → «Ricollega foto» e scegli la cartella con gli originali.")
                 + "\nI PSD già generati non sono inclusi: si rigenerano con Esporta → PSD.\nInstalla i font elencati in font_usati.txt.\n")
             res = out
@@ -1724,7 +1733,7 @@ def versioni():
     for f in sorted(os.listdir(bk), reverse=True):
         mf = re.fullmatch(r"(\d{8}-\d{6})_(album\.json|spec\.py)", f)
         if not mf or (out and out[-1]["ts"] == mf.group(1)): continue
-        ts = mf.group(1); txt = open(os.path.join(bk, f), encoding="utf-8", errors="replace").read(); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
+        ts = mf.group(1); txt = _leggi_testo(os.path.join(bk, f)); h = hashlib.md5(txt.encode(), usedforsecurity=False).hexdigest()
         if h == prev: continue
         if f.endswith(".json"):
             try: nsp = len(formato.leggi_album(os.path.join(bk, f))["spread"])
@@ -1732,7 +1741,7 @@ def versioni():
         else: m = re.search(r"(\d+) spread", txt.split("\n", 1)[0]); nsp = int(m.group(1)) if m else len(re.findall(r"^\s*# \d+\s*$", txt, re.M))
         prev = h
         try: lab = time.strftime("%d/%m %H:%M:%S", time.strptime(ts, "%Y%m%d-%H%M%S"))
-        except Exception: lab = ts
+        except ValueError: lab = ts                                       # data impossibile nel nome: si mostra com'è
         out.append(dict(ts=ts, spread=nsp, label=lab))
         if len(out) >= 80: break
     return out

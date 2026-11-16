@@ -42,8 +42,12 @@ def configura(progetti=None, porta=PORTA_PREDEFINITA, aggiorna=None):
 
 
 def registro():
+    """progetti aggiunti all'elenco che esistono ancora. Senza registro (prima volta) nessuno; un registro illeggibile si
+    annota e si riparte da vuoto (VER-015)"""
     try: return [p for p in formato.leggi_json(REG) if os.path.exists(os.path.join(p, "progetto.json"))]
-    except Exception: return []
+    except FileNotFoundError: return []
+    except (OSError, ValueError, TypeError) as e:
+        log.warning("elenco dei progetti aggiunti illeggibile (%s): riparto da vuoto", type(e).__name__); return []
 
 
 def salva_registro(lst): formato.scrivi_json(REG, sorted(set(lst)), indent=1)
@@ -179,7 +183,7 @@ def riavvia_programma():
         time.sleep(.6)
         for pr, _ in EDITORS.values():
             try: pr.terminate()
-            except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+            except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
         processi.rilancia_dopo([sys.executable, "-m", "impaginatore", "--porta", str(PORTA), "--progetti", PROGETTI, "--no-browser"], 1.5,
                                gettone=SERVER.sessione.gettone if SERVER else None)        # stesso gettone: la pagina aperta resta collegata
         esci()
@@ -249,7 +253,7 @@ class H(Gestore):
                 self.send({"ok": True})
                 for pr, _ in EDITORS.values():
                     try: pr.terminate()
-                    except Exception: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
+                    except OSError: pass  # nosec B110  # editor già chiuso: non c'è niente da fermare
                 threading.Thread(target=lambda: (time.sleep(.4), esci()), daemon=True).start()
             else: self.send({"errore": "non trovato"}, code=404)
         except percorsi.FuoriDalleRadici as e: self.send({"errore": str(e)}, code=403)

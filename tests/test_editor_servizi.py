@@ -8,6 +8,7 @@ una copia. Photoshop e il processo che fa i PSD sono finti: il finto registra il
 import errno
 import io
 import json
+import logging
 import os
 import re
 import secrets
@@ -187,7 +188,7 @@ def test_progetto_spostato_senza_foto(apri):
 
 
 @POSIX
-def test_riparazioni_con_cache_rovinata_e_cartella_illeggibile(apri, tmp_path, capsys):
+def test_riparazioni_con_cache_rovinata_e_cartella_illeggibile(apri, tmp_path, caplog):
     """le riparazioni all'apertura non fermano l'editor: una cache delle misure rovinata (si rifà) e una cartella Foto che
     non si legge (il progetto prende le foto da un'altra cartella) si annotano e basta"""
     altre = tmp_path / "Selezione"
@@ -198,8 +199,10 @@ def test_riparazioni_con_cache_rovinata_e_cartella_illeggibile(apri, tmp_path, c
         with open(os.path.join(p, "_cache", "meta.json"), "w", encoding="utf-8") as f: f.write('[{"n": "H01.jpg", rotto')
         os.chmod(os.path.join(p, "Foto"), 0o000)
     try:
-        c = apri(prepara=prepara); out = capsys.readouterr().out
-        assert re.search(r"^ripara percorsi: ", out, re.M) and re.search(r"^raccogli foto: .*Permission denied", out, re.M), out
+        caplog.set_level(logging.DEBUG, logger="impaginatore.editor")
+        c = apri(prepara=prepara); out = [r.getMessage() for r in caplog.records if r.name == "impaginatore.editor"]
+        assert "percorsi del progetto non riparati (JSONDecodeError)" in out and "foto di Foto non raccolte (PermissionError)" in out, out
+        assert any(re.match(r"raccogli foto: .*Permission denied", r) for r in out), "il dettaglio (con il percorso) solo a DEBUG"
         st = c.get("/api/state"); assert len(st["photos"]) == 10 and st["mancanti"] == []
         assert formato.leggi_json(os.path.join(c.progetto, "progetto.json")).get("foto_extra") == []
     finally: os.chmod(os.path.join(str(tmp_path / "Prova"), "Foto"), 0o755)

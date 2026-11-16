@@ -403,8 +403,14 @@ def _text(it, K):
     return im
 
 # ---------------- rendering anteprime ----------------
+def leggi_rgb(p):
+    """immagine p in RGB, con il file già chiuso (VER-015)"""
+    with Image.open(p) as im0: im = im0.convert("RGB")
+    return im
+
+
 def _photo(it, K, corrected=False):
-    im = Image.open(os.path.join(THUMBS, M[it["i"]]["n"])).convert("RGB")
+    im = leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"]))
     if corrected: im = apply_ev(im, ev_for(it["i"]), WB.get(name(it["i"])))
     l, t, r, b = zcrop(it)
     out = im.resize((max(1, round(it["W"] * K)), max(1, round(it["H"] * K))), Image.LANCZOS, box=(l * im.width, t * im.height, r * im.width, b * im.height))

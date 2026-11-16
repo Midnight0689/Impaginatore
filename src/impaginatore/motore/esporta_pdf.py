@@ -51,12 +51,13 @@ out.join("\n");
         top, bottom, margin, gap = 105, PH - 55, 60, 60
         boxw = (Wp - 2 * margin - gap * (len(covers) - 1)) // len(covers)
         for k, c in enumerate(covers):
-            im = ImageOps.exif_transpose(Image.open(cover_path(c))).convert("RGB"); im.thumbnail((boxw, bottom - top), Image.LANCZOS)
+            with Image.open(cover_path(c)) as im0: im = ImageOps.exif_transpose(im0).convert("RGB")          # file chiuso subito (VER-015)
+            im.thumbnail((boxw, bottom - top), Image.LANCZOS)
             x = margin + k * (boxw + gap) + (boxw - im.width) // 2; y = top + (bottom - top - im.height) // 2; pg.paste(im, (x, y))
             if len(covers) > 1: d.text((x + im.width / 2, y + im.height + 12), f"{chr(65 + k)}  ·  {os.path.basename(c).rsplit('.', 1)[0]}", font=sans, fill=INKc, anchor="mt")
         pages.append(pg)
     for k, f in enumerate(files):
-        im = Image.open(f).convert("RGB"); im.draft("RGB", (Wp, Hs)); im = im.resize((Wp, Hs), Image.LANCZOS)
+        with Image.open(f) as im0: im0.draft("RGB", (Wp, Hs)); im = im0.convert("RGB").resize((Wp, Hs), Image.LANCZOS)          # draft prima di leggere: JPEG grandi letti già ridotti; file chiuso (VER-015)
         p = Image.new("RGB", (Wp, PH), "white"); p.paste(im, (0, 0)); d = ImageDraw.Draw(p)
         d.line([(Wp // 2, 0), (Wp // 2, Hs)], fill=(225, 225, 225), width=1)
         d.text((Wp / 2, Hs + 18), f"Spread {k + 1} / {len(files)}", font=sans, fill=(140, 140, 140), anchor="mt"); pages.append(p)

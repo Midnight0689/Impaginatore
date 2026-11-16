@@ -41,14 +41,14 @@ if __name__ == "__main__":
         for s in range(0, len(M), per):
             S = Image.new("RGB", (5 * (C + 10) + 10, 4 * (C + 40) + 10), (90, 90, 90)); d = ImageDraw.Draw(S)
             for k, m in enumerate(M[s:s + per]):
-                t = Image.open(os.path.join(THUMBS, m["n"])); t.thumbnail((C, C)); x = 10 + (k % 5) * (C + 10); y = 10 + (k // 5) * (C + 40)
+                t = leggi_rgb(os.path.join(THUMBS, m["n"])); t.thumbnail((C, C)); x = 10 + (k % 5) * (C + 10); y = 10 + (k // 5) * (C + 40)
                 S.paste(t, (x + (C - t.width) // 2, y + (C - t.height) // 2)); d.text((x, y + C + 6), f"{s + k + 1}  {m['n'].rsplit('.', 1)[0]}", fill=(255, 255, 0), font=FONT(20))
             p = os.path.join(CACHE, f"provini_{s // per + 1}.jpg"); S.save(p, quality=85); print(p)
 
     elif cmd == "luminosita":
         per_photo = {}
         for i, m in enumerate(M):
-            v = skin_L(Image.open(os.path.join(THUMBS, m["n"])).convert("RGB"), i)
+            v = skin_L(leggi_rgb(os.path.join(THUMBS, m["n"])), i)
             if v is not None: per_photo[i] = v
         groups = {}
         for i, v in per_photo.items():
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             S = render(SP[n - 1], 0.17); th = []
             for it in layout(SP[n - 1]):
                 if it["k"] == "t": continue
-                im = Image.open(os.path.join(THUMBS, M[it["i"]]["n"])).convert("RGB"); l, t, r, b = zcrop(it)
+                im = leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"])); l, t, r, b = zcrop(it)
                 im.thumbnail((400, 400)); d = ImageDraw.Draw(im)
                 d.rectangle((l * im.width, t * im.height, r * im.width - 1, b * im.height - 1), outline=(255, 0, 0), width=3)
                 d.text((5, 5), name(it["i"]), fill=(255, 255, 0), font=FONT(22)); th.append(im)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         SP = load_spec(); n = int(args[1])
         for it in layout(SP[n - 1]):
             if it["k"] == "t": continue
-            im = apply_ev(Image.open(os.path.join(THUMBS, M[it["i"]]["n"])).convert("RGB"), ev_for(it["i"]), WB.get(name(it["i"])))
+            im = apply_ev(leggi_rgb(os.path.join(THUMBS, M[it["i"]]["n"])), ev_for(it["i"]), WB.get(name(it["i"])))
             l, t, r, b = zcrop(it); im = im.crop((int(l * im.width), int(t * im.height), int(r * im.width), int(b * im.height))).resize((400, 400))
             L, A, Bb = lab(im); neu = (np.hypot(A, Bb) < 10) & (L > 50) & (L < 97)
             wb = f"neutri a*={A[neu].mean():+.1f} b*={Bb[neu].mean():+.1f}" if neu.any() else "nessuna zona neutra"
