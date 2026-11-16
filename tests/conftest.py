@@ -1,5 +1,6 @@
 """Fixture comuni. Ogni test gira con una casa finta: niente di quello che fa tocca la cartella dell'utente, nessuna
-finestra di sistema si apre (IMPAGINATORE_DIALOGHI=nessuno), nessun aggiornamento parte, nessun riavvio vero."""
+finestra di sistema si apre (IMPAGINATORE_DIALOGHI=nessuno), né quella del programma (IMPAGINATORE_FINESTRA=no), nessun
+aggiornamento parte, nessun riavvio vero."""
 import json
 import os
 import shutil
@@ -24,6 +25,7 @@ def casa(tmp_path, monkeypatch):
                      IMPAGINATORE_PROGETTI=tmp_path / "Progetti", IMPAGINATORE_DATI=h / "dati", IMPAGINATORE_CACHE=h / "cache").items():
         monkeypatch.setenv(k, str(v))
     monkeypatch.setenv("IMPAGINATORE_DIALOGHI", "nessuno")
+    monkeypatch.setenv("IMPAGINATORE_FINESTRA", "no")                     # niente finestra del programma (desktop): il browser, intercettato
     monkeypatch.setenv("IMPAGINATORE_AGGIORNAMENTI", "no")
     monkeypatch.setenv("IMPAGINATORE_SENZA_RIAVVIO", "1")
     for k in ("IMPAGINATORE_GETTONE", "IMPAGINATORE_MAX_MPIXEL", "IMPAGINATORE_REGISTRO"):      # ogni server di prova ha il suo gettone
