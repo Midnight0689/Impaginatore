@@ -1,233 +1,519 @@
 <!doctype html>
-<html lang="it">
+<html lang="it" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Impaginatore</title>
+<link rel="stylesheet" href="/risorse/tokens.css">
+<link rel="stylesheet" href="/risorse/font.css">
 <style>
-  :root { --bg: #2b2b2b; --panel: #333; --panel2: #3b3b3b; --line: #4a4a4a; --text: #e6e6e6; --dim: #a0a0a0; --accent: #e0b23c; --accent-ink: #231a00; --danger: #d9605a; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, "Helvetica Neue", Arial, sans-serif; }
-  button, input { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
-  button { cursor: pointer; } button:hover { border-color: #777; }
-  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  header { display: flex; align-items: center; gap: 10px; padding: 14px 28px; background: var(--panel); border-bottom: 1px solid var(--line); }
-  #verb { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; } #verb i { width: 9px; height: 9px; border-radius: 50%; background: #666; display: inline-block; } #verb.ok i { background: #3fb950; } #verb.nuova { background: #e0a526; color: #1a1a1a; border-color: #e0a526; } #verb.nuova i { background: #1a1a1a; } #verb.off i { background: #e5484d; }
-  header h1 { font-size: 18px; margin: 0; flex: 1; }
-  main { padding: 28px; max-width: 1200px; margin: 0 auto; }
-  h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--dim); margin: 0 0 14px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; position: relative; }
-  .card:hover { border-color: var(--accent); }
-  .card .cv { height: 150px; background: #444 center/cover; display: flex; align-items: center; justify-content: center; color: #777; font-size: 12px; }
-  .card .tx { padding: 10px 12px 12px; }
-  .card .nm { font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .meta { color: var(--dim); font-size: 12px; }
-  .card .dot { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.6); border-radius: 10px; padding: 1px 8px; font-size: 11px; color: var(--accent); }
-  .card .mn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.55); border: none; padding: 1px 8px; border-radius: 10px; }
-  .new { border-style: dashed; display: flex; align-items: center; justify-content: center; min-height: 230px; flex-direction: column; gap: 8px; color: var(--dim); font-size: 15px; }
-  .new b { font-size: 40px; font-weight: 300; color: var(--accent); line-height: 1; }
-  .empty { color: var(--dim); }
-  #menu { position: fixed; background: #222; border: 1px solid var(--line); border-radius: 8px; padding: 4px; display: none; z-index: 20; min-width: 190px; }
-  #menu div { padding: 6px 12px; border-radius: 5px; cursor: pointer; } #menu div:hover { background: var(--panel2); } #menu .d { color: var(--danger); }
-  .veil { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 30; }
-  .dlg { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; width: 460px; max-width: 92vw; }
-  .dlg h3 { margin: 0 0 14px; font-size: 17px; }
-  .dlg label { display: block; color: var(--dim); font-size: 12px; margin: 12px 0 4px; }
-  .dlg input { width: 100%; } .dlg .two { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; } .dlg .two span { color: var(--dim); }
-  .dlg .pre { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; } .dlg .pre button { padding: 3px 9px; font-size: 12px; }
-  .dlg .info { color: var(--dim); font-size: 12px; margin-top: 8px; min-height: 17px; }
-  .dlg .adv { display: none; } .dlg .adv.on { display: block; } .dlg .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  html, body { margin: 0; min-height: 100%; background: var(--imp-app-tela); color: var(--imp-app-testo); font: 400 13px/1.4 var(--imp-font-testo); -webkit-font-smoothing: antialiased; }
+  [hidden] { display: none !important; }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: var(--imp-bordo-fuoco) solid var(--imp-app-accento); outline-offset: 2px; }
+  .num { font-family: var(--imp-font-numeri); font-size: 12px; }
+  .tenue { color: var(--imp-app-testo-tenue); }
+
+  /* pulsanti: raggio 4 px, uno solo primario per schermata */
+  button { height: 28px; padding: 0 12px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-medio); background: var(--imp-app-sollevato); color: var(--imp-app-testo); font-weight: 500; cursor: pointer; white-space: nowrap; transition: background var(--imp-durata-breve), border-color var(--imp-durata-breve); }
+  button:hover:not(:disabled) { border-color: var(--imp-bordo-campo); background: var(--imp-app-pannello); }
+  button:disabled { opacity: .55; cursor: default; }
+  button.primario { background: var(--imp-accento-fondo); border-color: var(--imp-accento-fondo); color: var(--imp-su-accento); font-weight: 600; }
+  button.primario:hover:not(:disabled) { background: var(--imp-accento-fondo-premuto); border-color: var(--imp-accento-fondo-premuto); }
+  button.pericolo { background: var(--imp-errore); border-color: var(--imp-errore); color: var(--imp-su-accento); font-weight: 600; }
+  button.icona { width: 28px; padding: 0; font-size: 15px; line-height: 1; }
+  button.link { height: auto; padding: 2px 0; border: 0; background: none; color: var(--imp-app-testo-tenue); font-weight: 400; }
+  button.link:hover:not(:disabled) { background: none; color: var(--imp-app-testo); }
+  input, textarea { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); background: var(--imp-app-tela); }
+  input::placeholder, textarea::placeholder { color: var(--imp-app-testo-tenue); }
+  textarea { height: auto; padding: 6px 8px; font-family: var(--imp-font-numeri); font-size: 12px; resize: vertical; }
+
+  /* barra */
+  .barra { position: sticky; top: 0; z-index: 5; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 24px; background: var(--imp-app-barra); border-bottom: 1px solid var(--imp-app-bordo); }
+  .marchio { margin: 0 auto 0 0; font: 500 18px/1 var(--imp-font-titoli); letter-spacing: -.006em; }
+  #cerca { width: 220px; }
+  #verb { display: inline-flex; align-items: center; gap: 8px; border-color: transparent; background: none; color: var(--imp-app-testo-tenue); font-weight: 400; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+  #verb:hover:not(:disabled) { background: var(--imp-app-pannello); border-color: var(--imp-app-bordo); }
+  #verb i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--imp-app-testo-tenue); }
+  #verb.ok i { background: var(--imp-successo); } #verb.nuova i { background: var(--imp-attenzione-segno); } #verb.off i { background: var(--imp-errore); }
+  #lic.warn { border-color: var(--imp-attenzione); color: var(--imp-attenzione); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 24px 64px; }
+
+  /* riga per creare un album */
+  .nuova { display: flex; align-items: center; gap: 16px; min-height: 76px; padding: 12px 20px; border: 1px dashed var(--imp-bordo-campo); border-radius: var(--imp-raggio-grande); }
+  .nuova .tx { flex: 1; min-width: 0; }
+  .nuova b { display: block; font-size: 15px; font-weight: 500; }
+  .nuova span { color: var(--imp-app-testo-tenue); }
+
+  /* scaffale */
+  .scaffale { --colonne: 96px minmax(0, 1fr) 104px 64px 64px 200px 156px; margin-top: 24px; }
+  .testata, .riga { display: grid; grid-template-columns: var(--colonne); column-gap: 16px; align-items: center; }
+  .testata { padding: 0 12px 8px; border-bottom: 1px solid var(--imp-app-bordo); color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .testata .d, .riga .d { text-align: right; }
+  .riga { position: relative; height: 80px; padding: 0 12px; border-bottom: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-medio); cursor: default; }
+  .riga:hover, .riga:focus-within { background: var(--imp-app-pannello); }
+  .riga:focus-visible { outline-offset: -2px; }
+  .riga .mini { width: 96px; height: 56px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-piccolo); background: var(--imp-app-sollevato) center / cover no-repeat; }
+  .riga .nome { font: 500 16px/1.25 var(--imp-font-titoli); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .riga .dove { margin-top: 2px; color: var(--imp-app-testo-tenue); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .riga .st { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+  .riga .st i { flex: none; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--imp-app-testo-tenue); }
+  .riga .st.aperto i { background: var(--imp-successo); } .riga .st.senza i { background: var(--imp-attenzione-segno); } .riga .st.errore i { background: var(--imp-errore); }
+  .riga .st small { display: block; color: var(--imp-app-testo-tenue); font-size: 12px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .riga .mod { color: var(--imp-app-testo-tenue); }
+  .riga .az { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: none; gap: 6px; padding-left: 12px; background: var(--imp-app-pannello); }
+  .riga:hover .az, .riga:focus-within .az { display: flex; }
+  .riga:hover .mod, .riga:focus-within .mod { visibility: hidden; }
+  .nessuno { padding: 32px 12px; color: var(--imp-app-testo-tenue); }
+  .dove-salva { margin: 16px 12px 0; color: var(--imp-app-testo-tenue); font-size: 12px; }
+
+  /* stato vuoto */
+  .vuoto { max-width: 520px; margin: 72px auto 0; text-align: center; }
+  .vuoto h2 { margin: 0 0 8px; font: 500 28px/1.15 var(--imp-font-titoli); letter-spacing: -.01em; }
+  .vuoto p { margin: 0 0 20px; font-size: 14px; line-height: 1.5; color: var(--imp-app-testo-tenue); }
+  .vuoto .secondario { margin-top: 12px; }
+
+  /* riga in basso, solo negli ultimi 7 giorni di prova */
+  .prova { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: var(--imp-app-barra); border-top: 1px solid var(--imp-app-bordo); }
+  .prova span { color: var(--imp-attenzione); font-weight: 500; }
+  body.con-prova main { padding-bottom: 80px; }
+  #credit { position: fixed; right: 18px; bottom: 12px; z-index: 6; font-size: 12px; color: var(--imp-app-testo-tenue); pointer-events: none; user-select: none; } #credit b { color: inherit; font-weight: 600; }
+
+  /* menu */
+  #menu { position: fixed; z-index: 20; display: none; min-width: 200px; padding: 4px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-grande); background: var(--imp-app-sollevato); box-shadow: var(--imp-ombra-sollevato); }
+  #menu button { display: block; width: 100%; height: 28px; padding: 0 12px; border: 0; background: none; font-weight: 400; text-align: left; border-radius: var(--imp-raggio-piccolo); }
+  #menu button:hover, #menu button:focus-visible { background: var(--imp-app-pannello); outline-offset: -2px; }
+  #menu button.pericolo { color: var(--imp-errore); background: none; font-weight: 400; }
+  #menu hr { margin: 4px 0; border: 0; border-top: 1px solid var(--imp-app-bordo); }
+
+  /* finestre */
+  .velo { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; padding: 16px; background: color-mix(in srgb, var(--imp-carta-950) 60%, transparent); }
+  #vchiedi { z-index: 40; } #vwait { z-index: 50; }
+  .dlg { width: 480px; max-width: 100%; max-height: 100%; overflow: auto; padding: 24px; border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-grande); background: var(--imp-app-sollevato); box-shadow: var(--imp-ombra-sollevato); }
+  .dlg h3 { margin: 0 0 16px; font: 500 20px/1.2 var(--imp-font-titoli); }
+  .dlg label { display: block; margin: 16px 0 4px; color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .dlg .due { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .dlg .foto { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .dlg .tre { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .dlg .pre { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .dlg .pre button { height: 24px; padding: 0 8px; font-family: var(--imp-font-numeri); font-size: 12px; font-weight: 400; }
+  .dlg .info { min-height: 17px; margin-top: 8px; color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .dlg .avanzate { display: none; } .dlg .avanzate.on { display: block; }
+  .dlg .err { min-height: 16px; margin-top: 12px; color: var(--imp-errore); font-size: 12px; }
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-  .dlg .err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
-  .spin { width: 34px; height: 34px; border: 3px solid #555; border-top-color: var(--accent); border-radius: 50%; animation: r 1s linear infinite; margin: 0 auto 12px; } @keyframes r { to { transform: rotate(360deg); } }
-  /* ===== Tema scuro in stile Apple ===== */
-  :root { --bg: #1b1b1d; --panel: #252528; --panel2: #333337; --line: rgba(255,255,255,.1); --text: #f2f2f7; --dim: #98989f; --blue: #0a84ff; --blue2: #409cff; --danger: #ff6961; }
-  html, body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.006em; }
-  button, input { border: 0; border-radius: 8px; padding: 7px 14px; font-weight: 500; transition: background .12s, transform .06s; }
-  input { background: #1b1b1d; border: 1px solid var(--line); font-weight: 400; } input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(10,132,255,.25); }
-  button:hover:not(:disabled) { background: #424247; border-color: transparent; } button:active { transform: scale(.97); }
-  button.primary { background: var(--blue); color: #fff; border: 0; } button.primary:hover { background: var(--blue2); }
-  header { padding: 12px 28px; background: rgba(37,37,40,.88); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
-  #verb { background: rgba(255,255,255,.08); } #verb.nuova { background: #e0a526; }
-  main { padding: 36px 28px; }
-  h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-transform: none; color: var(--text); margin-bottom: 18px; }
-  .grid { gap: 20px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: transform .15s, box-shadow .15s, border-color .15s; }
-  .card:hover { border-color: rgba(255,255,255,.22); transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0,0,0,.5); }
-  .card .cv { height: 160px; background-color: #151517; }
-  .card .tx { padding: 12px 14px 14px; } .card .nm { font-size: 15px; font-weight: 650; }
-  .card .dot { background: rgba(0,0,0,.55); color: #32d74b; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-  .card .mn { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-  .new { border: 1.5px dashed rgba(255,255,255,.2); background: transparent; box-shadow: none; } .new:hover { border-color: var(--blue); background: rgba(10,132,255,.07); transform: none; box-shadow: none; }
-  .new b { color: var(--blue2); font-size: 44px; }
-  #menu { background: rgba(44,44,47,.97); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(0,0,0,.55); padding: 6px; } #menu div { border-radius: 8px; padding: 7px 12px; } #menu div:hover { background: var(--blue); color: #fff; }
-  .veil { background: rgba(0,0,0,.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-  .dlg { background: rgba(44,44,47,.96); border: 1px solid var(--line); border-radius: 16px; padding: 24px 28px; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
-  .dlg h3 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
-  .spin { border-color: rgba(255,255,255,.18); border-top-color: var(--blue); }
-  #lic.warn { background: #e0a526; color: #1a1a1a; font-weight: 700; }
-  .dlg textarea { width: 100%; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--text); background: #1b1b1d; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; resize: vertical; }
-  #credit { position: fixed; right: 18px; bottom: 12px; font-size: 12px; color: var(--dim); letter-spacing: .02em; pointer-events: none; user-select: none; } #credit b { color: inherit; font-weight: 600; opacity: .9; }
+  .dlg .corpo { line-height: 1.7; }
+  .dlg label.interr { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; color: var(--imp-app-testo); font-size: 14px; cursor: pointer; }
+  .dlg label.interr input { width: 18px; height: 18px; margin: 0; accent-color: var(--imp-accento); }
+  .dlg .corpo .ok { color: var(--imp-successo); } .dlg .corpo .ko { color: var(--imp-errore); }
+  .dlg .testo { white-space: pre-line; line-height: 1.5; }
+  .vers { display: none; max-height: 220px; overflow: auto; margin-top: 8px; }
+  .vers > div { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--imp-app-bordo); }
+  .vers > div > span:first-child { flex: 1; }
+  .attesa { width: 300px; text-align: center; }
+  .spin { width: 32px; height: 32px; margin: 0 auto 12px; border: 3px solid var(--imp-app-bordo); border-top-color: var(--imp-app-accento); border-radius: 50%; animation: gira 1s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 6s; } }
+
+  /* avvisi: gli errori restano finché non si leggono */
+  #avviso { position: fixed; left: 50%; bottom: 56px; z-index: 60; display: none; align-items: center; gap: 12px; max-width: min(640px, calc(100% - 32px)); padding: 10px 12px 10px 16px; transform: translateX(-50%); border: 1px solid var(--imp-app-bordo); border-radius: var(--imp-raggio-grande); background: var(--imp-app-sollevato); box-shadow: var(--imp-ombra-sollevato); }
+  #avviso.errore { border-color: var(--imp-errore); } #avviso.ok { border-color: var(--imp-successo); }
+  #avviso span { min-width: 0; overflow-wrap: anywhere; }
+  .solo { max-width: 640px; padding: 48px; line-height: 1.5; font-size: 15px; } .solo h1 { margin: 0 0 16px; font: 500 22px/1.2 var(--imp-font-titoli); }
+
+  @media (max-width: 1100px) { .scaffale { --colonne: 96px minmax(0, 1fr) 104px 200px 156px; } .c-sp, .c-fo { display: none; } #verb { max-width: 180px; } }
+  @media (max-width: 760px) { .scaffale { --colonne: 96px minmax(0, 1fr) 170px; } .c-fm, .c-md { display: none; } .barra { padding: 0 12px; gap: 6px; } #cerca { width: 120px; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>Impaginatore</h1>
-  <button id="verb" title="Versione in uso e controllo aggiornamenti"><i id="vdot"></i><span id="vtxt">Versione…</span></button>
-  <button id="upd" style="display:none;background:#e0a526;color:#1a1a1a;font-weight:700" title="">⬆ Aggiornamento disponibile</button>
-  <button id="lic" title="Licenza, prova gratuita e chiave">Licenza…</button>
-  <button id="add" title="Apri un progetto che sta in un'altra cartella (quella con progetto.json)">Apri progetto esistente…</button>
-  <button id="addzip" title="Importa un progetto esportato come file ZIP (Esporta progetto dall'editor)">Importa ZIP…</button>
-  <button id="quit" title="Chiude il programma">Chiudi programma</button>
+<header class="barra">
+  <h1 class="marchio">Impaginatore</h1>
+  <input id="cerca" type="search" autocomplete="off" hidden data-t-ph="home.cerca" data-t-aria="home.cerca">
+  <button id="verb" type="button" data-t-title="home.versione_titolo"><i id="vdot"></i><span id="vtxt"></span></button>
+  <button id="upd" type="button" hidden></button>
+  <button id="lic" type="button" data-t-title="home.licenza_titolo"></button>
+  <button id="tema" type="button" class="icona" aria-label="" title=""><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 1.25a5.75 5.75 0 0 1 0 11.5z" fill="currentColor"/></svg></button>
+  <button id="bnuovo" type="button" data-azione="nuovo" data-t="home.nuovo_album"></button>
+  <button id="altro" type="button" class="icona" aria-haspopup="menu" data-t-aria="home.altre_azioni" data-t-title="home.altre_azioni">⋯</button>
 </header>
 <main>
-  <h2>Progetti</h2>
-  <div class="grid" id="grid"></div>
-  <p class="empty" id="where"></p>
+  <div class="nuova" id="nuova">
+    <div class="tx"><b data-t="home.crea_titolo"></b><span data-t="home.crea_frase"></span></div>
+    <button id="scegli" type="button" data-t="home.scegli_cartella"></button>
+  </div>
+  <section class="scaffale" id="scaffale" aria-labelledby="titolo-album">
+    <h2 id="titolo-album" hidden data-t="home.titolo"></h2>
+    <div class="testata" aria-hidden="true"><span></span><span data-t="home.col_album"></span><span class="c-fm" data-t="home.col_formato"></span><span class="c-sp d" data-t="home.col_spread"></span><span class="c-fo d" data-t="home.col_foto"></span><span data-t="home.col_stato"></span><span class="c-md" data-t="home.col_modificato"></span></div>
+    <div id="grid" role="list"></div>
+    <p class="nessuno" id="nessuno" hidden data-t="home.nessun_risultato"></p>
+  </section>
+  <div class="vuoto" id="vuoto" hidden>
+    <h2 data-t="home.vuoto_titolo"></h2>
+    <p data-t="home.vuoto_testo"></p>
+    <button id="vuoto-scegli" type="button" class="primario" data-t="home.scegli_cartella"></button>
+    <div class="secondario"><button id="vuoto-nuovo" type="button" class="link" data-t="home.vuoto_senza_foto"></button></div>
+  </div>
+  <p class="dove-salva" id="where"></p>
 </main>
 
-<div id="menu"></div>
+<div class="prova" id="prova" hidden><span id="provatxt"></span><button id="provalic" type="button" data-t="home.prova_licenza"></button></div>
 
-<div class="veil" id="vver"><div class="dlg">
-  <h3>Versione del programma</h3>
-  <div id="vbody" style="line-height:1.8;font-size:14px"></div>
-  <div style="margin-top:12px"><a href="#" id="vhist" style="color:var(--dim);font-size:13px">▸ Versioni precedenti (tornare indietro)</a><div id="vlist" style="display:none;max-height:220px;overflow:auto;margin-top:8px;font-size:13px"></div></div>
-  <div class="btns"><button id="vchk">Controlla aggiornamenti</button><button id="vgo" class="primary" style="display:none">Aggiorna ora</button><button id="vclose">Chiudi</button></div>
+<div id="menu" role="menu"></div>
+<div id="avviso" role="status" aria-live="polite"><span id="avvtxt"></span><button id="avvchiudi" type="button" class="icona" aria-label="" data-t-aria="comune.chiudi" data-t-title="comune.chiudi">✕</button></div>
+
+<div class="velo" id="vver"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vver-t">
+  <h3 id="vver-t" data-t="home.versione_dlg"></h3>
+  <div id="vbody" class="corpo"></div>
+  <div style="margin-top:12px"><button id="vhist" type="button" class="link" aria-expanded="false"></button><div id="vlist" class="vers"></div></div>
+  <div class="btns"><button id="vchk" type="button" data-t="home.controlla_aggiornamenti"></button><button id="vgo" type="button" class="primario" style="display:none" data-t="home.aggiorna_ora"></button><button id="vclose" type="button" data-t="comune.chiudi"></button></div>
 </div></div>
 
-<div class="veil" id="vnew"><div class="dlg">
-  <h3>Nuovo progetto</h3>
-  <label>Nome del progetto</label><input id="nome" placeholder="Es. Battesimo Serena" autofocus>
-  <label>Cartella delle foto (facoltativa: il progetto nasce accanto, in «Impaginatore»)</label>
-  <div class="two" style="grid-template-columns:1fr auto"><input id="fdir" placeholder="Nessuna: userò una cartella Foto nel progetto" readonly><button id="fpick" type="button">Scegli…</button></div>
-  <label>Dimensioni dell'album aperto (due pagine), in cm</label>
-  <div class="two"><input id="w" inputmode="decimal" placeholder="Larghezza" value="60"><span>×</span><input id="h" inputmode="decimal" placeholder="Altezza" value="22,5"></div>
-  <div class="pre"><button data-p="60,22.5">60 × 22,5</button><button data-p="70,25">70 × 25</button><button data-p="50,20">50 × 20</button><button data-p="40,30">40 × 30</button></div>
-  <div class="info" id="pinfo"></div>
-  <label style="cursor:pointer" id="advt">▸ Avanzate (abbondanza, spazio tra le foto, margine)</label>
-  <div class="adv" id="adv"><div class="three">
-    <div><label>Abbondanza (mm)</label><input id="abb" value="0"></div><div><label>Spazio foto (mm)</label><input id="spazio" value="2,5"></div><div><label>Margine (mm)</label><input id="margine" value="10"></div>
+<div class="velo" id="vnew"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vnew-t">
+  <h3 id="vnew-t" data-t="home.nuovo_titolo"></h3>
+  <label for="nome" data-t="home.nome_label"></label><input id="nome" data-t-ph="home.nome_ph" autocomplete="off">
+  <label for="fdir" data-t="home.foto_label"></label>
+  <div class="foto"><input id="fdir" readonly data-t-ph="home.foto_ph"><button id="fpick" type="button" data-t="home.scegli"></button></div>
+  <label for="w" data-t="home.dim_label"></label>
+  <div class="due"><input id="w" class="num" inputmode="decimal" value="60" data-t-aria="home.larghezza" data-t-ph="home.larghezza"><span class="tenue">×</span><input id="h" class="num" inputmode="decimal" value="22,5" data-t-aria="home.altezza" data-t-ph="home.altezza"></div>
+  <div class="pre"><button type="button" data-p="60,22.5"></button><button type="button" data-p="70,25"></button><button type="button" data-p="50,20"></button><button type="button" data-p="40,30"></button></div>
+  <div class="info num" id="pinfo"></div>
+  <button id="advt" type="button" class="link" aria-expanded="false" aria-controls="adv"></button>
+  <div class="avanzate" id="adv"><div class="tre">
+    <div><label for="abb" data-t="home.abbondanza"></label><input id="abb" class="num" value="0"></div>
+    <div><label for="spazio" data-t="home.spazio_foto"></label><input id="spazio" class="num" value="2,5"></div>
+    <div><label for="margine" data-t="home.margine"></label><input id="margine" class="num" value="10"></div>
   </div></div>
-  <div class="err" id="err"></div>
-  <div class="btns"><button id="cancel">Annulla</button><button class="primary" id="create">Crea</button></div>
+  <div class="err" id="err" role="alert"></div>
+  <div class="btns"><button id="cancel" type="button" data-t="comune.annulla"></button><button id="create" type="button" class="primario" data-t="home.crea"></button></div>
 </div></div>
 
-<div class="veil" id="vlic"><div class="dlg">
-  <h3>Licenza</h3>
-  <div id="lstato" style="line-height:1.6"></div>
-  <label for="lkey">Chiave di licenza (è nell'email d'acquisto e inizia con IMP1-)</label>
+<div class="velo" id="vlic"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vlic-t">
+  <h3 id="vlic-t" data-t="home.licenza_dlg"></h3>
+  <div id="lstato" class="corpo"></div>
+  <label for="lkey" data-t="home.lic_chiave_label"></label>
   <textarea id="lkey" rows="4" spellcheck="false" autocomplete="off" placeholder="IMP1-…"></textarea>
-  <div class="info">La chiave si controlla qui, su questo computer, senza internet: non viene inviata a nessuno.</div>
-  <div class="err" id="lerr"></div>
-  <div class="btns"><button id="lrim" style="display:none">Togli da questo computer</button><button id="lclose">Chiudi</button><button class="primary" id="lgo">Attiva</button></div>
+  <div class="info" data-t="home.lic_senza_internet"></div>
+  <div class="err" id="lerr" role="alert"></div>
+  <div class="btns"><button id="lrim" type="button" style="display:none" data-t="home.lic_togli"></button><button id="lclose" type="button" data-t="comune.chiudi"></button><button id="lgo" type="button" class="primario" data-t="home.lic_attiva"></button></div>
 </div></div>
 
-<div class="veil" id="vwait"><div class="dlg" style="text-align:center;width:300px"><div class="spin"></div><div id="wmsg">Apro il progetto…</div></div></div>
+<div class="velo" id="vassist"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vassist-t">
+  <h3 id="vassist-t" data-t="home.assist_titolo"></h3>
+  <div class="corpo" data-t="home.assist_testo"></div>
+  <label class="interr"><input type="checkbox" id="aimg" role="switch" aria-describedby="anota"><span data-t="home.assist_immagini"></span></label>
+  <div class="info" id="anota" data-t="home.assist_nota"></div>
+  <div class="err" id="aerr" role="alert"></div>
+  <div class="btns"><button id="aclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
+</div></div>
+
+<div class="velo" id="vchiedi"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="ch-titolo" aria-describedby="ch-testo">
+  <h3 id="ch-titolo"></h3>
+  <div id="ch-testo" class="testo"></div>
+  <div class="btns" id="ch-btns"></div>
+</div></div>
+
+<div class="velo" id="vwait"><div class="dlg attesa" role="status"><div class="spin"></div><div id="wmsg"></div></div></div>
 
 <script nonce="__NONCE__">
+const TESTI = __TESTI__;                                                          // testi dell'interfaccia (risorse/testi): li mette il server (T-206: altre lingue)
+const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] ?? m) : s; };
 const $ = id => document.getElementById(id);
-const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
-if (!GETTONE) { document.body.innerHTML = '<div style="padding:48px;max-width:640px;font:15px/1.5 -apple-system,Segoe UI,sans-serif"><h1 style="font-size:20px">Impaginatore</h1><p>Questa scheda non è collegata al programma.</p><p>Apri Impaginatore dal suo collegamento (o un progetto dalla schermata dei progetti): l\'indirizzo che si apre da lì vale una volta sola e collega questa scheda.</p></div>'; throw new Error("scheda non collegata"); }
-const rq = (p, o = {}) => fetch(p, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
+const esc = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato passa da qui prima di innerHTML
 const encU = s => encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());      // anche dentro url('...') dei CSS
-let SIS = "";                                                                    // sistema operativo (dal server): «Mostra nel Finder» o in Esplora risorse
-const lblFinder = () => ({ mac: "Mostra nel Finder", windows: "Mostra in Esplora risorse" }[SIS] || "Mostra nel gestore file");
-async function api(p, b) { const r = await rq(p, b === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); const j = await r.json(); if (j.errore) throw new Error(j.errore); return j; }
-const fmtD = t => new Date(t * 1000).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
-const cm = v => String(v).replace(".", ",");
-let LIST = [];
 
-async function load() {
-  const d = await api("/api/progetti"); LIST = d.progetti; SIS = d.sistema || ""; $("where").textContent = "I nuovi progetti vengono salvati in: " + d.cartella;
-  const g = $("grid"); g.innerHTML = "";
-  const nw = document.createElement("div"); nw.className = "card new"; nw.innerHTML = "<b>+</b><span>Nuovo progetto</span>"; nw.onclick = openNew; g.appendChild(nw);
-  LIST.forEach(p => {
-    const c = document.createElement("div"); c.className = "card";
-    c.innerHTML = `<div class="cv" ${p.cover ? `style="background-image:url('/api/cover?path=${encU(p.path)}&n=${encU(p.cover)}')"` : ""}>${p.cover ? "" : "nessuna foto"}</div>
-      <div class="tx"><div class="nm">${esc(p.nome)}</div><div class="meta">${p.cm ? esc(cm(p.cm[0]) + " × " + cm(p.cm[1])) + " cm · " : ""}${esc(p.spread)} spread · ${esc(p.foto)} foto</div><div class="meta">${p.errore ? "errore: " + esc(p.errore) : "modificato " + fmtD(p.mod)}</div></div>
-      ${p.aperto ? '<span class="dot">aperto</span>' : ""}<button class="mn">⋯</button>`;
-    c.onclick = e => { if (e.target.classList.contains("mn")) { menu(e, p); return; } openProject(p); };
-    g.appendChild(c);
+// ---- testi statici: gli elementi dichiarano la chiave, il testo viene dalla tabella
+document.querySelectorAll("[data-t]").forEach(e => { e.textContent = t(e.dataset.t); });
+document.querySelectorAll("[data-t-ph]").forEach(e => { e.placeholder = t(e.dataset.tPh); });
+document.querySelectorAll("[data-t-title]").forEach(e => { e.title = t(e.dataset.tTitle); });
+document.querySelectorAll("[data-t-aria]").forEach(e => { e.setAttribute("aria-label", t(e.dataset.tAria)); });
+
+// ---- tema: scuro all'apertura, poi la preferenza salvata
+const TEMA_CHIAVE = "impaginatore_tema";
+function applicaTema(v) {
+  document.documentElement.dataset.theme = v;
+  const b = $("tema"), k = v === "dark" ? "home.tema_chiaro" : "home.tema_scuro"; b.setAttribute("aria-label", t(k)); b.title = t(k);
+}
+function temaSalvato() { try { const v = localStorage.getItem(TEMA_CHIAVE); return v === "light" || v === "dark" ? v : "dark"; } catch (e) { return "dark"; } }
+applicaTema(temaSalvato());
+$("tema").onclick = () => { const n = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; try { localStorage.setItem(TEMA_CHIAVE, n); } catch (e) {} applicaTema(n); };
+
+const GETTONE = (() => { try { return sessionStorage.getItem("impaginatore_gettone") || ""; } catch (e) { return ""; } })();       // gettone delle API: lo lascia nella scheda l'indirizzo di avvio, mai nella pagina né nel cookie (VER-006, docs/architettura/SICUREZZA.md)
+if (!GETTONE) {
+  document.body.textContent = "";
+  const d = document.createElement("div"); d.className = "solo";
+  const h = document.createElement("h1"); h.textContent = "Impaginatore"; d.appendChild(h);
+  ["home.non_collegata_1", "home.non_collegata_2"].forEach(k => { const p = document.createElement("p"); p.textContent = t(k); d.appendChild(p); });
+  document.body.appendChild(d); throw new Error("scheda non collegata");
+}
+const rq = (p, o = {}) => fetch(p, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
+let SIS = "";                                                                    // sistema operativo (dal server): «Mostra nel Finder» o in Esplora risorse
+const lblFinder = () => ({ mac: t("home.mostra_finder"), windows: t("home.mostra_esplora") }[SIS] || t("home.mostra_gestore"));
+async function api(p, b) { const r = await rq(p, b === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); const j = await r.json(); if (j.errore) throw new Error(j.errore); return j; }
+const cm = v => String(v).replace(".", ",");
+const parse = v => parseFloat(String(v).replace(",", "."));
+let LIST = [], VISTI = [], FILTRO = "", CARTELLA = "";
+
+// ---- avvisi in pagina (mai alert): l'errore resta finché non lo chiudi
+let _avvT = 0;
+function avviso(testo, tipo = "info") {
+  const a = $("avviso"); clearTimeout(_avvT); $("avvtxt").textContent = testo; a.className = tipo; a.style.display = "flex";
+  if (tipo !== "errore") _avvT = setTimeout(() => { a.style.display = "none"; }, 5000);
+}
+$("avvchiudi").onclick = () => { clearTimeout(_avvT); $("avviso").style.display = "none"; };
+const errore = e => avviso(e.message || String(e), "errore");
+
+// ---- finestre: Esc chiude, il fuoco torna dove era, Tab resta dentro
+const PILA = [];
+const focalizzabili = r => [...r.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter(e => !e.disabled && e.offsetParent !== null);
+function apri(id, fuoco) {
+  const v = $(id); PILA.push({ id, origine: document.activeElement }); v.style.display = "flex";
+  const f = fuoco || focalizzabili(v.firstElementChild)[0]; if (f) f.focus();
+}
+function chiudi(id) {
+  $(id).style.display = "none"; const i = PILA.findIndex(x => x.id === id); if (i < 0) return;
+  const o = PILA.splice(i, 1)[0].origine; if (o && o.isConnected && o.focus) o.focus();
+}
+let _ch = null;
+const rispondi = esito => { const f = _ch; _ch = null; chiudi("vchiedi"); if (f) f(esito); };
+function chiedi(titolo, testo, pulsanti) {                                         // foglio di conferma in pagina: restituisce l'id del pulsante premuto, null con Esc
+  if (_ch) rispondi(null);
+  return new Promise(ok => {
+    _ch = ok; $("ch-titolo").textContent = titolo; $("ch-testo").textContent = testo;
+    const B = $("ch-btns"); B.textContent = ""; let fuoco = null;
+    pulsanti.forEach(p => { const b = document.createElement("button"); b.type = "button"; b.textContent = p.testo; b.dataset.esito = p.id; if (p.ruolo) b.className = p.ruolo; b.onclick = () => rispondi(p.id); B.appendChild(b); if (p.fuoco) fuoco = b; });
+    apri("vchiedi", fuoco || B.lastElementChild);
   });
 }
-const esc = s => String(s ?? "").replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));      // ogni dato passa da qui prima di innerHTML
+const PRM_ANNULLA = () => ({ id: "annulla", testo: t("comune.annulla"), fuoco: true });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    if ($("menu").style.display === "block") { chiudiMenu(true); e.preventDefault(); return; }
+    const alto = PILA[PILA.length - 1]; if (!alto) return;
+    e.preventDefault(); if (alto.id === "vchiedi") rispondi(null); else chiudi(alto.id);
+  } else if (e.key === "Tab" && PILA.length) {
+    const f = focalizzabili($(PILA[PILA.length - 1].id).firstElementChild); if (!f.length) return;
+    const a = document.activeElement, p = f[0], u = f[f.length - 1];
+    if (e.shiftKey && (a === p || !f.includes(a))) { e.preventDefault(); u.focus(); } else if (!e.shiftKey && (a === u || !f.includes(a))) { e.preventDefault(); p.focus(); }
+  }
+});
+function attesa(msg) { $("wmsg").textContent = msg; $("vwait").style.display = "flex"; }
+const fineAttesa = () => { $("vwait").style.display = "none"; };
+function schermataFinale(testo) { document.body.textContent = ""; const p = document.createElement("p"); p.className = "solo"; p.textContent = testo; document.body.appendChild(p); }
 
-function menu(e, p) {
-  e.stopPropagation(); const m = $("menu");
-  m.innerHTML = `<div data-a="open">Apri</div><div data-a="finder">${lblFinder()}</div>` + (p.esterno ? `<div data-a="rim">Togli dall'elenco</div>` : `<div data-a="cest" class="d">Metti nel Cestino…</div>`);
-  m.style.display = "block"; m.style.left = Math.min(e.clientX, innerWidth - 210) + "px"; m.style.top = e.clientY + "px";
-  m.onclick = async ev => {
-    const a = ev.target.dataset.a; m.style.display = "none"; if (!a) return;
-    try {
-      if (a === "open") openProject(p);
-      else if (a === "finder") await api("/api/finder", { path: p.path });
-      else if (a === "rim") { await api("/api/rimuovi", { path: p.path }); load(); }
-      else if (a === "cest" && confirm(`Mettere nel Cestino il progetto «${p.nome}» con tutte le sue foto collegate e le anteprime?`)) { await api("/api/cestino", { path: p.path }); load(); }
-    } catch (er) { alert(er.message); }
-  };
+// ---- menu
+let _menuOrigine = null;
+function chiudiMenu(riporta) { const m = $("menu"); if (m.style.display !== "block") return; m.style.display = "none"; if (riporta && _menuOrigine && _menuOrigine.isConnected) _menuOrigine.focus(); _menuOrigine = null; }
+function apriMenu(ancora, voci) {
+  const m = $("menu"); _menuOrigine = ancora; m.textContent = "";
+  voci.forEach(v => {
+    if (v === "-") { m.appendChild(document.createElement("hr")); return; }
+    const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "menuitem"); b.textContent = v.testo; if (v.pericolo) b.className = "pericolo";
+    b.onclick = () => { chiudiMenu(true); Promise.resolve(v.fn()).catch(errore); }; m.appendChild(b);
+  });
+  m.style.display = "block"; const r = ancora.getBoundingClientRect(), mh = m.offsetHeight, mw = m.offsetWidth;
+  m.style.left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8)) + "px"; m.style.top = (r.bottom + 4 + mh > innerHeight ? Math.max(8, r.top - 4 - mh) : r.bottom + 4) + "px";
+  m.querySelector("button").focus();
 }
-document.addEventListener("click", () => $("menu").style.display = "none");
+$("menu").addEventListener("keydown", e => {
+  const b = [...$("menu").querySelectorAll("button")], i = b.indexOf(document.activeElement);
+  if (e.key === "ArrowDown") { e.preventDefault(); b[(i + 1) % b.length].focus(); } else if (e.key === "ArrowUp") { e.preventDefault(); b[(i - 1 + b.length) % b.length].focus(); } else if (e.key === "Tab") chiudiMenu(false);
+});
+document.addEventListener("click", e => { if (!e.target.closest("#menu")) chiudiMenu(false); }, true);
+
+// ---- scaffale
+function fmtMod(ts) {
+  if (!ts) return "—"; const d = new Date(ts * 1000), n = new Date(), ora = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const g = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(), diff = Math.round((g(n) - g(d)) / 86400000);
+  if (diff === 0) return t("home.oggi", { ora }); if (diff === 1) return t("home.ieri", { ora });
+  return d.toLocaleDateString("it-IT", d.getFullYear() === n.getFullYear() ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+function statoDi(p) {
+  if (p.errore) return { c: "errore", t: t("home.stato_errore"), m: p.errore };
+  if (p.aperto) return { c: "aperto", t: t("home.stato_aperto") };
+  if (!p.foto) return { c: "senza", t: t("home.stato_senza_foto") };
+  return { c: "", t: t("home.stato_lavorazione") };
+}
+function riga(p, i) {
+  const s = statoDi(p), mini = p.cover ? ` style="background-image:url('${esc("/api/cover?path=" + encU(p.path) + "&n=" + encU(p.cover))}')"` : "";
+  return `<div class="riga" role="listitem" tabindex="0" data-i="${i}"><div class="mini"${mini}></div>
+    <div><div class="nome" title="${esc(p.nome)}">${esc(p.nome)}</div><div class="dove" title="${esc(p.path)}">${esc(p.path)}</div></div>
+    <div class="c-fm num">${p.cm ? esc(cm(p.cm[0]) + " × " + cm(p.cm[1])) : "—"}</div>
+    <div class="c-sp d num">${esc(p.spread)}</div><div class="c-fo d num">${esc(p.foto)}</div>
+    <div class="st ${s.c}"><i></i><div>${esc(s.t)}${s.m ? `<small title="${esc(s.m)}">${esc(s.m)}</small>` : ""}</div></div>
+    <div class="c-md mod num">${esc(fmtMod(p.mod))}</div>
+    <div class="az"><button type="button" class="primario" data-a="apri">${esc(t("home.apri"))}</button><button type="button" class="icona" data-a="altro" aria-haspopup="menu" aria-label="${esc(t("home.altre_azioni_album", { nome: p.nome }))}" title="${esc(t("home.altre_azioni"))}">⋯</button></div></div>`;
+}
+function disegna() {
+  const tutti = LIST.length, ricerca = tutti > 12; if (!ricerca) FILTRO = "";
+  const c = $("cerca"); c.hidden = !ricerca; if (!ricerca) c.value = "";
+  const q = FILTRO.trim().toLowerCase(); VISTI = q ? LIST.filter(p => p.nome.toLowerCase().includes(q)) : LIST.slice();
+  const vuoto = tutti === 0;
+  $("nuova").hidden = vuoto; $("scaffale").hidden = vuoto; $("vuoto").hidden = !vuoto;
+  $("grid").innerHTML = VISTI.map(riga).join(""); $("nessuno").hidden = vuoto || VISTI.length > 0;
+  $("where").textContent = t("home.salvati_in", { cartella: CARTELLA });
+}
+async function load() {
+  const d = await api("/api/progetti"); LIST = d.progetti; SIS = d.sistema || ""; CARTELLA = d.cartella; disegna();
+}
+$("cerca").oninput = () => { FILTRO = $("cerca").value; disegna(); };
+const rigaDi = e => { const r = e.target.closest(".riga"); return r ? VISTI[+r.dataset.i] : null; };
+function menuRiga(ancora, p) {
+  apriMenu(ancora, [
+    { testo: t("home.apri"), fn: () => openProject(p) },
+    { testo: lblFinder(), fn: () => api("/api/finder", { path: p.path }) },
+    p.esterno ? { testo: t("home.togli_elenco"), fn: async () => { await api("/api/rimuovi", { path: p.path }); await load(); } }
+              : { testo: t("home.cestino"), pericolo: true, fn: () => cestina(p) },
+  ]);
+}
+async function cestina(p) {
+  const r = await chiedi(t("home.cestino_titolo", { nome: p.nome }), t("home.cestino_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.cestino_ok"), ruolo: "pericolo" }]);
+  if (r !== "ok") return; await api("/api/cestino", { path: p.path }); await load();
+}
+$("grid").addEventListener("click", e => {
+  const p = rigaDi(e); if (!p) return; const b = e.target.closest("button[data-a]"); if (!b) return;
+  e.stopPropagation(); if (b.dataset.a === "apri") openProject(p); else menuRiga(b, p);
+});
+$("grid").addEventListener("dblclick", e => { const p = rigaDi(e); if (p && !e.target.closest("button")) openProject(p); });
+$("grid").addEventListener("keydown", e => {
+  const r = e.target.closest(".riga"); if (!r) return;
+  if (e.key === "Enter" && e.target === r) { e.preventDefault(); openProject(VISTI[+r.dataset.i]); }
+  else if ((e.key === "ArrowDown" || e.key === "ArrowUp") && e.target === r) { e.preventDefault(); const n = e.key === "ArrowDown" ? r.nextElementSibling : r.previousElementSibling; if (n) n.focus(); }
+});
 
 async function openProject(p) {
-  $("wmsg").textContent = "Apro «" + p.nome + "»…"; $("vwait").style.display = "flex";
+  attesa(t("home.apro", { nome: p.nome }));
   try {
     const { porta } = await api("/api/apri", { path: p.path });
     for (let i = 0; i < 240; i++) { const r = await api("/api/pronto?porta=" + porta); if (r.pronto) { location.href = r.indirizzo; return; } await new Promise(r => setTimeout(r, 500)); }
-    throw new Error("L'editor non si è avviato (guarda Progetti/editor.log)");
-  } catch (e) { $("vwait").style.display = "none"; alert(e.message); }
+    throw new Error(t("home.editor_non_parte"));
+  } catch (e) { fineAttesa(); errore(e); }
 }
 
-// ---- nuovo progetto
-const parse = v => parseFloat(String(v).replace(",", "."));
-function pinfo() { const w = parse($("w").value), h = parse($("h").value); $("pinfo").textContent = w > 0 && h > 0 ? `Ogni pagina: ${cm(+(w / 2).toFixed(2))} × ${cm(h)} cm` : ""; }
-function openNew() { $("err").textContent = ""; $("vnew").style.display = "flex"; $("nome").value = ""; $("fdir").value = ""; $("nome").focus(); pinfo(); }
+// ---- nuovo album
+function pinfo() { const w = parse($("w").value), h = parse($("h").value); $("pinfo").textContent = w > 0 && h > 0 ? t("home.pagina_misura", { w: cm(+(w / 2).toFixed(2)), h: cm(h) }) : ""; }
+function avanzate(on) { $("adv").classList.toggle("on", on); $("advt").setAttribute("aria-expanded", String(on)); $("advt").textContent = (on ? "▾ " : "▸ ") + t("home.avanzate"); }
+function openNew(scelta) {
+  $("err").textContent = ""; $("nome").value = scelta ? scelta.nome || "" : ""; $("fdir").value = scelta ? scelta.path || "" : ""; avanzate(false);
+  apri("vnew", $("nome")); pinfo();
+}
 $("w").oninput = $("h").oninput = pinfo;
-document.querySelectorAll(".pre button").forEach(b => b.onclick = () => { const [w, h] = b.dataset.p.split(","); $("w").value = cm(w); $("h").value = cm(h); pinfo(); });
-$("advt").onclick = () => { $("adv").classList.toggle("on"); $("advt").textContent = ($("adv").classList.contains("on") ? "▾" : "▸") + " Avanzate (abbondanza, spazio tra le foto, margine)"; };
-$("fpick").onclick = async () => { try { const r = await api("/api/scegli-foto", {}); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.nome || ""; } } catch (e) { $("err").textContent = e.message; } };
-$("cancel").onclick = () => $("vnew").style.display = "none";
+document.querySelectorAll(".pre button").forEach(b => { const [w, h] = b.dataset.p.split(","); b.textContent = cm(w) + " × " + cm(h); b.onclick = () => { $("w").value = cm(w); $("h").value = cm(h); pinfo(); }; });
+$("advt").onclick = () => avanzate(!$("adv").classList.contains("on"));
+async function sceglieFoto() { return await api("/api/scegli-foto", {}); }
+$("fpick").onclick = async () => { try { const r = await sceglieFoto(); if (r.path) { $("fdir").value = r.path; if (!$("nome").value) $("nome").value = r.nome || ""; } } catch (e) { $("err").textContent = e.message; } };
+async function dallaCartella() {                                                    // «Scegli la cartella delle foto…»: apre il nuovo album con la cartella già scelta
+  try { const r = await sceglieFoto(); if (r.path) openNew(r); } catch (e) { errore(e); }
+}
+$("scegli").onclick = $("vuoto-scegli").onclick = dallaCartella;
+$("bnuovo").onclick = $("vuoto-nuovo").onclick = () => openNew();
+$("cancel").onclick = () => chiudi("vnew");
 $("create").onclick = async () => {
+  const b = $("create"); b.disabled = true;
   try {
     const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value });
-    $("vnew").style.display = "none"; await load(); const p = LIST.find(x => x.path === r.path); if (p) openProject(p);
+    chiudi("vnew"); await load(); const p = LIST.find(x => x.path === r.path); if (p) openProject(p);
   } catch (e) { $("err").textContent = e.message; }
+  b.disabled = false;
 };
-$("nome").onkeydown = e => { if (e.key === "Enter") $("create").onclick(); };
-$("addzip").onclick = async () => { const b = $("addzip"); b.disabled = true; b.textContent = "Importo…"; try { const r = await api("/api/importa-zip", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Importa ZIP…"; };
-$("add").onclick = async () => { try { const r = await api("/api/aggiungi", {}); if (!r.annullato) load(); } catch (e) { alert(e.message); } };
-$("quit").onclick = async () => { if (confirm("Chiudere il programma? Le modifiche sono già salvate.")) { try { await api("/api/esci", {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;color:#aaa">Programma chiuso. Puoi chiudere questa scheda.</p>'; } };
-async function checkUpd() { try { const r = await (await rq("/api/aggiornamento")).json(); showVer(r); const b = $("upd"); b.style.display = "none"; b.title = (r.novita || []).join("\n"); b.dataset.n = (r.novita || []).map(x => "• " + x).join("\n"); } catch (e) {} }
-$("upd").onclick = async () => { const b = $("upd"); if (!confirm("Novità:\n" + b.dataset.n + "\n\nAggiorno e riavvio il programma? Il lavoro è già salvato.")) return; b.textContent = "Aggiorno…"; b.disabled = true; try { await api("/api/aggiorna", {}); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Aggiornato: il programma si riapre da solo tra qualche secondo…</p>'; setTimeout(() => location.reload(), 6000); } catch (e) { alert(e.message); b.disabled = false; b.textContent = "⬆ Aggiornamento disponibile"; } };
-const nomeV = v => v.rel ? `${v.rel} (build ${v.n})` : `${v.n}`, brev = v => v.rel || v.n;
-const fmtV = v => v ? `<b>Versione ${esc(nomeV(v))}</b> · ${esc(v.data)} · ${esc(v.titolo)} <span style="color:var(--dim)">(${esc(v.codice)})</span>` : "—";
+$("vnew").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName === "INPUT") { e.preventDefault(); $("create").onclick(); } });
+
+// ---- menu «⋯», apri esistente, importa ZIP, chiudi programma
+async function aggiungi() { const r = await api("/api/aggiungi", {}); if (!r.annullato) { await load(); avviso(t("home.album_aggiunto"), "ok"); } }
+async function importaZip() {
+  avviso(t("home.importo"), "info"); clearTimeout(_avvT);
+  try { const r = await api("/api/importa-zip", {}); if (r.annullato) $("avviso").style.display = "none"; else { await load(); avviso(t("home.importato"), "ok"); } } catch (e) { errore(e); }
+}
+async function chiudiProgramma() {
+  const r = await chiedi(t("home.chiudi_titolo"), t("home.chiudi_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.chiudi_ok"), ruolo: "primario" }]);
+  if (r !== "ok") return; try { await api("/api/esci", {}); } catch (e) {} schermataFinale(t("home.chiuso"));
+}
+// ---- assistente AI (MCP): di serie riceve solo testo; le immagini ridotte solo se l'utente accende l'interruttore
+async function apriAssistente() {
+  $("aerr").textContent = ""; const d = await api("/api/assistente"); $("aimg").checked = d.immagini === true; apri("vassist", $("aimg"));
+}
+$("aimg").onchange = async () => {
+  const v = $("aimg").checked; $("aerr").textContent = "";
+  if (v && await chiedi(t("home.assist_conferma_titolo"), t("home.assist_nota"), [PRM_ANNULLA(), { id: "ok", testo: t("home.assist_accendi"), ruolo: "primario" }]) !== "ok") { $("aimg").checked = false; return; }
+  try { $("aimg").checked = (await api("/api/assistente", { immagini: v })).immagini === true; }
+  catch (e) { $("aimg").checked = !v; $("aerr").textContent = e.message || String(e); }
+};
+$("aclose").onclick = () => chiudi("vassist");
+$("altro").onclick = e => { e.stopPropagation(); apriMenu($("altro"), [
+  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente },
+  "-", { testo: t("home.chiudi_programma"), fn: chiudiProgramma },
+]); };
+
+// ---- versione e aggiornamenti
+async function checkUpd() { try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} }       // il pulsante «upd» resta nascosto: la versione in alto apre la finestra con «Aggiorna ora»
+async function aggiorna() {
+  const novita = ($("upd").dataset.n || "");
+  const r = await chiedi(t("home.agg_titolo"), (novita ? t("home.agg_novita", { elenco: novita }) + "\n\n" : "") + t("home.agg_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.agg_ok"), ruolo: "primario" }]);
+  if (r !== "ok") return; attesa(t("home.aggiorno"));
+  try { await api("/api/aggiorna", {}); schermataFinale(t("home.aggiornato")); setTimeout(() => location.reload(), 6000); } catch (e) { fineAttesa(); errore(e); }
+}
+$("upd").onclick = () => aggiorna().catch(errore);
+const nomeV = v => v.rel ? t("home.versione_build", { rel: v.rel, n: v.n }) : String(v.n), brev = v => v.rel || v.n;
+const fmtV = v => v ? `<b>${esc(t("home.versione_n", { n: nomeV(v) }))}</b> · ${esc(v.data)} · ${esc(v.titolo)} <span class="tenue num">(${esc(v.codice)})</span>` : "—";
 function showVer(r) {
   const vb = $("verb"), spenti = r.disponibile === false; vb.className = spenti ? "" : r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
-  $("vtxt").textContent = !r.attuale ? "Versione ?" : spenti ? `Versione ${brev(r.attuale)}` : r.errore ? `Versione ${brev(r.attuale)} · non riesco a controllare` : r.da_aggiornare ? `Versione ${brev(r.attuale)} · disponibile la ${r.ultima ? brev(r.ultima) : "nuova"} — clicca per aggiornare` : `Versione ${brev(r.attuale)} · aggiornata`;
-  const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "mai";
-  $("vbody").innerHTML = `In uso: ${fmtV(r.attuale)}<br>` + (spenti ? `<span style="color:var(--dim)">${esc(r.motivo || "Aggiornamenti automatici non disponibili")}</span>` : r.errore ? `<span style="color:#e5484d">Non riesco a controllare gli aggiornamenti (internet?)</span>` : r.da_aggiornare ? `Disponibile: ${fmtV(r.ultima)}<br><b>Novità:</b><br>${(r.novita || []).map(x => "• " + esc(x)).join("<br>")}` : `<span style="color:#5cb85c">✓ Hai già l'ultima versione</span>`) + `<br><span style="color:var(--dim);font-size:12px">Ultimo controllo: ${ago}</span>`;
+  const v = r.attuale ? brev(r.attuale) : "";
+  $("vtxt").textContent = !r.attuale ? t("home.ver_ignota") : spenti ? t("home.ver_breve", { v }) : r.errore ? t("home.ver_non_controllo", { v }) : r.da_aggiornare ? t("home.ver_disponibile", { v, u: r.ultima ? brev(r.ultima) : t("home.ver_nuova") }) : t("home.ver_aggiornata", { v });
+  const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : t("home.mai");
+  const novita = (r.novita || []);
+  $("upd").dataset.n = novita.map(x => "• " + x).join("\n");
+  $("vbody").innerHTML = `${esc(t("home.in_uso"))} ${fmtV(r.attuale)}<br>` + (spenti ? `<span class="tenue">${esc(r.motivo || t("home.agg_spenti"))}</span>`
+    : r.errore ? `<span class="ko">${esc(t("home.ver_errore"))}</span>`
+    : r.da_aggiornare ? `${esc(t("home.disponibile"))} ${fmtV(r.ultima)}<br><b>${esc(t("home.novita"))}</b><br>${novita.map(x => "• " + esc(x)).join("<br>")}`
+    : `<span class="ok">✓ ${esc(t("home.ultima_versione"))}</span>`) + `<br><span class="tenue">${esc(t("home.ultimo_controllo", { quando: ago }))}</span>`;
   $("vgo").style.display = r.da_aggiornare ? "" : "none"; $("vchk").style.display = spenti ? "none" : "";
 }
-$("verb").onclick = async () => { $("vver").style.display = "flex"; try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} };
-$("vhist").onclick = async e => { e.preventDefault(); const L = $("vlist"); if (L.style.display === "block") { L.style.display = "none"; return; } L.style.display = "block"; L.textContent = "…"; try { const r = await (await rq("/api/versioni")).json(); L.innerHTML = ""; r.versioni.forEach(v => { const d = document.createElement("div"); d.style.cssText = "display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)"; d.innerHTML = `<span style="flex:1"><b>Versione ${esc(v.n)}</b> · ${esc(v.data)}<br><span style="color:var(--dim)">${esc(v.titolo)}</span></span>` + (v.attuale ? '<span style="color:#3fb950">in uso</span>' : '<button>Torna a questa</button>'); const b = d.querySelector("button"); if (b) b.onclick = async () => { if (!confirm(`Tornare alla versione ${v.n}?\n\n${v.titolo}\n\nIl programma si riavvia. I tuoi progetti non cambiano. Le versioni successive restano salvate.`)) return; b.textContent = "Ripristino…"; try { const x = await api("/api/ripristina", { codice: v.codice }); document.body.innerHTML = '<p style="padding:40px;color:#aaa">Tornato alla versione ' + esc(x.n) + (x.caricato ? "" : " (solo su questo Mac: non sono riuscito a caricarla su GitHub)") + '. Il programma si riapre da solo…</p>'; setTimeout(() => location.reload(), 6000); } catch (err) { alert(err.message); b.textContent = "Torna a questa"; } }; L.appendChild(d); }); } catch (err) { L.textContent = "Non riesco a leggere le versioni"; } };
-$("vclose").onclick = () => $("vver").style.display = "none";
-$("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = "Controllo…"; try { const r = await api("/api/controlla", {}); showVer(r); checkUpd(); } catch (e) { alert(e.message); } b.disabled = false; b.textContent = "Controlla aggiornamenti"; };
-$("vgo").onclick = () => { $("vver").style.display = "none"; $("upd").onclick(); };
+$("verb").onclick = async () => { apri("vver"); try { showVer(await (await rq("/api/aggiornamento")).json()); } catch (e) {} };
+function vhistStato(on) { $("vlist").style.display = on ? "block" : "none"; $("vhist").setAttribute("aria-expanded", String(on)); $("vhist").textContent = (on ? "▾ " : "▸ ") + t("home.versioni_precedenti"); }
+vhistStato(false);
+$("vhist").onclick = async () => {
+  const L = $("vlist"); if (L.style.display === "block") { vhistStato(false); return; } vhistStato(true); L.textContent = "…";
+  try {
+    const r = await (await rq("/api/versioni")).json(); L.textContent = "";
+    r.versioni.forEach(v => {
+      const d = document.createElement("div");
+      d.innerHTML = `<span><b>${esc(t("home.versione_n", { n: v.n }))}</b> · ${esc(v.data)}<br><span class="tenue">${esc(v.titolo)}</span></span>` + (v.attuale ? `<span class="ok">${esc(t("home.in_uso_tag"))}</span>` : `<button type="button">${esc(t("home.torna_a_questa"))}</button>`);
+      const b = d.querySelector("button");
+      if (b) b.onclick = async () => {
+        const c = await chiedi(t("home.torna_titolo", { n: v.n }), t("home.torna_testo", { titolo: v.titolo }), [PRM_ANNULLA(), { id: "ok", testo: t("home.torna_ok"), ruolo: "primario" }]);
+        if (c !== "ok") return; b.disabled = true; b.textContent = t("home.ripristino");
+        try { const x = await api("/api/ripristina", { codice: v.codice }); schermataFinale(t("home.tornato", { n: x.n }) + (x.caricato ? "" : " " + t("home.tornato_non_caricata"))); setTimeout(() => location.reload(), 6000); } catch (err) { errore(err); b.disabled = false; b.textContent = t("home.torna_a_questa"); }
+      };
+      L.appendChild(d);
+    });
+  } catch (err) { L.textContent = t("home.versioni_errore"); }
+};
+$("vclose").onclick = () => chiudi("vver");
+$("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.textContent = t("home.controllo"); try { showVer(await api("/api/controlla", {})); } catch (e) { errore(e); } b.disabled = false; b.textContent = t("home.controlla_aggiornamenti"); };
+$("vgo").onclick = () => { chiudi("vver"); $("upd").onclick(); };
+
 // ---- licenza (T-202): stato, prova gratuita, chiave controllata su questo computer
+const giorniTxt = n => n === 1 ? t("home.giorno_uno") : t("home.giorni_n", { n });
 function showLic(s) {
   const b = $("lic"); b.className = s.sola_lettura ? "warn" : "";
-  b.textContent = s.stato === "attiva" ? `Licenza ${s.nome_fascia}` : s.stato === "prova" ? `Prova gratuita · ${s.prova.giorni_rimasti} giorni` : s.sola_lettura ? "Sola lettura · inserisci la licenza" : `Chiave non valida · prova ${s.prova.giorni_rimasti} giorni`;
+  b.textContent = s.stato === "attiva" ? t("home.lic_attiva_btn", { nome: s.nome_fascia }) : s.stato === "prova" ? t("home.lic_prova_btn", { giorni: giorniTxt(s.prova.giorni_rimasti) }) : s.sola_lettura ? t("home.lic_sola_lettura") : t("home.lic_non_valida", { giorni: giorniTxt(s.prova.giorni_rimasti) });
   $("lstato").textContent = s.messaggio; $("lrim").style.display = s.chiave_presente ? "" : "none";
+  const n = s.prova && s.prova.giorni_rimasti, vista = s.stato === "prova" && n <= 7;                // negli ultimi 7 giorni di prova, la riga in basso
+  $("prova").hidden = !vista; document.body.classList.toggle("con-prova", vista);
+  if (vista) $("provatxt").textContent = n <= 1 ? t("home.prova_ultimo") : t("home.prova_restano", { n });
 }
 async function loadLic() { try { showLic(await api("/api/licenza")); } catch (e) {} }
-$("lic").onclick = () => { $("lerr").textContent = ""; $("lkey").value = ""; $("vlic").style.display = "flex"; loadLic(); $("lkey").focus(); };
-$("lclose").onclick = () => $("vlic").style.display = "none";
+function showLicFinestra() { $("lerr").textContent = ""; $("lkey").value = ""; apri("vlic", $("lkey")); loadLic(); }
+$("lic").onclick = $("provalic").onclick = showLicFinestra;
+$("lclose").onclick = () => chiudi("vlic");
 $("lgo").onclick = async () => { const b = $("lgo"); b.disabled = true; $("lerr").textContent = ""; try { showLic(await api("/api/licenza/attiva", { chiave: $("lkey").value })); $("lkey").value = ""; } catch (e) { $("lerr").textContent = e.message; } b.disabled = false; };
-$("lrim").onclick = async () => { if (!confirm("Togliere la licenza da questo computer? Potrai attivarla su un altro. I progetti restano qui; senza licenza si aprono con la prova gratuita, se non è finita, o in sola lettura.")) return; try { showLic(await api("/api/licenza/rimuovi", {})); } catch (e) { $("lerr").textContent = e.message; } };
+$("lrim").onclick = async () => {
+  const r = await chiedi(t("home.lic_togli_titolo"), t("home.lic_togli_testo"), [PRM_ANNULLA(), { id: "ok", testo: t("home.lic_togli_ok"), ruolo: "pericolo" }]);
+  if (r !== "ok") return; try { showLic(await api("/api/licenza/rimuovi", {})); } catch (e) { $("lerr").textContent = e.message; }
+};
+$("vtxt").textContent = t("home.versione_attesa");
 loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
-load();
+load().catch(errore);
 </script>
 <div id="credit">Created by <b>Stefano Imperato</b></div>
 </body>

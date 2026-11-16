@@ -59,6 +59,7 @@ Con `--scope user` vale in tutte le cartelle. Lo stesso blocco `mcpServers` di C
 ### Immagini
 
 Di serie l'assistente riceve solo testo. Per mandargli anche miniature delle foto e anteprime degli spread, l'utente
+accende «L'assistente può vedere le immagini» nella schermata Album (menu ⋯ › Assistente AI…, con una conferma), oppure
 aggiunge l'opzione alla configurazione e riavvia l'assistente:
 
 ```json
@@ -177,8 +178,9 @@ computer. Le foto possono mostrare persone riconoscibili (clienti del fotografo)
   `consenso.SPIEGAZIONE`, che dice cosa partirebbe, dove andrebbe e come accenderle;
 - si accendono solo in due modi, entrambi dell'utente:
   - l'opzione `--consenti-immagini` scritta dall'utente nella configurazione dell'assistente;
-  - l'impostazione del programma in `<dati>/assistente.json` (0600), che scrive solo `consenso.imposta()`. L'interruttore
-    nell'interfaccia arriva con T-205; nessuno strumento MCP la cambia;
+  - l'impostazione del programma in `<dati>/assistente.json` (0600), che scrive solo `consenso.imposta()`, chiamata
+    dall'interruttore della schermata Album (`POST /api/assistente` della schermata, con il gettone; T-205); nessuno
+    strumento MCP la cambia e il server MCP non parla con quella schermata per questo;
 - le immagini sono ridotte: anteprime fino a 1200 pixel di larghezza, miniature fino a 512 pixel di lato, al massimo
   2 MB; mai l'originale;
 - i due strumenti hanno `openWorldHint: true`, così il programma dell'assistente può chiedere conferma.
@@ -231,15 +233,17 @@ il trattamento dei dati da parte del fornitore dell'assistente (scelta e contrat
 
 ## Limiti noti
 
-- La pagina dell'editor aperta non si aggiorna da sola dopo una modifica dell'assistente: rilegge lo stato al ritorno
-  sulla scheda o alla prossima azione (`/api/ping` cambia `rev`, la pagina oggi guarda solo `boot` e `agg`). Da fare con
-  T-205.
+- La pagina dell'editor aperta si accorge di una modifica dell'assistente al controllo di `/api/ping` (ogni 4 secondi:
+  `rev` cambiato, `assistente` vero se l'ultima modifica viene da un `cid` `assistente-…`), rilegge lo stato e lo dice
+  («Modificato dall'assistente: …», con «Annulla»); Annulla e Ripeti dicono «(dell'assistente)». Mentre si scrive in un
+  campo, si trascina o un'operazione della pagina è in corso aspetta il controllo dopo (T-205).
 - Con la finestra del programma (T-201), `mostra_editor` apre l'editor nel browser di sistema, non nella finestra.
 - Se il programma non è in funzione, il server MCP lo avvia senza finestra: resta acceso dopo l'assistente finché non lo
   si chiude.
 - L'avvio usa `sys.executable -m impaginatore`, come la schermata per gli editor: con un eseguibile compilato (T-301)
   va rivisto insieme.
-- L'interruttore delle immagini nelle impostazioni (T-205) non c'è ancora: oggi vale l'opzione `--consenti-immagini`.
+- `consenso.SPIEGAZIONE` (la risposta degli strumenti con le immagini spente) dice ancora solo l'opzione
+  `--consenti-immagini`, non l'interruttore della schermata Album.
 - `stato_esportazione` segue solo l'ultima esportazione dell'assistente per progetto e solo finché il registro
   dell'editor è suo.
 

@@ -4,9 +4,11 @@ ServerLocale ascolta su 127.0.0.1 e tiene il gettone di sessione del server; Ges
 richiesta passa dai controlli di sicurezza (Host, Origin, Sec-Fetch-Site, gettone, tipo e misura del corpo) prima di
 arrivare a do_GET/do_POST, ogni risposta ha le intestazioni di sicurezza. Il progetto è in docs/architettura/SICUREZZA.md.
 """
+import hashlib
 import json
 import logging
 import math
+import os
 import secrets
 import socket
 import sys
@@ -67,11 +69,14 @@ class Rifiuto(Exception):
         super().__init__(motivo); self.codice = codice
 
 
+STATICI = "/risorse/"                              # file statici delle pagine (risorse.statici), anche con il solo cookie
+
+
 class Gestore(BaseHTTPRequestHandler):
     """base dei gestori HTTP. Le sottoclassi scrivono do_GET/do_POST e dicono in COOKIE/COOKIE_PREFISSI quali percorsi GET
     si aprono anche con il solo cookie (la pagina e le immagini, mai un percorso che dà il gettone o un URL di avvio:
-    VER-006): tutto il resto vuole l'intestazione INTESTAZIONE con il gettone. /avvio (GET, codice monouso) e /api/avvio
-    (POST, nuovo URL di avvio) li gestisce questa base."""
+    VER-006): tutto il resto vuole l'intestazione INTESTAZIONE con il gettone. /avvio (GET, codice monouso), /api/avvio
+    (POST, nuovo URL di avvio) e i file statici /risorse/<nome> (GET, anche con il solo cookie) li gestisce questa base."""
     timeout = 60                                   # secondi di silenzio dopo cui si chiude la connessione (client lenti o fermi)
     COOKIE = ("/",)
     COOKIE_PREFISSI = ()
@@ -106,7 +111,7 @@ class Gestore(BaseHTTPRequestHandler):
         p = urlparse(self.path).path
         if self.command == "GET" and p in ("/avvio", "/favicon.ico"): return                       # il codice monouso si controlla nella risposta; l'icona non c'è
         if not sicurezza.uguali(h.get(sicurezza.INTESTAZIONE), gettone):
-            if not (self.command == "GET" and (p in self.COOKIE or p.startswith(self.COOKIE_PREFISSI))
+            if not (self.command == "GET" and (p in self.COOKIE or p.startswith(self.COOKIE_PREFISSI + (STATICI,)))
                     and sicurezza.uguali(self._cookie(), sicurezza.valore_cookie(gettone, self.server.server_address[1]))):
                 raise Rifiuto(401, "non autorizzato")
         if self.command == "POST":
@@ -128,6 +133,7 @@ class Gestore(BaseHTTPRequestHandler):
         if self.command == "GET" and u.path == "/avvio": self._avvio(parse_qs(u.query)); return False
         if self.command == "GET" and u.path == "/favicon.ico":                                     # il browser la chiede da solo: niente icona, niente errore
             self.send_response(204); self.send_header("Cache-Control", "max-age=86400"); self.end_headers(); return False
+        if self.command == "GET" and u.path.startswith(STATICI): self.statico(u.path[len(STATICI):]); return False
         if self.command == "POST" and u.path == "/api/avvio":
             try: self.corpo()
             except ValueError as e: self.json({"errore": str(e)}, 400); return False
@@ -163,13 +169,24 @@ class Gestore(BaseHTTPRequestHandler):
     def json(self, dati, codice=200): self.risposta(json.dumps(dati), "application/json", codice)
 
     def pagina(self, nome):
-        """pagina HTML delle risorse con il nonce dello script; CSP stretta (SICUREZZA.md). Il gettone non c'è: la pagina lo
-        prende dalla sessionStorage della scheda, dove l'ha lasciato l'URL di avvio (VER-006)"""
+        """pagina HTML delle risorse con il nonce dello script e la tabella dei suoi testi; CSP stretta (SICUREZZA.md). Il
+        gettone non c'è: la pagina lo prende dalla sessionStorage della scheda, dove l'ha lasciato l'URL di avvio (VER-006)"""
         nonce = secrets.token_urlsafe(18)
-        html = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce)
+        html = risorse.leggi(nome).decode("utf-8").replace("__NONCE__", nonce).replace("__TESTI__", risorse.testi_pagina(nome))
         self._csp = sicurezza.csp(nonce); b = html.encode("utf-8")
         self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
         self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)
+
+    def statico(self, nome):
+        """file statico delle pagine (token della marca, caratteri, licenze dei caratteri): solo quelli di
+        risorse.statici(), con l'impronta per non riscaricarli (304) finché non cambiano"""
+        tipo = risorse.statici().get(nome)
+        if tipo is None: self.json({"errore": "non trovato"}, 404); return
+        b = risorse.leggi(os.path.join("statici", nome)); et = '"%s"' % hashlib.sha256(b).hexdigest()[:20]
+        if self.headers.get("If-None-Match") == et:
+            self.send_response(304); self.send_header("ETag", et); self.end_headers(); return
+        self.send_response(200); self.send_header("Content-Type", tipo); self.send_header("Content-Length", str(len(b)))
+        self.send_header("ETag", et); self.send_header("Cache-Control", "no-cache"); self.end_headers(); self.wfile.write(b)
 
     def corpo(self):
         """corpo JSON della richiesta POST (un oggetto; {} se vuoto), letto con leggi_json. La misura l'ha già controllata controlla()"""

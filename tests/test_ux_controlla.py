@@ -55,7 +55,8 @@ def test_spazi_funzioni_pure():
 @pytest.mark.browser
 @pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
 def test_spazi_come_la_pagina(editor, tmp_path):
-    """gli stessi spread controllati e corretti dalla pagina (gapStat, gapFix) e dal motore danno gli stessi numeri"""
+    """la pagina non rifà i conti degli spazi (T-205): le misure segnate sullo spread sono quelle di /api/spazi e «Correggi
+    spazi» manda l'operazione «spazi» del motore, con la misura scelta nel menu; il risultato è quello di correggi_spazi"""
     from cdp import Browser
     c = editor; E = c.E
     for k, names in enumerate((["H01", "H02", "V03"], ["V04", "Q05", "H06", "Q09"], ["H08", "V10", "V07"])):
@@ -64,17 +65,18 @@ def test_spazi_come_la_pagina(editor, tmp_path):
     assert all(E.stato_spazi(s)["diversi"] for s in range(3))
     with Browser(tmp_path) as b:
         b.apri(c.srv.indirizzo_avvio(), 2)
+        assert b.js("typeof gapStat") == "undefined" and b.js("typeof gapPairs") == "undefined", "niente conti degli spazi nella pagina"
         for modo, cm in (("std", None), ("freq", None), ("custom", 0.4)):
-            gv = f"GAPMODE = {modo!r}; GAPVAL = {cm or 0} / 2.54 * S.ppi;"
+            gv = f"GAPMODE = {modo!r}; GAPCM = {cm or 0};"
             for s in range(3):
-                js = b.js(f"(() => {{ {gv} const r = gapStat({s}); return [r.n, r.bad, r.ref]; }})()")
-                py = E.stato_spazi(s, modo, cm); assert [py["n"], py["diversi"], py["ref"]] == pytest.approx(js), (modo, s)
-                rj = b.js(f"(async () => {{ {gv} let preso = null; const vero = op; op = async x => {{ preso = x; }}; try {{ await gapFix({s}, true); }} finally {{ op = vero; S = await (await rq('/api/state')).json(); }} return preso && preso.rects; }})()")
-                m, v = E._riferimento_spazi(modo, cm); R, ch = spazi.correggi(E._rett_spread(s), A.G, A.PPI, m, v)
-                assert (rj is None) == (ch == 0), (modo, s)
-                if rj:
-                    assert [r[:2] for r in rj] == [[r["side"], r["idx"]] for r in R], (modo, s)
-                    assert [x for r in R for x in (r["x"], r["y"], r["w"], r["h"])] == pytest.approx([x for r in rj for x in r[2:]]), (modo, s)
+                segni = b.js(f"(async () => {{ {gv} cur = {s}; view = 'album'; GAPCHK = true; render(); for (let i = 0; i < 40 && !gapMarks().length; i++) await new Promise(r => setTimeout(r, 50)); return gapMarks().map(m => [m.ax, m.from, m.to, m.at, m.g, m.c]); }})()")
+                py = E.spazi_spread(s, modo, cm)
+                assert segni == [[p["ax"], p["da"], p["a"], p["at"], p["g"], "ok" if p["ok"] else "bad"] for p in py["coppie"]], (modo, s)
+                preso = b.js(f"(async () => {{ {gv} let preso = null; const vero = op; op = async x => {{ preso = x; return null; }}; try {{ await gapFix({s}, true); }} finally {{ op = vero; }} return preso; }})()")
+                assert preso == dict(op="spazi", s=s, modo=modo, **({"cm": cm} if cm else {})), (modo, s)
+        prima = E.stato_spazi(0)["diversi"]
+        b.js("(async () => { GAPMODE = 'std'; GAPCM = 0; await gapFix(0); })()"); b.pausa(0.5)
+        assert prima and E.stato_spazi(0)["diversi"] == 0 and b.js("S.annulla.nome") == "Correggi spazi"
         assert not b.problemi(), b.problemi()
 
 

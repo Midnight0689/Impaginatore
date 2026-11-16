@@ -270,3 +270,19 @@ def test_riavvio_dopo_aggiornamento(home, monkeypatch):
     try: home.riavvia_programma()
     finally: srv.server_close()
     assert lanci[1][1] == srv.sessione.gettone, "il programma riavviato tiene il gettone: la pagina aperta resta collegata"
+
+
+def test_interruttore_immagini_dell_assistente(home_srv):
+    """«L'assistente può vedere le immagini» (T-205 per T-203): spento di serie; lo cambia solo la pagina, con il gettone,
+    e il server MCP legge la stessa scelta (mcp/consenso.py)"""
+    from impaginatore.mcp import consenso
+    c = home_srv
+    assert c.get("/api/assistente") == {"immagini": False} and not consenso.consentite(False)
+    assert c.post("/api/assistente", {"immagini": True}) == {"immagini": True} and consenso.consentite(False)
+    assert c.get("/api/assistente") == {"immagini": True}
+    assert oct(os.stat(consenso.percorso()).st_mode & 0o777) == "0o600" or os.name == "nt"
+    for v in ("true", 1, None):
+        ok, r = c.prova("/api/assistente", {"immagini": v}); assert not ok and "vero o falso" in r["errore"]
+    assert c.get("/api/assistente") == {"immagini": True}, "un valore strano non cambia la scelta"
+    assert c.codice("/api/assistente", {"immagini": False}, **{"X-Impaginatore-Gettone": None}) == 401, "solo con il gettone"
+    assert c.post("/api/assistente", {"immagini": False}) == {"immagini": False} and not consenso.consentite(False)

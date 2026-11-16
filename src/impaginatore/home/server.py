@@ -23,6 +23,7 @@ from ..servizio import Gestore, ServerLocale, porta_libera as _porta_libera
 from .. import licenze                         # T-202: licenza e prova gratuita, controllate su questo computer (docs/architettura/LICENZE.md)
 from .. import desktop                         # T-201: finestra del programma (pywebview si carica solo in desktop.motore())
 from ..desktop import dialoghi as desktop_dialoghi
+from ..mcp import consenso as consenso_mcp      # T-203/T-205: l'interruttore «L'assistente può vedere le immagini» (solo libreria standard)
 
 PORTA_PREDEFINITA = 8765
 PROGETTI = None                                # cartella dei progetti nuovi (configura)
@@ -220,6 +221,7 @@ class H(Gestore):
             elif u.path == "/api/aggiornamento": self.send(AGGIORNAMENTI.stato())       # la versione in uso si rilegge sempre (cambia anche se si aggiorna a mano)
             elif u.path == "/api/versioni": self.send({"versioni": AGGIORNAMENTI.versioni()})
             elif u.path == "/api/licenza": self.send(licenze.stato())                     # aprire la schermata la prima volta fa partire la prova
+            elif u.path == "/api/assistente": self.send({"immagini": consenso_mcp.salvato()})
             elif u.path == "/api/pronto":
                 a = pronto(int(q["porta"][0])); self.send({"pronto": bool(a), "indirizzo": a})
             elif u.path == "/api/cover":
@@ -249,6 +251,9 @@ class H(Gestore):
             elif u.path == "/api/controlla": self.send(AGGIORNAMENTI.controlla())
             elif u.path == "/api/licenza/attiva": self.send(licenze.attiva(d.get("chiave")))   # chiave non valida: ValueError con il motivo (400)
             elif u.path == "/api/licenza/rimuovi": self.send(licenze.rimuovi())
+            elif u.path == "/api/assistente":                  # solo l'utente, da questa pagina (gettone): nessuno strumento MCP passa di qui
+                if not isinstance(d.get("immagini"), bool): raise ValueError("immagini: vero o falso")
+                consenso_mcp.imposta(d["immagini"]); self.send({"immagini": consenso_mcp.salvato()})
             elif u.path == "/api/importa-zip":
                 p = importa_zip(); self.send({"path": p} if p else {"annullato": True})
             elif u.path == "/api/rimuovi":
