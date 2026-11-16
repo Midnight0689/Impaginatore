@@ -198,6 +198,13 @@ così la prova su Windows 11 ARM mostra un eseguibile `x86_64` su una macchina `
     `Info.plist` dice altro. Dichiarato e misurato vanno in `componenti.json` (`macos_minimo`, `macos_minimo_binari`);
     la pipeline stampa `lipo -archs`, `vtool -show-build` e `LSMinimumSystemVersion` dell'eseguibile del DMG montato, e la
     prova mette architettura e versione minima nel rapporto (`misure`).
+  - Letto sul Mac Intel nella pipeline (16/11/2026): `lipo -archs` `x86_64`, `LSMinimumSystemVersion` 14.0,
+    `macos_minimo` e `macos_minimo_binari` 14.0 in `componenti.json`. L'eseguibile stesso (`impaginatore-app`) ha
+    `minos 10.15` (`vtool -show-build`, `sdk 15.5`): Nuitka lo compila con la versione del Python che compila, non con
+    `MACOSX_DEPLOYMENT_TARGET`. Chiede meno del dichiarato, quindi il controllo passa, e la versione che conta è quella di
+    `Info.plist`: aperto dal Finder su un macOS più vecchio, il sistema dice che il programma non è compatibile. Lanciato
+    direttamente dal Terminale (per esempio `impaginatore-app mcp`) su un macOS più vecchio partirebbe e si fermerebbe
+    sulle librerie da 14.0: è fuori dai sistemi supportati e non è provato.
   Non provato: l'avvio vero su macOS 13 o 14 (i runner sono macOS 15); quello che vale è il controllo sui binari.
 - Finestre di scelta: quelle del Finder (osascript), come nel pacchetto Python.
 
@@ -386,7 +393,11 @@ A ogni versione:
    rosso, le note della bozza dicono cosa manca (per esempio il Mac con chip Apple senza runner): rilanciare i job
    falliti con `gh run rerun <id> --failed` finché la bozza è completa, a distanza di 20–30 minuti se mancano le
    macchine macOS. Se invece un test è **fallito** non c'è bozza: si corregge, si cancella il tag (`git push origin
-   :refs/tags/v<versione>`) e si ricomincia dal punto 1.
+   :refs/tags/v<versione>`) e si ricomincia dal punto 1. Se è fallito un pacchetto per un errore (non per mancanza di
+   macchine), la bozza c'è ma è incompleta e il rilancio non basta, perché il tag punta al codice con l'errore: si
+   corregge, si cancellano la bozza (`gh release delete v<versione> --yes`) e il tag, e si rifà il tag sul commit
+   corretto. L'indirizzo di una bozza è `…/releases/tag/untagged-…`: si apre dalla pagina Releases o con `gh release view
+   v<versione>`.
 5. Facoltativo: `python strumenti/rilascio.py pubblica v<versione> --prova` prepara tutto in
    `dist/pubblica-<versione>` (scarica, ricontrolla, firma) senza caricare né pubblicare niente.
 6. `python strumenti/rilascio.py pubblica v<versione> --novita-it "…" --novita-en "…"` (una opzione per riga di
@@ -417,8 +428,16 @@ compilati il file va messo nel repository sul tag del rilascio (è firmato e non
   riconoscono e il programma dice che non le apre (come il pacchetto Python senza l'extra `heic`).
 - Inno Setup e Nuitka sono strumenti di costruzione: non entrano nel programma.
 - Le licenze delle dipendenze Python passano da `strumenti/controlli.py licenze` (`LICENZE_AMMESSE`): in `sicurezza.yml`
-  per Linux, nella pipeline dei pacchetti per macOS e Windows. `compila.py` non le ricontrolla: copia i testi e scrive la
-  licenza dichiarata di ogni distribuzione inclusa, e avvisa se una non ha file di licenza.
+  per Linux, nella pipeline dei pacchetti per macOS e Windows (sui tag e con l'avvio manuale). `compila.py` non le
+  ricontrolla: copia i testi e scrive la licenza dichiarata di ogni distribuzione inclusa, e avvisa se una non ha file di
+  licenza.
+- Una dipendenza che non dichiara la licenza nei metadati va in `LICENZE_CONTROLLATE_A_MANO` (`controlli.py`) con nome e
+  versione, dopo aver letto il file di licenza della sua ruota: pip-licenses la salta solo a quella versione, e un test la
+  confronta con `uv.lock`. Oggi una sola: **clr-loader 0.3.1** (solo Windows, la usa pythonnet per la finestra), MIT nel
+  file `LICENSE` della ruota ma senza licenza nei metadati. Il 16/11/2026 ha fermato il pacchetto Windows al primo tag
+  (sui rami `pacchetti/**` il controllo non gira); provato in locale con le dipendenze di Windows (`uv pip install
+  --python-platform x86_64-pc-windows-msvc`) per Python 3.11, 3.12 e 3.14: senza la voce fallisce come nella pipeline,
+  con la voce passa.
 - `componenti.json` elenca anche i nomi delle librerie native che Nuitka ha messo nel programma. Quasi tutte vengono
   dalle ruote (e sono coperte dalle loro licenze, per esempio `cv2/LICENSE-3RD-PARTY.txt`); quelle che Nuitka prende dal
   sistema di costruzione vanno guardate a mano nell'elenco a ogni cambio di runner.
