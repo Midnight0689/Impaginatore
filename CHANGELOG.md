@@ -49,6 +49,12 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-039` **mcp** — Strumenti `elenca_prodotti` e `imposta_prodotto`; `crea_progetto` accetta `prodotto`, `esporta` accetta `formato: "consegna"`; i prodotti si nominano con id, mai con percorsi. _File:_ `src/impaginatore/mcp/strumenti.py`, `src/impaginatore/mcp/server.py`. _Rif:_ `T-208`.
 - `AGG-040` **licenze** — Firma dei cataloghi (Ed25519, dominio `IMPAGINATORE-CATALOGO-v1`): verificato, non verificato o rifiutato; comando `firma-catalogo` nello strumento delle chiavi del negozio; cancello `preset_laboratori` per i cataloghi non generici. _File:_ `src/impaginatore/laboratori/catalogo.py`, `marketing/negozio/chiavi/chiavi.py`, `src/impaginatore/licenze/__init__.py`. _Rif:_ `T-208`.
 - `AGG-041` **piattaforma** — Finestra di scelta del catalogo (.json) su macOS, Tk, Zenity, Kdialog e nella finestra del programma. _File:_ `src/impaginatore/piattaforma/dialoghi.py`, `src/impaginatore/desktop/dialoghi.py`. _Rif:_ `T-208`.
+- `AGG-042` **piattaforma** — Testi dell'interfaccia in una tabella per area e lingua (italiano e inglese), lingua presa dal sistema al primo avvio e salvata. _File:_ `src/impaginatore/lingua.py`, `src/impaginatore/risorse/testi/`. _Rif:_ `T-206`.
+- `AGG-043` **progetti** — «Lingua…» nel menu della schermata Album. _File:_ `src/impaginatore/risorse/home.html`, `src/impaginatore/home/server.py`. _Rif:_ `T-206`.
+- `AGG-044` **desktop** — La finestra chiede conferma prima di chiudersi durante un'esportazione. _File:_ `src/impaginatore/desktop/finestra.py`. _Rif:_ `T-206`.
+- `AGG-045` **editor** — Esito strutturato delle esportazioni in `/api/esito`, uguale in ogni lingua. _File:_ `src/impaginatore/editor/server.py`. _Rif:_ `T-206`.
+- `AGG-046` **editor** — Sotto i 1280 px il pannello di destra diventa un foglio («Pannello», Esc), tela più grande, contorno sulle cornici dopo un annulla, un album senza spread apre su «Impagina», avviso con «Ripeti» o «Annulla» quando l'assistente annulla o ripete. _File:_ `src/impaginatore/risorse/index.html`. _Rif:_ `UX-016`, `UX-008`, `UX-003`.
+- `AGG-047` **test** — Controllo automatico dell'accessibilità della schermata Album e dell'editor, prova in Chrome di prodotto del laboratorio e consegna, controllo della tabella dei testi. _File:_ `tests/test_ux_accessibilita.py`, `tests/test_ux_consegna.py`, `tests/test_lingua.py`. _Rif:_ `T-206`, `T-208`.
 
 ### Modificato
 
@@ -67,6 +73,8 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-013` **ci** — Il controllo delle licenze installa anche l'extra `desktop`; `MIT-0` ammessa (cffi, solo Windows). _File:_ `strumenti/controlli.py`. _Rif:_ `T-201`.
 - `MOD-014` **ci** — I controlli installano l'extra `mcp` per test, copertura e licenze; licenze verificate anche su Python 3.14; ammessa `Apache-2.0 OR BSD-3-Clause` (cryptography); eccezione motivata per il generatore casuale della bozza. _File:_ `strumenti/controlli.py`, `src/impaginatore/motore/bozza.py`. _Rif:_ `T-203`.
 - `MOD-015` **editor** — Tastiera: Tab torna al fuoco del browser, la tela piena passa a F, etichette Ctrl/⌘ secondo il sistema. _File:_ `src/impaginatore/risorse/index.html`. _Rif:_ `UX-019`.
+- `MOD-016` **editor** — Editor, server, motore, validazione e laboratori in italiano e inglese; bersagli da 24 px; testi incoerenti corretti (formati delle foto, nomi dei comandi, simboli della tastiera secondo il sistema). _File:_ `src/impaginatore/risorse/index.html`, `src/impaginatore/editor/server.py`, `src/impaginatore/laboratori/`. _Rif:_ `T-206`, `UX-019`.
+- `MOD-017` **mcp** — Descrizioni degli strumenti e risposte nella lingua dell'utente; esito delle esportazioni letto da `/api/esito`. _File:_ `src/impaginatore/mcp/strumenti.py`, `src/impaginatore/mcp/server.py`. _Rif:_ `T-206`.
 
 ### Corretto
 
@@ -163,3 +171,4 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `DOC-033` **mcp** — Guida all'assistente AI per chi usa il programma: cosa può e non può fare, cosa riceve e cosa esce dal computer (testi sempre, immagini solo con l'interruttore o `--consenti-immagini`), configurazione di Claude Desktop e Claude Code, dieci richieste d'esempio, problemi frequenti. _File:_ `docs/manuale/assistente/INDICE.md`, `docs/manuale/assistente/02-cosa-vede.md`, `docs/manuale/assistente/03-collegare.md`. _Rif:_ `T-403`.
 - `DOC-034` **documenti** — Guida per sviluppatori (ambiente con uv, avvio, test e fixture, copertura, `strumenti/controlli.py`, struttura del codice, nuova operazione dell'editor con il test, testi dell'interfaccia, sicurezza, registro) e LEGGIMI con indice dei documenti e comandi uv. _File:_ `docs/sviluppo/GUIDA.md`, `LEGGIMI.md`. _Rif:_ `T-404`.
 - `DOC-035` **documenti** — `CATALOGHI.md` (formato, firma, licenza, prodotto nel progetto, controllo, consegna, limiti) e la guida per chi scrive un catalogo; aggiornati `ARCHITETTURA.md`, `FORMATO-PROGETTO.md`, `LICENZE.md`, `MCP.md`. _File:_ `docs/architettura/CATALOGHI.md`, `docs/laboratori/SCRIVERE-UN-CATALOGO.md`. _Rif:_ `T-208`.
+- `DOC-036` **documenti** — Glossario italiano-inglese, architettura (lingua, `/api/esito`, chiusura), manuale, schermate 2.0 in italiano e inglese. _File:_ `docs/prodotto/ux/GLOSSARIO.md`, `docs/architettura/`, `docs/manuale/`, `docs/prodotto/ux/schermate/2.0/`. _Rif:_ `T-206`.
