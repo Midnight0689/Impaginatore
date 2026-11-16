@@ -14,7 +14,7 @@
     {"id": "T-102", "fase": 1, "titolo": "Server interno protetto", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "fatto"},
     {"id": "T-103", "fase": 1, "titolo": "Correzione dei bug confermati", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-002", "T-006"], "stato": "fatto"},
     {"id": "T-104", "fase": 1, "titolo": "Copertura dei test al 100 %", "ruolo": "Ingegneri di prodotto", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "fatto"},
-    {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "da_fare"},
+    {"id": "T-105", "fase": 1, "titolo": "Prove dell'interfaccia nel browser", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "fatto", "nota": "Coperto dalle prove in Chrome di T-205, T-206 e T-208"},
     {"id": "T-106", "fase": 1, "titolo": "Verifica indipendente delle correzioni", "ruolo": "Security & QA Lead", "dipende_da": ["T-101", "T-102", "T-103"], "stato": "fatto", "nota": "Rilievi VER-001…015 chiusi il 16/11/2026 (VER-007…009 con T-104)"},
 
     {"id": "T-201", "fase": 2, "titolo": "Finestra desktop con pywebview", "ruolo": "Ingegnere di prodotto", "dipende_da": ["T-102"], "stato": "in_verifica"},
