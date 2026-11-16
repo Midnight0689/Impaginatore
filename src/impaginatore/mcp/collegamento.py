@@ -35,10 +35,11 @@ class NonRaggiungibile(Exception):
 
 class Errore(ValueError):
     """il server ha risposto con un errore: codice HTTP, messaggio per l'utente, licenza (403 di una funzione di fascia),
-    causa (il «codice» che l'editor aggiunge ai rifiuti che il programma deve riconoscere senza leggere il testo: «altra_scheda»)"""
+    causa (il «codice» che l'editor aggiunge ai rifiuti che il programma deve riconoscere senza leggere il testo:
+    «altra_scheda», «problemi_bloccanti»), dati (la risposta intera, per i rifiuti che portano altro: l'elenco dei problemi)"""
 
-    def __init__(self, codice, messaggio, licenza=False, causa=None):
-        super().__init__(messaggio); self.codice, self.licenza, self.causa = codice, licenza, causa
+    def __init__(self, codice, messaggio, licenza=False, causa=None, dati=None):
+        super().__init__(messaggio); self.codice, self.licenza, self.causa, self.dati = codice, licenza, causa, dati or {}
 
 
 def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
@@ -51,7 +52,7 @@ def chiedi(porta, gettone, percorso, corpo=None, timeout=30, binario=False):
         try: d = json.loads(e.read(65536))
         except ValueError: d = None
         d = d if isinstance(d, dict) else {}
-        raise Errore(e.code, str(d.get("errore") or lingua.t("mcp.errore_http", codice=str(e.code))), d.get("licenza") is True, d.get("codice") if isinstance(d.get("codice"), str) else None) from None
+        raise Errore(e.code, str(d.get("errore") or lingua.t("mcp.errore_http", codice=str(e.code))), d.get("licenza") is True, d.get("codice") if isinstance(d.get("codice"), str) else None, d) from None
     except (OSError, ValueError) as e: raise NonRaggiungibile(type(e).__name__) from None          # non tradotto: nome tecnico dell'errore, non arriva all'utente          # connessione rifiutata, tempo scaduto, porta di un altro programma
     if len(b) > MAX_RISPOSTA: raise Errore(413, lingua.t("mcp.risposta_troppo_grande"))
     if binario: return b

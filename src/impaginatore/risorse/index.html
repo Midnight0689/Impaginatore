@@ -36,8 +36,7 @@
   button.danger:hover:not(:disabled) { color: var(--danger); }
   button.piatto { background: transparent; }
   button.ico { width: 28px; padding: 0; }
-  button.lock::after { content: ""; width: 10px; height: 10px; margin-left: 2px; background: currentColor; opacity: .7; -webkit-mask: var(--lucchetto) center/contain no-repeat; mask: var(--lucchetto) center/contain no-repeat; }
-  :root { --lucchetto: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 11V8a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z'/%3E%3C/svg%3E"); }
+  button.lock::after { content: ""; width: 10px; height: 10px; margin-left: 2px; background: currentColor; opacity: .7; -webkit-mask: url("/risorse/lucchetto.svg") center/contain no-repeat; mask: url("/risorse/lucchetto.svg") center/contain no-repeat; }   /* lucchetto: file statico del programma (la CSP, img-src 'self', blocca i data:) */
   :focus { outline: none; }
   :focus-visible { outline: var(--imp-bordo-fuoco) solid var(--accent); outline-offset: 1px; }
   input, select, textarea { font: inherit; color: var(--text); background: var(--bar); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 8px; }
@@ -534,6 +533,7 @@ const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFraction
 const t = (k, p) => { const s = TESTI[k]; if (s === undefined) { console.error("testo mancante: " + k); return k; } return p ? s.replace(/\{(\w+)\}/g, (m, x) => p[x] == null ? m : typeof p[x] === "number" ? fN(p[x]) : String(p[x])) : s; };      // testo semplice (textContent, title)
 const tn = (k, n, p) => t(k + (n === 1 ? "_1" : "_n"), Object.assign({ n }, p));                  // plurale: chiave_1 / chiave_n
 const tH = (k, p) => escH(t(k, p));                                                                 // per innerHTML: testo e parametri protetti (i testi della tabella non hanno HTML)
+const elencoT = v => v.length < 2 ? v.join("") : t("comune.elenco", { primi: v.slice(0, -1).join(", "), ultimo: v[v.length - 1] });      // «A, B e C» / «A, B and C»
 const TT = t;                                                                     // lo stesso, dove «t» è già il nome di una variabile (modelli, testi)
 let lastTxDown = { k: null, t: 0 }, textTool = false, FONTS = [], msel = [], S = null, cur = 0, sel = null, dragData = null, cropMode = false, view = null, SELP = [], lastClick = null;
 const $ = id => document.getElementById(id);
@@ -597,8 +597,8 @@ async function api(path, body) {
   const j = await r.json();
   if (j.errore) {
     if (j.licenza) foglio(t("editor.lic.non_compresa_tit"), j.errore, [{ t: t("comune.chiudi"), v: false }, { t: t("editor.lic.vedi"), v: true, main: true }]).then(v => { if (v) vaiProgetti(); });       // 403 della licenza: spiegato, non un errore secco
-    else toast(j.codice === "altra_scheda" ? t("editor.msg.altra_finestra") : j.errore, true);
-    const e = new Error(j.errore); e.licenza = !!j.licenza; e.codice = j.codice || ""; throw e;
+    else if (j.codice !== "problemi_bloccanti") toast(j.codice === "altra_scheda" ? t("editor.msg.altra_finestra") : j.errore, true);      // problemi_bloccanti: li mostra chi ha chiesto (Esporta)
+    const e = new Error(j.errore); e.licenza = !!j.licenza; e.codice = j.codice || ""; e.dati = j; throw e;
   }
   return j;
 }
@@ -691,7 +691,7 @@ function render() {
 function renderVuoto() {                                                                // stato vuoto della tela (UX-008): cosa fare adesso, con un pulsante
   const n = S.photos.length, libere = S.photos.filter(p => p.sp == null && !p.tolta).length, el = $("nospread");
   const k = n ? "editor.vuoto.spread" : "editor.vuoto.foto";
-  el.innerHTML = `<h2>${escH(t(k + "_tit"))}</h2><div>${escH(t(k + "_testo", { n, libere }))}</div><div class="azioni"></div>`;
+  el.innerHTML = `<h2>${escH(t(k + "_tit"))}</h2><div>${escH(t(k + "_testo", { n, libere, foto: tn("editor.conta.foto", n) }))}</div><div class="azioni"></div>`;
   const az = el.querySelector(".azioni"), b = (txt, f, main) => { const x = document.createElement("button"); x.textContent = txt; if (main) x.className = "primary"; x.onclick = f; az.appendChild(x); };
   if (!n) { b(t("editor.vuoto.aggiungi"), () => fbOpen("folder"), true); }
   else { if (libere >= 10) b(t("editor.vuoto.bozza"), () => apriBozza(), true); b(t("editor.vuoto.scegli"), () => { view = "foto"; render(); }, libere < 10); }
@@ -803,7 +803,7 @@ function gapMarks() {                       // misure degli stacchi dello spread
 }
 async function gapToggle() {
   GAPCHK = !GAPCHK; render(); if (!GAPCHK) return;
-  const d = await spaziDi(); toast(d.n ? t("editor.spazi.stato", { ok: d.ok, n: d.n, ref: cm2(cmOf(d.ref)) }) + (d.diversi ? " · " + t("editor.spazi.diversi", { n: d.diversi }) : "") : t("editor.spazi.nessuna"));
+  const d = await spaziDi(); toast(d.n ? tn("editor.spazi.stato", d.ok, { tot: d.n, ref: cm2(cmOf(d.ref)) }) + (d.diversi ? " · " + tn("editor.spazi.diversi", d.diversi) : "") : t("editor.spazi.nessuna"));
 }
 function gapMenu(btn) {       // menu di «Correggi spazi»: a quale misura devono essere uguali gli stacchi, questo spread o tutto l'album
   if ($("gapmenu")) { $("gapmenu").remove(); return; }
@@ -830,7 +830,7 @@ const spaziOp = o => Object.assign(o, { modo: GAPMODE }, GAPMODE === "custom" ? 
 async function gapFix(si = cur, quiet = false) {          // «Correggi spazi» dello spread: operazione «spazi» del motore, un solo passo d'annulla
   if (!S.spreads.length) return 0;
   const d = await op(spaziOp({ op: "spazi", s: si })); if (!d) return 0; const e = d.esito || {};
-  if (!quiet) toast(!e.corretti ? (e.diversi ? t("editor.spazi.restano", { n: e.diversi }) : t("editor.spazi.gia_giusti")) : e.diversi ? t("editor.spazi.restano", { n: e.diversi }) : t("editor.spazi.uguali"), false, e.corretti ? annullaAz() : null);
+  if (!quiet) toast(!e.corretti ? (e.diversi ? tn("editor.spazi.restano", e.diversi) : t("editor.spazi.gia_giusti")) : e.diversi ? tn("editor.spazi.restano", e.diversi) : t("editor.spazi.uguali"), false, e.corretti ? annullaAz() : null);
   return e.corretti || 0;
 }
 async function gapFixAll() {                               // tutto l'album: «Sistema» con i soli spazi (un passo d'annulla; licenza: correzione_spaziature_album)
@@ -1263,7 +1263,7 @@ const provK = () => S.spreads[cur] ? cur + ":" + S.spreads[cur].h : "";
 function renderSpreadSide(P) {
   const sp = S.spreads[cur], nf = sp.items.filter(i => i.k !== "t").length, k = provK();
   const tipo = m => t(m === "W" ? "editor.sbar.bianca" : "editor.sbar.piena").toLowerCase();
-  P.innerHTML = `<div class="insp"><div class="nm">${escH(t("editor.side.spread", { n: nomeSpread(cur) }))}</div><div class="sub">${escH(t("editor.side.spread_sub", { n: nf, sx: tipo(sp.L), dx: tipo(sp.R) }))}</div>
+  P.innerHTML = `<div class="insp"><div class="nm">${escH(t("editor.side.spread", { n: nomeSpread(cur) }))}</div><div class="sub">${escH(t("editor.side.spread_sub", { foto: tn("editor.conta.foto", nf), sx: tipo(sp.L), dx: tipo(sp.R) }))}</div>
     <div class="sec" style="display:flex;align-items:center;gap:6px"><span id="provt" style="flex:1">${escH(t("editor.prov.titolo"))}</span><button id="provm" class="ico piatto" aria-haspopup="menu" aria-label="${escH(t("editor.prov.menu"))}" title="${escH(t("editor.prov.menu"))}">${IC("more")}</button></div>
     <div id="provl"><div class="empty">${escH(t("editor.prov.carico"))}</div></div><div id="provlock"></div></div>`;
   $("provm").onclick = e => { const r = e.currentTarget.getBoundingClientRect(); ctxMenu({ preventDefault() {}, stopPropagation() {}, clientX: r.left - 160, clientY: r.bottom + 4 }, [
@@ -1274,7 +1274,7 @@ function renderSpreadSide(P) {
 }
 function disegnaProvini() {
   const d = PROV.d, L = $("provl"), tutti = (d.utente || []).map(x => Object.assign({ tuo: true }, x)).concat(d.items || [], PROV.piu ? d.piu || [] : []);
-  $("provt").textContent = tutti.length ? t("editor.prov.n", { n: (d.items || []).length + (d.utente || []).length, k: d.n || 0 }) + (d.lato ? " · " + t(d.lato === "L" ? "editor.prov.solo_sx" : "editor.prov.solo_dx") : "") : t("editor.prov.titolo");
+  $("provt").textContent = tutti.length ? tn("editor.prov.disposizioni", d.n || 0, { d: (d.items || []).length + (d.utente || []).length }) + (d.lato ? " · " + t(d.lato === "L" ? "editor.prov.solo_sx" : "editor.prov.solo_dx") : "") : t("editor.prov.titolo");
   L.innerHTML = ""; if (!tutti.length) { L.innerHTML = `<div class="empty">${escH(d.nota || t("editor.prov.nessuna"))}</div>`; return; }
   const g = document.createElement("div"); g.className = "proofs"; L.appendChild(g);
   tutti.forEach((x, n) => {
@@ -1284,7 +1284,7 @@ function disegnaProvini() {
     tile.tabIndex = 0; tile.setAttribute("role", "button"); tile.setAttribute("aria-label", (x.tuo ? x.nome : t("editor.prov.numero", { n: n + 1 })) + (x.cur ? " · " + t("editor.prov.attuale") : "")); tile.title = tile.getAttribute("aria-label");
     tile.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tile.click(); } }; g.appendChild(tile);
   });
-  if (!PROV.piu && (d.piu || []).length) { const b = document.createElement("button"); b.className = "piatto"; b.style.marginTop = "8px"; b.textContent = t("editor.prov.altre", { n: d.piu.length }); b.onclick = () => { PROV.piu = true; disegnaProvini(); }; L.appendChild(b); }
+  if (!PROV.piu && (d.piu || []).length) { const b = document.createElement("button"); b.className = "piatto"; b.style.marginTop = "8px"; b.textContent = tn("editor.prov.altre", d.piu.length); b.onclick = () => { PROV.piu = true; disegnaProvini(); }; L.appendChild(b); }
   if (S.licenza && S.licenza.funzioni.modelli_personali === false) $("provlock").innerHTML = `<div class="lockmsg">${escH(S.licenza.motivi.modelli_personali || "")}</div>`;
 }
 async function salvaModello() {                               // «Salva come modello…»: il nome si scrive in un campo del foglio, non in una finestra del browser
@@ -1309,25 +1309,30 @@ function ctlSemaforo() {
   const b = $("ctlb"), d = CTL.d; b.classList.remove("ok", "att", "no"); b.classList.toggle("on", CTL.aperto); b.setAttribute("aria-pressed", CTL.aperto ? "true" : "false");
   if (!d || !S.spreads.length) { b.title = conTasto(t("editor.top.controlla_tit"), "C"); return; }
   b.classList.add(d.conta.blocca ? "no" : d.conta.guarda ? "att" : "ok");
-  b.title = conTasto(d.conta.blocca ? t("editor.ctl.sem_blocca", { n: d.conta.blocca }) : d.conta.guarda ? t("editor.ctl.sem_guarda", { n: d.conta.guarda }) : t("editor.ctl.sem_ok"), "C");
+  b.title = conTasto(d.conta.blocca ? tn("editor.ctl.sem_blocca", d.conta.blocca) : d.conta.guarda ? tn("editor.ctl.sem_guarda", d.conta.guarda) : t("editor.ctl.sem_ok"), "C");
   b.setAttribute("aria-label", b.title);
 }
 function apriControlla(v = !CTL.aperto) {
   CTL.aperto = v; if (v) { sel = null; msel = []; CTL.rev = null; if (!panels()[1]) { const [l, , p_] = panels(); setPanels(l, true, p_); } } render(); if (v) { ctlCorri(); const p = $("insp"); if (p) p.focus({ preventScroll: true }); }
 }
 const LIV = { blocca: "editor.ctl.blocca", guarda: "editor.ctl.guarda", info: "editor.ctl.info" };
+const ctlCorrezioni = (spazi, tono) => elencoT([spazi ? tn("editor.ctl.parte_spazi", spazi) : "", tono ? tn("editor.ctl.parte_tono", tono) : ""].filter(Boolean));      // «gli spazi di 2 spread e il tono di 3 foto»: senza le parti a zero
+function ctlSpiega(x) {                                       // cosa fa «Sistema» e cosa resta a mano; con niente da correggere non promette correzioni
+  const resta = x.restano ? tn("editor.ctl.restano", x.restano) : "";
+  return x.spazi + x.tono ? t("editor.ctl.sistema_spiega", { cosa: ctlCorrezioni(x.spazi, x.tono) }) + (resta ? " " + resta : "") : resta || t("editor.ctl.niente_sistema");
+}
 function renderControlla() {
   const P = $("insp"), d = CTL.d; P.tabIndex = -1;
   if (!d) { P.innerHTML = `<div class="insp ctl"><div class="nm">${escH(t("editor.ctl.titolo"))}</div><div class="empty">${escH(t("editor.ctl.controllo"))}</div></div>`; return; }
   const L = S.licenza || { funzioni: {}, motivi: {} }, nSis = d.sistema.spazi + d.sistema.tono, tonoOk = L.funzioni.uniformita_tono !== false, album = L.funzioni.correzione_spaziature_album !== false;
-  const esito = d.pronto ? (d.conta.guarda ? t("editor.ctl.pronto_guarda", { n: d.conta.guarda }) : t("editor.ctl.pronto")) : t("editor.ctl.non_pronto", { n: d.conta.blocca });
+  const esito = d.pronto ? (d.conta.guarda ? tn("editor.ctl.pronto_guarda", d.conta.guarda) : t("editor.ctl.pronto")) : t("editor.ctl.non_pronto", { n: d.conta.blocca });
   const riga = p => `<button class="pb" data-i="${d.problemi.indexOf(p)}"><i class="${p.livello}"></i><span>${escH(p.testo.replace(/^Spread \d+: /, ""))}<small>${escH(p.s != null ? t("editor.ctl.dove", { n: nomeSpread(p.s) }) + (p.side ? " · " + t(p.side === "L" ? "editor.sbar.sinistra" : "editor.sbar.destra").toLowerCase() : "") : t("editor.ctl.non_usata"))}</small></span>${p.sistema ? `<span class="sis">${escH(t("editor.ctl.si_sistema"))}</span>` : ""}</button>`;
-  const gruppo = liv => { const L2 = d.problemi.filter(p => p.livello === liv); return L2.length ? `<h3>${escH(t(LIV[liv] + "_h", { n: L2.length }))}</h3>${L2.slice(0, 200).map(riga).join("")}${L2.length > 200 ? `<div class="empty">${escH(t("editor.ctl.altri", { n: L2.length - 200 }))}</div>` : ""}` : ""; };
+  const gruppo = liv => { const L2 = d.problemi.filter(p => p.livello === liv); return L2.length ? `<h3>${escH(t(LIV[liv] + "_h", { n: L2.length }))}</h3>${L2.slice(0, 200).map(riga).join("")}${L2.length > 200 ? `<div class="empty">${escH(tn("editor.ctl.altri", L2.length - 200))}</div>` : ""}` : ""; };
   P.innerHTML = `<div class="insp ctl"><div style="display:flex;align-items:center"><div class="nm" style="flex:1">${escH(t("editor.ctl.titolo"))}</div><button id="ctlx" class="ico piatto" aria-label="${escH(t("comune.chiudi"))}" title="${escH(conTasto(t("comune.chiudi"), t("editor.tasti.k_esc")))}">✕</button></div>
     <div class="esito ${d.pronto ? "pronto" : "nonpronto"}" role="status">${escH(esito)}</div>
-    <div class="conta">${["blocca", "guarda", "info"].map(k => `<span><i class="${k}"></i>${escH(t(LIV[k] + "_n", { n: d.conta[k] }))}</span>`).join("")}</div>
+    <div class="conta">${["blocca", "guarda", "info"].map(k => `<span><i class="${k}"></i>${escH(tn(LIV[k], d.conta[k]))}</span>`).join("")}</div>
     <div class="azioni"><button id="ctlsis" class="primary${album ? "" : " lock"}" ${nSis ? "" : "disabled"}>${escH(nSis ? t("editor.ctl.sistema_n", { n: nSis }) : t("editor.ctl.sistema"))}</button><button id="ctluni" class="${tonoOk ? "" : "lock"}">${escH(t("editor.ctl.uniforma"))}</button><button id="ctlric">${escH(t("editor.ctl.ricontrolla"))}</button></div>
-    <div class="empty" style="font-size:12px">${escH(nSis ? t("editor.ctl.sistema_spiega", { spazi: d.sistema.spazi, tono: d.sistema.tono, restano: d.sistema.restano }) : d.sistema.restano ? t("editor.ctl.restano", { n: d.sistema.restano }) : t("editor.ctl.niente_sistema"))}</div>
+    <div class="empty" style="font-size:12px">${escH(ctlSpiega(d.sistema))}</div>
     ${album ? "" : `<div class="lockmsg">${escH(L.motivi.correzione_spaziature_album || "")} ${escH(t("editor.ctl.uno_alla_volta"))}</div>`}
     ${gruppo("blocca")}${gruppo("guarda")}${gruppo("info")}</div>`;
   $("ctlx").onclick = () => apriControlla(false);
@@ -1339,7 +1344,7 @@ function renderControlla() {
 async function sistemaTutto(spread, soloTono) {                 // «Sistema» (spazi + tono) o «Uniforma» (solo tono): un solo passo d'annulla
   const o = Object.assign({ op: "sistema" }, ctlBody(), soloTono ? { spazi: false, tono: true } : { spazi: true }, spread ? { spread } : {});
   const d = await op(o); if (!d) return; const e = d.esito || {};
-  toast(e.spazi || e.tono ? t("editor.ctl.sistemato", { spazi: e.spazi || 0, tono: e.tono || 0 }) : t("editor.ctl.niente_fatto"), false, e.spazi || e.tono ? annullaAz() : null);
+  toast(e.spazi || e.tono ? t("editor.ctl.sistemato", { cosa: ctlCorrezioni(e.spazi, e.tono) }) : t("editor.ctl.niente_fatto"), false, e.spazi || e.tono ? annullaAz() : null);
   CTL.rev = null; ctlCorri();
 }
 function vaiProblema(p) {                                       // clic su un problema: lo spread e la cornice giusti, il pannello resta aperto
@@ -1368,7 +1373,7 @@ const BZ = { ritmo: "alterna", per: 0, stelle: true, seme: 0, d: null };
 async function apriBozza() {
   if (licenzaNo("impaginazione_automatica_album")) return;
   const libere = S.photos.filter(p => p.sp == null && !p.tolta).length;
-  if (libere < 10) { foglio(t("editor.bozza.poche_tit"), t("editor.bozza.poche", { n: libere }), [{ t: t("comune.chiudi"), v: false, main: true }]); return; }
+  if (libere < 10) { foglio(t("editor.bozza.poche_tit"), tn("editor.bozza.poche", libere), [{ t: t("comune.chiudi"), v: false, main: true }]); return; }
   let o = $("bozd"); if (o) o.remove(); o = document.createElement("div"); o.id = "bozd"; o.className = "veil sheet"; o.style.display = "flex"; const prima = document.activeElement;
   o.innerHTML = `<div class="dlg larga" role="dialog" aria-modal="true" aria-labelledby="bzt"><h3 id="bzt">${escH(t("editor.bozza.titolo"))}</h3><p class="empty" id="bzs" style="margin:0 0 12px">${escH(t("editor.bozza.sotto", { n: libere }))}</p>
     <div class="bz-opz"><label>${escH(t("editor.bozza.ritmo"))}</label><div class="seg" id="bzr" role="group" aria-label="${escH(t("editor.bozza.ritmo"))}">${["alterna", "piene", "bianche"].map(r => `<button data-r="${r}" class="${BZ.ritmo === r ? "on" : ""}" aria-pressed="${BZ.ritmo === r}">${escH(t("editor.bozza.r_" + r))}</button>`).join("")}</div>
@@ -1383,7 +1388,7 @@ async function apriBozza() {
   const carica = async () => {
     $("bzok").disabled = true; $("bzl").innerHTML = `<div class="empty">${escH(t("editor.bozza.preparo"))}</div>`;
     try { BZ.d = await api("/api/bozza", Object.assign({ ritmo: BZ.ritmo, stelle: BZ.stelle, seme: BZ.seme }, BZ.per ? { per_spread: BZ.per } : {})); } catch (e) { $("bzl").innerHTML = ""; return; }
-    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: d.spreads.length, nfoto: d.foto, capitoli: d.capitoli, per: cmF(d.per_spread) });
+    const d = BZ.d; $("bzs").textContent = t("editor.bozza.esito", { spread: tn("editor.conta.spread", d.spreads.length), nfoto: tn("editor.conta.foto", d.foto), capitoli: d.capitoli, per: cmF(d.per_spread) });
     let capo = -1; $("bzl").innerHTML = d.spreads.map((s, n) => { const testa = s.capitolo !== capo ? `<div class="bz-cap">${escH(t("editor.bozza.capitolo", { n: s.capitolo + 1 }))}${s.ora ? ` <span class="mono" style="font-size:12px;color:var(--dim)">${escH(s.ora)}</span>` : ""}</div>` : ""; capo = s.capitolo;
       return testa + `<figure><img loading="lazy" alt="${escH(t("editor.bozza.anteprima", { n: n + 1 }))}" src="/img/bozza/${n}?k=0.08&v=${BZ.seme}-${encU(BZ.ritmo)}-${BZ.per}"><figcaption><b>${nomeSpread(S.spreads.length + n)}</b><span>${escH(tn("editor.conta.foto", s.foto.length))}${s.taglia > 1.25 ? " · ×" + cmF(Math.round(s.taglia * 10) / 10) : ""}</span></figcaption></figure>`; }).join("");
     $("bzok").disabled = !d.spreads.length; $("bzok").textContent = tn("editor.bozza.aggiungi_sp", d.spreads.length); $("bzok").focus();
@@ -1573,8 +1578,8 @@ function albumHtml(C) {
   const rows = TONOALL.map(r => { const st = C ? r.c : r.a, bad = st.filter(x => x === "no").length, att = st.filter(x => x === "att").length; return { ...r, st, bad, att, w: bad * 100 + att }; });
   const nb = rows.reduce((a, r) => a + r.bad, 0), na = rows.reduce((a, r) => a + r.att, 0), nsp = rows.filter(r => r.bad || r.att).length, tot = rows.reduce((a, r) => a + r.n, 0);
   const list = tonoSort === "w" ? rows.slice().sort((a, b) => b.w - a.w || a.s - b.s) : rows;
-  const head = nb ? t("editor.tono.da_sistemare", { n: nb }) : na ? t("editor.tono.da_guardare", { n: na }) : t("editor.tono.album_ok");
-  const sub = nb || na ? t(nb ? "editor.tono.album_sub_a" : "editor.tono.album_sub_b", { sis: nb, gua: na, nsp, spread: rows.length, nfoto: tot }) : t("editor.tono.album_tutte", { n: tot });
+  const head = nb ? tn("editor.tono.da_sistemare", nb) : na ? tn("editor.tono.da_guardare", na) : t("editor.tono.album_ok");
+  const sub = nb || na ? t(nb ? "editor.tono.album_sub_a" : "editor.tono.album_sub_b", { sis: nb, gua: na, nsp, spread: rows.length, nfoto: tot }) : tn("editor.tono.album_tutte", tot);
   const cards = list.map(r => `<div class="tac ${r.s === cur ? "cur" : ""}" data-s="${r.s}" title="${tH("editor.tono.card_album_tit", { n: r.s + 1, score: r.score })}${r.sc.some(Boolean) ? " · " + tH("editor.tono.card_scena") : ""}"><div class="tach"><b>${r.s + 1}</b><span class="tacs ${r.score >= 85 ? "ok" : r.score >= 60 ? "att" : "no"}">${r.score}</span></div><div class="tacd">${r.st.map((x, i) => `<i class="${x}${r.sc[i] ? " sc" : ""}"></i>`).join("")}</div></div>`).join("");
   return `<div class="tl"><div class="th"><span class="tt">${escH(head)}</span><span class="ts" title="${escH(sub)}">${escH(sub)}</span><button id="tsort" class="${tonoSort === "w" ? "on" : ""}" title="${tH("editor.tono.peggiori_tit")}">${tH("editor.tono.peggiori")}</button></div><div id="talb">${cards}</div></div>`;
 }
@@ -1593,8 +1598,8 @@ function drawTono() {
     if (Math.abs(x.d) > (x.ze || T.zona) || !C) return t("editor.tono.p_" + (x.d < 0 ? "scura" : "chiara") + (g ? "_2" : "_1"), { n: x.n });
     return t(x.H < T.hz[0] ? "editor.tono.p_spente" : "editor.tono.p_bruciate", { n: x.n }); };
   const parts = no.map(x => why(x, 1)).concat(at.map(x => why(x, 0)));
-  const head = no.length ? t("editor.tono.da_sistemare", { n: no.length }) : at.length ? t("editor.tono.da_guardare", { n: at.length }) : t("editor.tono.in_linea");
-  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " " + t("editor.tono.altre_ok") : "") : t("editor.tono.sub_ok", { n: its.filter(x => tst(x) !== "escl").length, rif: Math.round(T.rif), zona: T.zona });
+  const head = no.length ? tn("editor.tono.da_sistemare", no.length) : at.length ? tn("editor.tono.da_guardare", at.length) : t("editor.tono.in_linea");
+  const sub = parts.length ? parts.join(", ").replace(/^./, c => c.toUpperCase()) + "." + (okn ? " " + t("editor.tono.altre_ok") : "") : tn("editor.tono.sub_ok", its.filter(x => tst(x) !== "escl").length, { rif: Math.round(T.rif), zona: T.zona });
   const sc = T.score >= 85 ? "ok" : T.score >= 60 ? "att" : "no", H = 110, k1 = 1.1, lo = Math.round((50 - T.zona * k1) / 100 * H), hi = Math.round((50 + T.zona * k1) / 100 * H);
   const dot = st => st;
   const cols = its.map(x => {
@@ -2047,7 +2052,7 @@ function ritoccoSub(names) {                                    // sottomenu «R
   return [{ t: t("editor.rit.copia"), off: !one || !RITCLIPOK(n0), f: () => { RITCLIP = Object.assign({}, RITCLIPSRC(n0)); toast(t("editor.rit.copiato")); } },
     { t: names.length > 1 ? t("editor.rit.incolla_n", { n: names.length }) : t("editor.rit.incolla"), off: !RITCLIP, f: () => op({ op: "rit", photos: names, copia: RITCLIP }).then(() => toast(t("editor.rit.incollato"), false, annullaAz())) },
     { t: t("editor.rit.azzera"), f: () => op({ op: "rit", photos: names, reset: true }) },
-    one && P.col && P.rit && sameCol.length ? { t: t("editor.rit.applica", { col: nomeCol(P.col), n: sameCol.length }), f: () => op({ op: "rit", photos: sameCol, copia: P.rit }).then(() => toast(t("editor.rit.applicato", { n: sameCol.length }), false, annullaAz())) } : null];
+    one && P.col && P.rit && sameCol.length ? { t: t("editor.rit.applica", { col: nomeCol(P.col), n: sameCol.length }), f: () => op({ op: "rit", photos: sameCol, copia: P.rit }).then(() => toast(tn("editor.rit.applicato", sameCol.length), false, annullaAz())) } : null];
 }
 function cartellaItems(names) { const one = names.length === 1, n0 = names[0];
   return [{ t: lblFinder(), off: !one, f: () => api("/api/reveal", { foto: n0 }) }, { t: t("editor.menu.copia_nome"), off: !one, f: () => { try { navigator.clipboard.writeText(n0); toast(t("editor.menu.nome_copiato", { nome: n0 })); } catch (x) {} } }]; }
@@ -2125,7 +2130,7 @@ function renderLib() {
   G.style.setProperty("--th", GF.sz + "px"); gBar(S.photos);
   const VIS = visPhotos(), tw = GF.sz > 200 ? 560 : 300;
   const free = S.photos.filter(p => p.sp == null && !p.tolta).length;
-  $("libinfo").textContent = t("editor.lib.info", { n: S.photos.length, libere: free, usate: S.photos.filter(p => p.sp != null).length });
+  $("libinfo").textContent = t("editor.lib.info", { foto: tn("editor.conta.foto", S.photos.length), libere: free, usate: S.photos.filter(p => p.sp != null).length });
   if (!S.photos.length) { G.innerHTML = `<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0;line-height:2">${tH("editor.lib.vuota")}<br>${tH("editor.lib.premi_a")} <b>${tH("editor.foto.importa_cartella")}</b> ${tH("editor.lib.premi_o")} <b>${tH("editor.foto.importa_foto")}</b> ${tH("editor.lib.premi_fine")}</div>`; }
   else if (!VIS.length) G.innerHTML = `<div class="empty" style="grid-column:1/-1;text-align:center;padding:60px 0">${tH("editor.pool.nessuna_filtri")}</div>`;
   const MISS = missSet();
@@ -2155,7 +2160,7 @@ async function loadProposals() {
   $("tplwhere").style.display = names.length ? "" : "none";
   if (!names.length) { cap.innerHTML = `${tH("editor.lib.seleziona")}<br><span style="font-size:12px">${tH("editor.lib.seleziona_nota", { maiusc: t("editor.tasti.maiusc") })}</span>`; L.innerHTML = ""; return; }
   const d = await api("/api/templates", { photos: names }); if (seq !== propSeq) return;
-  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${tH("editor.lib.sel_n", { n: names.length })}</b> · ${tH("editor.lib.sel_modelli", { n: d.tot + (d.utente || []).length })}` : `<b>${escH(tn("editor.conta.foto", names.length))}</b>: ${tH("editor.lib.sel_nessun")}`;
+  cap.innerHTML = d.items.length || (d.utente || []).length ? `<b>${escH(tn("editor.lib.sel", names.length))}</b> · ${escH(tn("editor.lib.sel_modelli", d.tot + (d.utente || []).length))}` : `<b>${escH(tn("editor.conta.foto", names.length))}</b>: ${tH("editor.lib.sel_nessun")}`;
   L.innerHTML = "";
   const mk = (t, lab) => mkTile(t, lab, async () => {
     const pos = $("wherenew").value === "after" && S.spreads.length ? cur + 1 : S.spreads.length;
@@ -2167,7 +2172,7 @@ async function loadProposals() {
     await op({ op: "newspread", pos, L: t.L, R: t.R }); SELP = []; lastClick = null; cur = pos; toast(TT("editor.lib.spread_aggiunto", { n: pos + 1 })); render();
   });
   d.items.slice(0, 40).forEach((t, n) => L.appendChild(mkn(t, TT("editor.lib.modello_n", { n: n + 1 }))));
-  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = t("editor.lib.altri", { n: d.piu.length }); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => L.appendChild(mkn(t, TT("editor.lib.taglio_maggiore", { n: n + 1 })))); }; L.appendChild(more); }
+  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = tn("editor.lib.altri", d.piu.length); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => L.appendChild(mkn(t, TT("editor.lib.taglio_maggiore", { n: n + 1 })))); }; L.appendChild(more); }
 }
 // ---- titoli dei pulsanti subito (senza attendere quelli lenti del sistema)
 (function () {
@@ -2208,7 +2213,7 @@ function fbUpdate() {
   document.querySelectorAll("#fbmain .fbi[data-n]").forEach(e => e.classList.toggle("sel", FB.sel.includes(e.dataset.n)));
   const nf = FB.data.files.length, folder = FB.mode === "folder";
   $("fbhint").textContent = folder ? t("editor.fb.hint_cartella") : t("editor.fb.hint_foto", { tutte: tasto("⌘ A"), cmd: tasto("⌘"), maiusc: t("editor.tasti.maiusc") });
-  $("fbinfo").textContent = folder ? t("editor.fb.info_cartella", { n: nf }) : t("editor.fb.info_foto", { sel: FB.sel.length, n: nf });
+  $("fbinfo").textContent = folder ? tn("editor.fb.info_cartella", nf) : tn("editor.fb.info_foto", FB.sel.length, { tot: nf });
   $("fbgo").textContent = folder ? t("editor.fb.importa_cartella") : FB.sel.length ? tn("editor.fb.importa_n", FB.sel.length) : t("editor.fb.importa_foto"); $("fbgo").disabled = folder ? false : !FB.sel.length;
   $("fball").style.display = $("fbnone").style.display = folder ? "none" : "";
 }
@@ -2222,10 +2227,10 @@ async function doImport(paths) {
   try {
     const res = await api("/api/import", { paths, a_caldo: true });          // a caldo: le foto entrano senza riavvio, la cronologia d'annulla resta (UX-012)
     if (!res.riavvio) {
-      if (!res.importate) { toast(res.saltate ? t("editor.imp.nessuna_nuova", { n: res.saltate }) : t("editor.imp.nessuna"), true); return; }
-      S = await api("/api/state"); render(); toast(t("editor.imp.fatto", { n: res.aggiunte || res.importate }) + (res.saltate ? " · " + t("editor.imp.saltate", { n: res.saltate }) : "")); return;
+      if (!res.importate) { toast(res.saltate ? tn("editor.imp.nessuna_nuova", res.saltate) : t("editor.imp.nessuna"), true); return; }
+      S = await api("/api/state"); render(); toast(tn("editor.imp.fatto", res.aggiunte || res.importate) + (res.saltate ? " · " + tn("editor.imp.saltate", res.saltate) : "")); return;
     }
-    $("busymsg").innerHTML = `${tH("editor.imp.importo", { n: res.importate })}<br><span style="color:var(--dim);font-size:12px">${tH("editor.imp.importo_nota")}</span>`; $("busy").style.display = "flex";
+    $("busymsg").innerHTML = `${escH(tn("editor.imp.importo", res.importate))}<br><span style="color:var(--dim);font-size:12px">${tH("editor.imp.importo_nota")}</span>`; $("busy").style.display = "flex";
     const boot = S.boot; await new Promise(r => setTimeout(r, 1500));
     for (let i = 0; i < 600; i++) { try { const p = await (await rq("/api/ping")).json(); if (p.boot !== boot) { location.reload(); return; } } catch (e) {} await new Promise(r => setTimeout(r, 1000)); }
   } catch (e) { $("busy").style.display = "none"; }
@@ -2243,7 +2248,7 @@ async function openTpl() {
   const ut = d.utente || [], hasPh = S.spreads[cur].items.some(i => i.k !== "t");
   const apply = t => async () => { closeTpl(); sel = null; await op({ op: "template", s: cur, L: t.L, R: t.R }); };
   const mod = async (body, msg) => { try { await api("/api/modelli", body); toast(msg); openTpl(); } catch (e) {} };
-  T.innerHTML = `<div class="bar"><b>${tH("editor.tpl.per", { n: d.n || 0 })}${d.lato ? " · " + tH(d.lato === "L" ? "editor.prov.solo_sx" : "editor.prov.solo_dx") : ""}</b>${hasPh ? `<button id="tsave" class="primary" title="${tH("editor.tpl.salva_tit")}">${tH("editor.tpl.salva")}</button>` : ""}<span class="empty">${escH(d.nota || (d.lato ? t("editor.tpl.altra_testo") + " " : "") + (d.tot ? t("editor.tpl.possibili", { n: d.tot }) : ""))}</span></div>
+  T.innerHTML = `<div class="bar"><b>${escH(tn("editor.tpl.per", d.n || 0))}${d.lato ? " · " + tH(d.lato === "L" ? "editor.prov.solo_sx" : "editor.prov.solo_dx") : ""}</b>${hasPh ? `<button id="tsave" class="primary" title="${tH("editor.tpl.salva_tit")}">${tH("editor.tpl.salva")}</button>` : ""}<span class="empty">${escH(d.nota || (d.lato ? t("editor.tpl.altra_testo") + " " : "") + (d.tot ? t("editor.tpl.possibili", { n: d.tot }) : ""))}</span></div>
     <div id="tut" style="display:none"><div class="sec" style="margin:10px 4px 4px">${tH("editor.tpl.tuoi")}</div><div class="grid" id="gut"></div></div>
     <div id="tstd" style="display:none"><div class="sec" style="margin:10px 4px 4px">${tH("editor.tpl.standard")}</div><div class="grid" id="gstd"></div></div>
     <div class="empty" id="tnone" style="display:none">${escH(d.nota || t("editor.tpl.nessuno"))}</div>`;
@@ -2257,7 +2262,7 @@ async function openTpl() {
       const b = document.createElement("button"); b.textContent = l; b.title = ti; b.style.cssText = "font-size:11px;padding:2px 6px"; if (l === TT("editor.mod.elimina_ok")) b.className = "danger"; b.onclick = ev => { ev.stopPropagation(); fn(); }; bar.appendChild(b); });
     tile.appendChild(bar); $("gut").appendChild(tile); });
   d.items.forEach((t, n) => $("gstd").appendChild(mkTile(t, t.cur ? TT("editor.prov.attuale") : TT("editor.lib.modello_n", { n: n + 1 }), apply(t))));
-  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = TT("editor.lib.altri", { n: d.piu.length }); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => { const k = mkTile(t, TT("editor.lib.taglio_maggiore", { n: n + 1 }), apply(t)); $("gstd").appendChild(k); }); }; $("tstd").appendChild(more); $("tstd").style.display = ""; }
+  if ((d.piu || []).length) { const more = document.createElement("button"); more.className = "tmore"; more.textContent = tn("editor.lib.altri", d.piu.length); more.onclick = () => { more.remove(); d.piu.forEach((t, n) => { const k = mkTile(t, TT("editor.lib.taglio_maggiore", { n: n + 1 }), apply(t)); $("gstd").appendChild(k); }); }; $("tstd").appendChild(more); $("tstd").style.display = ""; }
   $("tut").style.display = ut.length ? "" : "none"; $("tstd").style.display = d.items.length || (d.piu || []).length ? "" : "none"; if (!d.items.length && !ut.length) $("tnone").style.display = "";
   if (!ut.length) T.querySelector("#tstd .sec").style.display = "none";
 }
@@ -2272,16 +2277,16 @@ $("nmenu").addEventListener("keydown", e => { const v = [...$("nmenu").querySele
 let pxres = null;
 function prjInfo() {
   const m = S.mancanti || [], n = S.photos.length;
-  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${tH("editor.prj.mancano", { m: m.length, n })}</b> ${tH("editor.prj.mancano_nota")}<br>${escH(m.slice(0, 12).join(", "))}${m.length > 12 ? "…" : ""}<br>${tH("editor.prj.premi")}` : escH(t("editor.prj.tutte", { n }));
+  $("prjfoto").innerHTML = m.length ? `<b style="color:var(--danger)">${escH(tn("editor.prj.mancano", m.length, { tot: n }))}</b> ${tH("editor.prj.mancano_nota")}<br>${escH(m.slice(0, 12).join(", "))}${m.length > 12 ? "…" : ""}<br>${tH("editor.prj.premi")}` : escH(tn("editor.prj.tutte", n));
 }
-function updMiss() { const m = S.mancanti || [], b = $("missb"); b.style.display = m.length ? "" : "none"; b.textContent = t("editor.prj.mancanti_btn", { n: m.length }); }
+function updMiss() { const m = S.mancanti || [], b = $("missb"); b.style.display = m.length ? "" : "none"; b.textContent = tn("editor.prj.mancanti_btn", m.length); }
 const openPrj = () => { prjInfo(); $("prjd").style.display = "flex"; };
 $("prjb").onclick = openPrj; $("missb").onclick = openPrj; $("prjclose").onclick = () => $("prjd").style.display = "none";
 $("prelink").onclick = async () => {
   try {
     const r = await api("/api/ricollega", {}); if (r.annullato) return;
     S = await api("/api/state"); render(); prjInfo();
-    toast(r.mancanti.length ? t("editor.prj.ritrovate_ancora", { trovate: r.trovate, n: r.mancanti.length }) : t("editor.prj.ritrovate_tutte", { n: r.trovate }), !!r.mancanti.length);
+    toast(r.mancanti.length ? t("editor.prj.ritrovate_ancora", { trovate: r.trovate, n: r.mancanti.length }) : tn("editor.prj.ritrovate_tutte", r.trovate), !!r.mancanti.length);
   } catch (e) {}
 };
 $("pcheck").onclick = async () => {
@@ -2352,11 +2357,23 @@ document.querySelectorAll("input[name=er]").forEach(r => r.onchange = updCount);
 $("expb").onclick = openExp; $("ecancel").onclick = () => $("exp").style.display = "none";
 $("echoose").onclick = async () => { const r = await api("/api/pick", { kind: "folder" }); if (r.paths[0]) $("edest").value = r.paths[0].replace(/\/$/, ""); };
 let epoll = null, eres = null;
+async function consegnaLoStesso(d) {                            // true: consegna lo stesso; «Controlla l'album» chiude Esporta e apre il controllo
+  const righe = d.problemi.slice(0, 8).map(p => "• " + (p.s != null ? t("editor.ctl.dove", { n: nomeSpread(p.s) }) + ": " : "") + p.testo.replace(/^Spread \d+: /, ""));
+  if (d.conta > righe.length) righe.push(tn("editor.ctl.altri", d.conta - righe.length));
+  const v = await foglio(t("editor.exp.bloccano_tit"), tn("editor.exp.bloccano_testo", d.conta) + "\n\n" + righe.join("\n"),
+    [{ t: t("editor.exp.consegna_stesso"), v: "si", danger: true }, { t: t("editor.ctl.titolo"), v: "ctl" }, { t: t("comune.annulla"), v: false, main: true }]);
+  if (v === "ctl") { $("exp").style.display = "none"; apriControlla(true); }
+  return v === "si";
+}
 $("ego").onclick = async () => {
   const body = { fmt: EF, range: document.querySelector('input[name=er]:checked').value === "all" ? "" : $("erange").value, dest: $("edest").value, ev: +$("eev").value || 0,
     res: $("ejq").value, q: EF === "jpg" ? +$("ejqq").value : 80, width: +$("epw").value, numeri: $("epn").checked, force: $("epf").checked };
   if (EF === "psd" && !(await foglio(t("editor.exp.psd_tit"), t("editor.exp.psd_testo"), [{ t: t("comune.annulla"), v: false }, { t: t("editor.exp.psd_ok"), v: true, main: true }]))) return;
-  try { await api("/api/export", body); } catch (e) { return; }
+  try { await api("/api/export", body); }
+  catch (e) {                                                   // consegna con problemi che bloccano la stampa: li dice e chiede (UX-013)
+    if (e.codice !== "problemi_bloccanti" || !(await consegnaLoStesso(e.dati))) return;
+    try { await api("/api/export", Object.assign(body, { conferma_problemi: true })); } catch (x) { return; }
+  }
   $("ego").disabled = true; $("elog").style.display = "block"; $("elog").textContent = t("editor.exp.avvio"); eres = null; esportazione(true, EF);
   clearInterval(epoll);
   epoll = setInterval(async () => {
@@ -2366,7 +2383,7 @@ $("ego").onclick = async () => {
     if (e.risultato) eres = e.risultato;
     if (e.finito) {
       clearInterval(epoll); esportazione(false); $("ego").disabled = false; const sk = e.saltati, er = e.errori.length;
-      if (sk.length) toast(t("editor.exp.saltati", { n: sk.length, primo: "spread " + sk[0].spread + " (" + sk[0].motivo + ")" }), true); else if (er) toast(t("editor.exp.errore"), true); else if (eres) toast(t("editor.exp.finita"), false, { t: lblFinder(), f: () => api("/api/reveal", { path: eres }) });
+      if (sk.length) toast(tn("editor.exp.saltati", sk.length, { primo: "spread " + sk[0].spread + " (" + sk[0].motivo + ")" }), true); else if (er) toast(t("editor.exp.errore"), true); else if (eres) toast(t("editor.exp.finita"), false, { t: lblFinder(), f: () => api("/api/reveal", { path: eres }) });
       if (eres) $("ereveal").style.display = ""; render();
     }
   }, 800);
@@ -2493,7 +2510,7 @@ $("stgsw").addEventListener("click", e => { const c = e.target.dataset && e.targ
 $("stgsw").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.dataset && e.target.dataset.c !== undefined) { e.preventDefault(); setStg(e.target.dataset.c); } });
 setStg((() => { try { const v = localStorage.getItem("stgBg2"); return v === null ? "" : v; } catch (_) { return ""; } })());
 api("/api/state").then(s => { S = s; aggSeen = s.agg ? s.agg.n : 0; view = "album"; render(); applicaTesti(); tema();
-  if ((S.scartate || []).length) toast(t("editor.msg.scartate", { n: S.scartate.length, elenco: S.scartate.slice(0, 3).map(x => x.n + " (" + x.motivo + ")").join(" · ") + (S.scartate.length > 3 ? " …" : "") }), true); });
+  if ((S.scartate || []).length) toast(tn("editor.msg.scartate", S.scartate.length, { elenco: S.scartate.slice(0, 3).map(x => x.n + " (" + x.motivo + ")").join(" · ") + (S.scartate.length > 3 ? " …" : "") }), true); });
 </script>
 </body>
 </html>

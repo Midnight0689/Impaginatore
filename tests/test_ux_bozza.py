@@ -2,6 +2,7 @@
 disposizioni che riempiono le pagine) e lo applica con un solo passo d'annulla; gli spread esistenti non si toccano.
 Le licenze: la bozza è «impaginazione_automatica_album», «Sistema» su tutto l'album «correzione_spaziature_album»."""
 import io
+import os
 
 import pytest
 from PIL import Image
@@ -18,6 +19,19 @@ def f(i, dt, ar=1.5, stella=False): return dict(i=i, dt=dt, ar=ar, stella=stella
 
 def t(L, R, cost=0.1, worst=0.1, mL="I", mR="I"):
     return dict(cost=cost, worst=worst, L=dict(mode=mL, module=L[0], mirror=False, photos=L[1]), R=dict(mode=mR, module=R[0], mirror=False, photos=R[1]))
+
+
+def test_foto_delle_schermate_a_capitoli(home, apri_editor):
+    """le foto finte delle schermate (strumenti/schermate_ux.py) sono di tre momenti della giornata, come quelle di un
+    matrimonio: dopo gli spread fatti a mano delle schermate, la bozza della scena «editor-bozza» ha almeno due capitoli"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("schermate_ux", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "strumenti", "schermate_ux.py"))
+    S = importlib.util.module_from_spec(spec); spec.loader.exec_module(S)
+    p = home.nuovo({"nome": "Schermate", "w": "60", "h": "22.5"}); S.foto_finte(os.path.join(p, "Foto"))
+    c = apri_editor(p); S.prepara_album(c)
+    dt = [x["dt"] for x in sorted(A.M, key=lambda m: m["n"])]
+    assert dt == sorted(dt) and len(BZ.capitoli([dict(i=i, dt=d) for i, d in enumerate(dt)])) == 3, "nomi in ordine di scatto, tre momenti"
+    b = c.post("/api/bozza", {}); assert b["capitoli"] >= 2, b["capitoli"]
 
 
 # ---------------------------------------------------------------- funzioni pure
@@ -89,6 +103,13 @@ def test_bozza_proposta_e_applicata(editor):
     st = op(c, op="undo"); assert len(st["spreads"]) == 0
     st = op(c, op="bozza"); assert len(E.SP) == len(st["spreads"]) == len(p["spreads"]), "senza spread: la stessa proposta, calcolata lì"
     ok, r = c.prova("/api/bozza", {"seme": 3}); assert not ok and r["errore"].endswith("ce ne sono 0")
+
+
+def test_bozza_con_una_foto_sola(editor):
+    """una foto ancora da usare: «ce n'è 1», non «ce ne sono 1»"""
+    c = editor
+    op(c, op="newspreadsel", names=["H01", "H02", "V03", "V04"], pos=0); op(c, op="newspreadsel", names=["Q05", "H06", "V07", "H08", "Q09"], pos=1)
+    ok, r = c.prova("/api/bozza", {}); assert not ok and r["errore"] == "Per la bozza servono almeno 10 foto ancora da usare: ce n'è 1"
 
 
 def test_bozza_dopo_gli_spread_esistenti(editor):

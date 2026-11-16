@@ -103,6 +103,22 @@ def test_licenza_dalla_schermata_dei_progetti(home_srv, licenza):
 
 @pytest.mark.browser
 @pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
+def test_lucchetto_della_licenza_senza_blocchi_della_csp(editor, licenza, tmp_path):
+    """Esporta › PSD nella prova: il pulsante ha il lucchetto, un file statico del programma che la CSP ammette (prima era
+    un indirizzo data: che img-src 'self' bloccava)"""
+    from cdp import Browser
+    _spread(editor); licenza.usa(None)
+    with Browser(tmp_path) as b:
+        b.apri(editor.srv.indirizzo_avvio(), 2)
+        b.js("openExp()"); b.js("document.querySelector('#efmt [data-f=psd]').click()"); b.pausa(1)
+        assert b.js("document.getElementById('ego').classList.contains('lock')") and b.js("document.getElementById('ego').disabled")
+        assert "/risorse/lucchetto.svg" in b.js("getComputedStyle(document.getElementById('ego'), '::after').maskImage")
+        assert any(s == 200 and u.endswith("/risorse/lucchetto.svg") for s, u in b.risposte()), "l'icona si carica"
+        assert b.violazioni_csp() == [] and not b.problemi(), b.problemi()
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(not CHROME, reason="serve Chrome o Chromium")
 def test_finestra_della_licenza_nel_browser(home_srv, licenza, tmp_path):
     from cdp import Browser
     licenza.usa(None)

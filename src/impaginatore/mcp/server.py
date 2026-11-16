@@ -145,8 +145,8 @@ def crea(assistente):
 
     @tool(**_testi("esporta"), annotations=MODIFICA)
     def esporta(progetto: Progetto, formato: Literal["jpg", "pdf", "consegna"], spread: Annotated[str, _descr("mcp.arg_esporta_spread", max_length=200)] = "",
-                risoluzione: Literal["stampa", "schermo"] = "stampa") -> CallToolResult:
-        return risultato(a.esporta, progetto, formato, spread, risoluzione)
+                risoluzione: Literal["stampa", "schermo"] = "stampa", conferma_problemi: Annotated[bool, _descr("mcp.arg_esporta_conferma")] = False) -> CallToolResult:
+        return risultato(a.esporta, progetto, formato, spread, risoluzione, conferma_problemi)
 
     @tool(**_testi("stato_esportazione"), annotations=LETTURA)
     def stato_esportazione(progetto: Progetto) -> CallToolResult:

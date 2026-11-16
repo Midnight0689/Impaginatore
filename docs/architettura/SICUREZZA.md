@@ -107,6 +107,11 @@ connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-
 Le risposte che non sono pagine hanno `script-src 'none'`. Ogni pagina ha un solo `<script nonce>`; i gestori in linea
 (`onclick="…"`) sono stati tolti (la prova `test_intestazioni_di_sicurezza_e_csp` lo controlla).
 
+Le immagini dei fogli di stile (per esempio il lucchetto dei comandi che la licenza non comprende) sono file statici del
+programma, `/risorse/<nome>.svg`: un indirizzo `data:` lo bloccherebbe `img-src 'self'`, che non si allarga. Nessuna
+pagina o foglio di stile usa `data:` (`test_niente_indirizzi_data_nelle_pagine`); i test che aprono le pagine in Chrome
+falliscono a ogni violazione della CSP, anche se il test non la cerca (`tests/cdp.py`, `Browser.__exit__`).
+
 **`'unsafe-inline'` negli stili** resta perché l'interfaccia usa centinaia di attributi `style="…"` nei modelli HTML.
 Rischio: iniezione di CSS (niente script; con `img-src 'self'` e `connect-src 'self'` nessuna uscita verso altri siti).
 Passo successivo: spostare gli stili dei modelli in classi o in `elemento.style` (che la CSP non blocca), poi

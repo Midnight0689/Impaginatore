@@ -58,9 +58,11 @@ Con `--scope user` vale in tutte le cartelle. Lo stesso blocco `mcpServers` di C
 
 ### Immagini
 
-Di serie l'assistente riceve solo testo. Per mandargli anche miniature delle foto e anteprime degli spread, l'utente
-accende «L'assistente può vedere le immagini» nella schermata Album (menu ⋯ › Assistente AI…, con una conferma), oppure
-aggiunge l'opzione alla configurazione e riavvia l'assistente:
+Di serie l'assistente riceve solo testo, che arriva anche al suo fornitore: nomi degli album e delle loro cartelle, nomi
+dei file delle foto, proporzioni, date, stelle ed etichette, disposizioni, testi scritti negli album, esiti del
+controllo (la finestra «Assistente AI» della schermata Album lo dice). Per mandargli anche miniature delle foto e
+anteprime degli spread, l'utente accende «L'assistente può vedere le immagini» nella schermata Album (menu ⋯ ›
+Assistente AI…, con una conferma), oppure aggiunge l'opzione alla configurazione e riavvia l'assistente:
 
 ```json
 "args": ["mcp", "--consenti-immagini"]
@@ -137,7 +139,7 @@ Convenzioni:
 | `sistema_album` | `progetto`, `spread`, `spazi`, `tono`, `gruppo` | spread con spazi corretti, foto con tono corretto | modifica |
 | `annulla` / `ripeti` | `progetto` | il passo annullato o rifatto, con il nome | modifica |
 | `salva` | `progetto` | salvato (con copia della versione precedente in `_backup_editor`) | modifica |
-| `esporta` | `progetto`, `formato` (`jpg`/`pdf`/`consegna`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`) | esito (spread fatti, saltati, errori) e cartella; `consegna`: i file come li chiede il prodotto dell'album, con il riepilogo (CATALOGHI.md); aspetta fino a 45 s | modifica |
+| `esporta` | `progetto`, `formato` (`jpg`/`pdf`/`consegna`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`), `conferma_problemi` (di serie `false`) | esito (spread fatti, saltati, errori) e cartella; `consegna`: i file come li chiede il prodotto dell'album, con il riepilogo (CATALOGHI.md); con problemi che bloccano la stampa non parte e risponde `partita: false`, `problemi_bloccanti` (quanti) e `problemi` (come `controlla_album`); `conferma_problemi: true` consegna lo stesso, solo se l'utente lo chiede; aspetta fino a 45 s | modifica |
 | `stato_esportazione` | `progetto` | esito dell'ultima esportazione chiesta dall'assistente | lettura |
 | `anteprima_spread` | `progetto`, `spread`, `larghezza` (200–1200) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |
 | `miniatura_foto` | `progetto`, `foto`, `lato` (64–512) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |
@@ -179,7 +181,9 @@ Un'immagine restituita da uno strumento arriva al programma dell'assistente e da
 computer. Le foto possono mostrare persone riconoscibili (clienti del fotografo). Per questo:
 
 - **di serie nessuno strumento restituisce pixel**: `anteprima_spread` e `miniatura_foto` rispondono con
-  `consenso.SPIEGAZIONE`, che dice cosa partirebbe, dove andrebbe e come accenderle;
+  `consenso.spiegazione()` (testo `mcp.spiegazione`), che dice che cosa parte già di serie (solo testo: nomi degli album
+  e delle cartelle, nomi dei file, dati delle foto, disposizioni, testi scritti negli album, esiti del controllo), che
+  cosa partirebbe con le immagini, dove andrebbe e come accenderle (interruttore della schermata Album o opzione);
 - si accendono solo in due modi, entrambi dell'utente:
   - l'opzione `--consenti-immagini` scritta dall'utente nella configurazione dell'assistente;
   - l'impostazione del programma in `<dati>/assistente.json` (0600), che scrive solo `consenso.imposta()`, chiamata
@@ -246,8 +250,6 @@ il trattamento dei dati da parte del fornitore dell'assistente (scelta e contrat
   si chiude.
 - L'avvio usa `sys.executable -m impaginatore`, come la schermata per gli editor: con un eseguibile compilato (T-301)
   va rivisto insieme.
-- `consenso.SPIEGAZIONE` (la risposta degli strumenti con le immagini spente) dice ancora solo l'opzione
-  `--consenti-immagini`, non l'interruttore della schermata Album.
 - `stato_esportazione` segue solo l'ultima esportazione dell'assistente per progetto e solo finché il registro
   dell'editor è suo.
 

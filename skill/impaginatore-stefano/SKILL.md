@@ -20,7 +20,7 @@ Rispondi in italiano, breve e diretto, con immagini quando aiutano. La cartella 
 - Mai toccare PSD già ritoccati a mano da Stefano; mai sovrascrivere i suoi PDF/esportazioni.
 - Non usare undo/redo sull'editor vivo per test: lavora su una copia del progetto.
 - Dati globali dell'utente (modelli salvati: `~/Library/Application Support/Impaginatore/modelli_utente.json`; le 1.x li tenevano in `~/.album-tools/`, da dove vengono copiati) non vanno cancellati; i test usano un HOME finto (`pytest` dalla cartella `ROOT`).
-- Prima di modificare il programma leggi `CAMBIAMENTI.md`; dopo ogni modifica aggiungi in cima una voce (cosa, perché, file) con il numero della nuova versione.
-- Dopo ogni modifica al codice: test su copia, riavvio dell'editor, poi `git commit` + `git push` e di' a Stefano che sull'Air basta **legacy/macos/Aggiorna.command**.
+- Prima di modificare il programma leggi `ROOT/AGENTS.md` (regole del repository, vincolanti) e `CHANGELOG.md`, l'unico registro delle modifiche: dopo ogni modifica aggiungi lì la voce, nella forma che dice `AGENTS.md`. `CAMBIAMENTI.md` è il registro storico fino alla 1.5.2 e non si modifica più.
+- Dopo ogni modifica al codice: test su copia, riavvio dell'editor, poi `git commit` con i soli file toccati. **Niente `git push` e niente modifiche a `main` senza una richiesta esplicita del titolare.** Solo dopo un push chiesto dal titolare di' a Stefano che sull'Air basta **legacy/macos/Aggiorna.command**.
 
 - Se qualcosa va storto dopo una modifica: riquadro Versione → «Versioni precedenti» → «Torna a questa» (crea una nuova versione, non cancella nulla).
