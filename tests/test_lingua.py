@@ -36,7 +36,7 @@ nei negli nelle con su sul sullo sulla sui sulle per tra fra che non è e ed o m
 questi queste ti tu tuo tua tuoi tue già più può puoi sono hai ha ho the a an to of and or on for with is are not this that your
 you be it its from into by at as was were has have""".split())
 ELENCO_LIBERO = {"Impaginatore", "Enter", "Escape", "Tab", "Delete", "Backspace", "Shift", "Alt", "Meta", "Control", "Home", "End",
-                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial", "Created", "Stefano", "Imperato",
+                 "Space", "Ctrl", "Newsreader", "Photoshop", "Claude", "Finder", "Helvetica", "Arial", "Stefano", "Imperato",
                  "Italiano", "English", "Album", "Spread", "Pro", "Studio", "Essenziale", "Essential", "Laboratorio"}
 
 
@@ -140,7 +140,7 @@ def stringhe_js(js):
             while j < n and (js[j] != "/" or classe) and js[j] != "\n":
                 if js[j] == "\\": j += 2; continue
                 classe = (classe or js[j] == "[") and js[j] != "]"; j += 1
-            i = j + 1; prima = "x"; continue
+            i = j if j < n and js[j] == "\n" else j + 1; prima = "x"; continue          # non una regex: l'a capo si conta
         if not c.isspace(): prima = c
         i += 1
     return out
@@ -200,7 +200,7 @@ def test_inglese_tradotto_davvero():
     assert uguali == []
     assert [k for k, v in en.items() if "«" in v or "»" in v] == []
     italiane = re.compile(r"\b(il|della|delle|degli|nella|questo|questa|sono|perché|più|già|foto|spread\w* \d+–\d+ e)\b")
-    assert [k for k, v in en.items() if italiane.search(v) and not re.fullmatch(r"[^a-z]*", v)] == []
+    assert [k for k, v in en.items() if italiane.search(SEGNAPOSTO.sub(" ", v)) and not re.fullmatch(r"[^a-z]*", v)] == []
 
 
 # ---------------------------------------------------------------- chiavi usate dal codice
@@ -271,7 +271,7 @@ class _Markup(html.parser.HTMLParser):
     def handle_endtag(self, tag):
         if tag == self.dentro: self.dentro = None
     def handle_data(self, data):
-        if not self.dentro and re.search(r"[A-Za-zÀ-ÿ]{2,}", data) and [w for w in re.findall(r"[A-Za-zÀ-ÿ]{2,}", data) if w not in ELENCO_LIBERO | {"JPG", "PDF", "PSD", "sRGB", "IMP", "by"}]:
+        if not self.dentro and re.search(r"[A-Za-zÀ-ÿ]{2,}", data) and [w for w in re.findall(r"[A-Za-zÀ-ÿ]{2,}", data) if w not in ELENCO_LIBERO | {"JPG", "PDF", "PSD", "sRGB", "IMP"}]:
             self.trovati.append((self.getpos()[0], "testo", data.strip()[:80]))
 
 
@@ -323,6 +323,7 @@ def test_il_controllo_riconosce_i_testi():
     assert [t for _, t in stringhe_js('x = `a ${f(`b ${"c"}`)} d`; y = /\\/"/; z = \'e\';')] == ["c", "b  {x} ", "a  {x}  d", "e"]
     assert any(prosa(x) for x in visibili_html_js('<b title="Chiudi la finestra">x</b>'))
     assert segnata(["x = 'Ciao' // non tradotto: nome di un font"], 1, 1) and not segnata(["x = 'Ciao' // non tradotto:"], 1, 1)
+    assert stringhe_js('x = (a) / 2\ny = "Ciao a te"') == [(2, "Ciao a te")], "una divisione non fa perdere il conto delle righe"
 
 
 # ---------------------------------------------------------------- lingua.py

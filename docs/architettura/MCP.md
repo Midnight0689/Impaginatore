@@ -121,9 +121,11 @@ Convenzioni:
 |---|---|---|---|
 | `stato_programma` | — | versione, licenza (stato, fascia, sola lettura, filigrana, giorni di prova), programma in funzione, progetti aperti, immagini permesse e come accenderle | lettura |
 | `elenca_progetti` | — | per progetto: id, nome, cartella, formato in cm, spread, foto, ultima modifica, aperto; avvia il programma se serve | lettura |
-| `apri_progetto` | `progetto` (id o nome esatto) | riassunto: formato, spread, conteggi delle foto, preparazione, versione, annulla/ripeti; `in_apertura` se dopo 50 s non è pronto | lettura (apre l'editor) |
+| `apri_progetto` | `progetto` (id o nome esatto) | riassunto: formato, spread, conteggi delle foto, preparazione, prodotto del laboratorio, versione, annulla/ripeti; `in_apertura` se dopo 50 s non è pronto | lettura (apre l'editor) |
 | `mostra_editor` | `progetto` | apre l'editor nel browser dell'utente (indirizzo monouso, non restituito) | lettura |
-| `crea_progetto` | `nome`, `larghezza_cm`, `altezza_cm`, `abbondanza_mm`, `spazio_mm`, `margine_mm`, `scegli_cartella_foto` | id e cartella del progetto nuovo; con `scegli_cartella_foto` l'utente sceglie la cartella in una finestra del sistema | modifica |
+| `crea_progetto` | `nome`, `larghezza_cm`, `altezza_cm`, `abbondanza_mm`, `spazio_mm`, `margine_mm`, `scegli_cartella_foto`, `prodotto` | id e cartella del progetto nuovo; con `prodotto` (`catalogo/prodotto`) formato, abbondanza e ppi vengono dal prodotto e le misure non servono; con `scegli_cartella_foto` l'utente sceglie la cartella in una finestra del sistema | modifica |
+| `elenca_prodotti` | — | prodotti dei cataloghi installati (T-208): id `catalogo/prodotto`, nome, laboratorio, misure, verificato, da confermare, consentito dalla licenza | lettura |
+| `imposta_prodotto` | `progetto`, `prodotto` (`null` per toglierlo) | il prodotto dell'album, un passo d'annulla; rifiutato se l'album ha un altro formato | modifica |
 | `aggiungi_foto` | `progetto`, `cosa` (`cartella`/`foto`) | importate, saltate, aggiunte: l'utente sceglie in una finestra del sistema, import a caldo | modifica |
 | `stato_album` | `progetto`, `da_spread`, `quanti` (≤ 50) | spread per pagina: cornici con foto, misure in cm, ppi, ritaglio, libera, bianco e nero; testi | lettura |
 | `elenca_foto` | `progetto`, `filtro` (`tutte`, `libere`, `nell_album`, `con_stella`, `tolte`), `da`, `quanti` (≤ 500) | nome, proporzioni, orientamento, data di scatto, spread, stella, etichetta | lettura |
@@ -135,7 +137,7 @@ Convenzioni:
 | `sistema_album` | `progetto`, `spread`, `spazi`, `tono`, `gruppo` | spread con spazi corretti, foto con tono corretto | modifica |
 | `annulla` / `ripeti` | `progetto` | il passo annullato o rifatto, con il nome | modifica |
 | `salva` | `progetto` | salvato (con copia della versione precedente in `_backup_editor`) | modifica |
-| `esporta` | `progetto`, `formato` (`jpg`/`pdf`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`) | esito (spread fatti, saltati, errori) e cartella; aspetta fino a 45 s | modifica |
+| `esporta` | `progetto`, `formato` (`jpg`/`pdf`/`consegna`), `spread` («1-5, 8»), `risoluzione` (`stampa`/`schermo`) | esito (spread fatti, saltati, errori) e cartella; `consegna`: i file come li chiede il prodotto dell'album, con il riepilogo (CATALOGHI.md); aspetta fino a 45 s | modifica |
 | `stato_esportazione` | `progetto` | esito dell'ultima esportazione chiesta dall'assistente | lettura |
 | `anteprima_spread` | `progetto`, `spread`, `larghezza` (200–1200) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |
 | `miniatura_foto` | `progetto`, `foto`, `lato` (64–512) | immagine JPEG, **solo con il consenso** | lettura, `openWorldHint` |

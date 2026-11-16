@@ -293,6 +293,7 @@ NOMI_FUNZIONI = {
     "export_psd_livelli": "Il PSD a livelli", "impaginazione_automatica_album": "L'impaginazione automatica dell'album",
     "correzione_spaziature_album": "La correzione degli spazi su tutto l'album", "uniformita_tono": "Il controllo del tono dell'album",
     "modelli_personali": "Il salvataggio dei modelli personali", "server_mcp": "Il collegamento con l'assistente AI (MCP)",
+    "preset_laboratori": "L'uso dei cataloghi dei laboratori",
 }
 
 
@@ -307,7 +308,7 @@ def motivo(funzione, st=None):
 
 OP_SENZA_MODIFICHE = frozenset({"copia"})                 # appunti dell'editor: non cambiano il progetto
 OP_FUNZIONI = dict.fromkeys(("tono_fix", "tono_L", "tono_escl"), "uniformita_tono")   # operazioni del pannello del tono; tutte le altre: editor_completo
-ESPORTAZIONI = {"jpg": "export_jpg", "pdf": "export_pdf", "psd": "export_psd_livelli"}
+ESPORTAZIONI = {"jpg": "export_jpg", "pdf": "export_pdf", "psd": "export_psd_livelli", "consegna": "export_jpg"}     # la consegna al laboratorio (T-208) sono JPG
 LETTURE = {"/api/tono": "uniformita_tono", "/api/tono_all": "uniformita_tono"}      # GET dell'editor che sono funzioni di fascia
 
 

@@ -15,6 +15,7 @@ src/impaginatore/
 ├── sicurezza.py         gettone di sessione, URL di avvio monouso, file di sessione per i client locali (docs/architettura/SICUREZZA.md)
 ├── percorsi.py          radici consentite: i percorsi che arrivano dalla pagina restano nelle cartelle del progetto o scelte dall'utente
 ├── giornale.py          registro «impaginatore» su file a rotazione nella cartella dei dati
+├── lingua.py            testi per l'utente in italiano e inglese (T-206): t()/tn() dalla tabella, numeri e date per lingua, lingua in uso
 ├── formato.py           l'unico modulo che legge e scrive l'impaginazione (album.json) e i JSON del progetto; scritture atomiche
 ├── formato_1x.py        spec.py delle 1.x: lettura con ast senza eseguirlo (migrazione) e scrittura per «Esporta per la 1.x»
 ├── validazione.py      controllo dei dati letti da un progetto (album.json, progetto.json, modelli, cache): ErroreProgetto
@@ -22,6 +23,8 @@ src/impaginatore/
 ├── nomi.py             nome del progetto (un dato) e nome di cartella valido su macOS, Windows e Linux
 ├── ed25519.py          firme Ed25519 (RFC 8032) con la sola libreria standard: chiavi di licenza, elenco delle revoche
 ├── licenze/            licenze, fasce di tier.json, prova gratuita, sola lettura, filigrana; tutto in locale (LICENZE.md)
+├── laboratori/         cataloghi dei laboratori (T-208): formato e firma (catalogo.py), installati e importati, prodotto
+│                       dell'album, file della consegna (consegna.py); cataloghi/generico.json (CATALOGHI.md)
 ├── home/server.py       schermata dei progetti: elenco, nuovo, apri (lancia l'editor), ZIP, cestino, aggiornamenti, licenza
 ├── editor/server.py     editor di un album: stato in memoria, operazioni, annulla/ripeti, anteprime, Tono, esportazioni
 ├── motore/              motore di impaginazione (viene dalla skill «impaginazione-album-stefano»)
@@ -40,6 +43,7 @@ src/impaginatore/
 │   ├── azioni.py        mostra nel Finder/Esplora risorse/file manager; Cestino (Finder, PowerShell, gio, freedesktop a mano)
 │   ├── font.py          cartelle dei font, font di ripiego, font dei vecchi titoli, profilo sRGB
 │   ├── photoshop.py     dove sta Photoshop e come eseguire un .jsx (osascript sul Mac, COM via cscript su Windows; su Linux no)
+│   ├── lingua.py        lingua del sistema per il primo avvio (AppleLanguages, GetUserDefaultUILanguage, LANG e simili)
 │   └── processi.py      ambiente dei figli (UTF-8), riavvio con gli stessi argomenti, rilancio ritardato, distacco dal terminale
 ├── aggiornamenti/       interfaccia Aggiornamenti; git.py (checkout git), NonDisponibili (installato o spento), firmati.py (contratto dei pacchetti firmati)
 ├── desktop/             finestra del programma con pywebview (T-201; extra «desktop»): pywebview si carica solo in motore()
@@ -52,7 +56,7 @@ src/impaginatore/
 │   ├── strumenti.py     gli strumenti (Assistente): argomenti controllati, licenza, testi come dati, limiti; senza SDK
 │   ├── consenso.py      immagini all'assistente: spente di serie, --consenti-immagini o <dati>/assistente.json
 │   └── server.py        registrazione con l'SDK (schemi, annotazioni, risposte) e avvio su stdio
-└── risorse/             home.html, index.html (interfaccia), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
+└── risorse/             home.html, index.html (interfaccia), testi/<lingua>/<area>.json (tabella dei testi), vib_lut.npz (vibranza misurata in Photoshop), icona.png (da brand/icona)
 tests/                   pytest; dati/progetto_152 = progetto salvato dalla 1.5.2 (riferimento di parità)
 legacy/macos/            Impaginatore.app (applet compilata), .command, setup.sh; «Editor Album/home.py» è un ponte per l'applet
 skill/impaginatore-stefano/  istruzioni per Claude (SKILL.md, references, assets)
@@ -152,6 +156,7 @@ e controlla che nel pacchetto non ci siano `exec`, `eval`, `compile`, `__import_
 | `home/server.py` (T-201) | FINESTRA (la schermata è nella finestra), `esci` sostituita dalla chiusura della finestra | `desktop.esegui` alla fine |
 | `desktop/finestra.py` | ATTUALE (la finestra di questo processo, per le prove) | `desktop.esegui` / `ospite` alla fine |
 | `piattaforma/font.py` | `_cerca_linux` in `lru_cache` | riavvio |
+| `lingua.py` | `_TABELLE` (tabella di ogni lingua, letta una volta), `_SCELTA` (lingua salvata: si rilegge quando `preferenze.json` cambia) | riavvio / da sola |
 | PIL | `Image.MAX_IMAGE_PIXELS` = `album.limite_pixel()` (160 MP, `IMPAGINATORE_MAX_MPIXEL`), impostato da `carica_progetto` e `apri_foto` | — |
 
 Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor nello stesso processo, uno alla volta.
@@ -176,6 +181,13 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
   registrazione in `mcp.server.crea`; le operazioni dell'editor che può chiamare sono quelle di `OPERAZIONI.md`.
   Le operazioni aggiunte per l'interfaccia nuova e per l'assistente (altra disposizione, sostituisci, controllo,
   «Sistema», bozza, annulla con nome, ricollega con prova, import a caldo) sono descritte in `OPERAZIONI.md`.
+- **Lingua** (T-206): ogni testo per l'utente sta in `risorse/testi/<lingua>/<area>.json` (`it` ed `en`, stesse chiavi e
+  stessi parametri `{nome}`, niente HTML). Le pagine ricevono `TESTI`, `LINGUA` e `LOCALE` dal server (`servizio.pagina`)
+  e usano `t()`, `tn()`, `tH()` (per `innerHTML`, con l'escape) e `fN()`; i moduli Python `lingua.t("area.chiave", nome=…)`
+  al momento del messaggio. La lingua in uso è quella scelta nella schermata Album (`<dati>/preferenze.json`), altrimenti
+  quella del sistema salvata al primo avvio. Una lingua nuova è una cartella `testi/<codice>/` più una voce in
+  `lingua.LINGUE` e `LOCALI`; `tests/test_lingua.py` controlla chiavi, parametri e testi rimasti fuori dalla tabella.
+  Termini inglesi in `docs/prodotto/ux/GLOSSARIO.md`.
 - **Riavvio dell'editor**: `editor.server.riavvia_processo` (di serie `os.execv` con gli stessi argomenti) si può sostituire
   quando l'editor gira dentro un altro processo.
 - **Photoshop**: `piattaforma.photoshop.trova / esegui_jsx / esegui_js`; i test li sostituiscono con un Photoshop finto.
@@ -194,6 +206,7 @@ Conseguenza: in un processo c'è un solo editor «vivo». I test usano l'editor 
 | `IMPAGINATORE_AGGIORNAMENTI=no` | aggiornamenti spenti |
 | `IMPAGINATORE_SENZA_RIAVVIO` | dopo un aggiornamento non riavvia (prove) |
 | `IMPAGINATORE_GETTONE` | gettone di sessione del server di questo processo (lo scrive il server; resta dopo un riavvio, non passa ai figli) |
+| `IMPAGINATORE_LINGUA` | lingua «del sistema» (`it`, `en`, `it_IT`…): vale finché l'utente non ne sceglie una; i test la mettono a `it` |
 | `IMPAGINATORE_MAX_MPIXEL` | milioni di pixel al massimo per foto (predefinito 160) |
 | `IMPAGINATORE_REGISTRO` | livello del registro (`DEBUG`, `INFO`…; predefinito `INFO`) |
 | `ALBUM_PROGETTO` | cartella del progetto per gli script del motore (come nelle 1.x) |

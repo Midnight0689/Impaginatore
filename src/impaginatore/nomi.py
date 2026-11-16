@@ -30,12 +30,13 @@ def nome_progetto(nome):
     return nome
 
 
-def nome_cartella(nome, ripiego="Progetto"):
-    """nome di cartella valido sui tre sistemi ricavato da `nome` (i caratteri vietati diventano «-»)"""
+def nome_cartella(nome, ripiego="Progetto", lunghezza=LUNGHEZZA_CARTELLA):
+    """nome di cartella (o di file) valido sui tre sistemi ricavato da `nome` (i caratteri vietati diventano «-»), al massimo
+    `lunghezza` caratteri"""
     s = unicodedata.normalize("NFC", str(nome or ""))
     s = "".join("-" if invisibile(c) else c for c in s)
     s = _VIETATI.sub("-", s).strip().lstrip(".").strip()
-    s = s[:LUNGHEZZA_CARTELLA].rstrip(" .")
+    s = s[:lunghezza].rstrip(" .")
     if not s: return ripiego
     if s.split(".")[0].rstrip(" ").upper() in _RISERVATI: s = "_" + s          # CON, con.txt, LPT1 ... sono dispositivi su Windows
     return s

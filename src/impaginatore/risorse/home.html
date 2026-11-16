@@ -23,7 +23,7 @@
   button.primario:hover:not(:disabled) { background: var(--imp-accento-fondo-premuto); border-color: var(--imp-accento-fondo-premuto); }
   button.pericolo { background: var(--imp-errore); border-color: var(--imp-errore); color: var(--imp-su-accento); font-weight: 600; }
   button.icona { width: 28px; padding: 0; font-size: 15px; line-height: 1; }
-  button.link { height: auto; padding: 2px 0; border: 0; background: none; color: var(--imp-app-testo-tenue); font-weight: 400; }
+  button.link { height: auto; min-height: 24px; padding: 2px 0; border: 0; background: none; color: var(--imp-app-testo-tenue); font-weight: 400; }
   button.link:hover:not(:disabled) { background: none; color: var(--imp-app-testo); }
   input, textarea { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); background: var(--imp-app-tela); }
   input::placeholder, textarea::placeholder { color: var(--imp-app-testo-tenue); }
@@ -99,11 +99,12 @@
   .dlg .tre { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .dlg .pre { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .dlg .pre button { height: 24px; padding: 0 8px; font-family: var(--imp-font-numeri); font-size: 12px; font-weight: 400; }
   .dlg .info { min-height: 17px; margin-top: 8px; color: var(--imp-app-testo-tenue); font-size: 12px; }
+  .dlg select { width: 100%; height: 28px; padding: 0 8px; font: inherit; color: inherit; border: 1px solid var(--imp-bordo-campo); border-radius: var(--imp-raggio-medio); background: var(--imp-app-tela); }   /* prodotto del laboratorio (T-208) */
   .dlg .avanzate { display: none; } .dlg .avanzate.on { display: block; }
   .dlg .err { min-height: 16px; margin-top: 12px; color: var(--imp-errore); font-size: 12px; }
   .dlg .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   .dlg .corpo { line-height: 1.7; }
-  .dlg label.interr { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; color: var(--imp-app-testo); font-size: 14px; cursor: pointer; }
+  .dlg label.interr { display: flex; align-items: center; gap: 10px; min-height: 28px; margin: 20px 0 0; color: var(--imp-app-testo); font-size: 14px; cursor: pointer; }
   .dlg label.interr input { width: 18px; height: 18px; margin: 0; accent-color: var(--imp-accento); }
   .dlg .corpo .ok { color: var(--imp-successo); } .dlg .corpo .ko { color: var(--imp-errore); }
   .dlg .testo { white-space: pre-line; line-height: 1.5; }
@@ -173,14 +174,18 @@
   <label for="nome" data-t="home.nome_label"></label><input id="nome" data-t-ph="home.nome_ph" autocomplete="off">
   <label for="fdir" data-t="home.foto_label"></label>
   <div class="foto"><input id="fdir" readonly data-t-ph="home.foto_ph"><button id="fpick" type="button" data-t="home.scegli"></button></div>
+  <label for="prod" data-t="home.prodotto_label"></label>
+  <select id="prod"></select>
+  <div class="info" id="prodi"></div>
+  <button id="pimp" type="button" class="link" data-t="home.importa_catalogo"></button>
   <label for="w" data-t="home.dim_label"></label>
-  <div class="due"><input id="w" class="num" inputmode="decimal" value="60" data-t-aria="home.larghezza" data-t-ph="home.larghezza"><span class="tenue">×</span><input id="h" class="num" inputmode="decimal" value="22,5" data-t-aria="home.altezza" data-t-ph="home.altezza"></div>
+  <div class="due"><input id="w" class="num" inputmode="decimal" value="60" data-t-aria="home.larghezza" data-t-ph="home.larghezza"><span class="tenue">×</span><input id="h" class="num" inputmode="decimal" value="22.5" data-t-aria="home.altezza" data-t-ph="home.altezza"></div>
   <div class="pre"><button type="button" data-p="60,22.5"></button><button type="button" data-p="70,25"></button><button type="button" data-p="50,20"></button><button type="button" data-p="40,30"></button></div>
   <div class="info num" id="pinfo"></div>
   <button id="advt" type="button" class="link" aria-expanded="false" aria-controls="adv"></button>
   <div class="avanzate" id="adv"><div class="tre">
     <div><label for="abb" data-t="home.abbondanza"></label><input id="abb" class="num" value="0"></div>
-    <div><label for="spazio" data-t="home.spazio_foto"></label><input id="spazio" class="num" value="2,5"></div>
+    <div><label for="spazio" data-t="home.spazio_foto"></label><input id="spazio" class="num" value="2.5"></div>
     <div><label for="margine" data-t="home.margine"></label><input id="margine" class="num" value="10"></div>
   </div></div>
   <div class="err" id="err" role="alert"></div>
@@ -200,10 +205,20 @@
 <div class="velo" id="vassist"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vassist-t">
   <h3 id="vassist-t" data-t="home.assist_titolo"></h3>
   <div class="corpo" data-t="home.assist_testo"></div>
-  <label class="interr"><input type="checkbox" id="aimg" role="switch" aria-describedby="anota"><span data-t="home.assist_immagini"></span></label>
+  <label class="interr" id="aimgr"><input type="checkbox" id="aimg" role="switch" aria-describedby="anota"><span data-t="home.assist_immagini"></span></label>
   <div class="info" id="anota" data-t="home.assist_nota"></div>
+  <div class="info" id="aopz" data-t="home.assist_opzione"></div>
+  <div class="info" id="amotivo" hidden></div>
   <div class="err" id="aerr" role="alert"></div>
   <div class="btns"><button id="aclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
+</div></div>
+
+<div class="velo" id="vlingua"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vlingua-t">
+  <h3 id="vlingua-t" data-t="home.lingua_titolo"></h3>
+  <div id="lingue" role="radiogroup" aria-labelledby="vlingua-t"></div>
+  <div class="info" data-t="home.lingua_nota"></div>
+  <div class="err" id="lgerr" role="alert"></div>
+  <div class="btns"><button id="lgclose" type="button" class="primario" data-t="comune.chiudi"></button></div>
 </div></div>
 
 <div class="velo" id="vchiedi"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="ch-titolo" aria-describedby="ch-testo">
@@ -214,6 +229,7 @@
 
 <div class="velo" id="vwait"><div class="dlg attesa" role="status"><div class="spin"></div><div id="wmsg"></div></div></div>
 
+<div id="credit"><span data-t="home.creato_da"></span> <b>Stefano Imperato</b></div>
 <script nonce="__NONCE__">
 const TESTI = __TESTI__, LINGUA = "__LINGUA__", LOCALE = "__LOCALE__";           // testi nella lingua in uso, lingua e codice per Intl: li mette il server (T-206, lingua.py)
 const fN = (v, d) => new Intl.NumberFormat(LOCALE, d == null ? { maximumFractionDigits: 2 } : { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);      // numeri secondo la lingua: 22,5 / 22.5
@@ -245,15 +261,15 @@ if (!GETTONE) {
   document.body.textContent = "";
   const d = document.createElement("div"); d.className = "solo";
   const h = document.createElement("h1"); h.textContent = "Impaginatore"; d.appendChild(h);
-  ["home.non_collegata_1", "home.non_collegata_2"].forEach(k => { const p = document.createElement("p"); p.textContent = t(k); d.appendChild(p); });
-  document.body.appendChild(d); throw new Error("scheda non collegata");
+  ["comune.non_collegata_1", "comune.non_collegata_2"].forEach(k => { const p = document.createElement("p"); p.textContent = t(k); d.appendChild(p); });
+  document.body.appendChild(d); throw new Error("scheda non collegata");             // non tradotto: ferma lo script, nessuno la vede
 }
 const rq = (p, o = {}) => fetch(p, Object.assign({}, o, { headers: Object.assign({ "X-Impaginatore-Gettone": GETTONE }, o.headers || {}) }));
 let SIS = "";                                                                    // sistema operativo (dal server): «Mostra nel Finder» o in Esplora risorse
 const lblFinder = () => ({ mac: t("home.mostra_finder"), windows: t("home.mostra_esplora") }[SIS] || t("home.mostra_gestore"));
 async function api(p, b) { const r = await rq(p, b === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); const j = await r.json(); if (j.errore) throw new Error(j.errore); return j; }
-const cm = v => String(v).replace(".", ",");
 const parse = v => parseFloat(String(v).replace(",", "."));
+const cm = v => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2, useGrouping: false }).format(parse(v));      // misure: «22,5» / «22.5» (T-206)
 let LIST = [], VISTI = [], FILTRO = "", CARTELLA = "";
 
 // ---- avvisi in pagina (mai alert): l'errore resta finché non lo chiudi
@@ -267,7 +283,7 @@ const errore = e => avviso(e.message || String(e), "errore");
 
 // ---- finestre: Esc chiude, il fuoco torna dove era, Tab resta dentro
 const PILA = [];
-const focalizzabili = r => [...r.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter(e => !e.disabled && e.offsetParent !== null);
+const focalizzabili = r => [...r.querySelectorAll('button, input, select, textarea, [tabindex="0"]')].filter(e => !e.disabled && e.offsetParent !== null);
 function apri(id, fuoco) {
   const v = $(id); PILA.push({ id, origine: document.activeElement }); v.style.display = "flex";
   const f = fuoco || focalizzabili(v.firstElementChild)[0]; if (f) f.focus();
@@ -325,10 +341,10 @@ document.addEventListener("click", e => { if (!e.target.closest("#menu")) chiudi
 
 // ---- scaffale
 function fmtMod(ts) {
-  if (!ts) return "—"; const d = new Date(ts * 1000), n = new Date(), ora = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  if (!ts) return "—"; const d = new Date(ts * 1000), n = new Date(), ora = d.toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" });
   const g = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(), diff = Math.round((g(n) - g(d)) / 86400000);
   if (diff === 0) return t("home.oggi", { ora }); if (diff === 1) return t("home.ieri", { ora });
-  return d.toLocaleDateString("it-IT", d.getFullYear() === n.getFullYear() ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString(LOCALE, d.getFullYear() === n.getFullYear() ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 function statoDi(p) {
   if (p.errore) return { c: "errore", t: t("home.stato_errore"), m: p.errore };
@@ -397,9 +413,39 @@ function pinfo() { const w = parse($("w").value), h = parse($("h").value); $("pi
 function avanzate(on) { $("adv").classList.toggle("on", on); $("advt").setAttribute("aria-expanded", String(on)); $("advt").textContent = (on ? "▾ " : "▸ ") + t("home.avanzate"); }
 function openNew(scelta) {
   $("err").textContent = ""; $("nome").value = scelta ? scelta.nome || "" : ""; $("fdir").value = scelta ? scelta.path || "" : ""; avanzate(false);
+  $("prod").value = ""; prodotto(); cataloghi();
   apri("vnew", $("nome")); pinfo();
 }
+// ---- prodotti dei laboratori (T-208): il prodotto dà formato e abbondanza; i testi dei cataloghi restano testo (textContent, Option)
+let CAT = [];
+async function cataloghi() {
+  try { CAT = (await api("/api/cataloghi")).cataloghi; } catch (e) { CAT = []; }
+  const sel = $("prod"), ora = sel.value; sel.replaceChildren(new Option(t("home.prodotto_libero"), ""));
+  for (const c of CAT) {
+    const g = document.createElement("optgroup");
+    g.label = c.nome + " · " + c.laboratorio + (c.verificato ? "" : " · " + t("home.non_verificato")) + (c.stato === "da_confermare" ? " · " + t("home.da_confermare") : "");
+    for (const p of c.prodotti) { const o = new Option(p.nome, c.id + "/" + p.id); o.disabled = !c.consentito; g.append(o); }
+    sel.append(g);
+  }
+  sel.value = [...sel.options].some(o => o.value === ora) ? ora : ""; prodotto();
+}
+function prodotto() {
+  const [ci, pi] = $("prod").value.split("/"), c = CAT.find(x => x.id === ci), p = c && c.prodotti.find(x => x.id === pi);
+  ["w", "h", "abb"].forEach(k => $(k).disabled = !!p); document.querySelector(".pre").hidden = !!p;
+  if (p) { $("w").value = cm(2 * p.pagina_cm[0]); $("h").value = cm(p.pagina_cm[1]); $("abb").value = cm(p.abbondanza_mm); }
+  $("prodi").textContent = p ? t("home.prodotto_info", { lab: c.laboratorio, w: cm(p.pagina_cm[0]), h: cm(p.pagina_cm[1]), abb: cm(p.abbondanza_mm), ppi: p.ppi }) : "";
+  pinfo();
+}
+$("prod").onchange = prodotto;
+$("pimp").onclick = async () => {
+  try {
+    const r = await api("/api/importa-catalogo", {}); if (r.annullato) return;
+    await cataloghi(); $("err").textContent = "";
+    $("prodi").textContent = r.verificato ? tn("home.catalogo_importato", r.prodotti, { nome: r.nome }) : tn("home.catalogo_non_verificato", r.prodotti, { nome: r.nome, perche: r.verifica });
+  } catch (e) { $("err").textContent = e.message; }
+};
 $("w").oninput = $("h").oninput = pinfo;
+["h", "spazio"].forEach(id => { $(id).value = cm($(id).value); });                  // valori iniziali con la virgola o il punto della lingua
 document.querySelectorAll(".pre button").forEach(b => { const [w, h] = b.dataset.p.split(","); b.textContent = cm(w) + " × " + cm(h); b.onclick = () => { $("w").value = cm(w); $("h").value = cm(h); pinfo(); }; });
 $("advt").onclick = () => avanzate(!$("adv").classList.contains("on"));
 async function sceglieFoto() { return await api("/api/scegli-foto", {}); }
@@ -413,7 +459,7 @@ $("cancel").onclick = () => chiudi("vnew");
 $("create").onclick = async () => {
   const b = $("create"); b.disabled = true;
   try {
-    const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value });
+    const r = await api("/api/nuovo", { nome: $("nome").value, foto: $("fdir").value, w: $("w").value, h: $("h").value, abb: $("abb").value, spazio: $("spazio").value, margine: $("margine").value, prodotto: $("prod").value || undefined });
     chiudi("vnew"); await load(); const p = LIST.find(x => x.path === r.path); if (p) openProject(p);
   } catch (e) { $("err").textContent = e.message; }
   b.disabled = false;
@@ -432,7 +478,9 @@ async function chiudiProgramma() {
 }
 // ---- assistente AI (MCP): di serie riceve solo testo; le immagini ridotte solo se l'utente accende l'interruttore
 async function apriAssistente() {
-  $("aerr").textContent = ""; const d = await api("/api/assistente"); $("aimg").checked = d.immagini === true; apri("vassist", $("aimg"));
+  $("aerr").textContent = ""; const d = await api("/api/assistente"), ok = d.consentito !== false;       // licenza senza l'assistente: niente interruttore, il perché
+  $("aimgr").hidden = $("anota").hidden = $("aopz").hidden = !ok; $("amotivo").hidden = ok; $("amotivo").textContent = ok ? "" : d.motivo || "";
+  $("aimg").checked = d.immagini === true; apri("vassist", ok ? $("aimg") : $("aclose"));
 }
 $("aimg").onchange = async () => {
   const v = $("aimg").checked; $("aerr").textContent = "";
@@ -441,8 +489,23 @@ $("aimg").onchange = async () => {
   catch (e) { $("aimg").checked = !v; $("aerr").textContent = e.message || String(e); }
 };
 $("aclose").onclick = () => chiudi("vassist");
+// ---- lingua dell'interfaccia (T-206): si salva per tutto il programma; questa pagina si ricarica, gli album aperti cambiano quando si riaprono
+async function apriLingua() {
+  $("lgerr").textContent = ""; const d = await api("/api/lingua"), L = $("lingue"); L.textContent = "";
+  d.lingue.forEach(x => {
+    const l = document.createElement("label"), i = document.createElement("input"), n = document.createElement("span");
+    l.className = "interr"; i.type = "radio"; i.name = "lingua"; i.value = x.id; i.checked = x.id === d.lingua; n.lang = x.id; n.textContent = x.nome;
+    i.onchange = () => cambiaLingua(x.id); l.append(i, n); L.appendChild(l);
+  });
+  apri("vlingua", L.querySelector("input:checked") || L.querySelector("input"));
+}
+async function cambiaLingua(id) {
+  try { await api("/api/lingua", { lingua: id }); location.reload(); }
+  catch (e) { $("lgerr").textContent = e.message || String(e); }
+}
+$("lgclose").onclick = () => chiudi("vlingua");
 $("altro").onclick = e => { e.stopPropagation(); apriMenu($("altro"), [
-  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente },
+  { testo: t("home.apri_esistente"), fn: aggiungi }, { testo: t("home.importa_zip"), fn: importaZip }, "-", { testo: t("home.assist_menu"), fn: apriAssistente }, { testo: t("home.lingua_menu"), fn: apriLingua },
   "-", { testo: t("home.chiudi_programma"), fn: chiudiProgramma },
 ]); };
 
@@ -461,7 +524,7 @@ function showVer(r) {
   const vb = $("verb"), spenti = r.disponibile === false; vb.className = spenti ? "" : r.errore ? "off" : r.da_aggiornare ? "nuova" : "ok";
   const v = r.attuale ? brev(r.attuale) : "";
   $("vtxt").textContent = !r.attuale ? t("home.ver_ignota") : spenti ? t("home.ver_breve", { v }) : r.errore ? t("home.ver_non_controllo", { v }) : r.da_aggiornare ? t("home.ver_disponibile", { v, u: r.ultima ? brev(r.ultima) : t("home.ver_nuova") }) : t("home.ver_aggiornata", { v });
-  const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : t("home.mai");
+  const ago = r.controllato ? new Date(r.controllato * 1000).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short" }) : t("home.mai");
   const novita = (r.novita || []);
   $("upd").dataset.n = novita.map(x => "• " + x).join("\n");
   $("vbody").innerHTML = `${esc(t("home.in_uso"))} ${fmtV(r.attuale)}<br>` + (spenti ? `<span class="tenue">${esc(r.motivo || t("home.agg_spenti"))}</span>`
@@ -495,7 +558,7 @@ $("vchk").onclick = async () => { const b = $("vchk"); b.disabled = true; b.text
 $("vgo").onclick = () => { chiudi("vver"); $("upd").onclick(); };
 
 // ---- licenza (T-202): stato, prova gratuita, chiave controllata su questo computer
-const giorniTxt = n => n === 1 ? t("home.giorno_uno") : t("home.giorni_n", { n });
+const giorniTxt = n => tn("home.giorni", n);
 function showLic(s) {
   const b = $("lic"); b.className = s.sola_lettura ? "warn" : "";
   b.textContent = s.stato === "attiva" ? t("home.lic_attiva_btn", { nome: s.nome_fascia }) : s.stato === "prova" ? t("home.lic_prova_btn", { giorni: giorniTxt(s.prova.giorni_rimasti) }) : s.sola_lettura ? t("home.lic_sola_lettura") : t("home.lic_non_valida", { giorni: giorniTxt(s.prova.giorni_rimasti) });
@@ -518,6 +581,5 @@ loadLic();
 checkUpd(); api("/api/controlla", {}).then(checkUpd).catch(() => {}); setInterval(checkUpd, 600000);       // aprendo la pagina si controlla subito GitHub, senza aspettare il controllo periodico
 load().catch(errore);
 </script>
-<div id="credit">Created by <b>Stefano Imperato</b></div>
 </body>
 </html>
