@@ -205,7 +205,7 @@ def cmd_bozza(a):
             if altro.is_file(): shutil.copy2(altro, uscita / altro.name)
     (uscita / VERIFICHE).write_text(json.dumps(dict(versione=versione, esecuzione=a.esecuzione, verifiche=verifiche), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     impronte = [f"{impronta(p)}  {p.name}" for p in sorted(copie, key=lambda p: p.name)]
-    (uscita / SOMME).write_text("\n".join(impronte) + "\n", encoding="utf-8")
+    (uscita / SOMME).write_text("\n".join(impronte) + "\n", encoding="utf-8", newline="\n")   # \n anche su Windows, per sha256sum -c
     pre = pre_release(versione)
     testa = ["> **Bozza preparata dalla pipeline**" + (f" ([esecuzione]({a.esecuzione}))" if a.esecuzione else "") + ": non pubblicarla da qui. Si",
              f"> pubblica dal computer di chi ha la chiave dei rilasci con `python strumenti/rilascio.py pubblica {a.tag}`, che firma il",
@@ -231,7 +231,7 @@ def firma_e_somme(a, wheel, pacchetti, uscita):
     m = firmati.verifica((uscita / firmati.MANIFESTO).read_bytes(), (uscita / firmati.FIRMA).read_bytes(), {a.id: pub})
     tutti = sorted([uscita / wheel.name, *[uscita / p.name for p in pacchetti.values()], uscita / firmati.MANIFESTO, uscita / firmati.FIRMA], key=lambda p: p.name)
     impronte = [f"{impronta(p)}  {p.name}" for p in tutti]
-    (uscita / SOMME).write_text("\n".join(impronte) + "\n", encoding="utf-8")
+    (uscita / SOMME).write_text("\n".join(impronte) + "\n", encoding="utf-8", newline="\n")   # \n anche su Windows, per sha256sum -c
     return m, impronte
 
 

@@ -277,6 +277,7 @@ def test_prepara_una_release(tmp_path):
                                               "impaginatore-2.0.1-py3-none-any.whl", "manifesto.json", "manifesto.json.sig"])
     m = firmati.verifica((rel / "manifesto.json").read_bytes(), (rel / "manifesto.json.sig").read_bytes(), {1: pub})
     assert set(m["pacchetti"]) == {"python", "linux", "windows", "mac-arm64"} and m["novita"] == {"it": ["Pacchetti"], "en": ["Packages"]}
+    assert b"\r" not in (rel / "SHA256SUMS").read_bytes()
     for riga in (rel / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((rel / nome).read_bytes()).hexdigest() == h
     note = (rel / "NOTE.md").read_text(encoding="utf-8")
@@ -338,6 +339,7 @@ def test_bozza_della_release(tmp_path, capsys):
     pk = [compila.nome_pacchetto("2.0.1rc1", k) for k in ("linux", "mac-arm64", "windows")]
     assert nomi == sorted(["SHA256SUMS", "impaginatore-2.0.1rc1-py3-none-any.whl", "verifiche.json", *pk, *[p + ".sha256" for p in pk], *[p + ".componenti.json" for p in pk]])
     somme = (out / "release" / "SHA256SUMS").read_text(encoding="utf-8")
+    assert b"\r" not in (out / "release" / "SHA256SUMS").read_bytes()
     for riga in somme.splitlines():
         h, nome = riga.split("  "); assert hashlib.sha256((out / "release" / nome).read_bytes()).hexdigest() == h
     assert len(somme.splitlines()) == 4 and somme.strip() in testo
@@ -600,7 +602,8 @@ def test_impacchetta(monkeypatch, tmp_path, k):
     out = compila.impacchetta(tmp_path / "prog", k, tmp_path / "u", tmp_path / "r.xml")
     assert out.name == compila.nome_pacchetto(__version__, k) and fatti[0] == "controllo"
     assert fatti[1] == {"linux": ("deb", "linux"), "linux-arm64": ("deb", "linux-arm64"), "mac-arm64": ("dmg", "mac-arm64"), "windows": ("exe",)}[k]
-    assert (tmp_path / "u" / f"{out.name}.sha256").read_text(encoding="utf-8") == f"{hashlib.sha256(b'pacchetto').hexdigest()}  {out.name}\n"
+    # byte esatti, \n anche su Windows (con \r\n «sha256sum -c» non trova il file; ci.yml fa girare questo test su Windows)
+    assert (tmp_path / "u" / f"{out.name}.sha256").read_bytes() == f"{hashlib.sha256(b'pacchetto').hexdigest()}  {out.name}\n".encode()
     c = json.loads((tmp_path / "u" / f"{out.name}.componenti.json").read_text(encoding="utf-8"))
     assert c.get("macos_minimo") == ("13.0" if k.startswith("mac") else None)
 

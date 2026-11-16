@@ -425,7 +425,8 @@ def impacchetta(prog, k, uscita, rapporto):
     if sis == "linux": out = pacchetto_deb(prog, uscita, __version__, k)
     elif sis == "mac": out = pacchetto_dmg(prog, uscita, __version__, k)
     else: out = pacchetto_exe(prog, uscita, __version__)
-    Path(f"{out}.sha256").write_text(f"{impronta(out)}  {out.name}\n", encoding="utf-8")
+    # fine riga \n anche su Windows: con \r\n «sha256sum -c» cerca un file che finisce con \r e non lo trova
+    Path(f"{out}.sha256").write_text(f"{impronta(out)}  {out.name}\n", encoding="utf-8", newline="\n")
     Path(f"{out}.componenti.json").write_text(json.dumps(elenco, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     mb = out.stat().st_size / 1e6
     print(f"Pacchetto: {out} ({mb:.1f} MB); programma {sum(p.stat().st_size for p in prog.rglob('*') if p.is_file()) / 1e6:.1f} MB su disco, {len(elenco['componenti'])} componenti")
