@@ -8,7 +8,7 @@
 # Tempi reali (esecuzioni del 16/11/2026, cache di uv calda); i job sono paralleli, un'esecuzione dura quanto il più lungo
 # (~20 minuti):
 #     lint ~15 s + Linux ~15-17 min per job x 4
-#     Windows senza browser ~15,5-20 min + browser ~6-7 min
+#     Windows senza browser ~12,5-20 min + browser ~5-6,5 min
 #     macOS senza browser ~6,5-7 min + browser ~4-6 min
 # Con il repository pubblico i runner standard non consumano minuti del piano. Da privato ogni job si arrotonda al minuto
 # intero e Windows conta 2 volte, macOS 10: ~66 + ~27 x 2 + ~13 x 10 = ~250 minuti a esecuzione (~8 al mese con 2.000).
