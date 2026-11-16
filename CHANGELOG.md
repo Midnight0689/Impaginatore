@@ -38,6 +38,10 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `AGG-028` **test** — Prove della finestra con un pywebview finto (tre sistemi simulati) e prova vera con WebKitGTK sotto Xvfb (marcatore `finestra`, saltata se manca qualcosa). _File:_ `tests/test_desktop.py`, `tests/prova_finestra.py`, `tests/conftest.py`. _Rif:_ `T-201`.
 - `AGG-029` **mcp** — Server MCP per gli assistenti AI (Claude Desktop, Claude Code): `impaginatore mcp` su stdio con l'SDK ufficiale (extra `mcp`), 21 strumenti per elencare e aprire progetti, leggere l'album e le foto, proporre e applicare la bozza, cambiare disposizioni, sostituire foto, sistemare, controllare, annullare, salvare ed esportare JPG e PDF in cartelle nuove; lavora sull'editor aperto, che mostra le modifiche. _File:_ `src/impaginatore/mcp/`, `src/impaginatore/cli.py`, `pyproject.toml`. _Rif:_ `T-203`.
 - `AGG-030` **test** — Prove del server MCP: strumenti contro schermata ed editor veri (licenze, consenso, argomenti malformati, testi con istruzioni, limiti, avvio del programma) e protocollo con l'SDK, in memoria e con `impaginatore mcp` avviato come processo dal client stdio. _File:_ `tests/test_mcp_strumenti.py`, `tests/test_mcp_server.py`. _Rif:_ `T-203`.
+- `AGG-031` **editor** — Editor ridisegnato con la marca: zone, barra dello spread e della selezione, provini delle disposizioni, «Altra disposizione» (D), «Sostituisci», «Controlla» con semaforo e «Sistema», bozza in un foglio, menu per compiti, stati vuoti, esportazione in corso visibile, stato della licenza. _File:_ `src/impaginatore/risorse/index.html`, `src/impaginatore/risorse/testi/it.json`, `src/impaginatore/editor/server.py`, `docs/prodotto/ux/schermate/2.0/`. _Rif:_ `T-205`.
+- `AGG-032` **progetti** — Schermata Album a scaffale con stati, ricerca, fogli di conferma in pagina e tema scuro predefinito. _File:_ `src/impaginatore/risorse/home.html`. _Rif:_ `UX-022`.
+- `AGG-033` **mcp** — L'editor aperto si aggiorna da solo dopo una modifica dell'assistente AI e lo dice («Modificato dall'assistente», con Annulla); Annulla e Ripeti dicono «(dell'assistente)». _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`. _Rif:_ `T-203`.
+- `AGG-034` **mcp** — Interruttore «L'assistente può vedere le immagini» nella schermata Album, spento di serie, con conferma e testo su dove vanno le immagini. _File:_ `src/impaginatore/home/server.py`, `src/impaginatore/risorse/home.html`, `docs/architettura/MCP.md`. _Rif:_ `T-203`.
 
 ### Modificato
 
@@ -55,6 +59,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `MOD-012` **progetti** — Opzione `--browser`; `--no-browser` non apre né finestra né browser; il secondo avvio apre un'altra finestra; dopo un aggiornamento il programma rilanciato riapre la finestra. _File:_ `src/impaginatore/home/server.py`, `src/impaginatore/cli.py`. _Rif:_ `T-201`.
 - `MOD-013` **ci** — Il controllo delle licenze installa anche l'extra `desktop`; `MIT-0` ammessa (cffi, solo Windows). _File:_ `strumenti/controlli.py`. _Rif:_ `T-201`.
 - `MOD-014` **ci** — I controlli installano l'extra `mcp` per test, copertura e licenze; licenze verificate anche su Python 3.14; ammessa `Apache-2.0 OR BSD-3-Clause` (cryptography); eccezione motivata per il generatore casuale della bozza. _File:_ `strumenti/controlli.py`, `src/impaginatore/motore/bozza.py`. _Rif:_ `T-203`.
+- `MOD-015` **editor** — Tastiera: Tab torna al fuoco del browser, la tela piena passa a F, etichette Ctrl/⌘ secondo il sistema. _File:_ `src/impaginatore/risorse/index.html`. _Rif:_ `UX-019`.
 
 ### Corretto
 
@@ -82,6 +87,7 @@ Numerazione: `maggiore.minore.correzione`. La 2.0.0 sarà la prima versione in v
 - `COR-022` **motore** — I JPG «Stampa · 300 dpi» si fanno dagli originali alla misura vera e con l'abbondanza, non più dalle miniature da 1200 px ingrandite; il limite di pixel vale anche qui e in prova resta la filigrana. _File:_ `src/impaginatore/motore/album.py`, `src/impaginatore/motore/album_libere.py`, `src/impaginatore/editor/server.py`, `tests/test_ux_stampa_originali.py`. _Rif:_ `UX-011`.
 - `COR-023` **editor** — «Ricollega foto» non collega più miniature o file d'uscita al posto degli originali: salta le cartelle del programma e le uscite, non collega file con lo stesso nome ma misure o data diverse, propone le foto rinominate e ha una prova che non cambia niente. _File:_ `src/impaginatore/editor/server.py`, `tests/test_ux_ricollega.py`. _Rif:_ `UX-004`.
 - `COR-024` **editor** — Il nome proposto per le foto scelte da una cartella «JPG» viene dalla cartella sopra; «Salva» dice «Salvato alle HH:MM»; il menu di «Correggi spazi» si chiude cambiando vista o aprendo le foto. _File:_ `src/impaginatore/nomi.py`, `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/home.html`, `src/impaginatore/risorse/index.html`, `tests/test_ux_correzioni.py`. _Rif:_ `A-01`, `A-26`, `A-30`.
+- `COR-025` **editor** — I segni degli spazi irregolari vengono dal motore (`/api/spazi`) e coincidono con quelli che «Sistema» corregge. _File:_ `src/impaginatore/editor/server.py`, `src/impaginatore/risorse/index.html`. _Rif:_ `T-205`.
 
 ### Sicurezza
 
