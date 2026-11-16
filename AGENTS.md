@@ -44,4 +44,5 @@ Le voci nuove vanno sotto `## [Non rilasciato]`, nella sezione del loro tipo. `s
 | `brand/` | Identità di marca: manuale, logo, colori, icone |
 | `marketing/` | Sito, email, social, negozio |
 | `legacy/` | Lanciatori della versione amatoriale |
+| `costruzione/` | Script per costruire i pacchetti, uno per sistema |
 | `.github/` | Pipeline |

@@ -36,6 +36,10 @@ sistema restano e la guida li spiega.
 
 ## Come si costruisce
 
+Per costruire un pacchetto su un computer c'è uno script per sistema in `costruzione/` (`costruzione/LEGGIMI.md`, con
+i passi per chi lo fa la prima volta): controlla il computer, prepara l'ambiente, compila, impacchetta e prova. La
+pipeline costruisce con gli stessi script. I comandi che gli script eseguono sono questi:
+
 ```
 UV_PROJECT_ENVIRONMENT=.venv-compilazione uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione
 .venv-compilazione/bin/python strumenti/compila.py                 # programma + pacchetto in dist/pacchetti
@@ -142,6 +146,11 @@ copie del motore dalle risorse quando i `.py` non ci sono.
 | PC Windows 10 ARM | — | — | — | non supportato: Windows 10 su ARM non esegue programmi x64 |
 | Linux x86_64 (Ubuntu 24.04 e derivate) | `linux.deb` | `ubuntu-24.04` | `ubuntu-24.04` | nativo amd64 |
 | Linux arm64 (Ubuntu 24.04 e derivate) | `linux-arm64.deb` | `ubuntu-24.04-arm` | `ubuntu-24.04-arm` | nativo arm64 |
+
+Quando GitHub non ha macchine libere per un sistema (il 16/11/2026 è successo per tutto il giorno con i Mac con chip
+Apple), quel pacchetto si costruisce su un computer con `costruzione/<sistema>/costruisci.sh` e chi pubblica lo
+aggiunge alla bozza con `rilascio.py aggiungi` (sotto, «Rilascio»): in `verifiche.json` resta scritto `"origine":
+"computer"`.
 
 Ogni pacchetto si costruisce sul sistema e sull'architettura per cui è: Nuitka non compila per un'altra architettura
 («macOS»). La prova (`verifica_pacchetto.py --architettura`) legge l'architettura dell'eseguibile installato (ELF,
@@ -349,9 +358,12 @@ Dal 16/11/2026 il repository è pubblico: i runner standard non si pagano e hann
 | Pacchetto | Senza cache di Nuitka | Con la cache del giro prima |
 |---|---|---|
 | linux | 16 min | 5 min |
-| windows | più di 26 min (il primo giro si è fermato dopo la compilazione) | 10 min |
-| mac-x86_64 | più di 29 min (il primo giro si è fermato al DMG) | 13–15 min |
+| linux-arm64 | 17 min | 4 min |
+| windows | 26 min | 10 min |
+| mac-x86_64 | più di 29 min (il primo giro si è fermato al DMG) | 13–15 min; 31 min quando cambia la versione minima di macOS |
 | mac-arm64 | non misurata (nessun runner) | non misurata |
+
+I test che precedono i pacchetti su un tag: Linux 11–13 min, Windows 18 min, macOS Intel 7 min.
 
 I job girano in parallelo: un giro dura quanto il più lento. Se il repository tornasse privato, i runner Linux e
 Windows avrebbero 2 core (la compilazione senza cache dura circa il doppio) e GitHub conterebbe i minuti macOS 10 volte
@@ -406,6 +418,9 @@ A ogni versione:
    corregge, si cancellano la bozza (`gh release delete v<versione> --yes`) e il tag, e si rifà il tag sul commit
    corretto. L'indirizzo di una bozza è `…/releases/tag/untagged-…`: si apre dalla pagina Releases o con `gh release view
    v<versione>`.
+   Se le macchine per un sistema non arrivano, quel pacchetto si costruisce su un computer dallo stesso tag
+   (`costruzione/LEGGIMI.md`) e si aggiunge alla bozza: `python strumenti/rilascio.py aggiungi v<versione> <cartella
+   dist/pacchetti ricevuta>` (prima con `--prova`). Dopo `aggiungi` il giro del tag non si rilancia più.
 5. Facoltativo: `python strumenti/rilascio.py pubblica v<versione> --prova` prepara tutto in
    `dist/pubblica-<versione>` (scarica, ricontrolla, firma) senza caricare né pubblicare niente.
 6. `python strumenti/rilascio.py pubblica v<versione> --novita-it "…" --novita-en "…"` (una opzione per riga di
@@ -508,6 +523,29 @@ find devices on local networks?» (Rete locale, macOS 15). La prova è passata c
 programma lavora senza quel permesso (i suoi server ascoltano solo su 127.0.0.1); cosa la fa comparire non è ancora
 chiaro (`WKWebView`, o una risoluzione del nome del computer). Va capito prima della beta, e intanto la guida dice di
 rispondere «Non consentire».
+
+### Release di prova `v2.0.0b1` (16/11/2026)
+
+Tag di prova sul ramo `pacchetti/rilascio`, per dimostrare il giro intero fino alla bozza. La bozza non è mai stata
+pubblicata.
+
+| Che cosa | Esito | Dove |
+|---|---|---|
+| Bozza incompleta dichiarata | la bozza dice in testa che cosa manca e il job «release» finisce in errore | giro 43923784180 (mancavano Windows e Mac chip Apple) |
+| Linux x86_64 e arm64, b1 | costruiti, installati con `apt`, provati con la finestra | giro 43932976545 |
+| Windows x64, b1 | costruito, installato, provato con la finestra, disinstallato | giro 43932976545 |
+| Windows 11 ARM | il pacchetto x64 installato e provato su `windows-11-arm` (Windows 10.0.26200 Arm64, WebView2 157): eseguibile `x86_64` su macchina `ARM64`, finestra compresa; `sha256sum -c` passa | giri 43919003527 e 43932976545 |
+| Mac Intel, b1 | costruito al secondo tentativo del giro (al primo mancava la macchina per i test macOS), provato dal DMG; `LSMinimumSystemVersion` 14.0, 58 binari, 19 dei quali chiedono macOS 14.0 | giro 43932976545 |
+| Mac chip Apple | **mai costruito**: otto tentativi fra le 16:39 e le 21:50 UTC, tutti annullati da GitHub dopo 15 minuti senza una macchina («capacity constraints … macOS arm64») | giri 43919003527, 43923784180, 43932976545 |
+| Pubblicazione, in prova | `rilascio.py pubblica v2.0.0b1 --prova --senza mac-arm64` con una chiave di prova: scarica la bozza, ricontrolla impronte e prove, firma il manifesto per cinque pacchetti (wheel compresa); niente caricato, la release resta in bozza | computer del titolare |
+| Script di costruzione su un computer | `costruzione/linux/costruisci.sh` su Ubuntu 24.04; gli altri girano nella pipeline | computer del titolare, pipeline |
+
+Dimensioni della b1: `windows.exe` 67,8 MB, `linux.deb` 92,0 MB, `linux-arm64.deb` 69,4 MB, `mac-x86_64.dmg` 96,8 MB,
+wheel 2,2 MB.
+
+Restano da provare su macchine vere, con la beta: il pacchetto per i Mac con chip Apple (da costruire su un Mac con
+chip Apple con `costruzione/mac-arm64/costruisci.sh`), gli avvisi di Gatekeeper e SmartScreen su un file scaricato,
+l'avvio su macOS 13 e 14 (la pipeline ha solo macOS 15).
 
 ## Decisioni per il titolare
 

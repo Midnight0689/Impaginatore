@@ -265,12 +265,6 @@ jobs:
         timeout-minutes: 20
         run: uv run --no-project strumenti/controlli.py licenze
 
-      - name: Ambiente di compilazione (Python 3.12, finestra, MCP, Nuitka)
-        timeout-minutes: 20
-        run: |
-          piattaforma=(); [ -n "${PIATTAFORMA_UV:-}" ] && piattaforma=(--python-platform "$PIATTAFORMA_UV")
-          uv sync --locked --python 3.12 --extra desktop --extra mcp --extra compilazione "${piattaforma[@]}"
-
       - name: Python dell'ambiente
         id: py
         run: |
@@ -307,9 +301,18 @@ jobs:
       - name: Compila e impacchetta
         id: compila
         timeout-minutes: ${{ fromJSON('{"linux":100,"linux-arm64":100,"mac-arm64":100,"mac-x86_64":130,"windows":150}')[matrix.chiave] }}
+        # gli stessi script che usa chi costruisce sul proprio computer (costruzione/LEGGIMI.md): ambiente, compilazione
+        # e pacchetto. Sui Mac lo script fa anche la prova, dal DMG montato; su Linux e Windows la prova è qui sotto, sul
+        # programma installato
+        env:
+          RIEPILOGO: ${{ github.step_summary }}
         run: |
           inizio=$(date +%s)
-          ${{ steps.py.outputs.python }} strumenti/compila.py
+          case "$RUNNER_OS" in
+            Windows) pwsh -NoProfile -ExecutionPolicy Bypass -File costruzione/windows/costruisci.ps1 -SenzaProva ;;
+            macOS) costruzione/${{ matrix.chiave }}/costruisci.sh ;;
+            *) costruzione/${{ matrix.chiave }}/costruisci.sh --senza-prova ;;
+          esac
           echo "COMPILAZIONE_S=$(( $(date +%s) - inizio ))" >> "$GITHUB_ENV"
           if command -v ccache >/dev/null; then CCACHE_DIR="$(find "$NUITKA_CACHE_DIR/ccache" -mindepth 1 -maxdepth 1 -type d | head -1)" ccache -s || true; fi
 
@@ -327,18 +330,6 @@ jobs:
           sudo apt-get install -y -q --no-install-recommends xvfb xauth x11-apps ./dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.deb
           echo "PROGRAMMA=/usr/bin/impaginatore" >> "$GITHUB_ENV"
 
-      - name: Monta il DMG (macOS)
-        if: runner.os == 'macOS'
-        timeout-minutes: 5
-        run: |
-          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/dmg" dist/pacchetti/Impaginatore-*-${{ matrix.chiave }}.dmg
-          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/dmg/Impaginatore.app"
-          echo "PROGRAMMA=$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app" >> "$GITHUB_ENV"
-          # versione minima e architettura lette dal binario, nel registro (compila.py le ha già controllate)
-          app="$RUNNER_TEMP/dmg/Impaginatore.app/Contents/MacOS/impaginatore-app"
-          lipo -archs "$app"; vtool -show-build "$app" | grep -E "platform|minos|sdk"
-          plutil -extract LSMinimumSystemVersion raw "$RUNNER_TEMP/dmg/Impaginatore.app/Contents/Info.plist"
-
       # «//» perché la shell di Git per Windows non scambi le opzioni per percorsi; l'installatore aspetta la fine
       - name: Installa con l'installatore silenzioso (Windows, per l'utente)
         if: runner.os == 'Windows'
@@ -353,6 +344,7 @@ jobs:
 
       # tutti i controlli e la finestra vera; Linux dentro xvfb (con le fotografie giudicate)
       - name: Prova il programma installato
+        if: runner.os != 'macOS'
         timeout-minutes: 25
         run: |
           prima=(); [ "$RUNNER_OS" = "Linux" ] && prima=(xvfb-run -a -s "-screen 0 1280x800x24")
@@ -367,10 +359,6 @@ jobs:
           "$DEST/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
           for _ in $(seq 30); do [ ! -f "$DEST/impaginatore.exe" ] && break; sleep 2; done
           test ! -f "$DEST/impaginatore.exe"
-
-      - name: Smonta il DMG (macOS)
-        if: always() && runner.os == 'macOS'
-        run: hdiutil detach "$RUNNER_TEMP/dmg" || true
 
       - name: Pacchetto e tempi nel riepilogo
         if: ${{ !cancelled() }}

@@ -5,7 +5,9 @@ Provato nella pipeline di GitHub, sul programma installato come un utente: Linux
 /usr/bin/impaginatore), Windows (installatore silenzioso per l'utente in %LOCALAPPDATA%\Programs\Impaginatore, poi
 disinstallazione) e Mac Intel (DMG montato, firma ad hoc verificata, avvio da Impaginatore.app): schermata di avvio con
 la prova gratuita, schermata Album nella finestra del programma, editor, esportazioni, assistente AI con «mcp».
-macOS 14 come minimo: misurato sul Mac Intel. Non provato: il Mac con chip Apple (nessun runner libero), gli avvisi di
+Provati anche Linux arm64 e il pacchetto Windows x64 su Windows 11 ARM (macchina vera di GitHub, finestra compresa).
+macOS 14 come minimo: misurato sul Mac Intel. Non provato: il Mac con chip Apple (nessun runner libero in tutto il
+giorno: si costruisce su un Mac con chip Apple, costruzione/LEGGIMI.md), gli avvisi di
 Gatekeeper e SmartScreen su un file scaricato davvero, i passi a mano dell'installatore e del DMG, i testi esatti degli
 avvisi e le schermate «SCHERMATA DA FARE»: vanno rifatti su un Mac e un PC veri con la prima beta. -->
 
