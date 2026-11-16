@@ -139,16 +139,16 @@ Testo piccolo: Se sei in lista d’attesa, ti è arrivata un’email con il link
 Adesivo link: «Lista d’attesa» → {{link_lista}}",Early access,"On-screen text: From today, 48 hours before everyone.
 Small text: If you are on the waiting list, an email with the purchase link at the launch price is in your inbox. Sales open to everyone on Tuesday 23 February.
 Link sticker: «Waiting list» → {{link_lista}}","Domenica: è l’unica uscita nel fine settimana, insieme all’email dell’accesso anticipato."
-U15,2027-02-23,martedì,09:00,S0,Instagram,post 4:5,Resta tuo,annuncio-lancio,grafiche/annuncio-lancio.png,Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum #fotografiadimatrimonio,#weddingphotographer #weddingalbum #albumdesign,sì,,Impaginatore è pronto,"Impaginatore è pronto.
+U15,2027-02-23,martedì,09:00,S0,Instagram,post 4:5,Resta tuo,annuncio-lancio,grafiche/annuncio-lancio.png,Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum #fotografiadimatrimonio,#weddingphotographer #weddingalbum #albumdesign,sì,,Impaginatore è pronto,"Impaginatore è pronto.
 
 Impagini l’album sul tuo computer, con le foto nelle tue cartelle: nessuna funzione le carica in rete. Paghi una volta, la licenza non scade.
 
 Tre licenze, prezzi di lancio, una volta, IVA esclusa:
-– Essenziale: 39 € fino al 23 aprile, poi 49 €. 1 computer, 30 modelli d’autore, JPG e PDF.
+– Essenziale: 39 € fino al 23 aprile, poi 49 €. 1 computer, JPG e PDF.
 – Pro: 79 € fino al 23 aprile, poi 99 €. 2 computer, impaginazione automatica dell’album, spazi e tono uniformi, PSD a livelli.
 – Studio: 119 € fino al 23 aprile, poi 149 €. 5 computer, un’ora di assistenza inclusa e la prossima versione maggiore.
 
-Prova gratuita di 30 giorni, senza carta: tutte le funzioni del Pro tranne il PSD, con una filigrana sugli export. Su Mac e Windows si installa con una riga; su Linux c’è l’AppImage o il pacchetto .deb.
+Prova gratuita di 30 giorni, senza carta: tutte le funzioni del Pro tranne il PSD, con una filigrana sugli export.
 
 Link nella bio.
 
@@ -157,16 +157,16 @@ Link nella bio.
 You lay out the album on your computer, with the photos in your own folders: no feature uploads them. Pay once; the licence doesn’t expire.
 
 Three licences, launch prices, one-time, VAT excluded:
-– Essenziale: €39 until 23 April, then €49. 1 computer, 30 designer layouts, JPG and PDF.
+– Essenziale: €39 until 23 April, then €49. 1 computer, JPG and PDF.
 – Pro: €79 until 23 April, then €99. 2 computers, automatic album layout, even spacing and tone, layered PSD.
 – Studio: €119 until 23 April, then €149. 5 computers, one hour of support included, and the next major version.
 
-Free 30-day trial, no card: every Pro feature except PSD, with a watermark on exports. On Mac and Windows it installs with one line; on Linux there’s an AppImage or a .deb package.
+Free 30-day trial, no card: every Pro feature except PSD, with a watermark on exports.
 
 Link in bio.
 
 #weddingphotographer #weddingalbum #albumdesign","Si fissa in cima al profilo per tutto il periodo di lancio. Alle 9 in punto, con l’email di lancio."
-U16,2027-02-23,martedì,09:05,S0,Instagram e Facebook,storia 9:16,Resta tuo,annuncio-lancio-storia,grafiche/annuncio-lancio-storia.png,Scarica la prova,{{link_prova}} (adesivo link),nessuno,,,,"Lancio, storia","Testo sullo schermo: Impaginatore è pronto. Sul tuo computer, con le tue foto. Paghi una volta.
+U16,2027-02-23,martedì,09:05,S0,Instagram e Facebook,storia 9:16,Resta tuo,annuncio-lancio-storia,grafiche/annuncio-lancio-storia.png,Prova gratis,{{link_prova}} (adesivo link),nessuno,,,,"Lancio, storia","Testo sullo schermo: Impaginatore è pronto. Sul tuo computer, con le tue foto. Paghi una volta.
 Prezzo nella grafica: Pro 79 € fino al 23 aprile, poi 99 €, una volta, IVA esclusa.
 Adesivo link: «Prova 30 giorni» → {{link_prova}}",,,
 U17,2027-02-23,martedì,09:30,S0,LinkedIn (profilo del titolare e pagina Impaginatore),post con immagine 4:5,Bottega,annuncio-lancio,grafiche/annuncio-lancio.png,Prova gratis per 30 giorni,{{link_prova}},#fotografia #software #matrimonio,#photography #software,sì,,Lancio su LinkedIn,"Oggi esce Impaginatore, il programma con cui impagino i miei album di matrimonio, ora per tutti i fotografi.
@@ -176,7 +176,7 @@ Lavora sul computer, senza conti online e senza caricare le foto da nessuna part
 Ringrazio i fotografi che l’hanno provato in queste settimane: alcune delle cose che trovate dentro sono nate dalle loro segnalazioni.
 
 Prova gratuita di 30 giorni, senza carta: {{link_prova}}
-Laboratori di stampa e associazioni: scrivetemi, ci sono edizioni pensate per voi.
+Laboratori di stampa e associazioni: scrivetemi, stiamo preparando edizioni pensate per voi.
 
 #fotografia #software #matrimonio",Launch on LinkedIn,"Today we release Impaginatore, the software I use to lay out my own wedding albums, now for every photographer.
 
@@ -185,26 +185,24 @@ It runs on your computer, with no online account and no photo uploads. You pay o
 Thank you to the photographers who tested it in recent weeks: some of what you will find inside came from their reports.
 
 Free 30-day trial, no card: {{link_prova}}
-Print labs and associations: get in touch, there are editions made for you.
+Print labs and associations: get in touch, we are preparing editions made for you.
 
 #photography #software",
-U18,2027-02-23,martedì,10:00,S0,YouTube,"video 16:9, 3–5 min (guida all’installazione)",Assistenza e prova,copertina-video,grafiche/copertina-video.png,Scarica la prova,{{link_installa}},#impaginatore #albumdimatrimonio,,,,"Come si installa Impaginatore (Mac, Windows, Linux)","Su Mac e Windows Impaginatore si installa con un comando di una riga; su Linux con l’AppImage o il pacchetto .deb. In questo video vediamo che cosa fa quel comando, passo per passo, e come si apre il primo album.
+U18,2027-02-23,martedì,10:00,S0,YouTube,"video 16:9, 3–5 min (guida al primo album)",Assistenza e prova,copertina-video,grafiche/copertina-video.png,Prova gratis,{{link_prova}},#impaginatore #albumdimatrimonio,,,,Il primo album con Impaginatore,"In questo video apriamo il primo album: la cartella delle foto, il formato, la bozza e l’esportazione.
 
 Capitoli
 00:00 Che cosa serve
-00:40 Mac
-01:40 Windows
-02:40 Linux: AppImage e .deb
-03:30 Il primo progetto e la prova di 30 giorni
+00:40 Nuovo album e formato
+01:40 La bozza e gli spread
+02:40 Controlla ed esporta
+03:30 La prova di 30 giorni
 
-Il comando scarica il programma dal nostro sito e, prima di installarlo, controlla la nostra firma digitale: se il file non è quello che abbiamo pubblicato, si ferma.
-
-Pagina di installazione, con il comando da copiare: {{link_installa}}
+Prova gratuita: {{link_prova}}
 Manuale: {{link_manuale}}
 Se qualcosa non va, scrivici: {{email_supporto}}. Gli errori del programma li correggiamo gratis.
 
-#impaginatore #albumdimatrimonio",,,"Titolo del video = titolo qui sopra (massimo 100 caratteri). Il testo è la descrizione. Il video lungo lo registra il fondatore (PIANO-90-GIORNI, S-6); la versione breve è il copione V2."
-U19,2027-02-23,martedì,12:00,S0,Facebook (pagina),post 4:5,Resta tuo,annuncio-lancio,grafiche/annuncio-lancio.png,Scarica la prova,{{link_prova}},nessuno,,,,Lancio su Facebook,"Impaginatore è pronto.
+#impaginatore #albumdimatrimonio",,,"Titolo del video = titolo qui sopra (massimo 100 caratteri). Il testo è la descrizione. Il video lungo lo registra il fondatore (PIANO-90-GIORNI, S-6); la versione breve è il copione V2. La guida all’installazione si fa solo quando esistono gli installatori (T-301, T-302): oggi il programma si avvia da una copia del codice."
+U19,2027-02-23,martedì,12:00,S0,Facebook (pagina),post 4:5,Resta tuo,annuncio-lancio,grafiche/annuncio-lancio.png,Prova gratis,{{link_prova}},nessuno,,,,Lancio su Facebook,"Impaginatore è pronto.
 
 Un programma per impaginare album di matrimonio sul tuo computer. Le foto restano nelle tue cartelle, la licenza si paga una volta e non scade.
 
@@ -218,8 +216,8 @@ Prezzi e differenze tra le licenze: {{link_prezzi}}
 
 Da domani siamo alla Convention ANFM di Padova: se passi, ti mostriamo un album impaginato dal vivo.",,,L’ultimo paragrafo solo se la presenza alla Convention ANFM è confermata.
 U20,2027-02-24,mercoledì,10:00,S0,Instagram,"storia 9:16, foto dallo stand",Bottega,"nessuno (foto del banco, senza volti di visitatori)",nessuna,Passa a trovarci,nessuno,nessuno,,,,"Convention ANFM, giorno 1","Testo sullo schermo: Convention ANFM, Padova. Fino a sabato impaginiamo un album dal vivo, in dieci minuti di demo.
-Seconda storia: Vuoi provarlo sul tuo portatile? Portalo: lo installiamo insieme.",,,Solo se la presenza alla Convention è confermata da ANFM. Nessuna foto di visitatori senza il loro consenso.
-U21,2027-02-25,giovedì,12:30,S0,Instagram,"reel 9:16, 40 s (copione V3)",Mestiere,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Dalla cartella alla bozza»),Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum,,,,Dalla cartella alla bozza,"Dalla cartella delle foto scelte alla prima bozza dell’album, sul mio portatile.
+Seconda storia: Vuoi provarlo sul tuo portatile? Passa dallo stand: te lo facciamo provare sul nostro portatile.",,,Solo se la presenza alla Convention è confermata da ANFM. Nessuna foto di visitatori senza il loro consenso.
+U21,2027-02-25,giovedì,12:30,S0,Instagram,"reel 9:16, 40 s (copione V3)",Mestiere,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Dalla cartella alla bozza»),Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum,,,,Dalla cartella alla bozza,"Dalla cartella delle foto scelte alla prima bozza dell’album, sul mio portatile.
 
 Con Pro e Studio, Impaginatore prepara la bozza dell’album intero con le foto che hai scelto, poi rende uniformi spazi e tono. Da lì comincia il lavoro vero: sposti, cambi, decidi ogni spread. La bozza è automatica, la firma è tua.
 
@@ -243,7 +241,7 @@ In videochiamata o da remoto: l’installazione, il primo album, i formati del t
 
 49 € per un’ora. Se preferisci non pensarci più, ci sono anche i pacchetti da 5 ore (249 €) e da 10 ore (499 €): un solo pagamento, ore valide 12 mesi, usate a blocchi di 30 minuti. IVA esclusa.
 
-Restano gratis per tutti il manuale, le guide video e la correzione degli errori del programma: se il problema è nostro, non paghi.
+Restano gratis per tutti il manuale e la correzione degli errori del programma: se il problema è nostro, non paghi.
 
 Link nella bio.
 
@@ -253,7 +251,7 @@ By video call or remote session: installation, your first album, your lab’s fo
 
 €49 for one hour. If you’d rather not think about it again, there are also 5-hour (€249) and 10-hour (€499) packs: one payment, hours valid for 12 months, used in 30-minute blocks. VAT excluded.
 
-The manual, video guides and bug fixes stay free for everyone: if the problem is ours, you don’t pay.
+The manual and bug fixes stay free for everyone: if the problem is ours, you don’t pay.
 
 Link in bio.
 
@@ -262,16 +260,16 @@ U24,2027-03-03,mercoledì,12:30,S1,Instagram,carosello 4 pagine 4:5,Mestiere,"ca
 
 Pagina 2: chiedi al laboratorio formato, abbondanza e margine di sicurezza per ogni prodotto che usi.
 Pagina 3: in Impaginatore li scrivi in millimetri nel pannello misure, insieme allo spazio tra le foto.
-Pagina 4: li salvi come preset e li ritrovi in ogni album nuovo.
+Pagina 4: se il laboratorio ti dà il suo catalogo, lo importi e scegli il prodotto: formato e abbondanza arrivano già impostati.
 
-Un errore di abbondanza costa una ristampa. Un preset costa due minuti.
+Un errore di abbondanza costa una ristampa. Un catalogo importato costa due minuti.
 
 Il manuale con tutti i passaggi è al link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio #stampafotografica",,,"Pagina 3 = segnaposto-schermata finché non c’è la schermata vera (modelli/schermate/pannello-misure.png, 888 × 700 px)."
-U25,2027-03-04,giovedì,18:00,S1,YouTube Shorts e Instagram,"short/reel 9:16, 25 s (copione V2)",Assistenza e prova,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Una riga per installarlo»),Guarda la guida completa,{{link_installa}},#impaginatore #albumdimatrimonio,,,,Una riga per installarlo,"Una riga nel Terminale del Mac, o in PowerShell su Windows, e Impaginatore è installato. Prima di installare, il comando controlla la nostra firma sul file.
+U25,2027-03-04,giovedì,18:00,S1,YouTube Shorts e Instagram,"short/reel 9:16, 25 s (copione V2)",Assistenza e prova,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Il primo album in tre passi»),Prova gratis,{{link_prova}},#impaginatore #albumdimatrimonio,,,,Il primo album in tre passi,"Nuovo album, la cartella delle foto, il formato: in tre passi Impaginatore ha aperto il tuo primo album.
 
-La guida completa, anche per Linux, è sul nostro canale YouTube. Pagina con il comando da copiare: {{link_installa}}
+Prova gratuita di 30 giorni, senza carta: {{link_prova}}
 
 #impaginatore #albumdimatrimonio",,,Su YouTube il titolo dello Short è il titolo qui sopra. Su Instagram il testo finisce con «link nella bio».
 U26,2027-03-05,venerdì,09:00,S1,LinkedIn (profilo del titolare),post di solo testo,Bottega,nessuno,nessuna,Commenta,nessuno,#fotografia #software,,,,Una chiave senza server,"Dietro Impaginatore c’è una scelta tecnica che i fotografi non vedono, ma che spiega molto di come lavoriamo.
@@ -283,7 +281,7 @@ La chiave porta il nome di chi l’ha comprata, e il programma lo mostra. Il res
 Ogni ordine lo evadiamo a mano, entro 2 ore lavorative.
 
 #fotografia #software",,,
-U27,2027-03-09,martedì,12:30,S2,Instagram,carosello 4:5,Mestiere,"citazione (frase del beta tester), carosello-interna, carosello-chiusura",da comporre con i dati del caso di studio,Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum,,,,Caso di studio di un beta tester,"{{caso.nome}} ha impaginato con Impaginatore gli album della sua stagione invernale, durante la prova riservata ai beta tester.
+U27,2027-03-09,martedì,12:30,S2,Instagram,carosello 4:5,Mestiere,"citazione (frase del beta tester), carosello-interna, carosello-chiusura",da comporre con i dati del caso di studio,Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #impaginazionealbum,,,,Caso di studio di un beta tester,"{{caso.nome}} ha impaginato con Impaginatore gli album della sua stagione invernale, durante la prova riservata ai beta tester.
 
 «{{caso.citazione}}»
 
@@ -310,32 +308,32 @@ Nessuna classifica e nessun premio a sorpresa: un collega che ne aiuta un altro,
 #fotografodimatrimonio #albumdimatrimonio",,,
 U30,2027-03-12,venerdì,09:00,S2,LinkedIn (pagina Impaginatore),post di solo testo,Mestiere,nessuno,nessuna,Scrivici per un’edizione per laboratori,{{link_laboratori}},#stampafotografica #fotolibri,,,,File pronti per il laboratorio,"Una domanda per chi lavora in un laboratorio di stampa: quanti file di album vi tornano indietro perché le misure non sono quelle giuste?
 
-Impaginatore permette al fotografo di salvare come preset le misure di ogni vostro prodotto: formato, abbondanza, margine, spazio tra le foto. Nell’edizione per laboratori il catalogo dei formati arriva già dentro il programma, con il vostro marchio.
+Impaginatore permette al fotografo di importare il catalogo di un laboratorio: formato, abbondanza e risoluzione di ogni prodotto arrivano già impostati. Per i laboratori stiamo preparando un’edizione con il catalogo dei formati già dentro il programma e il vostro marchio.
 
 Se volete vederla, organizziamo una dimostrazione da remoto: {{link_laboratori}}
 
 #stampafotografica #fotolibri",,,
-U31,2027-03-16,martedì,12:30,S3,Facebook (pagina),post con video 9:16 (copione V1),Le foto restano tue,copertina-reel,grafiche/copertina-reel.png,Scarica la prova,{{link_prova}},nessuno,,,,"La prova del wi-fi, su Facebook","Una prova che puoi fare anche tu: staccare il wi‑fi ed esportare un album intero.
+U31,2027-03-16,martedì,12:30,S3,Facebook (pagina),post con video 9:16 (copione V1),Le foto restano tue,copertina-reel,grafiche/copertina-reel.png,Prova gratis,{{link_prova}},nessuno,,,,"La prova del wi-fi, su Facebook","Una prova che puoi fare anche tu: staccare il wi‑fi ed esportare un album intero.
 
 Impaginatore lavora sui file che hai già, nelle tue cartelle. Nessuna funzione carica le foto in rete: le foto dei tuoi sposi restano sul tuo computer.
 
 Prova gratuita di 30 giorni, senza carta: {{link_prova}}",,,Riuso del reel V1 (U06) per chi segue solo la pagina Facebook.
 U32,2027-03-17,mercoledì,18:00,S3,Instagram,storia 9:16,Mestiere,storia (testi da cambiare),da comporre da storia,Iscriviti al webinar,link del laboratorio (adesivo link),nessuno,,,,Webinar con un laboratorio,"Testo sullo schermo: Webinar con {{webinar.laboratorio}}, {{webinar.data}}. Come preparare i file dell’album perché tornino stampati come li hai visti.
 Adesivo link: «Iscriviti» → pagina del laboratorio",,,"Solo se il webinar è confermato (PIANO-90-GIORNI, S3) e il laboratorio ha dato il consenso a essere nominato. Valori in costanti.json (webinar.*)."
-U33,2027-03-18,giovedì,12:30,S3,Instagram,"reel 9:16, 35 s (copione V4)",Mestiere,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Il PSD a livelli»),Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #photoshop,,,,Lo spread finisce in Photoshop,"Uno spread impaginato, esportato come PSD a livelli e aperto in Photoshop: ogni foto sul suo livello, pronta per l’ultima rifinitura.
+U33,2027-03-18,giovedì,12:30,S3,Instagram,"reel 9:16, 35 s (copione V4)",Mestiere,copertina-reel,grafiche/copertina-reel.png (testo da cambiare: «Il PSD a livelli»),Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio #photoshop,,,,Lo spread finisce in Photoshop,"Uno spread impaginato, esportato come PSD a livelli e aperto in Photoshop: ogni foto sul suo livello, pronta per l’ultima rifinitura.
 
 Il PSD a livelli è nelle licenze Pro e Studio e serve Photoshop installato sul computer. JPG e PDF li hai con tutte le licenze.
 
 Prova gratuita di 30 giorni: link nella bio. Nella prova il PSD non c’è, tutto il resto del Pro sì.
 
 #fotografodimatrimonio #albumdimatrimonio #photoshop",,,
-U34,2027-03-19,venerdì,12:30,S3,Facebook (pagina),post 4:5,Assistenza e prova,carosello-interna (pagina 2 di U02),grafiche/carosello-interna.png,Scarica la prova,{{link_prova}},nessuno,,,,Com’è fatta la prova,"Com’è fatta la prova di Impaginatore, senza sorprese.
+U34,2027-03-19,venerdì,12:30,S3,Facebook (pagina),post 4:5,Assistenza e prova,carosello-interna (pagina 2 di U02),grafiche/carosello-interna.png,Prova gratis,{{link_prova}},nessuno,,,,Com’è fatta la prova,"Com’è fatta la prova di Impaginatore, senza sorprese.
 
 Dura 30 giorni e non chiede la carta. Ha tutte le funzioni del Pro tranne il PSD a livelli. Gli export hanno una filigrana. Alla fine della prova i tuoi progetti restano apribili, in sola lettura: niente va perso.
 
 Se compri, la chiave arriva entro 2 ore lavorative e la filigrana sparisce dagli export successivi.
 
-Scarica la prova: {{link_prova}}",,,
+Prova gratis: {{link_prova}}",,,
 U35,2027-03-23,martedì,12:30,S4,Instagram,post 4:5,Le foto restano tue,carosello-interna,grafiche/carosello-interna.png,Salva il post,nessuno,#fotografodimatrimonio #privacy #albumdimatrimonio,,,,Dove finiscono le foto,"Quando impagini un album, dove finiscono le foto dei tuoi sposi?
 
 Con Impaginatore restano dove le hai messe tu: nelle tue cartelle, sul tuo disco. Il programma non ha un archivio online e nessuna funzione le carica in rete. Lo puoi verificare da solo: stacca il wi‑fi e lavora come sempre.
@@ -401,12 +399,12 @@ Scrivici: {{email_supporto}}
 #fotografia #formazione",,,
 U43,2027-04-13,martedì,12:30,S7,Instagram,post 4:5,Assistenza e prova,scheda-ore,grafiche/scheda-ore.png,Prenota le ore,{{link_assistenza}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Inizio stagione: 5 ore,"La stagione dei matrimoni sta per cominciare. Se vuoi arrivarci con il programma già sistemato, prenota 5 ore di assistenza: 249 €, IVA esclusa, un solo pagamento.
 
-Le usi a blocchi di 30 minuti, quando ti servono, per 12 mesi: un’ora adesso per i preset dei tuoi laboratori, mezz’ora a giugno quando arriva il primo album grande, un’ora per i PSD.
+Le usi a blocchi di 30 minuti, quando ti servono, per 12 mesi: un’ora adesso per i formati dei tuoi laboratori, mezz’ora a giugno quando arriva il primo album grande, un’ora per i PSD.
 
 Se ti basta un’ora, sono 49 €. Link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio",,,"Pacchetto «inizio stagione» (PIANO-90-GIORNI, S7): stessi prezzi del listino delle ore, nessuno sconto."
-U44,2027-04-15,giovedì,12:30,S7,Instagram,post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Promemoria onesto,"Un promemoria, una volta sola: il prezzo di lancio finisce il 23 aprile a mezzanotte, o prima se arriviamo a 300 licenze.
+U44,2027-04-15,giovedì,12:30,S7,Instagram,post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Promemoria onesto,"Un promemoria, una volta sola: il prezzo di lancio finisce il 23 aprile a mezzanotte, o prima se arriviamo a 300 licenze.
 
 Essenziale 39 € fino al 23 aprile, poi 49 €. Pro 79 € fino al 23 aprile, poi 99 €. Studio 119 € fino al 23 aprile, poi 149 €. Sempre una volta, IVA esclusa.
 
@@ -415,7 +413,7 @@ Se sei a metà della prova e non hai ancora deciso, va bene così: la prova dura
 Link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio",,,"Stessa settimana dell’email di promemoria (PIANO-90-GIORNI, S7). Una volta sola, senza conti alla rovescia."
-U45,2027-04-16,venerdì,09:00,S7,LinkedIn e Facebook,post con immagine 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Scarica la prova,{{link_prova}},#fotografia #software,#photography #software,sì,,Il prezzo di lancio finisce il 23 aprile,"Il prezzo di lancio di Impaginatore finisce il 23 aprile a mezzanotte, o prima se arriviamo a 300 licenze.
+U45,2027-04-16,venerdì,09:00,S7,LinkedIn e Facebook,post con immagine 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Prova gratis,{{link_prova}},#fotografia #software,#photography #software,sì,,Il prezzo di lancio finisce il 23 aprile,"Il prezzo di lancio di Impaginatore finisce il 23 aprile a mezzanotte, o prima se arriviamo a 300 licenze.
 
 Fino ad allora: Essenziale 39 € fino al 23 aprile, poi 49 €; Pro 79 € fino al 23 aprile, poi 99 €; Studio 119 € fino al 23 aprile, poi 149 €. Una volta, IVA esclusa.
 
@@ -428,7 +426,7 @@ Until then: Essenziale €39 until 23 April, then €49; Pro €79 until 23 Apri
 After that, the list price doesn’t change for promotions or holidays. If you want to try it first, the trial lasts 30 days and needs no card: {{link_prova}}
 
 #photography #software",
-U46,2027-04-20,martedì,12:30,S8,Instagram,"reel 9:16, 45 s (copione V5)",Assistenza e prova,copertina-reel,"grafiche/copertina-reel.png (testo da cambiare: «Tre domande, tre risposte»)",Scarica la prova,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Tre domande che ci fate,"Le tre domande che ci fate più spesso, in 45 secondi.
+U46,2027-04-20,martedì,12:30,S8,Instagram,"reel 9:16, 45 s (copione V5)",Assistenza e prova,copertina-reel,"grafiche/copertina-reel.png (testo da cambiare: «Tre domande, tre risposte»)",Prova gratis,{{link_prova}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Tre domande che ci fate,"Le tre domande che ci fate più spesso, in 45 secondi.
 
 Funziona senza connessione? Sì, dopo l’installazione non serve la rete.
 Su quanti computer? Uno con Essenziale, 2 con Pro, 5 con Studio.
@@ -437,12 +435,12 @@ E se smetto di aggiornare? La versione che hai comprato resta tua e continua ad 
 Le altre risposte sono nella pagina delle domande frequenti. Link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio",,,
-U47,2027-04-22,giovedì,12:30,S8,Facebook (pagina),post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Scarica la prova,{{link_prezzi}},nessuno,,,,Domani finisce il prezzo di lancio,"Domani, 23 aprile, finisce il prezzo di lancio di Impaginatore: Pro 79 € fino al 23 aprile, poi 99 €, una volta, IVA esclusa.
+U47,2027-04-22,giovedì,12:30,S8,Facebook (pagina),post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Prova gratis,{{link_prezzi}},nessuno,,,,Domani finisce il prezzo di lancio,"Domani, 23 aprile, finisce il prezzo di lancio di Impaginatore: Pro 79 € fino al 23 aprile, poi 99 €, una volta, IVA esclusa.
 
 Non lo diciamo per metterti fretta: preferiamo che nessuno lo scopra il giorno dopo.
 
 Prezzi e differenze tra le licenze: {{link_prezzi}}",,,
-U48,2027-04-23,venerdì,09:00,S8,Instagram,post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Scarica la prova,{{link_prezzi}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Oggi l’ultimo giorno,"Oggi è l’ultimo giorno del prezzo di lancio. Fino a mezzanotte: Essenziale 39 € fino al 23 aprile, poi 49 €; Pro 79 € fino al 23 aprile, poi 99 €; Studio 119 € fino al 23 aprile, poi 149 €. Una volta, IVA esclusa.
+U48,2027-04-23,venerdì,09:00,S8,Instagram,post 4:5,Resta tuo,scheda-prezzo,grafiche/scheda-prezzo.png,Prova gratis,{{link_prezzi}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,,Oggi l’ultimo giorno,"Oggi è l’ultimo giorno del prezzo di lancio. Fino a mezzanotte: Essenziale 39 € fino al 23 aprile, poi 49 €; Pro 79 € fino al 23 aprile, poi 99 €; Studio 119 € fino al 23 aprile, poi 149 €. Una volta, IVA esclusa.
 
 Grazie a chi ha comprato in questi due mesi, e a chi ci ha scritto anche solo per una domanda. Da domani il listino resta quello che vedi, senza promozioni a sorpresa.
 
@@ -456,16 +454,18 @@ Prices in the graphic: Essenziale €39 until 23 April, then €49; Pro €79 un
 Link sticker: «Prices» → {{link_prezzi}}",
 R01,,,,,Instagram,post 4:5,Bottega,mcp-bozza-claude,grafiche/uscite/mcp-bozza-claude.png,Leggi la guida,{{link_guida_claude}} (nella bio),#fotografodimatrimonio #albumdimatrimonio,,,da pubblicare solo dopo il rilascio del server MCP,Claude prepara la bozza,"Da oggi Impaginatore funziona con Claude.
 
-Gli chiedi una prima bozza dell’album, con le tue indicazioni: formato, numero di spread, ordine della giornata. Claude prepara la bozza dentro l’editor tramite MCP. Poi decidi tu, spread per spread; quelli che hai già rifinito a mano non li tocca.
+Gli chiedi una prima bozza dell’album, con le tue indicazioni: formato, numero di spread, ordine della giornata. Claude prepara la bozza dentro l’editor tramite MCP. Poi decidi tu, spread per spread.
 
-È una possibilità in più, non un obbligo: Impaginatore funziona come prima anche senza.
+È una possibilità in più, non un obbligo: Impaginatore funziona come prima anche senza. C’è con le licenze Pro e Studio e nella prova gratuita.
+
+Quello che Claude riceve (nomi dei file, misure e testi dell’album) passa dal programma assistente che scegli tu e arriva al suo fornitore. Le immagini sono spente di serie: le accendi solo tu, e gli originali non partono mai.
 
 La guida per collegarlo è al link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio",,,"Prima di pubblicare: verificare con la guida T-403 quali dati passano a Claude (nomi dei file, metadati, anteprime) e scrivere la frase sulla riservatezza di conseguenza. Togliere dalla grafica la fascia «Riserva»."
 R02,,,,,LinkedIn (profilo del titolare),post con immagine 4:5,Bottega,mcp-bozza-claude,grafiche/uscite/mcp-bozza-claude.png,Leggi la guida,{{link_guida_claude}},#fotografia #software,,,da pubblicare solo dopo il rilascio del server MCP,"Impaginatore e Claude, su LinkedIn","Impaginatore ora ha un server MCP: Claude può preparare la bozza di un album dentro l’editor, seguendo le indicazioni del fotografo.
 
-Abbiamo tenuto ferma una regola: la bozza la prepara Claude, ogni spread lo decide il fotografo. Gli spread rifiniti a mano non vengono più toccati.
+Abbiamo tenuto ferma una regola: la bozza la prepara Claude, ogni spread lo decide il fotografo. È facoltativo, c’è con le licenze Pro e Studio e nella prova; i testi vanno al programma assistente scelto dall’utente e al suo fornitore, le immagini sono spente di serie e gli originali non partono mai.
 
 Guida al collegamento: {{link_guida_claude}}
 

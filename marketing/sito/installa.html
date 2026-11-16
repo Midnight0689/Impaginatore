@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Installa Impaginatore · Mac, Windows e Linux</title>
-<meta name="description" content="Come installare Impaginatore con un comando di una riga o con l’installatore classico, che cosa fa il comando riga per riga e come verificare che il file sia autentico.">
+<title>Installare Impaginatore · in arrivo</title>
+<meta name="description" content="Gli installatori di Impaginatore per macOS, Windows e Linux sono in arrivo: che cosa c’è adesso e come sapere quando escono.">
 <link rel="canonical" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="it" data-url="installa.html" href="https://impaginatore.example/installa.html">
 <link rel="alternate" hreflang="en" data-url="en/installa.html" href="https://impaginatore.example/en/installa.html">
@@ -12,13 +12,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Impaginatore">
 <meta property="og:locale" content="it_IT">
-<meta property="og:title" content="Installa Impaginatore">
-<meta property="og:description" content="Un comando di una riga, oppure l’installatore classico. Che cosa fa il comando e come verificare il file.">
+<meta property="og:title" content="Installare Impaginatore">
+<meta property="og:description" content="Gli installatori per macOS, Windows e Linux sono in arrivo.">
 <meta property="og:url" data-url="installa.html" content="https://impaginatore.example/installa.html">
 <meta property="og:image" data-url="img/og/og-it.jpg" content="https://impaginatore.example/img/og/og-it.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Il logo di Impaginatore accanto all’editor con un album di matrimonio aperto.">
+<meta property="og:image:alt" content="Il logo di Impaginatore accanto all’editor con un album di prova aperto.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -60,7 +60,6 @@
       <ul>
         <li><a href="index.html#funzioni">Funzioni</a></li>
         <li><a href="prezzi.html">Prezzi</a></li>
-        <li><a href="installa.html" aria-current="page">Installazione</a></li>
         <li><a href="index.html#domande">Domande</a></li>
       </ul>
     </nav>
@@ -69,7 +68,6 @@
       <ul>
         <li><a href="index.html#funzioni">Funzioni</a></li>
         <li><a href="prezzi.html">Prezzi</a></li>
-        <li><a href="installa.html" aria-current="page">Installazione</a></li>
         <li><a href="index.html#domande">Domande</a></li>
       </ul>
     </details>
@@ -78,93 +76,19 @@
 </header>
 
 <main id="contenuto" class="semplice">
+  <!-- Pagina ridotta finché non esistono gli installatori (T-301, T-302): niente comandi, niente impronte, niente avvisi
+       di macOS e di Windows da indovinare. Il giorno del lancio va riscritta con i file veri (vedi README.md). -->
   <div class="pagina">
     <div class="testo">
-      <span class="etichetta">Installazione · macOS, Windows e Linux</span>
-      <h1>Installa Impaginatore in un minuto.</h1>
-      <div class="avviso attenzione" data-se-non="in_vendita"><svg class="icona" aria-hidden="true"><use href="#i-info"/></svg><p><b>Non ancora disponibile.</b> Impaginatore sarà in vendita dal <span data-cfg="data_lancio">23 febbraio 2027</span>. Questa pagina mostra già come si installerà: i comandi e i file funzioneranno da quel giorno.</p></div>
-      <p class="attacco">Il modo più semplice è un comando di una riga: scarica Impaginatore dal nostro sito, ne controlla l’integrità e lo installa solo per il tuo utente, senza chiedere la password di amministratore. Se preferisci, c’è l’<a href="#classico">installatore classico</a>.</p>
+      <span class="etichetta">Installazione</span>
+      <h1>Gli installatori sono in arrivo.</h1>
+      <p class="attacco">Impaginatore non si può ancora scaricare. Gli installatori per macOS, Windows e Linux sono in preparazione: quando ci sono, questa pagina spiega come scaricarli e come aprirli la prima volta.</p>
 
-      <h2 id="mac-linux">Mac e Linux</h2>
-      <p>Apri <b>Terminale</b> (sul Mac: Spotlight, poi scrivi «Terminale»), incolla questa riga e premi Invio:</p>
-      <div class="comando">
-        <pre><code id="cmd-mac" data-cfg="comando_mac">curl -fsSL https://impaginatore.example/installa.sh | sh</code></pre>
-        <button class="pulsante piccolo copia" type="button" data-copia="cmd-mac" aria-describedby="annuncio-mac" hidden>Copia</button>
-      </div>
-      <p class="annuncio" id="annuncio-mac" aria-live="polite"></p>
+      <h2 id="adesso">Che cosa c’è adesso</h2>
+      <p>Il programma è in sviluppo. I test automatici girano su macOS, Windows e Linux; le prove su computer Mac e Windows veri, e con loro i requisiti minimi di memoria e di disco, sono in arrivo. Su Linux i PSD a livelli non si possono fare, perché Photoshop non c’è.</p>
 
-      <h2 id="windows">Windows</h2>
-      <p>Apri <b>PowerShell</b> dal menu Start, incolla questa riga e premi Invio:</p>
-      <div class="comando">
-        <pre><code id="cmd-win" data-cfg="comando_windows">irm https://impaginatore.example/installa.ps1 | iex</code></pre>
-        <button class="pulsante piccolo copia" type="button" data-copia="cmd-win" aria-describedby="annuncio-win" hidden>Copia</button>
-      </div>
-      <p class="annuncio" id="annuncio-win" aria-live="polite"></p>
-      <p class="secondario">Alla fine il comando scrive «Fatto» e ti dice dove trovare Impaginatore: nel Launchpad sul Mac, nel menu Start su Windows, tra le applicazioni su Linux.</p>
-
-      <h2 id="cosa-fa">Che cosa fa il comando, pezzo per pezzo</h2>
-      <p>Incollare un comando chiede fiducia, quindi ecco che cosa significa ogni parte.</p>
-      <h3>Mac e Linux</h3>
-      <dl class="spiegazione">
-        <dt><code>curl</code></dt><dd>Il programma che scarica file da internet. È già installato sul Mac e su quasi tutti i Linux.</dd>
-        <dt><code>-f</code></dt><dd>Se il sito risponde con un errore, si ferma invece di eseguire una pagina d’errore.</dd>
-        <dt><code>-s</code></dt><dd>Niente barra di avanzamento.</dd>
-        <dt><code>-S</code></dt><dd>Se però qualcosa va storto, mostra l’errore.</dd>
-        <dt><code>-L</code></dt><dd>Se l’indirizzo è stato spostato, segue il nuovo.</dd>
-        <dt><code data-cfg="url_script_mac">https://impaginatore.example/installa.sh</code></dt><dd>Lo script d’installazione, scaricato dal nostro sito con una connessione cifrata. È un file di testo: puoi aprirlo e leggerlo.</dd>
-        <dt><code>| sh</code></dt><dd>Passa lo script alla shell, che lo esegue con i permessi del tuo utente, non da amministratore.</dd>
-      </dl>
-      <h3>Windows</h3>
-      <dl class="spiegazione">
-        <dt><code>irm</code></dt><dd>Abbreviazione di <code>Invoke-RestMethod</code>: scarica il contenuto dell’indirizzo che segue.</dd>
-        <dt><code data-cfg="url_script_windows">https://impaginatore.example/installa.ps1</code></dt><dd>Lo script d’installazione per Windows, dal nostro sito, con connessione cifrata. Anche questo si può aprire e leggere.</dd>
-        <dt><code>| iex</code></dt><dd>Abbreviazione di <code>Invoke-Expression</code>: esegue in PowerShell lo script appena scaricato, con i permessi del tuo utente.</dd>
-      </dl>
-      <h3>Che cosa fa lo script</h3>
-      <ol>
-        <li>Scarica, con connessione cifrata, la versione giusta per il tuo sistema e il tuo processore.</li>
-        <li>Controlla l’impronta SHA-256 del file e la firma del nostro elenco delle versioni. Se una delle due non corrisponde, si ferma e non installa nulla.</li>
-        <li>Installa Impaginatore nella cartella del tuo utente: non tocca il sistema e non chiede la password di amministratore.</li>
-        <li>Crea l’icona e registra i collegamenti <code>impaginatore://</code>, che servono ad aprire la chiave di licenza direttamente dall’email.</li>
-        <li>Ti dice dove trovare il programma.</li>
-      </ol>
-      <p>Lo script non raccoglie dati, non installa altro e non apre nulla in rete oltre al nostro sito. Le foto non c’entrano: lo script non le vede.</p>
-      <h3>Preferisci leggerlo prima?</h3>
-      <p>Scaricalo in un file, aprilo, e avvialo solo dopo averlo letto:</p>
-      <div class="comando">
-        <pre><code>curl -fsSL <span data-cfg="url_script_mac">https://impaginatore.example/installa.sh</span> -o installa.sh
-less installa.sh
-sh installa.sh</code></pre>
-      </div>
-
-      <h2 id="classico">Installatore classico</h2>
-      <p>Se non vuoi usare il Terminale, scarica il file per il tuo sistema e aprilo come un qualsiasi programma.</p>
-      <div class="fila" data-se="in_vendita" hidden>
-        <a class="pulsante" data-link="download.mac" href="installa.html#classico"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Mac (.dmg)</a>
-        <a class="pulsante" data-link="download.windows" href="installa.html#classico"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Windows (.exe)</a>
-        <a class="pulsante" data-link="download.linux" href="installa.html#classico"><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Linux (AppImage e .deb)</a>
-      </div>
-      <p>Gli installatori non sono firmati con i certificati di Apple e Microsoft, quindi la prima volta il sistema mostra un avviso:</p>
-      <ul>
-        <li><b>Mac:</b> apri il file .dmg e trascina Impaginatore in Applicazioni. Alla prima apertura, se macOS lo blocca, vai in Impostazioni di Sistema, Privacy e sicurezza, e premi «Apri comunque».</li>
-        <li><b>Windows:</b> sulla finestra blu di Windows SmartScreen premi «Ulteriori informazioni» e poi «Esegui comunque».</li>
-        <li><b>Linux:</b> rendi eseguibile l’AppImage dalle proprietà del file e aprila, oppure installa il pacchetto .deb dal tuo gestore dei pacchetti.</li>
-      </ul>
-
-      <h2 id="verifica">Verificare che il file sia autentico</h2>
-      <p>Ogni file da scaricare ha un’<b>impronta SHA-256</b>: una sequenza di 64 caratteri che cambia completamente se nel file cambia anche un solo bit. Le impronte sono pubblicate accanto ai file, nella <a data-link="impronte" href="installa.html#verifica">pagina delle impronte</a>. Il comando d’installazione le controlla da solo; con l’installatore classico puoi farlo tu:</p>
-      <ul>
-        <li><b>Mac</b>, nel Terminale: <code>shasum -a 256 ~/Downloads/Impaginatore.dmg</code></li>
-        <li><b>Windows</b>, in PowerShell: <code>Get-FileHash $HOME\Downloads\Impaginatore-Setup.exe -Algorithm SHA256</code></li>
-        <li><b>Linux</b>, nel terminale: <code>sha256sum ~/Downloads/Impaginatore.AppImage</code></li>
-      </ul>
-      <p>Il risultato deve essere identico all’impronta pubblicata. Se non lo è, non aprire il file e scrivici a <a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a>.</p>
-
-      <h2 id="requisiti">Requisiti</h2>
-      <p data-cfg="requisiti">macOS (Apple Silicon e Intel), Windows 10 e 11, Linux a 64 bit. Requisiti minimi di memoria e disco: da definire con le prove sui tre sistemi.</p>
-
-      <h2 id="problemi">Se qualcosa non va</h2>
-      <p>Scrivici a <a data-link="email.assistenza" href="mailto:assistenza@impaginatore.example"><span data-cfg="email.assistenza">assistenza@impaginatore.example</span></a> con il messaggio che vedi. Se il problema è del programma o dell’installazione, ti aiutiamo gratis. Se preferisci che qualcuno lo installi con te, c’è l’<a href="prezzi.html#assistenza">assistenza a ore</a>.</p>
+      <h2 id="avviso">Vuoi sapere quando esce?</h2>
+      <p>Iscriviti alla <a href="index.html#lista">lista d’attesa</a>: ti scriviamo il giorno del lancio. Per qualsiasi domanda scrivici a <a data-link="email.contatti" href="mailto:ciao@impaginatore.example"><span data-cfg="email.contatti">ciao@impaginatore.example</span></a>.</p>
     </div>
   </div>
 </main>

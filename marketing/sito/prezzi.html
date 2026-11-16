@@ -121,7 +121,7 @@
    "name": "Come funziona il rimborso?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Entro 30 giorni dall’acquisto ci scrivi e ti rimborsiamo tutto, senza chiederti il motivo. La licenza smette di valere; i tuoi progetti restano sul tuo computer. Vale una volta per cliente e per fascia."
+    "text": "Entro 30 giorni dall’acquisto ci scrivi e ti rimborsiamo tutto, senza chiederti il motivo. La licenza smette di valere e la chiave viene revocata: dal primo aggiornamento del programma che installi dopo la revoca, Impaginatore la tratta come chiave revocata e passa in sola lettura. I tuoi progetti restano sul tuo computer e si aprono. Vale una volta per cliente e per fascia."
    }
   },
   {
@@ -169,7 +169,6 @@
         <li><a href="index.html#confronto">Confronto</a></li>
         <li><a href="prezzi.html" aria-current="page">Prezzi</a></li>
         <li><a href="index.html#laboratori">Laboratori</a></li>
-        <li><a href="installa.html">Installazione</a></li>
         <li><a href="index.html#domande">Domande</a></li>
       </ul>
     </nav>
@@ -180,7 +179,6 @@
         <li><a href="index.html#confronto">Confronto</a></li>
         <li><a href="prezzi.html" aria-current="page">Prezzi</a></li>
         <li><a href="index.html#laboratori">Laboratori</a></li>
-        <li><a href="installa.html">Installazione</a></li>
         <li><a href="index.html#domande">Domande</a></li>
       </ul>
     </details>
@@ -213,9 +211,10 @@
         <p class="per-chi">Per chi impagina qualche album l’anno, spread per spread.</p>
         <ul>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Editor completo, spread per spread</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="modelli_autore.essenziale">30</span> modelli d’autore, <span data-valore="modelli_personali.essenziale">5</span> tuoi</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Controlla»; «Sistema» sullo spread aperto</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Esportazione JPG e PDF</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Formati dei laboratori</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Fino a <span data-valore="modelli_personali.essenziale">5</span> modelli tuoi</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Formati comuni e cataloghi dei laboratori</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.essenziale">1</span> computer</span></li>
         </ul>
         <div class="azione">
@@ -232,11 +231,11 @@
         <p class="per-chi">Per chi vive di matrimoni e vuole partire da una bozza.</p>
         <ul>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Tutto di Essenziale</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Bozza di tutto l’album</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Spazi e tono uniformi su tutto l’album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Prepara la bozza» di tutto l’album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Sistema» e tono uniforme su tutto l’album</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>PSD a livelli per Photoshop</span></li>
-          <li data-se="mcp_disponibile" hidden><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Collegamento con Claude (abbonamento a parte)</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Modelli senza limiti · <span data-valore="computer.pro">2</span> computer</span></li>
+          <li data-se="mcp_disponibile"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Collegamento con Claude (account Claude a parte)</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Modelli tuoi senza limiti · <span data-valore="computer.pro">2</span> computer</span></li>
         </ul>
         <div class="azione">
           <a class="pulsante primario" data-link="acquisto.pro" href="mailto:ordini@impaginatore.example?subject=Richiesta%20d%27acquisto%3A%20Impaginatore%20Pro&amp;body=Ciao%2C%20vorrei%20acquistare%20Impaginatore%20Pro%20%28licenza%20per%202%20computer%29.%0A%0ANome%20o%20ragione%20sociale%3A%0APaese%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ACodice%20destinatario%20SdI%20o%20PEC%20%28solo%20per%20l%27Italia%29%3A%0AIntestatario%20della%20licenza%20%28il%20nome%20che%20comparir%C3%A0%20nel%20programma%29%3A%0A%0AMandatemi%20l%27importo%20e%20i%20dati%20per%20il%20bonifico." data-se="in_vendita" hidden>Acquista Pro</a>
@@ -271,18 +270,18 @@
         <p class="secondario">Una persona lavora con te in videochiamata o da remoto: installazione, formati del tuo laboratorio, Photoshop, formazione dei collaboratori. Paghi le ore in anticipo; valgono 12 mesi e si usano a blocchi di <span data-valore="ore.unita">30</span> minuti.</p>
       </div>
       <div class="pacchetti">
-        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ora_1">1</span> ora</span><strong data-prezzo="ore.ora_1">49 €</strong><span class="per-ora"><span data-prezzo="ore.ora_1">49 €</span> l’ora</span><a data-link="ore.ora_1" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%201%20ora&amp;body=Ciao%2C%20vorrei%20acquistare%201%20ora%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
-        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_5">5</span> ore</span><strong data-prezzo="ore.ore_5">249 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_5" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%205%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%205%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
-        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_10">10</span> ore</span><strong data-prezzo="ore.ore_10">499 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_10" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%2010%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%2010%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20preset%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ora_1">1</span> ora</span><strong data-prezzo="ore.ora_1">49 €</strong><span class="per-ora"><span data-prezzo="ore.ora_1">49 €</span> l’ora</span><a data-link="ore.ora_1" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%201%20ora&amp;body=Ciao%2C%20vorrei%20acquistare%201%20ora%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20formati%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_5">5</span> ore</span><strong data-prezzo="ore.ore_5">249 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_5" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%205%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%205%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20formati%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
+        <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_10">10</span> ore</span><strong data-prezzo="ore.ore_10">499 €</strong><span class="per-ora">un solo pagamento</span><a data-link="ore.ore_10" href="mailto:assistenza@impaginatore.example?subject=Ore%20di%20assistenza%3A%2010%20ore&amp;body=Ciao%2C%20vorrei%20acquistare%2010%20ore%20di%20assistenza.%0A%0ANome%20o%20ragione%20sociale%3A%0APartita%20IVA%20o%20codice%20fiscale%3A%0ADi%20cosa%20hai%20bisogno%20%28installazione%2C%20primo%20album%2C%20formati%20del%20laboratorio%2C%20Photoshop...%29%3A%0A" data-se="in_vendita" hidden>Acquista</a></div>
       </div>
-      <p class="nota">IVA esclusa · Gratis per tutti: manuale, guide video e correzione dei difetti. Se il problema è del programma, non paghi. <a data-link="condizioni_assistenza" href="legale.html#assistenza">Condizioni dell’assistenza</a>.</p>
+      <p class="nota">IVA esclusa · Gratis per tutti: il manuale e la correzione dei difetti. Se il problema è del programma, non paghi. <a data-link="condizioni_assistenza" href="legale.html#assistenza">Condizioni dell’assistenza</a>.</p>
     </div>
 
     <div class="fascia-lab">
       <div>
         <span class="etichetta">Laboratori</span>
         <h3>Edizione Laboratorio</h3>
-        <p class="secondario">Il tuo catalogo dentro il programma: formati, copertine, abbondanze e controlli di prestampa. I fotografi ti mandano file già conformi.</p>
+        <p class="secondario">Il tuo catalogo dentro il programma: formati, abbondanza, piega, risoluzione, nomi dei file e controlli. I fotografi ti mandano file già conformi.</p>
       </div>
       <a class="pulsante pieno" data-link="laboratori" href="mailto:laboratori@impaginatore.example?subject=Edizione%20Laboratorio%3A%20parliamone&amp;body=Ciao%2C%20vorremmo%20saperne%20di%20pi%C3%B9%20sull%27Edizione%20Laboratorio.%0A%0ALaboratorio%3A%0ASito%3A%0AQuanti%20fotografi%20lavorano%20con%20voi%3A%0ACome%20ricevete%20oggi%20i%20file%20degli%20album%3A%0A">Parliamone</a>
     </div>
@@ -295,7 +294,7 @@
       <span class="etichetta">Fascia per fascia</span>
       <div>
         <h2 id="titolo-confronto-fasce">Che cosa c’è in ogni licenza.</h2>
-        <p class="attacco">Le funzioni sono le stesse su Mac, Windows e Linux, tranne i PSD, che richiedono Photoshop.</p>
+        <p class="attacco">Ogni licenza ha le stesse funzioni su Mac, Windows e Linux; solo i PSD richiedono Photoshop, che su Linux non c’è.</p>
       </div>
     </div>
     <p class="suggerimento-scorri">Scorri la tabella di lato per vedere tutte le fasce.</p>
@@ -308,18 +307,20 @@
         <tbody>
           <tr class="gruppo"><th scope="colgroup" colspan="4">Impaginazione</th></tr>
           <tr><th scope="row">Editor completo, spread per spread</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
-          <tr><th scope="row">Bozza di tutto l’album</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
-          <tr><th scope="row">Correzione degli spazi su tutto l’album</th><td><span class="esito no">Spread per spread</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">«Prepara la bozza» di tutto l’album</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">«Altra disposizione» (D) e modelli</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">«Controlla» prima della stampa</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">«Sistema» e spazi uguali su tutto l’album</th><td><span class="esito no">Spread per spread</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr><th scope="row">Tono uniforme su tutto l’album</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
-          <tr><th scope="row">Modelli d’autore</th><td class="num"><span data-valore="modelli_autore.essenziale">30</span></td><td>Tutti</td><td>Tutti</td></tr>
           <tr><th scope="row">Modelli tuoi</th><td class="num"><span data-valore="modelli_personali.essenziale">5</span></td><td>Senza limiti</td><td>Senza limiti</td></tr>
           <tr><th scope="row">Testi con stili</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
-          <tr><th scope="row">Formati dei laboratori</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
-          <tr data-se="mcp_disponibile" hidden><th scope="row">Collegamento con Claude (abbonamento a parte)</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">Formati comuni e cataloghi dei laboratori</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr data-se="mcp_disponibile"><th scope="row">Collegamento con Claude (account Claude a parte)</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr class="gruppo"><th scope="colgroup" colspan="4">Esportazione</th></tr>
           <tr><th scope="row">JPG per il laboratorio</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr><th scope="row">PDF per gli sposi</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr><th scope="row">PSD a livelli (con Photoshop installato)</th><td><span class="esito no">No</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
+          <tr><th scope="row">Consegna con i nomi e le misure del prodotto del laboratorio</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr class="gruppo"><th scope="colgroup" colspan="4">Progetti</th></tr>
           <tr><th scope="row">Versioni e copie di sicurezza</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
           <tr><th scope="row">Progetto da portare su un altro computer</th><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td><td><span class="esito si"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Sì</span></td></tr>
@@ -405,7 +406,7 @@
       </details>
       <details class="domanda">
         <summary>Come funziona il rimborso?</summary>
-        <div><p>Entro <span data-valore="rimborso.giorni">30</span> giorni dall’acquisto ci scrivi e ti rimborsiamo tutto, senza chiederti il motivo. La licenza smette di valere; i tuoi progetti restano sul tuo computer. Vale una volta per cliente e per fascia.</p></div>
+        <div><p>Entro <span data-valore="rimborso.giorni">30</span> giorni dall’acquisto ci scrivi e ti rimborsiamo tutto, senza chiederti il motivo. La licenza smette di valere e la chiave viene revocata: dal primo aggiornamento del programma che installi dopo la revoca, Impaginatore la tratta come chiave revocata e passa in sola lettura. I tuoi progetti restano sul tuo computer e si aprono. Vale una volta per cliente e per fascia.</p></div>
       </details>
       <details class="domanda">
         <summary>L’assistenza a ore scade?</summary>
@@ -429,7 +430,6 @@
         <h2 id="piede-prodotto">Prodotto</h2>
         <ul>
           <li><a href="index.html">Pagina iniziale</a></li>
-          <li><a href="installa.html">Installazione</a></li>
           <li><a href="index.html#laboratori">Laboratori</a></li>
           <li><a href="index.html#domande">Domande</a></li>
           <li><a href="en/index.html" hreflang="en" lang="en">English</a></li>
@@ -443,7 +443,7 @@
           <li><a data-link="licenza" href="legale.html#licenza">Licenza d’uso</a></li>
           <li><a data-link="condizioni_assistenza" href="legale.html#assistenza">Condizioni dell’assistenza</a></li>
           <li><a data-link="terze_parti" href="legale.html#terze-parti">Licenze di terze parti</a></li>
-          <li><a href="legale.html#crediti">Crediti delle foto</a></li>
+          <li><a href="legale.html#crediti">Foto delle schermate</a></li>
         </ul>
       </nav>
       <div>

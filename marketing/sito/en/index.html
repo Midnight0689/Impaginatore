@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Impaginatore · Wedding albums laid out on your own computer, with a perpetual licence</title>
-<meta name="description" content="Desktop app for laying out wedding albums on Mac, Windows and Linux. A draft of the whole album, equal spacing on every spread, layered PSD. Your photos stay on your computer. Pay once.">
+<meta name="description" content="Desktop app for laying out wedding albums on your computer, for Mac, Windows and Linux. A draft of the whole album, a check before printing, layered PSD. It doesn’t upload your photos anywhere. Pay once.">
 <link rel="canonical" data-url="en/" href="https://impaginatore.example/en/">
 <link rel="alternate" hreflang="it" data-url="" href="https://impaginatore.example/">
 <link rel="alternate" hreflang="en" data-url="en/" href="https://impaginatore.example/en/">
@@ -14,12 +14,12 @@
 <meta property="og:locale" content="en_GB">
 <meta property="og:locale:alternate" content="it_IT">
 <meta property="og:title" content="Impaginatore · Lay out the album on your computer. Pay once. Yours to keep.">
-<meta property="og:description" content="A draft of the whole album, equal spacing on every spread, layered PSD. Your photos stay on your computer. Perpetual licence for Mac, Windows and Linux.">
+<meta property="og:description" content="A draft of the whole album, a check before printing, layered PSD. It doesn’t upload your photos anywhere. Perpetual licence for Mac, Windows and Linux.">
 <meta property="og:url" data-url="en/" content="https://impaginatore.example/en/">
 <meta property="og:image" data-url="img/og/og-en.jpg" content="https://impaginatore.example/img/og/og-en.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Impaginatore logo next to the editor with a wedding album open.">
+<meta property="og:image:alt" content="The Impaginatore logo next to the editor with a sample album open.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../favicon.ico" sizes="32x32">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -101,15 +101,15 @@
    "name": "Are my photos uploaded anywhere?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to."
+    "text": "No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to. If you connect Claude, it receives reduced images only if you turn them on; the originals never."
    }
   },
   {
    "@type": "Question",
-   "name": "The app isn’t signed by Apple or Microsoft: can I trust it?",
+   "name": "How do I install it?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The installers don’t carry an Apple or Microsoft signature. Every file is signed with our own key and has a published SHA-256 fingerprint: the install command checks them by itself and stops if anything doesn’t match. With the classic installer, the system asks you to confirm the first time: on Mac in System Settings, Privacy & Security, Open Anyway; on Windows with More info, Run anyway. How to check a file by hand."
+    "text": "Installers for macOS, Windows and Linux are coming. When they are ready, this site will explain how to download them and open them the first time."
    }
   },
   {
@@ -125,7 +125,7 @@
    "name": "How many computers can I use it on?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Essential on 1 computer, Pro on 2, Studio on 5. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, install on the new one and stop using the old one."
+    "text": "Essential on 1 computer, Pro on 2, Studio on 5. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, remove the licence from the old one («Remove from this computer») and enter it on the new one."
    }
   },
   {
@@ -141,7 +141,7 @@
    "name": "Do I need an internet connection?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Only to download the app and, if you want, the updates. The licence is checked on your computer: you can lay out and export offline."
+    "text": "No. The licence is checked on your computer: you can lay out and export offline. Internet is only needed by the AI assistant, if you use it."
    }
   },
   {
@@ -165,7 +165,7 @@
    "name": "Is the app in English?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "The interface is in Italian today. The English version is planned before the launch; this page will say so when it’s ready."
+    "text": "Yes. The app is in English and Italian: change it from «⋯», «Language…» on the Albums screen. The first time, it uses your computer’s language. A few labels of the built-in sizes catalogue are still in Italian."
    }
   },
   {
@@ -173,7 +173,7 @@
    "name": "How do I buy?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, enter the key and carry on with the same album."
+    "text": "Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, paste the key into the «Licence» window on the Albums screen and carry on with the same album."
    }
   },
   {
@@ -181,7 +181,7 @@
    "name": "Which systems does it run on?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems."
+    "text": "It is made for macOS, Windows and Linux. The automated tests run on all three; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs."
    }
   }
  ]
@@ -234,7 +234,6 @@
         <li><a href="#prices">Prices</a></li>
         <li><a href="#labs">Labs</a></li>
         <li><a href="#faq">FAQ</a></li>
-        <li><a href="installa.html">Install</a></li>
       </ul>
     </details>
     <a class="lingua" href="../index.html" hreflang="it" lang="it" aria-label="Italiano">IT</a>
@@ -250,7 +249,7 @@
     <div class="testo">
       <span class="etichetta">For wedding photographers · macOS, Windows and Linux</span>
       <h1 id="titolo">Lay out the album on your computer. Pay once. <span class="payoff">Yours to keep.</span></h1>
-      <p class="attacco">Impaginatore drafts the whole album with your photos in shooting order, keeps spacing and margins equal from one spread to the next, and prepares the files for your lab, layered PSD included. Your photos never leave your computer, and the licence never expires.</p>
+      <p class="attacco">Impaginatore drafts the whole album with your photos in shooting order, offers another layout at a keystroke, checks the album before printing and fixes spacing and tone by itself. It exports JPG, PDF and, with Photoshop, layered PSD. It doesn’t upload your photos anywhere, and the licence never expires.</p>
       <p class="badge prezzo"><b>Pro <span data-prezzo="pro.oggi" data-listino="€99">€79</span></b><span>one-time</span></p>
       <div class="fila">
         <a class="pulsante primario grande" href="#waitlist" data-se-non="in_vendita">Tell me at launch</a>
@@ -267,9 +266,9 @@
     </div>
     <figure class="finestra">
       <div class="cornice">
-        <img src="../img/schermate/editor-album-1200.webp" srcset="../img/schermate/editor-album-800.webp 800w, ../img/schermate/editor-album-1200.webp 1200w, ../img/schermate/editor-album-1600.webp 1600w, ../img/schermate/editor-album-2400.webp 2400w" sizes="(min-width: 1328px) 1200px, 92vw" width="2400" height="1500" fetchpriority="high" alt="The Impaginatore editor with a wedding album open: the list of spreads on the left, spread 22 in the middle with four reception photos under rulers in centimetres, the album photos at the bottom.">
+        <img src="../img/schermate/editor-album-en-1200.webp" srcset="../img/schermate/editor-album-en-800.webp 800w, ../img/schermate/editor-album-en-1200.webp 1200w, ../img/schermate/editor-album-en-1600.webp 1600w, ../img/schermate/editor-album-en-2400.webp 2400w" sizes="(min-width: 1328px) 1200px, 92vw" width="2400" height="1500" fetchpriority="high" alt="The Impaginatore editor in the Design view: the 12 spreads listed on the left, spread 05–06 in the middle with four photos under rulers in centimetres and the bar with Full, Border, Next layout, Text, Spacing and View, more layouts for the same photos on the right, the photo gallery at the bottom.">
       </div>
-      <figcaption>The demo album in the editor: 62 photos, 25 spreads, 30 × 30 cm. The interface is in Italian; the English version is on the way.</figcaption>
+      <figcaption>A sample album in the editor: 36 computer-drawn photos, 12 spreads made by «Draft the album», 60 × 22.5 cm.</figcaption>
     </figure>
   </div>
 </section>
@@ -316,54 +315,51 @@
     <article class="funzione" aria-labelledby="f-bozza">
       <div class="testo">
         <span class="badge verde">Pro and Studio</span>
-        <h3 id="f-bozza">A draft of the whole album</h3>
-        <p>Impaginatore groups your photos in shooting order and picks, for each group, a layout that respects the proportions of every shot. You start from a whole album to review, not from a blank page.</p>
+        <h3 id="f-bozza">Draft the whole album</h3>
+        <p>«Draft the album» lays out every photo you marked to use, in shooting order. It starts a new chapter when more than half an hour passes between two shots and gives a page of its own to panoramas and, if you like, to your favourites. If you don’t like the proposal, ask for another. It needs at least 10 photos. You start from a whole album to review, not from a blank page.</p>
         <ul>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Panoramas on their own, across the spread</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Portrait and landscape where they sit best</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Every spread stays editable by hand</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Rhythm: full bleed, white borders or alternating</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Photos per spread: you choose, or the app does</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>One undo step; every spread stays editable</li>
         </ul>
       </div>
       <figure class="tavola">
-        <div class="coppia-spread">
-          <div class="foglio"><img src="../img/schermate/spread-01-990.webp" srcset="../img/schermate/spread-01-640.webp 640w, ../img/schermate/spread-01-990.webp 990w, ../img/schermate/spread-01-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread with a single panoramic photo across both pages: the couple seen from behind on a white boardwalk among succulents, heading towards the sea."></div>
-          <div class="foglio"><img src="../img/schermate/spread-04-990.webp" srcset="../img/schermate/spread-04-640.webp 640w, ../img/schermate/spread-04-990.webp 990w, ../img/schermate/spread-04-1980.webp 1980w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1980" height="990" loading="lazy" alt="Spread with three photos of the couple on the beach at sunset, one large and two small, and sparkling wine poured into glasses on the right."></div>
-        </div>
-        <figcaption>Two spreads of the demo album, as they come out of the export.</figcaption>
+        <div class="foglio"><img src="../img/schermate/bozza-en-1400.webp" srcset="../img/schermate/bozza-en-700.webp 700w, ../img/schermate/bozza-en-1400.webp 1400w, ../img/schermate/bozza-en-1960.webp 1960w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1960" height="1284" loading="lazy" alt="The Draft the album window: rhythm Alternate, photos per spread Automatic, favourites biggest; below, the proposal of 12 spreads with 36 photos, and the Cancel, Try another and Add 12 spreads buttons."></div>
+        <figcaption>«Draft the album» on a sample album with 36 photos.</figcaption>
       </figure>
     </article>
 
     <article class="funzione inversa" aria-labelledby="f-spazi">
       <div class="testo">
-        <span class="badge verde">Pro and Studio</span>
-        <h3 id="f-spazi">Equal spacing and tone across the album</h3>
-        <p>The gap between photos and the margins stay the same from one spread to the next. The check lists the spreads that don’t match, with the reference measure, and fixes them all together. In the same way you can even out brightness and colour between photos of the same scene.</p>
+        <span class="badge">All editions</span>
+        <h3 id="f-spazi">Check, then Fix</h3>
+        <p>«Check» looks for what prints badly: missing or damaged photos, resolution too low for the frame, photos running off the page, heavy crops, faces cut or close to the gutter, uneven gaps between photos, empty pages, photos used twice, photos lighter or darker than the rest of the album. It tells you whether the album is ready to print and, with a click, takes you to the spread. «Fix» corrects spacing and tone by itself, in one step you can undo.</p>
         <ul>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Spacing check on every spread</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Fix the whole album, or one spread at a time</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Consistent tone between neighbouring photos</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>The same check in every edition</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>With Pro and Studio «Fix» works on the whole album, tone included</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>With Essential it fixes the open spread</li>
         </ul>
       </div>
       <figure class="tavola">
-        <div class="foglio"><img src="../img/schermate/controllo-stacchi-1100.webp" srcset="../img/schermate/controllo-stacchi-700.webp 700w, ../img/schermate/controllo-stacchi-1100.webp 1100w, ../img/schermate/controllo-stacchi-2200.webp 2200w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="2200" height="692" loading="lazy" alt="The spacing check window, in Italian: 4 spreads out of 25 have gaps that differ from the 0.30 cm reference, each with its preview, and a button to fix the whole album."></div>
-        <figcaption>The spacing check on the demo album: four spreads to fix.</figcaption>
+        <div class="foglio"><img src="../img/schermate/controlla-en-1460.webp" srcset="../img/schermate/controlla-en-730.webp 730w, ../img/schermate/controlla-en-1460.webp 1460w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1460" height="1050" loading="lazy" alt="The Check the album panel next to the spread: Ready to print; 7 things to review, 0 blocking, the Fix (2) button and the To review list, with a photo lighter than the rest of the album and an uneven gap in spread 05–06 that Fix can correct."></div>
+        <figcaption>«Check» on the sample album, after two changes made on purpose: one photo brightened and one moved.</figcaption>
       </figure>
     </article>
 
     <article class="funzione" aria-labelledby="f-rifinisci">
       <div class="testo">
         <span class="badge">All editions</span>
-        <h3 id="f-rifinisci">Refine spread by spread</h3>
-        <p>Rulers in centimetres, guides, snapping and layouts that adapt to the photos you pick. Move, swap, crop: you decide the final spread, and the app keeps track of the measurements.</p>
+        <h3 id="f-rifinisci">Next layout, then refine</h3>
+        <p>Press D and the same photos move into another layout; D again for the next, Esc to go back to how it was. Then refine by hand: rulers in centimetres, guides, snapping, S to replace a photo, text with your own styles. You decide the final spread, and the app keeps track of the measurements.</p>
         <ul>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Designer layouts and your own</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>A warning when a photo is cropped too much</li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Saved versions, to go back</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Ready layouts for the photos you pick, and your own templates</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Resolution in ppi for every photo, and a crop warning</li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg>Automatic saving and saved versions</li>
         </ul>
       </div>
       <figure class="tavola">
-        <div class="foglio"><img src="../img/schermate/editor-spread-860.webp" srcset="../img/schermate/editor-spread-640.webp 640w, ../img/schermate/editor-spread-860.webp 860w, ../img/schermate/editor-spread-1720.webp 1720w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1720" height="1312" loading="lazy" alt="The editor canvas with rulers in centimetres and the toolbar: a 60 × 30 cm spread with a single panoramic photo of hands fastening the bride’s dress."></div>
-        <figcaption>A 60 × 30 cm spread with the editor’s rulers and tools.</figcaption>
+        <div class="foglio"><img src="../img/schermate/disposizione-en-1400.webp" srcset="../img/schermate/disposizione-en-700.webp 700w, ../img/schermate/disposizione-en-1400.webp 1400w, ../img/schermate/disposizione-en-2288.webp 2288w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="2288" height="1128" loading="lazy" alt="Spread 03–04 with rulers in centimetres and, at the bottom, the notice Layout 2 of 20: D next, Shift+D back, Esc goes back to how it was. On the right, more layouts for the same two photos."></div>
+        <figcaption>Next layout (D) on spread 03–04 of the sample album.</figcaption>
       </figure>
     </article>
 
@@ -371,21 +367,24 @@
       <div class="testo">
         <span class="badge verde">Pro and Studio</span>
         <h3 id="f-psd">Layered PSD for Photoshop</h3>
-        <p>Any spread can come out as a Photoshop file with every photo on its own layer, already at print size. Retouch only where needed, without redoing the layout. PSD export needs Photoshop installed, on Mac or Windows; JPG and PDF are made by Impaginatore on its own.</p>
+        <p>Any spread can come out as a Photoshop file with every photo and every text on its own layer. Retouch only where needed, without redoing the layout. PSD files are made by the Photoshop installed on your computer, on Mac or Windows; on Linux they can’t be made. JPG and PDF are made by Impaginatore on its own.</p>
       </div>
       <figure class="tavola">
-        <div class="foglio"><img src="../img/schermate/psd-livelli-800.webp" srcset="../img/schermate/psd-livelli-800.webp 800w, ../img/schermate/psd-livelli-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="A spread open in Photoshop: the layers panel shows one photo per layer."></div>
+        <div class="foglio"><img src="../img/schermate/esporta-psd-en-1120.webp" srcset="../img/schermate/esporta-psd-en-560.webp 560w, ../img/schermate/esporta-psd-en-1120.webp 1120w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1120" height="914" loading="lazy" alt="The Export window on the Layered PSD tab: spreads to export, Redo PSDs edited by hand too, the note Needs Photoshop on this computer, exposure, sRGB colours, folder, and the Export to PSD button."></div>
+        <figcaption>The «Export» window on the «Layered PSD» tab.</figcaption>
       </figure>
     </article>
 
     <article class="funzione" aria-labelledby="f-laboratorio">
       <div class="testo">
         <span class="badge">All editions</span>
-        <h3 id="f-laboratorio">Your lab’s formats</h3>
-        <p>When you create the album you choose lab, size and cover: bleed, gutter and safety margins are already right. If your lab isn’t listed, you set size and bleed once and save them.</p>
+        <h3 id="f-laboratorio">Formats and lab catalogues</h3>
+        <p>You create the album with a ready size or with the measurements your lab gives you, bleed included. If the lab has a catalogue for Impaginatore, you import it and pick the product: size, bleed and resolution come in already right, the check follows its rules and «Lab delivery» exports the JPG files with the names and sizes it asks for, with a summary to send along.</p>
+        <p class="secondario piccolo">The app includes a catalogue of common sizes that belongs to no lab. There are no catalogues from real labs yet.</p>
       </div>
       <figure class="tavola">
-        <div class="foglio"><img src="../img/schermate/preset-laboratorio-800.webp" srcset="../img/schermate/preset-laboratorio-800.webp 800w, ../img/schermate/preset-laboratorio-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="The new album window: list of labs, available sizes and cover, with bleed and gutter shown in millimetres."></div>
+        <div class="foglio"><img src="../img/schermate/nuovo-album-en-960.webp" srcset="../img/schermate/nuovo-album-en-480.webp 480w, ../img/schermate/nuovo-album-en-960.webp 960w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="960" height="1014" loading="lazy" alt="The New album window: name, photo folder, Lab product with a 30 × 22.5 landscape size from the common sizes catalogue (its labels still in Italian), page 30 × 22.5 cm, bleed 3 mm, 300 ppi; below, Import a lab’s catalogue and the size of the open album, 60 × 22.5 cm."></div>
+        <figcaption>«New album» with a product from the common sizes catalogue.</figcaption>
       </figure>
     </article>
 
@@ -393,7 +392,7 @@
       <div class="card">
         <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-locale"/></svg></div>
         <h3>Your photos stay on your computer</h3>
-        <p class="secondario">Impaginatore works on the files on your disk. There is no account, no service to upload them to, and the app doesn’t send them anywhere.</p>
+        <p class="secondario">Impaginatore works on the files on your disk and doesn’t change them. There is no account, no service to upload them to, and the app doesn’t send them anywhere. The one exception is yours to make: reduced images for the AI assistant, off by default.</p>
       </div>
       <div class="card">
         <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-licenza"/></svg></div>
@@ -405,21 +404,37 @@
         <h3>Works offline</h3>
         <p class="secondario">The licence is checked on your computer, without contacting a server. Lay out and export while travelling or in a studio with no network.</p>
       </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-testo"/></svg></div>
+        <h3>In English and Italian</h3>
+        <p class="secondario">Choose the app’s language from the Albums screen; the first time, it uses your computer’s language.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg></div>
+        <h3>It saves by itself</h3>
+        <p class="secondario">The app saves while you work and keeps earlier versions, so you can go back hours, not just a few steps.</p>
+      </div>
+      <div class="card">
+        <div class="icona-card"><svg class="icona" aria-hidden="true"><use href="#i-esporta"/></svg></div>
+        <h3>The album goes where you go</h3>
+        <p class="secondario">A copy of the album, with or without the photos, in a folder or a ZIP file, to open on another computer.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="sezione" id="claude" aria-labelledby="titolo-claude" data-se="mcp_disponibile" hidden>
+<section class="sezione" id="claude" aria-labelledby="titolo-claude" data-se="mcp_disponibile">
   <div class="pagina">
     <article class="funzione">
       <div class="testo">
         <span class="badge verde">Pro and Studio · optional</span>
-        <h2 id="titolo-claude">If you use Claude, it can draft the album with you.</h2>
-        <p>Pick the photos and tell Claude how you want the album; it works inside Impaginatore while you watch, and every spread stays yours to change. You can also never use it: the app works the same way.</p>
-        <p class="secondario piccolo">Needs your own Claude subscription, paid separately. Claude receives album data (file names, proportions, shooting time), not the photos, unless you allow it.</p>
+        <h2 id="titolo-claude">If you use Claude, it can work on the album with you.</h2>
+        <p>Connect Claude Desktop or Claude Code to Impaginatore and ask in plain words: «draft the album with three photos per spread», «check the album», «try another layout on spread 4». Claude works in the app while you watch, and every change it makes is undone with Ctrl+Z, like yours. It can’t delete albums or photos, or export PSD. You can also never use it: the app works the same way.</p>
+        <p class="secondario piccolo">Needs Claude Desktop or Claude Code with your own Claude account, paid separately. Claude receives text: names of albums, folders and files, sizes, dates, the text written in the album, the check results; all of it goes to Anthropic, under its own terms. Images are off by default: photo thumbnails and spread previews are sent only if you turn them on, the originals never.</p>
       </div>
       <figure class="tavola">
-        <div class="foglio"><img src="../img/schermate/bozza-claude-800.webp" srcset="../img/schermate/bozza-claude-800.webp 800w, ../img/schermate/bozza-claude-1600.webp 1600w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="1600" height="1000" loading="lazy" alt="Claude and the editor side by side: Claude has prepared the spreads and the editor shows them ready for review."></div>
+        <div class="foglio"><img src="../img/schermate/assistente-en-960.webp" srcset="../img/schermate/assistente-en-480.webp 480w, ../img/schermate/assistente-en-960.webp 960w" sizes="(min-width: 1328px) 690px, (min-width: 861px) 56vw, 92vw" width="960" height="904" loading="lazy" alt="The AI assistant window of the Albums screen: it explains that by default the assistant receives text only; the switch The assistant can see images is off, and below is what would be sent if you turn it on."></div>
+        <figcaption>The assistant settings: images stay off until you turn them on.</figcaption>
       </figure>
     </article>
   </div>
@@ -434,15 +449,15 @@
     <ol class="passi">
       <li>
         <h3>Create the album</h3>
-        <p class="secondario">Choose size and lab, then the folder with your selected photos. Impaginatore reads them from the disk and puts them in shooting order.</p>
+        <p class="secondario">Choose the folder with your selected photos and the size: a ready one, your lab’s measurements or a product from its catalogue. Impaginatore reads the photos from the disk, without copying them.</p>
       </li>
       <li>
         <h3>Start from the draft</h3>
-        <p class="secondario">With Pro and Studio you get a draft of the whole album. With Essential you build one spread at a time, with layouts suggested for the photos you pick.</p>
+        <p class="secondario">With Pro and Studio «Draft the album» lays out the whole album, in shooting order. With Essential you build one spread at a time, with layouts suggested for the photos you pick.</p>
       </li>
       <li>
-        <h3>Refine and export</h3>
-        <p class="secondario">Adjust the spreads, check spacing and tone across the album, then export JPG for the lab, a PDF for the couple or PSD for Photoshop.</p>
+        <h3>Check and export</h3>
+        <p class="secondario">Change layouts with D, «Check» tells you what prints badly and «Fix» corrects spacing and tone. Then export JPG for the lab, a PDF for the couple or PSD for Photoshop.</p>
       </li>
     </ol>
   </div>
@@ -473,7 +488,7 @@
           <tr><th scope="row">Layered PSD</th><td class="nostro">Yes, with Photoshop installed</td><td>In some</td><td>Rarely</td></tr>
           <tr><th scope="row">Online proofing with the couple</th><td class="nostro"><span class="esito no">No</span></td><td>In many</td><td>Yes</td></tr>
           <tr><th scope="row">Ordering from the lab</th><td class="nostro"><span class="esito no">No: you export the files and send them</span></td><td>In some</td><td>Often</td></tr>
-          <tr><th scope="row">Ready-made layouts</th><td class="nostro">A few dozen, plus the ones you make</td><td>Hundreds</td><td>Hundreds</td></tr>
+          <tr><th scope="row">Ready-made layouts</th><td class="nostro">Ready layouts for the photos you pick, plus the templates you save</td><td>Hundreds</td><td>Hundreds</td></tr>
         </tbody>
       </table>
     </div>
@@ -498,9 +513,10 @@
         <p class="per-chi">For a few albums a year, spread by spread.</p>
         <ul>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Full editor, spread by spread</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="modelli_autore.essenziale">30</span> designer layouts, <span data-valore="modelli_personali.essenziale">5</span> of your own</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Check»; «Fix» on the open spread</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>JPG and PDF export</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Lab formats</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Up to <span data-valore="modelli_personali.essenziale">5</span> templates of your own</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Common sizes and lab catalogues</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span><span data-valore="computer.essenziale">1</span> computer</span></li>
         </ul>
         <div class="azione">
@@ -517,11 +533,11 @@
         <p class="per-chi">For photographers who shoot weddings for a living and want to start from a draft.</p>
         <ul>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Everything in Essential</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>A draft of the whole album</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Even spacing and tone across the album</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Draft the album», the whole of it</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>«Fix» and even tone across the album</span></li>
           <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Layered PSD for Photoshop</span></li>
-          <li data-se="mcp_disponibile" hidden><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Works with Claude (subscription paid separately)</span></li>
-          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Unlimited layouts · <span data-valore="computer.pro">2</span> computers</span></li>
+          <li data-se="mcp_disponibile"><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Works with Claude (Claude account paid separately)</span></li>
+          <li><svg class="icona" aria-hidden="true"><use href="#i-ok"/></svg><span>Unlimited templates of your own · <span data-valore="computer.pro">2</span> computers</span></li>
         </ul>
         <div class="azione">
           <a class="pulsante primario" data-link="acquisto.pro" href="mailto:ordini@impaginatore.example?subject=Purchase%20request%3A%20Impaginatore%20Pro&amp;body=Hi%2C%20I%27d%20like%20to%20buy%20Impaginatore%20Pro%20%28licence%20for%202%20computers%29.%0A%0AName%20or%20company%3A%0ACountry%3A%0AVAT%20number%20%28businesses%29%3A%0ALicence%20holder%20%28the%20name%20shown%20in%20the%20app%29%3A%0A%0APlease%20send%20me%20the%20amount%20and%20the%20bank%20transfer%20details." data-se="in_vendita" hidden>Buy Pro</a>
@@ -560,7 +576,7 @@
         <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_5">5</span> hours</span><strong data-prezzo="ore.ore_5">€249</strong><span class="per-ora">a single payment</span><a data-link="ore.ore_5" href="mailto:assistenza@impaginatore.example?subject=Support%20hours%3A%205%20hours&amp;body=Hi%2C%20I%27d%20like%20to%20buy%205%20hours%20of%20support.%0A%0AName%20or%20company%3A%0AVAT%20number%20%28businesses%29%3A%0AWhat%20you%20need%20help%20with%3A%0A" data-se="in_vendita" hidden>Buy</a></div>
         <div class="pacchetto"><span class="etichetta"><span data-valore="ore.ore_10">10</span> hours</span><strong data-prezzo="ore.ore_10">€499</strong><span class="per-ora">a single payment</span><a data-link="ore.ore_10" href="mailto:assistenza@impaginatore.example?subject=Support%20hours%3A%2010%20hours&amp;body=Hi%2C%20I%27d%20like%20to%20buy%2010%20hours%20of%20support.%0A%0AName%20or%20company%3A%0AVAT%20number%20%28businesses%29%3A%0AWhat%20you%20need%20help%20with%3A%0A" data-se="in_vendita" hidden>Buy</a></div>
       </div>
-      <p class="nota">Excl. VAT · Free for everyone: manual, video guides and bug fixes. If the problem is in the app, you don’t pay.</p>
+      <p class="nota">Excl. VAT · Free for everyone: the manual and bug fixes. If the problem is in the app, you don’t pay.</p>
     </div>
   </div>
 </section>
@@ -570,7 +586,7 @@
     <div class="testo">
       <span class="etichetta">Free trial</span>
       <h2 id="titolo-prova">Try it on a real album for <span data-valore="prova.giorni">30</span> days.</h2>
-      <p class="attacco">The trial has the Pro features, whole-album draft included, and no spread limit. It doesn’t ask for a credit card. When you buy, you enter the key and carry on with the same album.</p>
+      <p class="attacco">The trial has the Pro features except PSD, «Draft the album» included, and no spread limit. It asks for no sign-up and no credit card. When you buy, you paste the key into the «Licence» window and carry on with the same album.</p>
       <div class="fila">
         <a class="pulsante pieno grande" href="installa.html" data-se="in_vendita" hidden><svg class="icona" aria-hidden="true"><use href="#i-scarica"/></svg>Download the trial</a>
         <a class="pulsante pieno grande" href="#waitlist" data-se-non="in_vendita">Tell me when it’s out</a>
@@ -618,17 +634,17 @@
       <span class="etichetta">For labs</span>
       <div>
         <h2 id="titolo-laboratori">Your products, inside your photographers’ layout app.</h2>
-        <p class="attacco">With the Lab Edition your catalogue goes into Impaginatore: sizes, covers, bleed and preflight checks. Photographers pick the product when they create the album and send you files that already comply.</p>
+        <p class="attacco">With a catalogue for Impaginatore your products go into the app: page size, bleed, safety area, gutter, resolution, number of spreads and file names. Photographers pick the product when they create the album, the check follows your rules and the delivery comes out with the names and sizes you ask for.</p>
       </div>
     </div>
     <div class="schede">
       <div class="card">
         <h3>Your catalogue</h3>
-        <p class="secondario">Sizes, papers and covers as in your price list, with your brand in the app.</p>
+        <p class="secondario">A file with your products, prepared with you from your specifications and signed by us, so photographers know it’s the right one. Your brand inside the app is coming.</p>
       </div>
       <div class="card">
         <h3>Files that comply</h3>
-        <p class="secondario">Size, bleed and file names follow your rules: fewer files to send back.</p>
+        <p class="secondario">Size, bleed, resolution and file names follow your rules, with a summary for every delivery: fewer files to send back. The cover, for now, is only described in the summary.</p>
       </div>
       <div class="card">
         <h3>A pilot</h3>
@@ -679,11 +695,11 @@
     <div class="domande">
       <details class="domanda">
         <summary>Are my photos uploaded anywhere?</summary>
-        <div><p>No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to.</p></div>
+        <div><p>No. Impaginatore reads your photos from the folder you choose, shows them and exports the files to your disk. There is no account and no online service to upload them to. If you connect Claude, it receives reduced images only if you turn them on; the originals never.</p></div>
       </details>
       <details class="domanda">
-        <summary>The app isn’t signed by Apple or Microsoft: can I trust it?</summary>
-        <div><p>The installers don’t carry an Apple or Microsoft signature. Every file is signed with our own key and has a published SHA-256 fingerprint: the install command checks them by itself and stops if anything doesn’t match. With the classic installer, the system asks you to confirm the first time: on Mac in System Settings, Privacy &amp; Security, Open Anyway; on Windows with More info, Run anyway. <a href="installa.html#verify">How to check a file by hand</a>.</p></div>
+        <summary>How do I install it?</summary>
+        <div><p>Installers for macOS, Windows and Linux are coming. When they are ready, this site will explain how to download them and open them the first time.</p></div>
       </details>
       <details class="domanda">
         <summary>Can I get a refund?</summary>
@@ -691,7 +707,7 @@
       </details>
       <details class="domanda">
         <summary>How many computers can I use it on?</summary>
-        <div><p>Essential on <span data-valore="computer.essenziale">1</span> computer, Pro on <span data-valore="computer.pro">2</span>, Studio on <span data-valore="computer.studio">5</span>. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, install on the new one and stop using the old one.</p></div>
+        <div><p>Essential on <span data-valore="computer.essenziale">1</span> computer, Pro on <span data-valore="computer.pro">2</span>, Studio on <span data-valore="computer.studio">5</span>. The licence is in your name and the app checks it on your computer, without contacting a server: the number of computers is a contractual commitment, not a lock. If you change computer, remove the licence from the old one («Remove from this computer») and enter it on the new one.</p></div>
       </details>
       <details class="domanda">
         <summary>Are updates included?</summary>
@@ -699,7 +715,7 @@
       </details>
       <details class="domanda">
         <summary>Do I need an internet connection?</summary>
-        <div><p>Only to download the app and, if you want, the updates. The licence is checked on your computer: you can lay out and export offline.</p></div>
+        <div><p>No. The licence is checked on your computer: you can lay out and export offline. Internet is only needed by the AI assistant, if you use it.</p></div>
       </details>
       <details class="domanda">
         <summary>What happens when the trial ends?</summary>
@@ -711,15 +727,15 @@
       </details>
       <details class="domanda">
         <summary>Is the app in English?</summary>
-        <div><p>The interface is in Italian today. The English version is planned before the launch; this page will say so when it’s ready.</p></div>
+        <div><p>Yes. The app is in English and Italian: change it from «⋯», «Language…» on the Albums screen. The first time, it uses your computer’s language. A few labels of the built-in sizes catalogue are still in Italian.</p></div>
       </details>
       <details class="domanda">
         <summary>How do I buy?</summary>
-        <div><p>Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, enter the key and carry on with the same album.</p></div>
+        <div><p>Choose the edition and send us your invoice details; we reply with the amount and you pay by bank transfer. The key arrives by email within 2 working hours of payment. If you’re using the trial, paste the key into the «Licence» window on the Albums screen and carry on with the same album.</p></div>
       </details>
       <details class="domanda">
         <summary>Which systems does it run on?</summary>
-        <div><p data-cfg="requisiti">macOS (Apple Silicon and Intel), Windows 10 and 11, 64-bit Linux. Minimum memory and disk: to be set after testing on all three systems.</p></div>
+        <div><p data-cfg="requisiti">It is made for macOS, Windows and Linux. The automated tests run on all three; tests on real Mac and Windows computers, and with them the minimum memory and disk requirements, are coming. On Linux you can’t make layered PSDs.</p></div>
       </details>
     </div>
   </div>
@@ -751,7 +767,6 @@
         <h2 id="piede-prodotto">Product</h2>
         <ul>
           <li><a href="#prices">Prices</a></li>
-          <li><a href="installa.html">Install</a></li>
           <li><a href="#labs">Labs</a></li>
           <li><a href="#faq">FAQ</a></li>
           <li><a href="../index.html" hreflang="it" lang="it">Italiano</a></li>
@@ -765,7 +780,7 @@
           <li><a data-link="licenza" href="../legale.html#licenza">Licence agreement</a></li>
           <li><a data-link="condizioni_assistenza" href="../legale.html#assistenza">Support terms</a></li>
           <li><a data-link="terze_parti" href="../legale.html#terze-parti">Third-party licences</a></li>
-          <li><a href="../legale.html#crediti">Photo credits</a></li>
+          <li><a href="../legale.html#crediti">Screenshot photos</a></li>
         </ul>
       </nav>
       <div>
@@ -778,7 +793,7 @@
     </div>
     <div class="titolare">
       <p><span data-cfg="titolare">{{titolare}}</span> · VAT no. <span data-cfg="partita_iva">{{partita_iva}}</span> · <span data-cfg="sede">{{sede}}</span></p>
-      <p>Demo photos from Pexels: <a href="../legale.html#crediti">authors</a>.</p>
+      <p>The photos in the screenshots are drawn by the computer: <a href="../legale.html#crediti">how they are made</a> (in Italian).</p>
     </div>
   </div>
 </footer>

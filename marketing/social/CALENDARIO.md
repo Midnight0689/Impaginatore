@@ -9,7 +9,7 @@ Come si legge: ogni uscita ha un ID stabile (U01…), il canale, il formato, il 
 
 Regole del calendario: nessuna uscita di sabato, a Pasqua e Pasquetta (28 e 29 marzo) e il 25 aprile; di solito alle 9:00, alle 12:30 o alle 18:00 (il giorno del lancio si segue l’ora dell’email); un post per canale al giorno, più eventuali storie, salvo il giorno del lancio.
 
-Segnaposto ancora vuoti, da riempire in `strumenti/costanti.json` prima di pubblicare: `{{link_lista}}`, `{{link_laboratori}}`, `{{link_prova}}`, `{{link_installa}}`, `{{link_manuale}}`, `{{email_supporto}}`, `{{link_prezzi}}`, `{{caso.nome}}`, `{{caso.citazione}}`, `{{caso.dato}}`, `{{webinar.laboratorio}}`, `{{webinar.data}}`, `{{prezzo_rosetta_pro}}`, `{{prezzo_rosetta_studio}}`, `{{link_rosetta}}`, `{{educator.nome}}`, `{{educator.canale}}`, `{{link_guida_claude}}`, `{{link_assistenza}}`.
+Segnaposto ancora vuoti, da riempire in `strumenti/costanti.json` prima di pubblicare: `{{link_lista}}`, `{{link_laboratori}}`, `{{link_prova}}`, `{{link_manuale}}`, `{{email_supporto}}`, `{{link_prezzi}}`, `{{caso.nome}}`, `{{caso.citazione}}`, `{{caso.dato}}`, `{{webinar.laboratorio}}`, `{{webinar.data}}`, `{{prezzo_rosetta_pro}}`, `{{prezzo_rosetta_studio}}`, `{{link_rosetta}}`, `{{educator.nome}}`, `{{educator.canale}}`, `{{link_guida_claude}}`, `{{link_assistenza}}`.
 
 ## Riepilogo
 
@@ -32,14 +32,14 @@ Segnaposto ancora vuoti, da riempire in `strumenti/costanti.json` prima di pubbl
 | 23/02 | martedì | 09:00 | S0 | U15 | Instagram | post 4:5 | Resta tuo | Impaginatore è pronto | sì |
 | 23/02 | martedì | 09:05 | S0 | U16 | Instagram e Facebook | storia 9:16 | Resta tuo | Lancio, storia |  |
 | 23/02 | martedì | 09:30 | S0 | U17 | LinkedIn (profilo del titolare e pagina Impaginatore) | post con immagine 4:5 | Bottega | Lancio su LinkedIn | sì |
-| 23/02 | martedì | 10:00 | S0 | U18 | YouTube | video 16:9, 3–5 min (guida all’installazione) | Assistenza e prova | Come si installa Impaginatore (Mac, Windows, Linux) |  |
+| 23/02 | martedì | 10:00 | S0 | U18 | YouTube | video 16:9, 3–5 min (guida al primo album) | Assistenza e prova | Il primo album con Impaginatore |  |
 | 23/02 | martedì | 12:00 | S0 | U19 | Facebook (pagina) | post 4:5 | Resta tuo | Lancio su Facebook |  |
 | 24/02 | mercoledì | 10:00 | S0 | U20 | Instagram | storia 9:16, foto dallo stand | Bottega | Convention ANFM, giorno 1 |  |
 | 25/02 | giovedì | 12:30 | S0 | U21 | Instagram | reel 9:16, 40 s (copione V3) | Mestiere | Dalla cartella alla bozza |  |
 | 26/02 | venerdì | 12:30 | S0 | U22 | Instagram | post 4:5 | Resta tuo | Quale licenza scegliere |  |
 | 02/03 | martedì | 12:30 | S1 | U23 | Instagram | post 4:5 | Assistenza e prova | Un’ora con una persona | sì |
 | 03/03 | mercoledì | 12:30 | S1 | U24 | Instagram | carosello 4 pagine 4:5 | Mestiere | Le misure del laboratorio, una volta sola |  |
-| 04/03 | giovedì | 18:00 | S1 | U25 | YouTube Shorts e Instagram | short/reel 9:16, 25 s (copione V2) | Assistenza e prova | Una riga per installarlo |  |
+| 04/03 | giovedì | 18:00 | S1 | U25 | YouTube Shorts e Instagram | short/reel 9:16, 25 s (copione V2) | Assistenza e prova | Il primo album in tre passi |  |
 | 05/03 | venerdì | 09:00 | S1 | U26 | LinkedIn (profilo del titolare) | post di solo testo | Bottega | Una chiave senza server |  |
 | 09/03 | martedì | 12:30 | S2 | U27 | Instagram | carosello 4:5 | Mestiere | Caso di studio di un beta tester |  |
 | 10/03 | mercoledì | 12:30 | S2 | U28 | Instagram | post 4:5 | Mestiere | Consiglio di bottega 02: l’abbondanza |  |
@@ -519,12 +519,12 @@ Dal piano di lancio: Lancio martedì 23 alle 9; Convention ANFM a Padova da merc
 | Pilastro | Resta tuo |
 | Modello | annuncio-lancio |
 | Grafica | grafiche/annuncio-lancio.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum #fotografiadimatrimonio |
 | Hashtag in inglese | #weddingphotographer #weddingalbum #albumdesign |
 | Note | Si fissa in cima al profilo per tutto il periodo di lancio. Alle 9 in punto, con l’email di lancio. |
-| Caratteri | 869 in italiano, 777 in inglese |
+| Caratteri | 760 in italiano, 662 in inglese |
 
 Testo in italiano:
 
@@ -534,11 +534,11 @@ Impaginatore è pronto.
 Impagini l’album sul tuo computer, con le foto nelle tue cartelle: nessuna funzione le carica in rete. Paghi una volta, la licenza non scade.
 
 Tre licenze, prezzi di lancio, una volta, IVA esclusa:
-– Essenziale: 39 € fino al 23 aprile, poi 49 €. 1 computer, 30 modelli d’autore, JPG e PDF.
+– Essenziale: 39 € fino al 23 aprile, poi 49 €. 1 computer, JPG e PDF.
 – Pro: 79 € fino al 23 aprile, poi 99 €. 2 computer, impaginazione automatica dell’album, spazi e tono uniformi, PSD a livelli.
 – Studio: 119 € fino al 23 aprile, poi 149 €. 5 computer, un’ora di assistenza inclusa e la prossima versione maggiore.
 
-Prova gratuita di 30 giorni, senza carta: tutte le funzioni del Pro tranne il PSD, con una filigrana sugli export. Su Mac e Windows si installa con una riga; su Linux c’è l’AppImage o il pacchetto .deb.
+Prova gratuita di 30 giorni, senza carta: tutte le funzioni del Pro tranne il PSD, con una filigrana sugli export.
 
 Link nella bio.
 
@@ -553,11 +553,11 @@ Impaginatore is ready.
 You lay out the album on your computer, with the photos in your own folders: no feature uploads them. Pay once; the licence doesn’t expire.
 
 Three licences, launch prices, one-time, VAT excluded:
-– Essenziale: €39 until 23 April, then €49. 1 computer, 30 designer layouts, JPG and PDF.
+– Essenziale: €39 until 23 April, then €49. 1 computer, JPG and PDF.
 – Pro: €79 until 23 April, then €99. 2 computers, automatic album layout, even spacing and tone, layered PSD.
 – Studio: €119 until 23 April, then €149. 5 computers, one hour of support included, and the next major version.
 
-Free 30-day trial, no card: every Pro feature except PSD, with a watermark on exports. On Mac and Windows it installs with one line; on Linux there’s an AppImage or a .deb package.
+Free 30-day trial, no card: every Pro feature except PSD, with a watermark on exports.
 
 Link in bio.
 
@@ -572,7 +572,7 @@ Link in bio.
 | Pilastro | Resta tuo |
 | Modello | annuncio-lancio-storia |
 | Grafica | grafiche/annuncio-lancio-storia.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (adesivo link) |
 | Hashtag | nessuno |
 | Caratteri | 228 in italiano |
@@ -597,7 +597,7 @@ Adesivo link: «Prova 30 giorni» → {{link_prova}}
 | Link | {{link_prova}} |
 | Hashtag | #fotografia #software #matrimonio |
 | Hashtag in inglese | #photography #software |
-| Caratteri | 676 in italiano, 596 in inglese |
+| Caratteri | 686 in italiano, 603 in inglese |
 
 Testo in italiano:
 
@@ -609,7 +609,7 @@ Lavora sul computer, senza conti online e senza caricare le foto da nessuna part
 Ringrazio i fotografi che l’hanno provato in queste settimane: alcune delle cose che trovate dentro sono nate dalle loro segnalazioni.
 
 Prova gratuita di 30 giorni, senza carta: {{link_prova}}
-Laboratori di stampa e associazioni: scrivetemi, ci sono edizioni pensate per voi.
+Laboratori di stampa e associazioni: scrivetemi, stiamo preparando edizioni pensate per voi.
 
 #fotografia #software #matrimonio
 ```
@@ -624,40 +624,38 @@ It runs on your computer, with no online account and no photo uploads. You pay o
 Thank you to the photographers who tested it in recent weeks: some of what you will find inside came from their reports.
 
 Free 30-day trial, no card: {{link_prova}}
-Print labs and associations: get in touch, there are editions made for you.
+Print labs and associations: get in touch, we are preparing editions made for you.
 
 #photography #software
 ```
 
-### U18 · martedì 23 febbraio 2027, 10:00 · YouTube · Come si installa Impaginatore (Mac, Windows, Linux)
+### U18 · martedì 23 febbraio 2027, 10:00 · YouTube · Il primo album con Impaginatore
 
 | Campo | Valore |
 |---|---|
-| Formato | video 16:9, 3–5 min (guida all’installazione) |
+| Formato | video 16:9, 3–5 min (guida al primo album) |
 | Pilastro | Assistenza e prova |
 | Modello | copertina-video |
 | Grafica | grafiche/copertina-video.png |
-| Invito all’azione | Scarica la prova |
-| Link | {{link_installa}} |
+| Invito all’azione | Prova gratis |
+| Link | {{link_prova}} |
 | Hashtag | #impaginatore #albumdimatrimonio |
-| Note | Titolo del video = titolo qui sopra (massimo 100 caratteri). Il testo è la descrizione. Il video lungo lo registra il fondatore (PIANO-90-GIORNI, S-6); la versione breve è il copione V2. |
-| Caratteri | 741 in italiano |
+| Note | Titolo del video = titolo qui sopra (massimo 100 caratteri). Il testo è la descrizione. Il video lungo lo registra il fondatore (PIANO-90-GIORNI, S-6); la versione breve è il copione V2. La guida all’installazione si fa solo quando esistono gli installatori (T-301, T-302): oggi il programma si avvia da una copia del codice. |
+| Caratteri | 434 in italiano |
 
 Testo in italiano:
 
 ```text
-Su Mac e Windows Impaginatore si installa con un comando di una riga; su Linux con l’AppImage o il pacchetto .deb. In questo video vediamo che cosa fa quel comando, passo per passo, e come si apre il primo album.
+In questo video apriamo il primo album: la cartella delle foto, il formato, la bozza e l’esportazione.
 
 Capitoli
 00:00 Che cosa serve
-00:40 Mac
-01:40 Windows
-02:40 Linux: AppImage e .deb
-03:30 Il primo progetto e la prova di 30 giorni
+00:40 Nuovo album e formato
+01:40 La bozza e gli spread
+02:40 Controlla ed esporta
+03:30 La prova di 30 giorni
 
-Il comando scarica il programma dal nostro sito e, prima di installarlo, controlla la nostra firma digitale: se il file non è quello che abbiamo pubblicato, si ferma.
-
-Pagina di installazione, con il comando da copiare: {{link_installa}}
+Prova gratuita: {{link_prova}}
 Manuale: {{link_manuale}}
 Se qualcosa non va, scrivici: {{email_supporto}}. Gli errori del programma li correggiamo gratis.
 
@@ -672,7 +670,7 @@ Se qualcosa non va, scrivici: {{email_supporto}}. Gli errori del programma li co
 | Pilastro | Resta tuo |
 | Modello | annuncio-lancio |
 | Grafica | grafiche/annuncio-lancio.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} |
 | Hashtag | nessuno |
 | Note | L’ultimo paragrafo solo se la presenza alla Convention ANFM è confermata. |
@@ -708,13 +706,13 @@ Da domani siamo alla Convention ANFM di Padova: se passi, ti mostriamo un album 
 | Link | nessuno |
 | Hashtag | nessuno |
 | Note | Solo se la presenza alla Convention è confermata da ANFM. Nessuna foto di visitatori senza il loro consenso. |
-| Caratteri | 197 in italiano |
+| Caratteri | 228 in italiano |
 
 Testo in italiano:
 
 ```text
 Testo sullo schermo: Convention ANFM, Padova. Fino a sabato impaginiamo un album dal vivo, in dieci minuti di demo.
-Seconda storia: Vuoi provarlo sul tuo portatile? Portalo: lo installiamo insieme.
+Seconda storia: Vuoi provarlo sul tuo portatile? Passa dallo stand: te lo facciamo provare sul nostro portatile.
 ```
 
 ### U21 · giovedì 25 febbraio 2027, 12:30 · Instagram · Dalla cartella alla bozza
@@ -725,7 +723,7 @@ Seconda storia: Vuoi provarlo sul tuo portatile? Portalo: lo installiamo insieme
 | Pilastro | Mestiere |
 | Modello | copertina-reel |
 | Grafica | grafiche/copertina-reel.png (testo da cambiare: «Dalla cartella alla bozza») |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum |
 | Caratteri | 435 in italiano |
@@ -788,7 +786,7 @@ Dal piano di lancio: Seguito ai contatti della Convention; «1 ora per partire»
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Hashtag in inglese | #weddingphotographer #weddingalbum #albumdesign |
 | Note | Nessun confronto fra il prezzo per ora dei pacchetti. |
-| Caratteri | 550 in italiano, 509 in inglese |
+| Caratteri | 534 in italiano, 495 in inglese |
 
 Testo in italiano:
 
@@ -799,7 +797,7 @@ In videochiamata o da remoto: l’installazione, il primo album, i formati del t
 
 49 € per un’ora. Se preferisci non pensarci più, ci sono anche i pacchetti da 5 ore (249 €) e da 10 ore (499 €): un solo pagamento, ore valide 12 mesi, usate a blocchi di 30 minuti. IVA esclusa.
 
-Restano gratis per tutti il manuale, le guide video e la correzione degli errori del programma: se il problema è nostro, non paghi.
+Restano gratis per tutti il manuale e la correzione degli errori del programma: se il problema è nostro, non paghi.
 
 Link nella bio.
 
@@ -815,7 +813,7 @@ By video call or remote session: installation, your first album, your lab’s fo
 
 €49 for one hour. If you’d rather not think about it again, there are also 5-hour (€249) and 10-hour (€499) packs: one payment, hours valid for 12 months, used in 30-minute blocks. VAT excluded.
 
-The manual, video guides and bug fixes stay free for everyone: if the problem is ours, you don’t pay.
+The manual and bug fixes stay free for everyone: if the problem is ours, you don’t pay.
 
 Link in bio.
 
@@ -834,7 +832,7 @@ Link in bio.
 | Link | {{link_manuale}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio #stampafotografica |
 | Note | Pagina 3 = segnaposto-schermata finché non c’è la schermata vera (modelli/schermate/pannello-misure.png, 888 × 700 px). |
-| Caratteri | 513 in italiano |
+| Caratteri | 589 in italiano |
 
 Testo in italiano:
 
@@ -843,35 +841,35 @@ Le misure del laboratorio, impostate una volta sola.
 
 Pagina 2: chiedi al laboratorio formato, abbondanza e margine di sicurezza per ogni prodotto che usi.
 Pagina 3: in Impaginatore li scrivi in millimetri nel pannello misure, insieme allo spazio tra le foto.
-Pagina 4: li salvi come preset e li ritrovi in ogni album nuovo.
+Pagina 4: se il laboratorio ti dà il suo catalogo, lo importi e scegli il prodotto: formato e abbondanza arrivano già impostati.
 
-Un errore di abbondanza costa una ristampa. Un preset costa due minuti.
+Un errore di abbondanza costa una ristampa. Un catalogo importato costa due minuti.
 
 Il manuale con tutti i passaggi è al link nella bio.
 
 #fotografodimatrimonio #albumdimatrimonio #stampafotografica
 ```
 
-### U25 · giovedì 4 marzo 2027, 18:00 · YouTube Shorts e Instagram · Una riga per installarlo
+### U25 · giovedì 4 marzo 2027, 18:00 · YouTube Shorts e Instagram · Il primo album in tre passi
 
 | Campo | Valore |
 |---|---|
 | Formato | short/reel 9:16, 25 s (copione V2) |
 | Pilastro | Assistenza e prova |
 | Modello | copertina-reel |
-| Grafica | grafiche/copertina-reel.png (testo da cambiare: «Una riga per installarlo») |
-| Invito all’azione | Guarda la guida completa |
-| Link | {{link_installa}} |
+| Grafica | grafiche/copertina-reel.png (testo da cambiare: «Il primo album in tre passi») |
+| Invito all’azione | Prova gratis |
+| Link | {{link_prova}} |
 | Hashtag | #impaginatore #albumdimatrimonio |
 | Note | Su YouTube il titolo dello Short è il titolo qui sopra. Su Instagram il testo finisce con «link nella bio». |
-| Caratteri | 308 in italiano |
+| Caratteri | 196 in italiano |
 
 Testo in italiano:
 
 ```text
-Una riga nel Terminale del Mac, o in PowerShell su Windows, e Impaginatore è installato. Prima di installare, il comando controlla la nostra firma sul file.
+Nuovo album, la cartella delle foto, il formato: in tre passi Impaginatore ha aperto il tuo primo album.
 
-La guida completa, anche per Linux, è sul nostro canale YouTube. Pagina con il comando da copiare: {{link_installa}}
+Prova gratuita di 30 giorni, senza carta: {{link_prova}}
 
 #impaginatore #albumdimatrimonio
 ```
@@ -915,7 +913,7 @@ Dal piano di lancio: Caso di studio di un beta tester; spinta sulle segnalazioni
 | Pilastro | Mestiere |
 | Modello | citazione (frase del beta tester), carosello-interna, carosello-chiusura |
 | Grafica | da comporre con i dati del caso di studio |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio #impaginazionealbum |
 | Note | Si pubblica solo con dati veri e il consenso scritto del fotografo (PIANO-90-GIORNI, S2). Nome, frase e dato vanno in costanti.json (caso.*). Niente numeri inventati. |
@@ -998,14 +996,14 @@ Nessuna classifica e nessun premio a sorpresa: un collega che ne aiuta un altro,
 | Invito all’azione | Scrivici per un’edizione per laboratori |
 | Link | {{link_laboratori}} |
 | Hashtag | #stampafotografica #fotolibri |
-| Caratteri | 502 in italiano |
+| Caratteri | 525 in italiano |
 
 Testo in italiano:
 
 ```text
 Una domanda per chi lavora in un laboratorio di stampa: quanti file di album vi tornano indietro perché le misure non sono quelle giuste?
 
-Impaginatore permette al fotografo di salvare come preset le misure di ogni vostro prodotto: formato, abbondanza, margine, spazio tra le foto. Nell’edizione per laboratori il catalogo dei formati arriva già dentro il programma, con il vostro marchio.
+Impaginatore permette al fotografo di importare il catalogo di un laboratorio: formato, abbondanza e risoluzione di ogni prodotto arrivano già impostati. Per i laboratori stiamo preparando un’edizione con il catalogo dei formati già dentro il programma e il vostro marchio.
 
 Se volete vederla, organizziamo una dimostrazione da remoto: {{link_laboratori}}
 
@@ -1024,7 +1022,7 @@ Dal piano di lancio: Controllo dei piloti; primo webinar con un laboratorio.
 | Pilastro | Le foto restano tue |
 | Modello | copertina-reel |
 | Grafica | grafiche/copertina-reel.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} |
 | Hashtag | nessuno |
 | Note | Riuso del reel V1 (U06) per chi segue solo la pagina Facebook. |
@@ -1069,7 +1067,7 @@ Adesivo link: «Iscriviti» → pagina del laboratorio
 | Pilastro | Mestiere |
 | Modello | copertina-reel |
 | Grafica | grafiche/copertina-reel.png (testo da cambiare: «Il PSD a livelli») |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio #photoshop |
 | Caratteri | 417 in italiano |
@@ -1094,10 +1092,10 @@ Prova gratuita di 30 giorni: link nella bio. Nella prova il PSD non c’è, tutt
 | Pilastro | Assistenza e prova |
 | Modello | carosello-interna (pagina 2 di U02) |
 | Grafica | grafiche/carosello-interna.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} |
 | Hashtag | nessuno |
-| Caratteri | 403 in italiano |
+| Caratteri | 399 in italiano |
 
 Testo in italiano:
 
@@ -1108,7 +1106,7 @@ Dura 30 giorni e non chiede la carta. Ha tutte le funzioni del Pro tranne il PSD
 
 Se compri, la chiave arriva entro 2 ore lavorative e la filigrana sparisce dagli export successivi.
 
-Scarica la prova: {{link_prova}}
+Prova gratis: {{link_prova}}
 ```
 
 ## Settimana S4 · dal 22 marzo al 28 marzo
@@ -1358,14 +1356,14 @@ Dal piano di lancio: Promemoria onesto sulla fine del prezzo di lancio; pacchett
 | Link | {{link_assistenza}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Note | Pacchetto «inizio stagione» (PIANO-90-GIORNI, S7): stessi prezzi del listino delle ore, nessuno sconto. |
-| Caratteri | 439 in italiano |
+| Caratteri | 440 in italiano |
 
 Testo in italiano:
 
 ```text
 La stagione dei matrimoni sta per cominciare. Se vuoi arrivarci con il programma già sistemato, prenota 5 ore di assistenza: 249 €, IVA esclusa, un solo pagamento.
 
-Le usi a blocchi di 30 minuti, quando ti servono, per 12 mesi: un’ora adesso per i preset dei tuoi laboratori, mezz’ora a giugno quando arriva il primo album grande, un’ora per i PSD.
+Le usi a blocchi di 30 minuti, quando ti servono, per 12 mesi: un’ora adesso per i formati dei tuoi laboratori, mezz’ora a giugno quando arriva il primo album grande, un’ora per i PSD.
 
 Se ti basta un’ora, sono 49 €. Link nella bio.
 
@@ -1380,7 +1378,7 @@ Se ti basta un’ora, sono 49 €. Link nella bio.
 | Pilastro | Resta tuo |
 | Modello | scheda-prezzo |
 | Grafica | grafiche/scheda-prezzo.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Note | Stessa settimana dell’email di promemoria (PIANO-90-GIORNI, S7). Una volta sola, senza conti alla rovescia. |
@@ -1408,7 +1406,7 @@ Link nella bio.
 | Pilastro | Resta tuo |
 | Modello | scheda-prezzo |
 | Grafica | grafiche/scheda-prezzo.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} |
 | Hashtag | #fotografia #software |
 | Hashtag in inglese | #photography #software |
@@ -1450,7 +1448,7 @@ Dal piano di lancio: Fine del prezzo di lancio venerdì 23 aprile a mezzanotte, 
 | Pilastro | Assistenza e prova |
 | Modello | copertina-reel |
 | Grafica | grafiche/copertina-reel.png (testo da cambiare: «Tre domande, tre risposte») |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prova}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Caratteri | 401 in italiano |
@@ -1477,7 +1475,7 @@ Le altre risposte sono nella pagina delle domande frequenti. Link nella bio.
 | Pilastro | Resta tuo |
 | Modello | scheda-prezzo |
 | Grafica | grafiche/scheda-prezzo.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prezzi}} |
 | Hashtag | nessuno |
 | Caratteri | 264 in italiano |
@@ -1500,7 +1498,7 @@ Prezzi e differenze tra le licenze: {{link_prezzi}}
 | Pilastro | Resta tuo |
 | Modello | scheda-prezzo |
 | Grafica | grafiche/scheda-prezzo.png |
-| Invito all’azione | Scarica la prova |
+| Invito all’azione | Prova gratis |
 | Link | {{link_prezzi}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Note | Se le 300 licenze finiscono prima, al posto di questa uscita si pubblica un grazie (testo nel README, «Se il lancio finisce prima»). |
@@ -1565,16 +1563,18 @@ Queste uscite non hanno data. Si programmano solo quando il server MCP (T-203) e
 | Link | {{link_guida_claude}} (nella bio) |
 | Hashtag | #fotografodimatrimonio #albumdimatrimonio |
 | Note | Prima di pubblicare: verificare con la guida T-403 quali dati passano a Claude (nomi dei file, metadati, anteprime) e scrivere la frase sulla riservatezza di conseguenza. Togliere dalla grafica la fascia «Riserva». |
-| Caratteri | 469 in italiano |
+| Caratteri | 704 in italiano |
 
 Testo in italiano:
 
 ```text
 Da oggi Impaginatore funziona con Claude.
 
-Gli chiedi una prima bozza dell’album, con le tue indicazioni: formato, numero di spread, ordine della giornata. Claude prepara la bozza dentro l’editor tramite MCP. Poi decidi tu, spread per spread; quelli che hai già rifinito a mano non li tocca.
+Gli chiedi una prima bozza dell’album, con le tue indicazioni: formato, numero di spread, ordine della giornata. Claude prepara la bozza dentro l’editor tramite MCP. Poi decidi tu, spread per spread.
 
-È una possibilità in più, non un obbligo: Impaginatore funziona come prima anche senza.
+È una possibilità in più, non un obbligo: Impaginatore funziona come prima anche senza. C’è con le licenze Pro e Studio e nella prova gratuita.
+
+Quello che Claude riceve (nomi dei file, misure e testi dell’album) passa dal programma assistente che scegli tu e arriva al suo fornitore. Le immagini sono spente di serie: le accendi solo tu, e gli originali non partono mai.
 
 La guida per collegarlo è al link nella bio.
 
@@ -1595,14 +1595,14 @@ La guida per collegarlo è al link nella bio.
 | Link | {{link_guida_claude}} |
 | Hashtag | #fotografia #software |
 | Note | Stesse verifiche di R01. |
-| Caratteri | 351 in italiano |
+| Caratteri | 504 in italiano |
 
 Testo in italiano:
 
 ```text
 Impaginatore ora ha un server MCP: Claude può preparare la bozza di un album dentro l’editor, seguendo le indicazioni del fotografo.
 
-Abbiamo tenuto ferma una regola: la bozza la prepara Claude, ogni spread lo decide il fotografo. Gli spread rifiniti a mano non vengono più toccati.
+Abbiamo tenuto ferma una regola: la bozza la prepara Claude, ogni spread lo decide il fotografo. È facoltativo, c’è con le licenze Pro e Studio e nella prova; i testi vanno al programma assistente scelto dall’utente e al suo fornitore, le immagini sono spente di serie e gli originali non partono mai.
 
 Guida al collegamento: {{link_guida_claude}}
 

@@ -45,27 +45,30 @@ sys.path.insert(0, QUI)
 # pagine pubblicate (percorso relativo alla radice del sito) e loro gemelle nell'altra lingua
 PAGINE = ["index.html", "prezzi.html", "installa.html", "grazie.html", "legale.html", "404.html", "en/index.html", "en/installa.html"]
 GEMELLE = {"index.html": "en/index.html", "installa.html": "en/installa.html"}
-NELLA_MAPPA = ["index.html", "prezzi.html", "installa.html", "legale.html", "en/index.html", "en/installa.html"]
+NELLA_MAPPA = ["index.html", "prezzi.html", "legale.html", "en/index.html"]   # installa.html resta fuori finché dice solo «in arrivo» (README.md)
 ASSOLUTE = {"404.html"}            # servita dall'hosting a qualunque profondità: percorsi dalla radice del sito
 ATTESI = {"installa.sh", "installa.ps1"}   # file previsti ma prodotti da altri (script d'installazione): mancano finché non esistono
 
-# schermate: nome stabile -> sorgente in img/originali, misura finale e larghezze pubblicate (vedi README.md)
-SCHERMATE = [
-    dict(nome="editor-album", sorgente="editor-album.png", misura=(2400, 1500), larghezze=(800, 1200, 1600, 2400), stato="provvisoria",
-         cosa="Editor attuale, album dimostrativo (62 foto, 25 spread), spread 22 in vista. Finestra 1440 × 900, densità 2"),
-    dict(nome="controllo-stacchi", sorgente="controllo-stacchi.png", misura=(2200, 692), larghezze=(700, 1100, 2200), stato="provvisoria",
-         cosa="Finestra «Controllo spaziature» su tutto l'album, con «Correggi tutto l'album»"),
-    dict(nome="editor-spread", sorgente="editor-spread.png", misura=(1720, 1312), larghezze=(640, 860, 1720), stato="provvisoria",
-         cosa="Tela dell'editor con i righelli in centimetri, spread 7 dell'album dimostrativo"),
-    *[dict(nome=f"spread-{k:02d}", sorgente=f"spread-{k:02d}.jpg", misura=(1980, 990), larghezze=(640, 990, 1980), stato="provvisoria",
-           cosa=f"Spread {s} della bozza, resa del motore (come l'export)") for k, s in enumerate((10, 22, 7, 18, 24, 8), 1)],
-    dict(nome="psd-livelli", sorgente="psd-livelli.png", misura=(1600, 1000), larghezze=(800, 1600), stato="segnaposto",
-         cosa="Uno spread aperto in Photoshop con le foto su livelli separati (serve un Mac o un PC con Photoshop)"),
-    dict(nome="preset-laboratorio", sorgente="preset-laboratorio.png", misura=(1600, 1000), larghezze=(800, 1600), stato="segnaposto",
-         cosa="Scelta di laboratorio, formato e copertina alla creazione dell'album, con abbondanza e piega (compito T-208)"),
-    dict(nome="bozza-claude", sorgente="bozza-claude.png", misura=(1600, 1000), larghezze=(800, 1600), stato="segnaposto",
-         cosa="Claude prepara la bozza dentro l'editor tramite MCP (compito T-203; sezione spenta finché mcp_disponibile è falso)"),
+# schermate della 2.0 (strumenti/schermate.py, foto sintetiche, tema chiaro, densità 2): nome stabile -> sorgente in
+# img/originali, riquadro facoltativo da ritagliare dall'originale (x0, y0, x1, y1 in px), misura finale, larghezze pubblicate.
+# Ogni schermata c'è in italiano (nome) e in inglese (nome-en). Vedi README.md, «Schermate».
+_SCHERMATE = [
+    dict(nome="editor-album", misura=(2400, 1500), larghezze=(800, 1200, 1600, 2400),
+         cosa="Editor, vista Impagina: album di prova (36 foto sintetiche, 12 spread fatti da «Prepara la bozza»), spread 05–06. Finestra 1280 × 800, densità 2"),
+    dict(nome="bozza", misura=(1960, 1284), larghezze=(700, 1400, 1960),
+         cosa="Finestra «Prepara la bozza» con la proposta per 36 foto"),
+    dict(nome="disposizione", misura=(2288, 1128), larghezze=(700, 1400, 2288),
+         cosa="Spread 03–04 dopo D («Altra disposizione»), con le altre disposizioni nel pannello"),
+    dict(nome="controlla", riquadro=(1100, 0, 2560, 1050), misura=(1460, 1050), larghezze=(730, 1460),
+         cosa="Pannello «Controlla l'album» con «Sistema (2)», dopo due modifiche a mano (una foto più chiara, uno spazio diverso)"),
+    dict(nome="esporta-psd", misura=(1120, 914), larghezze=(560, 1120),
+         cosa="Finestra «Esporta», linguetta «PSD a livelli» (licenza Pro): serve Photoshop su questo computer"),
+    dict(nome="nuovo-album", misura=(960, 1014), larghezze=(480, 960),
+         cosa="Finestra «Nuovo album» con un prodotto del catalogo Generico (formati comuni, nessun laboratorio)"),
+    dict(nome="assistente", misura=(960, 904), larghezze=(480, 960),
+         cosa="Finestra «Assistente AI» della schermata Album: immagini spente (di serie)"),
 ]
+SCHERMATE = [dict(s, nome=s["nome"] + suff, sorgente=s["nome"] + suff + ".png", stato="2.0") for s in _SCHERMATE for suff in ("", "-en")]
 
 MESI = {"it": "gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre".split(),
         "en": "January February March April May June July August September October November December".split()}
@@ -190,7 +193,7 @@ def link_di(chiave, cfg, tier, lingua, pagina):
         if lingua == "it":
             return mailto(E["assistenza"], f"Ore di assistenza: {h} {'ora' if h == 1 else 'ore'}",
                           f"Ciao, vorrei acquistare {h} {'ora' if h == 1 else 'ore'} di assistenza.\n\nNome o ragione sociale:\nPartita IVA o codice fiscale:\n"
-                          "Di cosa hai bisogno (installazione, primo album, preset del laboratorio, Photoshop...):\n")
+                          "Di cosa hai bisogno (installazione, primo album, formati del laboratorio, Photoshop...):\n")
         return mailto(E["assistenza"], f"Support hours: {h} hour{'s' if h > 1 else ''}",
                       f"Hi, I'd like to buy {h} hour{'s' if h > 1 else ''} of support.\n\nName or company:\nVAT number (businesses):\nWhat you need help with:\n")
     if chiave == "laboratori":
@@ -211,9 +214,9 @@ def link_di(chiave, cfg, tier, lingua, pagina):
     if gruppo == "email": return "mailto:" + E[nome]
     if gruppo in ("download", "script"):
         v = L.get(f"{gruppo}_{nome}") or ""
-        return relativo(pagina, v, cfg) if v else relativo(pagina, "installa.html#classico" if lingua == "it" else "en/installa.html#classic", cfg)
+        return relativo(pagina, v, cfg) if v else relativo(pagina, "installa.html" if lingua == "it" else "en/installa.html", cfg)
     v = L.get(chiave) or ""
-    if not v and chiave == "impronte": v = "installa.html#verifica" if lingua == "it" else "en/installa.html#verify"
+    if not v and chiave == "impronte": v = "installa.html" if lingua == "it" else "en/installa.html"
     if not v: v = "legale.html#" + chiave.replace("_", "-")
     return relativo(pagina, v, cfg)
 
@@ -490,6 +493,7 @@ def immagini(a=None):
         W, H = s["misura"]; src = os.path.join(ORIGINALI, s["sorgente"])
         if os.path.exists(src):
             im = Image.open(src).convert("RGB")
+            if s.get("riquadro"): im = im.crop(s["riquadro"])
             r_src, r_dst = im.width / im.height, W / H
             if abs(r_src - r_dst) > 0.002:            # rapporto diverso: ritaglio centrato, poi riduzione
                 if r_src > r_dst: nw = round(im.height * r_dst); im = im.crop(((im.width - nw) // 2, 0, (im.width - nw) // 2 + nw, im.height))

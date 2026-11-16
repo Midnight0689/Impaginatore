@@ -8,13 +8,13 @@
          propria casella, uno alla volta, al massimo 3 tentativi per laboratorio, dopo il parere privacy
          (art. 130 Codice privacy; GUIDA-INVIO.md). Niente logo, niente immagini: deve sembrare ciò che è,
          una lettera. Si dà del voi al laboratorio. -->
-    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Un preset con i vostri formati, abbondanze e piega, e un video di 90 secondi.</div></mj-raw>
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Un preset con i vostri formati e abbondanze, e un video di 90 secondi.</div></mj-raw>
     <mj-section padding="32px 40px 0" css-class="sez">
       <mj-column>
         <mj-text font-family="Helvetica, Arial, sans-serif" font-size="15px" line-height="23px">
           <p style="margin:0 0 16px;">Buongiorno,</p>
           <p style="margin:0 0 16px;">{{#if se_accordo_telefonico}}vi scrivo come d’accordo al telefono. {{/if}}Sono {{firma_nome}}, fotografo di matrimoni, e ho scritto Impaginatore: un programma per impaginare album che i fotografi installano sul proprio computer.</p>
-          <p style="margin:0 0 16px;">Ho preparato un preset con alcuni formati di {{nome_laboratorio}}, fra cui il {{formato_esempio}}, con abbondanze e piega come nelle vostre specifiche pubblicate. L’idea è semplice: i file dei fotografi vi arrivano già conformi.</p>
+          <p style="margin:0 0 16px;">Ho preparato un preset con alcuni formati di {{nome_laboratorio}}, fra cui il {{formato_esempio}}, con abbondanza e regole come nelle vostre specifiche pubblicate. Impaginatore importa i cataloghi dei laboratori da file: con un prodotto del catalogo l’album prende formato e abbondanza, il controllo segue le regole del prodotto e la consegna esce con i nomi e le misure del prodotto. L’idea è semplice: i file dei fotografi vi arrivano con le misure e i nomi che chiedete.</p>
           <p style="margin:0 0 16px;">In questo video di 90 secondi si vede come funziona: <a class="lnk" href="{{link_video}}">{{link_video}}</a></p>
           <p style="margin:0 0 16px;">Se vi interessa, vi mando un album di prova esportato secondo le vostre specifiche, da far controllare alla prestampa. Se non vi interessa, basta rispondere «no» e non vi scriverò più.</p>
           <p style="margin:0 0 4px;">Grazie dell’attenzione,</p>

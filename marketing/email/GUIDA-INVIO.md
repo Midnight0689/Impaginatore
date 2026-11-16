@@ -57,11 +57,11 @@ Per rigenerare immagini e caratteri, dalla radice del repository:
 
 ### 1.1 Prima del primo invio
 
-1. **Riempi `strumenti/costanti.json`**: sito, indirizzi, partita IVA, firma, link fissi, comandi d’installazione copiati dalla pagina «Installa». Finché una costante è vuota, le campagne convertite contengono segni `[[nome]]` e lo script scrive «NON PRONTA».
-2. **Lascia vuoto `mcp_disponibile`** finché il server MCP non è rilasciato: il piano dice che fino ad allora la bozza con Claude non si pubblicizza, e lo script toglie quei blocchi. Le anteprime li mostrano accesi, per far vedere come saranno.
+1. **Riempi `strumenti/costanti.json`**: sito, indirizzi, partita IVA, firma, link fissi. Finché una costante è vuota, le campagne convertite contengono segni `[[nome]]` e lo script scrive «NON PRONTA».
+2. **Lascia vuoto `mcp_disponibile`** finché l’assistente AI non si può collegare con un’installazione vera: il server MCP c’è (T-203, `docs/architettura/MCP.md`), ma oggi il componente si installa solo da una copia del codice (`uv sync --extra mcp`), senza installatore. Il piano dice che fino ad allora l’assistente non si pubblicizza, e lo script toglie quei blocchi. Le anteprime li mostrano accesi, per far vedere come saranno. I blocchi, quando si accendono, dicono già il vero: assistente scelto dall’utente, solo testo di serie, immagini accese solo da lui, dati che vanno al fornitore dell’assistente.
 3. **Metti online `immagini/`** in una cartella pubblica HTTPS con la versione nel percorso, per esempio `https://<dominio>/email/v1/`, e scrivi quell’indirizzo in `base_immagini`. Una volta inviata un’email, non si sovrascrivono le immagini: un cambio va in `v2/`. I file in `font/` vanno serviti con `Content-Type: font/woff2` e l’intestazione `Access-Control-Allow-Origin: *`, altrimenti alcuni client web non li caricano e usano i caratteri di ripiego, che sono già previsti. Peso totale: circa 540 KB.
 4. **Sostituisci le schermate segnaposto** (§7).
-5. **Pagina-ponte per l’attivazione** (§6.3).
+5. **Controlla ogni frase sul programma** contro il programma com’è quel giorno (§6.3 e §8): installatore, aggiornamenti per chi compra, guida video e cataloghi di laboratori reali oggi non ci sono.
 
 ---
 
@@ -180,7 +180,7 @@ Questa sezione riassume le regole da rispettare; non sostituisce il parere del l
 |---|---|---|
 | Servizio (chiave, rimborso, ore, assistenza) | esecuzione del contratto | Niente consenso. Solo contenuto di servizio: niente offerte dentro |
 | Lancio, Rosetta | consenso | Iscrizione con **doppia conferma**: modulo + email con link di conferma. Registro con data, ora, fonte, testo del consenso. Il Garante tratta la doppia conferma come prova del consenso (provv. 4/6/2025 n. 330) [NV: estremi da far confermare] |
-| Prova, giorni 1-7-scadenza | consenso | La prova non chiede l’email. Le tre email partono solo a chi, scaricandola, ha chiesto i consigli con una casella **non preselezionata** e ha confermato |
+| Prova, giorni 1-7-scadenza | consenso | La prova non chiede l’email. Le tre email partono solo a chi, provandola, ha chiesto i consigli con una casella **non preselezionata** e ha confermato |
 | Aggiornamento, ai clienti | art. 130, comma 4, Codice privacy («soft spam») | Solo per prodotti analoghi a quello comprato; informativa al momento dell’acquisto; possibilità di opporsi in ogni email, che c’è [L] |
 | Laboratori | **da chiarire** | Vedi §5.3 |
 
@@ -225,13 +225,11 @@ Il Garante ha sostenuto che serve il consenso per le email promozionali anche ve
 
 Sempre allegata. Ha gli stessi segnaposto e le stesse condizioni dell’HTML; `converti.py` la traduce insieme.
 
-### 6.3 Il link «Attiva in Impaginatore»
+### 6.3 Come si inserisce la chiave (nessun pulsante «Attiva»)
 
-`FLUSSO-ACQUISTO.md` prevede un link diretto `impaginatore://attiva?chiave=…`. Nei modelli il link è `{{link_attivazione}}`, per due motivi:
-- **Gmail e altri client web tolgono o bloccano i link con schemi diversi da `https` e `mailto`** [NV: da provare su Gmail web, Gmail app, Outlook.com prima del lancio]. Il pulsante resterebbe morto proprio dove si legge più posta.
-- **Il tracciamento dei clic** dei servizi riscrive i link passando dai loro server: la chiave finirebbe nei loro registri.
+Le email non hanno un pulsante o un link che apra il programma con la chiave. Il programma non registra il collegamento `impaginatore://` (lo farà l’installatore, T-302), non legge la chiave dagli appunti da solo e non ha un menu «Licenza › Attiva». Il flusso vero, che `benvenuto-chiave` e `attivazione-problema` descrivono, è quello del manuale (capitolo 11): schermata Album → pulsante della licenza in alto → finestra «Licenza» → incollare la chiave nel riquadro «Chiave di licenza» → «Attiva». In inglese: «Albums», «Licence», «Licence key», «Activate». Quando l’installatore registrerà il collegamento, `FLUSSO-ACQUISTO.md` §3 potrà tornare in gioco: allora si riaggiunge un link `https` che fa da ponte (Gmail e altri client web bloccano gli schemi diversi da `https` e `mailto` [NV]) e si riscrivono le due email.
 
-Proposta: `{{link_attivazione}}` = `https://<dominio>/attiva#<CHIAVE>`. La pagina legge la chiave dal frammento dopo `#`, che il browser **non invia** al server, apre `impaginatore://attiva?chiave=…` e, se non succede nulla, mostra la chiave da copiare con le istruzioni del menu *Licenza › Attiva*. Se la prova dimostra che lo schema diretto passa ovunque, basta mettere quello nel valore: il modello non cambia. In ogni caso il tracciamento dei clic resta spento per `benvenuto-chiave` e `attivazione-problema`.
+Il tracciamento dei clic resta spento per `benvenuto-chiave` e `attivazione-problema`, per non far passare dai server del servizio i link di un’email con la chiave.
 
 ### 6.4 Allegati
 
@@ -246,8 +244,8 @@ In `immagini/` ci sono solo logo e icone della marca, generati dai file di `bran
 | File | Misure del file | Resa | Email | Cosa mostrare | Testo alternativo (già nei sorgenti) |
 |---|---|---|---|---|---|
 | `segnaposto/lancio-spread.png` | 1040 × 650 | 520 × 325 | lancio | Uno spread nell’editor, tema chiaro, con una quota verde «5,0 mm» fra due foto | «Uno spread di un album di matrimonio in Impaginatore, con le misure di margini e piega.» |
-| `segnaposto/benvenuto-primo-spread.png` | 1040 × 586 | 520 × 293 | benvenuto-chiave | L’album di esempio appena impaginato: primo spread, pannello misure, nessuna filigrana | «Il primo spread dell’album di esempio aperto in Impaginatore, con il pannello delle misure.» |
-| `segnaposto/prova-bozza-claude.png` | 1040 × 650 | 520 × 325 | prova-giorno-1 (solo con `mcp_disponibile`) | La colonna degli spread con la bozza completa; uno spread rifinito a mano evidenziato | «Impaginatore con la bozza di un album preparata da Claude e il pannello degli spread.» |
+| `segnaposto/benvenuto-primo-spread.png` | 1040 × 586 | 520 × 293 | benvenuto-chiave | Un album appena impaginato: primo spread, elenco degli spread a sinistra, nessuna filigrana | «Il primo spread di un album aperto in Impaginatore, con l’elenco degli spread a sinistra.» |
+| `segnaposto/prova-bozza-claude.png` | 1040 × 650 | 520 × 325 | prova-giorno-1 (solo con `mcp_disponibile`) | La colonna degli spread con la bozza completa; uno spread rifinito a mano evidenziato | «Impaginatore con la bozza di un album e il pannello degli spread.» |
 | `segnaposto/aggiornamento-novita.png` | 1040 × 586 | 520 × 293 | aggiornamento | La funzione nuova, ritagliata sul punto che si racconta, una sola annotazione | «La novità principale della versione {{versione}} di Impaginatore.» (da precisare a ogni versione) |
 
 Regole: PNG o JPG sotto i 200 KB l’uno; foto dell’album dimostrativo con licenza e liberatoria degli sposi; nessun dato vero di clienti visibile. Le versioni inglesi usano le stesse immagini: se l’interfaccia nella schermata è in italiano, va bene, ma il testo alternativo inglese è già tradotto nei sorgenti `.en`.
@@ -263,15 +261,16 @@ Regole: PNG o JPG sotto i 200 KB l’uno; foto dell’album dimostrativo con lic
 - [ ] `data_fine_lancio` vera: 23 aprile 2027, o la data in cui si arriva a 300 licenze. Dopo, si riconverte con `dopo-il-lancio.json`.
 - [ ] `mcp_disponibile` vuoto finché il server MCP non è rilasciato.
 - [ ] `lancio`: nota sul confronto con gli abbonamenti ricontrollata (prezzi e data; nel 2027 un concorrente ha annunciato 320 $) e vista dal legale.
-- [ ] `rosetta`: **verificato che Impaginatore giri in modo nativo sui Mac con processore Apple** (eseguibile arm64 o universale, provato su un Mac Apple silicon senza Rosetta installato). Senza questa prova la frase «gira in modo nativo» va tolta. Ricontrollati il link all’annuncio Apple e le etichette del Finder («Applicazione (Intel)», «(Universal)», «(Apple Silicon)») sulla versione di macOS in uso [NV]. Offerta approvata dal titolare.
+- [ ] `rosetta`: la frase «gira in modo nativo sui Mac con processore Apple» è stata tolta perché oggi non è provata (macOS e Windows non sono mai stati provati su macchine vere). Si può rimettere solo dopo aver verificato l’eseguibile arm64 o universale su un Mac Apple silicon senza Rosetta. Ricontrollati il link all’annuncio Apple e le etichette del Finder («Applicazione (Intel)», «(Universal)», «(Apple Silicon)») sulla versione di macOS in uso [NV]. Offerta approvata dal titolare.
+- [ ] Nessuna frase afferma ciò che il programma non fa il giorno dell’invio: installatore e pagina «Installa», aggiornamenti per chi compra, guide video, laboratori reali già inclusi, requisiti di sistema, «testato su macOS e Windows». Si controlla contro `docs/manuale/` e `docs/architettura/LICENZE.md`.
 - [ ] Schermate segnaposto sostituite.
 - [ ] Oggetto e preheader scelti in `OGGETTI.md`; se non è la variante A, preheader aggiornato nel sorgente.
 
 **Tecnica**
 - [ ] `python3 strumenti/compila.py` senza segnalazioni; `converti.py` senza «NON PRONTA».
 - [ ] Prova a Gmail (web e app), Outlook (web e Windows), Apple Mail (Mac e iPhone, chiaro e scuro): immagini, caratteri, pulsanti, link, disiscrizione.
-- [ ] Tutti i link aprono la pagina giusta; `{{link_attivazione}}` provato con una chiave vera.
-- [ ] Tracciamento dei clic spento per chiave e assistenza; per le campagne, se acceso, controllato che non rompa i comandi d’installazione (non sono link).
+- [ ] Tutti i link aprono la pagina giusta; la procedura di `benvenuto-chiave` (Album › pulsante della licenza › «Licenza» › «Chiave di licenza» › «Attiva») provata con una chiave vera, con il testo dei pulsanti com’è nella versione che si consegna.
+- [ ] Tracciamento dei clic spento per chiave e assistenza.
 - [ ] Allegati presenti dove il testo li cita.
 - [ ] SPF, DKIM e DMARC in `PASS` su una prova.
 
@@ -304,10 +303,10 @@ Date dal piano di lancio (S-14 = settimana del 16/11/2026; lancio martedì 23/02
 
 ## 10. Cosa resta da fare a mano
 
-- Riempire `costanti.json`, mettere online `immagini/` e la pagina-ponte `/attiva`.
+- Riempire `costanti.json` e mettere online `immagini/`.
 - Sostituire le 4 schermate segnaposto.
 - Configurare DNS, Brevo e Resend; collegare l’invio a `chiavi.py` (oggi l’email parte a mano).
 - Revisione legale dei testi marcati [L]; parere privacy prima dei laboratori.
-- Verifica arm64 prima di `rosetta`; prova del link di attivazione sui client principali.
+- Verifica arm64 prima di rimettere la frase «nativo» in `rosetta`; prova della procedura di inserimento della chiave con una chiave vera.
 - Testi non coperti da questi modelli: risposta con i dati per il bonifico (`FLUSSO-ACQUISTO.md` §4.2, oggi testo semplice), annuncio della data (S-2), promemoria di fine lancio (S7), conferma dell’iscrizione alla lista.
 - Nota per `FLUSSO-ACQUISTO.md` §4.5: l’oggetto «Le tue <ORE> ore di assistenza» con una sola ora diventa «Le tue 1 ore»; in `OGGETTI.md` ci sono varianti senza il numero.

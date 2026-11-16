@@ -1,12 +1,12 @@
-{% if contact.FIRSTNAME %}Ciao {{ contact.FIRSTNAME }}, grazie{% else %}Grazie{% endif %} per aver installato la prova di Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.
+{% if contact.FIRSTNAME %}Ciao {{ contact.FIRSTNAME }}, grazie{% else %}Grazie{% endif %} per aver provato Impaginatore. Hai 30 giorni, le funzioni del Pro tranne il PSD, e nessun limite di spread. Ecco da dove partire.
 
 IL PRIMO SPREAD IN CINQUE MINUTI
 
-01 · Parti dall’album di esempio
-Sulla prima schermata scegli «Prova con l’album di esempio». Le foto sono incluse, quindi puoi sbagliare senza toccare le tue.
+01 · Parti da una cartella di foto
+Nella schermata Album premi «Scegli la cartella delle foto…» e scegli la cartella con le foto scelte del servizio (per la bozza ne bastano 10). Le foto restano dove sono: l’album le legge da lì e non le modifica.
 
-02 · Scegli il tuo laboratorio
-Quando crei un album nuovo, scegli laboratorio e formato: abbondanze e piega arrivano già impostate. Se il tuo laboratorio non c’è, inserisci le misure a mano.
+02 · Scegli il formato
+Nella finestra «Nuovo album» premi un formato pronto, per esempio «60 × 22,5», o scrivi le misure. Se hai il catalogo del tuo laboratorio in un file, lo importi con «Importa il catalogo di un laboratorio…»: l’album prende formato e abbondanza del suo prodotto.
 
 03 · Esporta uno spread e guardalo al 100%
 In JPG o PDF: è il modo più rapido per giudicare margini e nitidezza. Durante la prova gli export hanno una filigrana.
@@ -21,7 +21,7 @@ Durante la prova ti scrivo altre due volte: fra una settimana e qualche giorno p
 
 --
 Resta tuo.
-Ricevi questa email perché, scaricando la prova, hai chiesto i consigli per usarla all’indirizzo {{ contact.EMAIL }} e hai confermato la richiesta.
+Ricevi questa email perché hai chiesto i consigli per usare la prova gratuita all’indirizzo {{ contact.EMAIL }} e hai confermato la richiesta.
 Non vuoi più ricevere queste email? Disiscriviti con un clic: {{ unsubscribe }}
 Scegli quali ricevere: {{ update_profile }}
 [[titolare]] · [[indirizzo]] · P. IVA [[partita_iva]]

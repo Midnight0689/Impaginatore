@@ -1,24 +1,17 @@
 *|IF:FNAME|*Ciao *|FNAME|*, grazie*|ELSE:|*Grazie*|END:IF|* per averci scritto. In base a quello che ci hai raccontato, ecco cosa fare.
 *|IF:P_CHIAVE|*
 «QUESTA CHIAVE NON È VALIDA»
-Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con IMP1-: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero, oppure apri il link.
+Quasi sempre manca un pezzo. La chiave è lunga, circa 200 caratteri, e inizia con IMP1-: va copiata tutta. Spazi, a capo e trattini non contano, Impaginatore li ignora. Te la rimandiamo qui sotto: copiala per intero e incollala nel riquadro «Chiave di licenza» della finestra «Licenza».
 
 *|LICENZA|*
 (intestata a «*|INTESTATAR|*»)
-
-Attiva in Impaginatore: *|L_ATTIVA|*
-*|END:IF|**|IF:P_LINK|*
-IL PULSANTE NON APRE IMPAGINATORE
-Succede con alcuni programmi di posta e con la posta letta nel browser, che non lasciano aprire le app dai link. Non è un problema della chiave. Copia la chiave dall’email della licenza, apri Impaginatore e usa il menu Licenza › Attiva. Se l’hai appena installato, aprilo una prima volta e poi riprova il pulsante.
+*|END:IF|**|IF:P_DOVE|*
+DOVE SI INSERISCE LA CHIAVE
+Apri Impaginatore: si apre la schermata Album. In alto a destra premi il pulsante della licenza (per esempio «Prova gratuita · 30 giorni» o «Sola lettura · inserisci la licenza»). Si apre la finestra «Licenza»: incolla la chiave nel riquadro «Chiave di licenza» e premi «Attiva». Se sei dentro un album, premi prima «‹ Album».
 *|END:IF|**|IF:P_INSTALL|*
 L’INSTALLAZIONE SI FERMA
-Con il comando di una riga, copia la riga intera e incollala in Terminale (Mac e Linux) o in PowerShell (Windows); non serve la password di amministratore. Il comando giusto è nella pagina Installa: *|L_INSTALLA|*
-
-Con l’installer classico, il sistema mostra un avviso perché non è firmato con i certificati di Apple e Microsoft:
-- Mac: Impostazioni di Sistema › Privacy e sicurezza, poi «Apri comunque» accanto al nome di Impaginatore.
-- Windows: sulla finestra blu premi «Ulteriori informazioni», poi «Esegui comunque».
-
-Prima di fidarti, puoi leggere cosa fa il comando, riga per riga, con l’impronta dei file da confrontare: *|L_COMANDO|*
+Le istruzioni per installare Impaginatore sono nella pagina Installa: *|L_INSTALLA|*
+Se non bastano, rispondi con il sistema che usi (macOS, Windows o Linux), il messaggio che leggi e, se puoi, uno screenshot.
 *|END:IF|**|IF:P_COMPUT|*
 TI SERVE SU PIÙ COMPUTER
 La tua licenza *|FASCIA|* vale per *|COMPUTER|* computer. Se te ne servono di più, Studio ne copre 5: passi a Studio pagando solo la differenza, 50 € dal Pro o 100 € dall’Essenziale, IVA esclusa. Dall’Essenziale al Pro, per 2 computer, la differenza è 50 €. Rispondi a questa email e ti mandiamo i dati per il bonifico; la nuova chiave sostituisce la vecchia.

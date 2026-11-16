@@ -9,7 +9,8 @@ IMPAGINATORE {{versione}} È DISPONIBILE ({{data_versione}})
 Correzioni: {{correzioni}}
 
 COME AGGIORNARE
-Impaginatore ti propone l’aggiornamento al prossimo avvio. Progetti, modelli e licenza restano come sono. Se non compare, la nuova versione è anche nella pagina Installa: {{link_installa}}
+I passi per installare la nuova versione sono nella pagina Installa: {{link_installa}}
+Progetti, modelli e licenza restano come sono.
 
 Tutte le novità: {{link_note_versione}}
 

@@ -2,7 +2,7 @@
 
 Pagine statiche scritte a mano: HTML, un foglio di stile, un piccolo script. Nessun framework, nessuna dipendenza da installare, nessuna risorsa da altri siti (caratteri compresi), nessun cookie, nessun tracciamento. Si aprono anche con un doppio clic su `index.html` e funzionano su qualsiasi hosting statico.
 
-**Stato: modello pronto, non pubblicabile così com'è.** Dominio, indirizzi email, titolare, testi legali, tre schermate e diverse funzioni promesse non esistono ancora: l'elenco è sotto, in «Prima di pubblicare».
+**Stato: modello pronto, non pubblicabile così com'è.** Dominio, indirizzi email, titolare, testi legali, installatori e pagina d'installazione non esistono ancora: l'elenco è sotto, in «Prima di pubblicare». Dal riallineamento T-501 le pagine descrivono solo quello che la versione 2.0 fa oggi; quello che manca è tolto o detto «in arrivo», senza date.
 
 ## Cosa c'è
 
@@ -11,9 +11,9 @@ Pagine statiche scritte a mano: HTML, un foglio di stile, un piccolo script. Nes
 | `index.html` | Pagina principale in italiano |
 | `en/index.html` | La stessa pagina in inglese (`hreflang` reciproci) |
 | `prezzi.html` | Fasce, tabella delle funzioni, aggiornamenti, come si compra, domande sui prezzi |
-| `installa.html`, `en/installa.html` | Comando di una riga spiegato pezzo per pezzo, installatore classico, verifica dell'impronta |
+| `installa.html`, `en/installa.html` | Per ora solo «gli installatori sono in arrivo»: fuori dai menu e dalla mappa del sito finché non esistono (T-301, T-302). Il testo di prima (comando di una riga, installatore classico, impronte) è nella storia di git |
 | `grazie.html` | Conferma dopo la lista d'attesa (`?per=lista`) o la richiesta d'acquisto (`?per=acquisto`); senza JavaScript mostra entrambi i blocchi |
-| `legale.html` | Privacy, condizioni, licenza, assistenza, terze parti, crediti delle foto, titolare: **riassunti segnaposto** |
+| `legale.html` | Privacy, condizioni, licenza, assistenza, terze parti, foto delle schermate, titolare: **riassunti segnaposto** |
 | `404.html` | Pagina d'errore, con percorsi dalla radice del sito |
 | `config.json` | **Unico punto di configurazione** (vedi sotto) |
 | `css/sito.css` | Stile del sito; colori, caratteri e spazi solo dai token |
@@ -22,7 +22,7 @@ Pagine statiche scritte a mano: HTML, un foglio di stile, un piccolo script. Nes
 | `img/schermate/` | WebP delle schermate in più larghezze, ricavati da `img/originali/` (esclusa da git) |
 | `img/og/` | Immagini Open Graph 1200 × 630, rese da `strumenti/modelli/og.html` |
 | `sitemap.xml`, `robots.txt` | Generati da `sito.py configura` |
-| `strumenti/` | `sito.py` (tutti i passi), `schermate.py` (schermate dell'editor), `cromo.py` (Chrome senza schermo, solo libreria standard) |
+| `strumenti/` | `sito.py` (tutti i passi), `schermate.py` (schermate della 2.0, in italiano e in inglese), `cromo.py` (Chrome senza schermo, solo libreria standard) |
 | `anteprime/` | Istantanee di ogni pagina a 360, 768, 1280 e 1920 px, tema chiaro e scuro |
 | `RICERCA.md` | Ricerca sulle pagine di vendita e scelte che ne derivano |
 
@@ -54,7 +54,7 @@ Dopo ogni modifica a `config.json` o a `tier.json` si esegue `sito.py configura`
 |---|---|
 | `data-prezzo="pro.oggi"` | Il testo diventa il prezzo da `tier.json` («79 €», «€79» in inglese). `.oggi` è il prezzo di lancio fino a `data_fine_lancio`, poi il listino; `.listino`, `.oggi_ivato`, `ore.ore_5`, `upgrade.pro`, `passaggio.essenziale_pro` e altri: vedi `valori()` in `sito.py` |
 | `data-valore="computer.pro"` | Il testo diventa un numero da `tier.json` (computer, giorni di prova, giorni di rimborso, mesi tra versioni maggiori…) |
-| `data-cfg="email.contatti"` | Il testo diventa il valore di `config.json`; ci sono anche `data_lancio`, `data_fine_lancio` (scritte per esteso), `comando_mac`, `comando_windows`, `requisiti` |
+| `data-cfg="email.contatti"` | Il testo diventa il valore di `config.json`; ci sono anche `data_lancio`, `data_fine_lancio` (scritte per esteso), `requisiti` (le FAQ «Su quali sistemi funziona?»); `comando_mac` e `comando_windows` restano in `config.json` per la pagina d'installazione futura |
 | `data-link="acquisto.pro"` | `href` diventa il link configurato; se è vuoto, un `mailto:` già compilato (acquisto con i dati per la fattura, ore di assistenza, laboratori, lista d'attesa) |
 | `data-url="prezzi.html"` | `href` o `content` diventa l'indirizzo assoluto (canonical, `hreflang`, Open Graph) |
 | `data-se="in_vendita"`, `data-se-non="in_vendita"` | Mostra o nasconde l'elemento (`hidden`). Interruttori: `in_vendita`, `mcp_disponibile`, `riprova_sociale`, più `lancio` (vero fino a `data_fine_lancio`) e `modulo_lista` (vero se c'è l'indirizzo del modulo) |
@@ -63,8 +63,8 @@ Dopo ogni modifica a `config.json` o a `tier.json` si esegue `sito.py configura`
 
 Gli interruttori:
 
-- `in_vendita` (oggi `false`): in prevendita i pulsanti dicono «Avvisami al lancio» e portano alla lista d'attesa; quando è vero diventano «Scarica la prova gratuita» e «Acquista …», e compaiono i pulsanti di download.
-- `mcp_disponibile` (oggi `false`): la sezione «Se usi Claude, può preparare la bozza con te», la riga nella card Pro e nella tabella delle fasce. Come l'interruttore omonimo delle email (`marketing/email/strumenti/costanti.json`).
+- `in_vendita` (oggi `false`): in prevendita i pulsanti dicono «Avvisami al lancio» e portano alla lista d'attesa; quando è vero diventano «Scarica la prova gratuita» e «Acquista …» e portano a `installa.html`. **Non accenderlo finché `installa.html` dice solo «in arrivo»**.
+- `mcp_disponibile` (oggi `true`, da T-501: l'assistente esiste dalla T-203): la sezione «Se usi Claude, può lavorare sull'album con te», la riga nella card Pro e nella tabella delle fasce. La sezione dice che cosa riceve l'assistente e che le immagini sono spente di serie, come `docs/manuale/assistente/02-cosa-vede.md`. L'interruttore omonimo delle email (`marketing/email/strumenti/costanti.json`) è ancora spento: il componente si installa solo da una copia del codice.
 - `riprova_sociale` (oggi `false`): la sezione delle testimonianze. Si accende solo con testimonianze vere e consenso scritto.
 
 La lista d'attesa: con `modulo_lista_attesa` vuoto, al posto del modulo c'è un pulsante `mailto:` con il messaggio già scritto (destinatario `email.lista_attesa`). Con un indirizzo, compare il modulo (`email`, `consenso`, `lingua`, in POST); il servizio che lo riceve deve rimandare a `grazie.html?per=lista`. Non c'è un ripiego che finga un'iscrizione andata a buon fine.
@@ -80,12 +80,12 @@ Pagine allineate a `config.json` e `tier.json`; un solo `h1` e titoli senza salt
 ## Pubblicare
 
 1. Compila `config.json`: `dominio`, `percorso_base`, email, `titolare`, `partita_iva`, `sede`, `requisiti`, `data_lancio`, `data_fine_lancio`; il modulo della lista d'attesa se c'è.
-2. Il giorno del lancio: `in_vendita: true`, link di download, link alle impronte, eventuali link d'acquisto (vuoti = `mailto:` all'indirizzo `email.vendite`).
+2. Il giorno del lancio: riscrivi `installa.html` e `en/installa.html` con i file veri e rimettile in `NELLA_MAPPA` (`sito.py`), nei menu e nei piedi; poi `in_vendita: true`, link di download, link alle impronte, eventuali link d'acquisto (vuoti = `mailto:` all'indirizzo `email.vendite`).
 3. Se il sito non sta nella radice del dominio, cambia `percorso_base` e i percorsi che iniziano con `/` in `404.html`.
 4. `python3 strumenti/sito.py tutto --pubblicazione` deve finire con 0 errori.
 5. `python3 strumenti/sito.py pubblica /percorso/vuoto` e carica il contenuto di quella cartella sull'hosting, con HTTPS. Configura l'hosting perché serva `404.html` per le pagine mancanti.
 6. Intestazioni consigliate: `Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; form-action 'self' <indirizzo del modulo>`, `Referrer-Policy: strict-origin-when-cross-origin`, cache lunga per `font/` e `img/`.
-7. `installa.sh` e `installa.ps1` vanno pubblicati nella radice accanto alle pagine (li prepara il team prodotto, T-302): finché mancano, il controllo li segnala come avviso.
+7. Se la pagina d'installazione tornerà al comando di una riga, `installa.sh` e `installa.ps1` vanno pubblicati nella radice accanto alle pagine (T-302).
 
 ## Segnaposto
 
@@ -94,53 +94,48 @@ Pagine allineate a `config.json` e `tier.json`; un solo `h1` e titoli senza salt
 | `config.json` | Dominio e email (`.example`), `titolare`, `partita_iva`, `sede`, requisiti minimi di memoria e disco, link di download e impronte, modulo della lista d'attesa |
 | `legale.html` | Tutti i testi completi: oggi ci sono riassunti marcati «SEGNAPOSTO» con il documento di origine in `docs/legale/` |
 | `index.html`, `en/index.html` | Sezione delle testimonianze (nascosta, `riprova_sociale`) |
-| `img/schermate/psd-livelli-*` | Segnaposto 1600 × 1000: uno spread aperto in Photoshop con le foto su livelli separati |
-| `img/schermate/preset-laboratorio-*` | Segnaposto 1600 × 1000: scelta di laboratorio, formato e copertina (dopo T-208) |
-| `img/schermate/bozza-claude-*` | Segnaposto 1600 × 1000, in una sezione oggi nascosta (dopo T-203) |
+| `installa.html`, `en/installa.html` | Tutta la pagina: oggi dice «in arrivo» (T-301, T-302) |
 | Confronto dei costi | Le larghezze delle barre (`style="width:…"`) sono scritte a mano su 99 € e 870 €: se cambiano listino o prezzi di mercato, vanno ricalcolate |
-| `en/index.html` | La domanda «Is the app in English?» promette l'interfaccia inglese prima del lancio (T-206): da confermare |
 
 ## Schermate
 
-Le schermate attuali sono **provvisorie**: mostrano l'editor 1.5.2, con i colori e la disposizione di oggi (scuro, pulsanti blu e gialli). Dopo il ridisegno dell'interfaccia (T-205) vanno rifatte tutte, anche per il rischio di somiglianza segnalato in LEG-004. I nomi dei file sono stabili: si sostituiscono gli originali e si rilancia `sito.py immagini`, le pagine non cambiano.
+Le schermate vengono dalla versione 2.0 (T-205, T-206), in italiano e in inglese: le pagine inglesi usano i file `-en`. Le foto sono **sintetiche**, le stesse forme di `strumenti/schermate_ux.py` (cielo, terreno, sagoma; con EXIF di data e ora), ingrandite tre volte: nessuna persona vera, niente `marketing/demo`. L'album è uno solo, «Matrimonio Rossi Bianchi» («Wedding Smith Jones»): 36 foto, prodotto «Orizzontale 30 × 22,5» del catalogo dei formati comuni, 12 spread fatti da «Prepara la bozza» applicata così com'è. Finestra 1280 × 800 a densità 2, tema chiaro, licenza Pro di prova con una chiave generata per la sessione.
 
-| Nome stabile | Misura dell'originale | Stato | Contenuto | Usata in |
-|---|---|---|---|---|
-| `editor-album` | 2880 × 1800 | provvisoria | Editor intero, album dimostrativo (62 foto, 25 spread), spread 22 in vista; finestra 1440 × 900 a densità 2 | copertina IT/EN, Open Graph |
-| `controllo-stacchi` | 2200 × 692 | provvisoria | Finestra «Controllo spaziature» con «Correggi tutto l'album» | funzione «Spazi e tono» |
-| `editor-spread` | 1720 × 1312 | provvisoria | Tela con righelli e barra degli strumenti, spread 7 | funzione «Rifinisci» |
-| `spread-01` … `spread-06` | 1980 × 990 | provvisorie | Spread 10, 22, 7, 18, 24 e 8 della bozza resi dal motore d'esportazione | `spread-01` e `spread-04` nella funzione «Bozza» |
-| `psd-livelli` | 1600 × 1000 | segnaposto | Spread in Photoshop con i livelli | funzione «PSD» |
-| `preset-laboratorio` | 1600 × 1000 | segnaposto | Creazione dell'album con laboratorio, formato e copertina | funzione «Formati del laboratorio» |
-| `bozza-claude` | 1600 × 1000 | segnaposto | Claude prepara la bozza nell'editor | sezione Claude (nascosta) |
+| Nome stabile | Misura pubblicata | Contenuto | Usata in |
+|---|---|---|---|
+| `editor-album`, `-en` | 2400 × 1500 | L'editor intero nella vista Impagina, spread 05–06 | copertina IT/EN, Open Graph |
+| `bozza`, `-en` | 1960 × 1284 | La finestra «Prepara la bozza» con la proposta di 12 spread, prima di applicarla | funzione «Prepara la bozza» |
+| `disposizione`, `-en` | 2288 × 1128 | Tela e pannello delle disposizioni dopo un D sullo spread 03–04, con l'avviso «Disposizione 2 di 20» | funzione «Un'altra disposizione» |
+| `controlla`, `-en` | 1460 × 1050 | Pannello «Controlla l'album» accanto allo spread, dopo due ritocchi fatti apposta (una foto schiarita di 0,9 EV, una spostata di 8 pixel della pagina) | funzione «Controlla, poi Sistema» |
+| `esporta-psd`, `-en` | 1120 × 914 | Finestra «Esporta» sulla linguetta «PSD a livelli» | funzione «PSD» (non c'è una schermata di Photoshop) |
+| `nuovo-album`, `-en` | 960 × 1014 | Finestra «Nuovo album» con un prodotto del catalogo dei formati comuni | funzione «Formati e cataloghi» |
+| `assistente`, `-en` | 960 × 904 | Finestra «Assistente AI» della schermata degli album, immagini spente | sezione Claude |
 
-Rigenerare le schermate dell'editor (lavora su una copia delle foto in una cartella temporanea fuori dal repository, con una casa finta: non tocca né `marketing/demo` né i progetti dell'utente; nessuna rete):
+Rifarle (Chrome; nessuna rete; casa finta in una cartella temporanea, i dati dell'utente non si toccano):
 
 ```
-.venv/bin/python marketing/sito/strumenti/schermate.py --lavoro /tmp/impaginatore-schermate --eroe 21 --dettaglio 6 --spread 9,21,6,17,23,7
+.venv/bin/python marketing/sito/strumenti/schermate.py              # tutte le scene, italiano e inglese
+.venv/bin/python marketing/sito/strumenti/schermate.py --lingua en controlla
+cd marketing/sito && ../../.venv/bin/python strumenti/sito.py immagini
 ```
 
-`--solo-bozza` costruisce l'album e rende tutti gli spread in piccolo, per sceglierli. La bozza è costruita dallo script con i modelli che l'editor propone per ogni gruppo di foto (in ordine di scatto, panoramiche da sole): **approssima** l'impaginazione automatica promessa per Pro, che nell'editor non esiste ancora come comando.
+Gli originali vanno in `img/originali/` (esclusa da git) con `schermate.json`; `sito.py immagini` ritaglia (`riquadro`) e ricava i WebP. Le schermate a finestra intera della schermata degli album mostrano in basso il nome dell'autore del programma: le scene del sito sono ritagliate in modo da non includerlo.
 
-Foto: Pexels, 55 di Andrea Prochilo e 7 di altri autori (`marketing/demo/README.md`). Negli spread e nelle schermate ci sono volti riconoscibili, anche se piccoli (spread 22, spiaggia, ballo): prima di usarli in pubblicità serve la conferma scritta dell'autore, oppure vanno sostituiti con spread di dettagli e di spalle.
+Nella schermata inglese «Nuovo album» il catalogo dei formati comuni ha ancora le etichette in italiano («Orizzontale 30 × 22,5», «Nessun laboratorio: formati comuni»): lo dice anche il testo alternativo.
 
 ## Prima di pubblicare: promesse da verificare
 
-Ogni frase del sito qui sotto descrive una cosa che oggi **non esiste o non è provata**. Va verificata sul prodotto vero, oppure tolta.
+Il sito descrive la 2.0 com'è oggi (verificato su codice, manuale e schermate il 16/11/2026, T-501). Restano cose che dipendono da lavoro non ancora fatto o da decisioni del titolare:
 
-- [ ] **Bozza di tutto l'album** (Pro): oggi l'editor suggerisce modelli spread per spread; il comando che impagina l'album intero non c'è.
-- [ ] **Formati dei laboratori** già pronti, con abbondanza, piega e copertina (T-208): non esistono.
-- [ ] **Licenza, chiave, prova di 30 giorni con filigrana e sola lettura alla scadenza, fasce** (T-202): non esistono.
-- [ ] **macOS, Windows e Linux**: oggi il programma gira su macOS; Windows e Linux non sono provati. PSD solo con Photoshop (non su Linux).
-- [ ] **Comando d'installazione e installatori** `.dmg`, `.exe`, AppImage, `.deb` (T-302), verifica SHA-256 e firma del manifesto, collegamenti `impaginatore://`: non esistono. Le etichette di macOS («Apri comunque») e di SmartScreen vanno controllate sulle versioni in uso.
-- [ ] **Funziona senza internet** e **nessun server di attivazione**: coerente con `tier.json`, da provare a programma finito.
-- [ ] **Tono uniforme su tutto l'album**, **avviso di ritaglio**, **versioni salvate**, **testi con stili**, **progetto da portare su un altro computer**: presenti nell'editor 1.5.2 in qualche forma; da riprovare dopo il ridisegno.
-- [ ] **Manuale e guide video gratuiti** (fascia dell'assistenza): non esistono ancora (T-40x).
-- [ ] **Interfaccia in inglese** prima del lancio (T-206).
-- [ ] **Edizione Laboratorio**: catalogo, marchio del laboratorio, regole di prestampa sono progetto, non prodotto.
+- [ ] **Installatori** per macOS, Windows e Linux (T-301, T-302): non esistono. `installa.html` dice «in arrivo»; i pulsanti di download compaiono solo con `in_vendita`.
+- [ ] **macOS e Windows**: i test automatici girano sui tre sistemi, ma il programma non è mai stato provato su computer Mac e Windows veri; requisiti minimi di memoria e disco non definiti (`config.json`, `requisiti`). Il sito non dice «testato su».
+- [ ] **Aggiornamenti della versione inclusi** (card «Paghi una volta», FAQ, prezzi): è un impegno commerciale; oggi chi compra non ha un modo per ricevere gli aggiornamenti (niente aggiornamenti automatici, niente installatori).
+- [ ] **Le foto restano sul tuo computer**: vero per il programma; l'eccezione dell'assistente AI con le immagini accese è scritta accanto (card, FAQ, sezione Claude, `legale.html`). La regola di `AGENTS.md` («nessuna funzione può caricarle in rete») e il consenso alle immagini dell'assistente vanno messi d'accordo dal titolare (`docs/legale/DA-DECIDERE.md` §1.15).
+- [ ] **Edizione Laboratorio**: il catalogo importabile esiste; nessun laboratorio vero ha un catalogo, il marchio del laboratorio nel programma è «in arrivo», la copertina è solo descritta nel riepilogo della consegna.
 - [ ] **Storia** («impagina album da più di dieci anni con un programma comprato nel 2012»): da `docs/prodotto/REQUISITI-VOCALI.md` e dallo stylebook; da far rileggere al titolare.
 - [ ] **Prezzi di mercato** (150–290 € l'anno, 450–870 € in tre anni, cambio BCE del 13/11/2026) e righe della tabella di confronto per categorie: da riverificare alla data di pubblicazione.
-- [ ] **Pagamento con bonifico e chiave entro 2 ore lavorative**: percorso di `marketing/negozio/FLUSSO-ACQUISTO.md` §1; se si passa a una piattaforma (§5) cambiano testi e link.
+- [ ] **Pagamento con bonifico e chiave entro 2 ore lavorative**: percorso di `marketing/negozio/FLUSSO-ACQUISTO.md` §1; se si passa a una piattaforma (§5) cambiano testi e link. `FLUSSO-ACQUISTO.md` parla ancora di link `impaginatore://` e di chiave letta dagli appunti, che il programma non ha.
+- [ ] **Manuale**: il sito lo promette gratis; oggi è in `docs/manuale/`, non pubblicato.
 
 ## Punti legali aperti
 
@@ -151,7 +146,7 @@ Da far decidere a chi segue l'aspetto legale (vedi anche `docs/legale/DA-DECIDER
 - **Recesso** per i contenuti digitali e la funzione di recesso richiesta per i contratti online: su un sito statico senza carrello va chiarito come si esercita.
 - **Accessibilità** (European Accessibility Act): il sito è costruito per WCAG 2.2 AA, ma non è stato verificato con un lettore di schermo né da un revisore.
 - **Testi legali in contraddizione** con le decisioni di `tier.json`: `docs/legale/TERMINI-VENDITA.md` §4.3 e `PRIVACY.md` (righe C e I) parlano di un server di attivazione e di cookie statistici con consenso; il sito dice «nessun server di attivazione» e «nessun cookie».
-- **Liberatorie dei volti** nelle foto dimostrative (sopra, «Schermate»).
+- **Assistente AI**: che cosa riceve il fornitore dell'assistente (testi e nomi di tutti gli album elencati, immagini solo col consenso) è scritto nel riassunto di `legale.html`; ruoli, base giuridica e trasferimenti fuori dall'UE sono aperti in `docs/legale/DA-DECIDERE.md` §1.15.
 - **IVA per chi compra dall'estero**: la pagina inglese dice che si paga l'IVA del proprio paese o nessuna con partita IVA europea valida; vale se l'IVA viene gestita così (OSS o piattaforma).
 
 ## Cose note da sistemare
@@ -159,4 +154,4 @@ Da far decidere a chi segue l'aspetto legale (vedi anche `docs/legale/DA-DECIDER
 - `cromo.py` non funziona su Windows (pipe ereditate): istantanee e immagini Open Graph si fanno da Linux, macOS o WSL.
 - Le barre del confronto dei costi non seguono i prezzi in automatico.
 - L'immagine Open Graph non ha la versione scura (le reti sociali non la usano).
-- `anteprime/` pesa circa 21 MB (64 JPEG, ognuno sotto 700 KB): si può tenere fuori da git e rigenerare con `sito.py istantanee`.
+- `anteprime/` è fuori da git (`.gitignore`): si rigenera con `sito.py istantanee`, anche solo a 390 e 1280 px (`--larghezze 390,1280`).

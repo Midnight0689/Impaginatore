@@ -6,7 +6,7 @@
   <mj-body>
     <!-- Offerta «Rosetta / macOS 28» (PIANO-90-GIORNI.md §3.2), da approvare. Tono di servizio:
          nessun marchio di concorrenti, né nell'oggetto né nel testo. Prima dell'invio: revisione legale,
-         verifica che Impaginatore sia nativo arm64 e del link alla fonte Apple (GUIDA-INVIO.md). -->
+         verifica del link alla fonte Apple. La frase «gira in modo nativo» è stata tolta: rimetterla solo dopo la verifica arm64 (GUIDA-INVIO.md). -->
     <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">Come controllare in un minuto se il tuo programma per album si aprirà ancora, e cosa fare prima di aggiornare.</div></mj-raw>
     <mj-include path="./_base/testata.mjml" />
 
@@ -56,13 +56,13 @@
         <mj-spacer height="8px" />
         <mj-text mj-class="titolo2">Pro a {{prezzo_rosetta_pro}}, Studio a {{prezzo_rosetta_studio}}</mj-text>
         <mj-spacer height="12px" />
-        <mj-text>Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa {{prezzo_rosetta_pro}} e Studio {{prezzo_rosetta_studio}}, IVA esclusa, fino al {{data_fine_rosetta}}. Anche questa licenza si paga una volta e non scade. Impaginatore gira in modo nativo sui Mac con processore Apple, oltre che su Windows e Linux.</mj-text>
+        <mj-text>Se hai una licenza perpetua di un programma per album che su macOS 28 non si aprirà più, Impaginatore Pro costa {{prezzo_rosetta_pro}} e Studio {{prezzo_rosetta_studio}}, IVA esclusa, fino al {{data_fine_rosetta}}. Anche questa licenza si paga una volta e non scade.</mj-text>
         <mj-spacer height="12px" />
         <mj-text>Per richiederla, rispondi a questa email con uno screenshot della licenza o della fattura del vecchio programma. Puoi coprire importi e dati che non servono: ci bastano il nome del programma e la licenza perpetua. Usiamo lo screenshot solo per l’offerta e lo cancelliamo dopo averti mandato la chiave.</mj-text>
         <mj-spacer height="24px" />
         <mj-button href="{{link_rosetta}}">Come funziona l’offerta</mj-button>
         <mj-spacer height="16px" />
-        <mj-text mj-class="piccolo">Non serve decidere oggi. Puoi anche <a class="lnk" href="{{link_prova}}">provare Impaginatore per 30 giorni</a>, senza carta, sul Mac che hai già.</mj-text>
+        <mj-text mj-class="piccolo">Non serve decidere oggi. Puoi anche <a class="lnk" href="{{link_prova}}">provare Impaginatore per 30 giorni</a>, senza carta.</mj-text>
       </mj-column>
     </mj-section>
 

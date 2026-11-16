@@ -18,7 +18,7 @@ Il messaggio è uno, ripetuto in tanti modi: **le foto restano sul tuo computer,
 |---|---|---|
 | **Instagram** | Principale: vetrina, consigli, lancio | È dove i fotografi di matrimonio mostrano il proprio lavoro e cercano colleghi. In Italia 29,9 milioni di utenti raggiungibili con la pubblicità (DataReportal, *Digital 2026: Italy*, pubblicato il 5/11/2025). Nell’indagine Zenfolio 2026 su 4.916 fotografi di oltre 90 paesi, il passaparola è il primo canale con cui i clienti li trovano e Instagram il secondo [S: dato letto nella sintesi della pagina, da rileggere sul rapporto completo]. |
 | **Facebook** | Specchio di Instagram, più la partecipazione ai gruppi | 28,5 milioni di utenti in Italia (DataReportal). Molti fotografi italiani discutono di flusso di lavoro e laboratori nei gruppi; la pagina serve a essere trovati, i gruppi si frequentano dal profilo personale del fondatore, rispettando il regolamento di ognuno. Elenchi aggiornati dei gruppi italiani non ne abbiamo trovati [NV]: l’unico elenco pubblico è del 2017 (Format). |
-| **YouTube** | Guide (installazione, primo album) e Shorts | 41,2 milioni di utenti in Italia (DataReportal). Un video «come si installa» lavora per mesi nella ricerca; riduce le richieste di assistenza; i formatori che il piano coinvolge (S-3, S6) pubblicano lì. |
+| **YouTube** | Guide (primo album) e Shorts | 41,2 milioni di utenti in Italia (DataReportal). Un video «il primo album» lavora per mesi nella ricerca; riduce le richieste di assistenza; i formatori che il piano coinvolge (S-3, S6) pubblicano lì. |
 | **LinkedIn** | Laboratori di stampa, associazioni, formatori | 25,0 milioni di iscritti in Italia (DataReportal). L’edizione per laboratori e i piloti si vendono a persone d’azienda; il profilo del titolare conta più della pagina. |
 | **Forum** | Partecipazione, non pubblicità | JuzaPhoto (comunità fotografica italiana con forum attivo); dopo il lancio, per l’estero, r/WeddingPhotography (circa 30.600 iscritti, numero letto sulla pagina senza data). Si risponde a domande da fotografo; il programma si cita solo quando c’entra e solo dove il regolamento lo permette. |
 
@@ -47,7 +47,7 @@ Il messaggio è uno, ripetuto in tanti modi: **le foto restano sul tuo computer,
 | **Resta tuo** | Licenza perpetua, prezzi, offerta macOS 28, fine del lancio | 16 |
 | **Le foto restano tue** | Riservatezza: nessuna funzione carica le foto in rete, lavoro senza connessione | 5, più il tema ricorrente di quasi tutti i testi di lancio |
 | **Bottega** | Dietro le quinte, il fondatore, le scelte tecniche, i laboratori | 7 |
-| **Assistenza e prova** | Com’è fatta la prova, installazione, ore con una persona | 7 |
+| **Assistenza e prova** | Com’è fatta la prova, primo album, ore con una persona | 7 |
 
 La quota di «Resta tuo» sale nelle settimane di lancio e di fine lancio, come è giusto; nelle settimane di mezzo prevale «Mestiere».
 
@@ -58,7 +58,7 @@ In media **4 uscite a settimana** (49 in 12 settimane), tutte già scritte:
 - Instagram: 2–3 post o reel a settimana, alle 12:30; storie quando c’è qualcosa da dire, non per obbligo.
 - Facebook: una pagina che rilancia le uscite di Instagram e 1 post proprio a settimana nelle settimane calde.
 - LinkedIn: 1 post a settimana, il venerdì alle 9.
-- YouTube: la guida all’installazione il giorno del lancio e 1 Short ogni due settimane.
+- YouTube: la guida al primo album il giorno del lancio (quella all’installazione, quando esistono gli installatori) e 1 Short ogni due settimane.
 
 **Tempo: circa 3–4 ore a settimana**, raccolte in un pomeriggio: si rigenerano le grafiche della settimana, si programmano i post con gli strumenti nativi, si risponde ai commenti due volte al giorno nei giorni di uscita (15 minuti). Un pezzo nasce per un canale e si riusa sugli altri (un reel diventa Short e video di Facebook): è già indicato nel calendario.
 

@@ -26,7 +26,7 @@
     <h1 id="titolo">Impagina l’album sul tuo computer. <span class="payoff">Resta tuo.</span></h1>
   </div>
   <div class="etichetta" id="sotto">Licenza perpetua · macOS, Windows e Linux</div>
-  <div class="schermata"><img src="../../img/schermate/editor-album-1600.webp" alt="" width="1600" height="1000"></div>
+  <div class="schermata"><img id="schermata" src="../../img/schermate/editor-album-1600.webp" alt="" width="1600" height="1000"></div>
   <div class="crocini" aria-hidden="true">
     <i style="left:40px;top:24px;width:1px;height:12px"></i><i style="left:28px;top:36px;width:12px;height:1px"></i>
     <i style="left:40px;bottom:24px;width:1px;height:12px"></i><i style="left:28px;bottom:36px;width:12px;height:1px"></i>
@@ -36,6 +36,7 @@
       document.documentElement.lang = "en";
       document.getElementById("titolo").innerHTML = 'Lay out the album on your computer. <span class="payoff">Yours to keep.</span>';
       document.getElementById("sotto").textContent = "Perpetual licence · macOS, Windows and Linux";
+      document.getElementById("schermata").src = "../../img/schermate/editor-album-en-1600.webp";
     }
   </script>
 </body>

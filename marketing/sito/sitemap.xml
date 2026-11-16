@@ -6,18 +6,10 @@
   </url>
   <url><loc>https://impaginatore.example/prezzi.html</loc><lastmod>2026-11-16</lastmod>
   </url>
-  <url><loc>https://impaginatore.example/installa.html</loc><lastmod>2026-11-16</lastmod>
-    <xhtml:link rel="alternate" hreflang="it" href="https://impaginatore.example/installa.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://impaginatore.example/en/installa.html"/>
-  </url>
   <url><loc>https://impaginatore.example/legale.html</loc><lastmod>2026-11-16</lastmod>
   </url>
   <url><loc>https://impaginatore.example/en/</loc><lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://impaginatore.example/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://impaginatore.example/en/"/>
-  </url>
-  <url><loc>https://impaginatore.example/en/installa.html</loc><lastmod>2026-11-16</lastmod>
-    <xhtml:link rel="alternate" hreflang="it" href="https://impaginatore.example/installa.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://impaginatore.example/en/installa.html"/>
   </url>
 </urlset>

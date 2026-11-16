@@ -7,8 +7,8 @@ IMPAGINATORE È PRONTO. LO PAGHI UNA VOLTA.
 È un programma per impaginare album di matrimonio sul tuo computer, con Mac, Windows o Linux. Si compra una volta, con una licenza che non scade: niente abbonamento.
 
 - Le foto restano sul tuo computer. Impaginatore lavora sui file che hai già. Non carichi nulla da nessuna parte, e funziona anche senza internet.
-- Al decimo di millimetro. Formati, abbondanze e piega del tuo laboratorio sono già impostati. Prima dell’export Impaginatore controlla che tutto torni.
-- PSD a livelli, se ritocchi in Photoshop. Con Pro e Studio ogni spread si apre in Photoshop con le foto su livelli separati. Photoshop non è incluso.
+- Controllo prima della stampa. Scegli un formato pronto o scrivi le misure, con abbondanza e margini. Prima dell’export «Controlla» segnala le foto mancanti, sotto 150 ppi o fuori pagina.
+- PSD a livelli, se ritocchi in Photoshop. Con Pro e Studio ogni spread si apre in Photoshop con le foto su livelli separati. Photoshop non è incluso e serve su macOS o Windows, non su Linux.
 
 
 TRE LICENZE, NESSUN ABBONAMENTO
@@ -17,12 +17,12 @@ Prezzo di lancio per 60 giorni, fino al [[data_fine_lancio]], o fino alle prime 
 
 PRO · consigliato
 79 € fino al [[data_fine_lancio]], poi 99 €. Una volta.
-Tutto l’editor, modelli d’autore e personali senza limiti; impaginazione automatica dell’intero album; spaziature e tono uniformi su tutto l’album; export JPG, PDF e PSD a livelli; 2 computer, aggiornamenti della versione 2 inclusi.
+Tutto l’editor, modelli tuoi senza limite; impaginazione automatica dell’intero album; spaziature e tono uniformi su tutto l’album; export JPG, PDF e PSD a livelli; 2 computer, aggiornamenti della versione 2 inclusi.
 Acquista Pro: [[link_acquisto_pro]]
 
 ESSENZIALE
 39 € fino al [[data_fine_lancio]], poi 49 €.
-30 modelli d’autore e 5 personali, export JPG e PDF, 1 computer.
+Editor, export JPG e PDF, fino a 5 modelli tuoi, 1 computer.
 [[link_acquisto_essenziale]]
 
 STUDIO
@@ -36,7 +36,7 @@ Un abbonamento a un software per album costa intorno ai 20 € al mese. Pro, a l
 (Tre abbonamenti annuali a software per album costano fra 250 e 290 $ l’anno, IVA esclusa: fra 19 e 22 € al mese circa. Prezzi pubblici al 13 novembre 2026, cambio BCE 1 € = 1,1052 $. Fonti nella pagina prezzi: [[link_prezzi]])
 
 ASSISTENZA A ORE
-1 ora 49 € · 5 ore 249 € · 10 ore 499 €, IVA esclusa. In videochiamata o da remoto, a blocchi di 30 minuti, validi 12 mesi. Gratis per tutti: manuale, guide video e correzione dei difetti.
+1 ora 49 € · 5 ore 249 € · 10 ore 499 €, IVA esclusa. In videochiamata o da remoto, a blocchi di 30 minuti, validi 12 mesi. Gratis per tutti: manuale e correzione dei difetti.
 
 COME SI COMPRA
 Scegli la licenza e ti mandiamo i dati per il bonifico. Ricevuto il pagamento, entro 2 ore lavorative arrivano la fattura e la chiave. Se cambi idea, hai 30 giorni per il rimborso completo, senza domande.

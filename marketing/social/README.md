@@ -89,7 +89,7 @@ Per un’uscita con testi diversi da quelli del modello si copia il modello in `
 | Caso di studio di un beta tester | `costanti.json`: `caso.nome`, `caso.citazione`, `caso.dato` | Solo dati veri e consenso scritto (U27) |
 | Webinar con un laboratorio | `costanti.json`: `webinar.laboratorio`, `webinar.data` | Solo se confermato e con il consenso del laboratorio (U32) |
 | Video di un formatore | `costanti.json`: `educator.nome`, `educator.canale` | U40 |
-| Schermate dell’app | `modelli/schermate/pannello-misure.png` (888 × 700), `modelli/schermate/video-installa.png` (760 × 640) | Dopo l’interfaccia ridisegnata (T-205) e le schermate di T-501; ora i modelli mostrano un riquadro con misura e nome del file |
+| Schermate dell’app | `modelli/schermate/pannello-misure.png` (888 × 700), `modelli/schermate/video-primo-album.png` (760 × 640) | Dopo l’interfaccia ridisegnata (T-205) e le schermate di T-501; ora i modelli mostrano un riquadro con misura e nome del file |
 | Riprese dei video | `riprese/V1-01-wifi.mov` e seguenti, elencate in `COPIONI.md` | Cartella non versionata |
 | Nomi di beta tester, laboratori, formatori | testi delle uscite U17, U27, U32, U40 | Solo con il consenso scritto di ciascuno |
 | Presenza alla Convention ANFM | U09, U19, U20 | Le righe sulla Convention si tolgono se la presenza non è confermata |
@@ -112,7 +112,7 @@ Link nella bio.
 
 ## Riserva MCP
 
-Le uscite R01–R03 e la grafica `uscite/mcp-bozza-claude` riguardano la bozza dell’album preparata da Claude tramite il server MCP, che non è ancora rilasciato. Restano fuori dal calendario e **si pubblicano solo dopo il rilascio del server MCP** (T-203) e della sua guida (T-403). Prima: verificare quali dati passano a Claude e scrivere di conseguenza la frase sulla riservatezza; togliere dalla grafica la fascia «Riserva» (`<p class="riserva">`). Il controllo automatico vieta di nominare Claude o MCP fuori dalla riserva.
+Le uscite R01–R03 e la grafica `uscite/mcp-bozza-claude` riguardano la bozza dell’album preparata da Claude tramite il server MCP, che non è ancora rilasciato. Restano fuori dal calendario e **si pubblicano solo dopo il rilascio del server MCP** (T-203) e della sua guida (T-403). Prima: rileggere la frase sulla riservatezza di R01 e R02 con la guida (`docs/manuale/assistente/`): dice che l’assistente è facoltativo (Pro, Studio e prova), che testi e misure vanno al programma assistente e al suo fornitore, che le immagini sono spente di serie e che gli originali non partono mai; togliere dalla grafica la fascia «Riserva» (`<p class="riserva">`). Il controllo automatico vieta di nominare Claude o MCP fuori dalla riserva.
 
 ## Controllo automatico
 

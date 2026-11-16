@@ -1,180 +1,168 @@
-"""Schermate PROVVISORIE dell'editor attuale con l'album dimostrativo (marketing/demo), per la pagina di vendita.
+"""Schermate della versione 2.0 per il sito di vendita (T-501), in italiano e in inglese.
 
-L'interfaccia verrà ridisegnata (compito T-205): queste immagini servono finché non ci sono le definitive.
-Lo script lavora su una COPIA delle foto in una cartella di lavoro e con una casa finta: non tocca né le foto
-di marketing/demo né i progetti o le impostazioni dell'utente.
+Avvia la schermata degli album e l'editor in questo processo, su una casa finta in una cartella temporanea, con un album di
+foto SINTETICHE (le stesse forme di strumenti/schermate_ux.py, ingrandite tre volte perché la risoluzione basti alla stampa:
+nessuna persona vera, nessuna foto di marketing/demo). Apre le pagine in Chrome senza schermo a densità 2, tema chiaro, e
+salva un PNG per scena in marketing/sito/img/originali/ (esclusa da git); `sito.py immagini` ne ricava i WebP pubblicati.
 
-    .venv/bin/python marketing/sito/strumenti/schermate.py --lavoro /percorso/temporaneo
+    .venv/bin/python marketing/sito/strumenti/schermate.py [--lingua it|en|tutte] [--uscita CARTELLA] [SCENA ...]
 
-Cosa fa:
-1. copia le 62 foto in <lavoro>/foto e crea un album 30 × 30 cm (spread 60 × 30 cm, abbondanza 3 mm);
-2. avvia l'editor in questo processo e costruisce la bozza: le foto in ordine di scatto, a gruppi, ciascun
-   gruppo nel primo modello che l'editor propone (lo stesso che vedi in «Modelli»); poi uniforma gli stacchi;
-3. apre l'editor in Chrome senza schermo e salva le schermate in marketing/sito/img/originali/ (PNG grandi,
-   esclusi da git); `sito.py immagini` ne ricava i WebP pubblicati.
-
-Le foto restano nella cartella di lavoro: nessuna rete, nessun caricamento.
+Lo stato dell'album si prepara con le stesse API della pagina: la bozza è quella vera di «Prepara la bozza», applicata
+così com'è. Niente rete, niente dati dell'utente: la cartella temporanea si cancella alla fine. Con un TMPDIR lungo Chrome
+non parte: lo script usa /tmp.
 """
 import argparse
 import json
 import os
 import shutil
 import sys
+import tempfile
 import threading
 import time
 
 QUI = os.path.dirname(os.path.abspath(__file__))
 SITO = os.path.dirname(QUI)
 RADICE = os.path.dirname(os.path.dirname(SITO))
-sys.path.insert(0, QUI)
-import cromo  # noqa: E402
+for p in (os.path.join(RADICE, "src"), os.path.join(RADICE, "tests"), os.path.join(RADICE, "strumenti")):
+    sys.path.insert(0, p)
 
-# gruppi di foto per spread, in ordine: alternano spread pieni, coppie e piccole sequenze (ritmo di un album vero)
-RITMO = [2, 3, 4, 2, 3, 2, 4, 3, 2, 3, 4, 2]
+FINESTRA = (1280, 800)              # la misura più comune di un portatile; densità 2: PNG da 2560 × 1600
+DENSITA = 2
+SPREAD_EROE = 2                     # spread in vista nella schermata grande (da 0)
 
-
-def prepara_ambiente(lavoro):
-    casa = os.path.join(lavoro, "casa")
-    for k, v in dict(HOME=casa, USERPROFILE=casa, APPDATA=os.path.join(casa, "AppData"), LOCALAPPDATA=os.path.join(casa, "Local"),
-                     XDG_DATA_HOME=os.path.join(casa, "share"), XDG_CACHE_HOME=os.path.join(casa, "cache"), XDG_CONFIG_HOME=os.path.join(casa, "config"),
-                     IMPAGINATORE_PROGETTI=os.path.join(lavoro, "Progetti"), IMPAGINATORE_DATI=os.path.join(casa, "dati"),
-                     IMPAGINATORE_CACHE=os.path.join(casa, "cache-imp")).items():
-        os.makedirs(v, exist_ok=True) if k != "IMPAGINATORE_PROGETTI" else None
-        os.environ[k] = v
-    os.environ.update(IMPAGINATORE_DIALOGHI="nessuno", IMPAGINATORE_AGGIORNAMENTI="no", IMPAGINATORE_SENZA_RIAVVIO="1")
-
-
-def costruisci_album(lavoro, foto):
-    from impaginatore import aggiornamenti
-    from impaginatore.home import server as H
-    H.configura(os.path.join(lavoro, "Progetti"), 0, aggiornamenti.NonDisponibili())
-    p = H.nuovo({"nome": "Album dimostrativo", "w": "60", "h": "30", "abb": "3", "spazio": "3", "margine": "10"})
-    for f in sorted(os.listdir(foto)):
-        if f.lower().endswith(".jpg"): shutil.copy(os.path.join(foto, f), os.path.join(p, "Foto", f))
-    return p
+# scene: nome -> (schermata «editor» o «home», JavaScript che prepara la pagina, ritaglio: selettore CSS o None = finestra intera)
+SCENE = {
+    # prima che la bozza entri nell'album: la finestra «Prepara la bozza» con la proposta
+    "bozza": ("editor", "apriBozza()", "#bozd .dlg"),
+    # dopo: l'editor con l'album, una disposizione alternativa, il controllo, l'esportazione
+    "editor-album": ("editor", f"go({SPREAD_EROE})", None),
+    "disposizione": ("editor", "go(1); altraDisp(1)", ("#stage", "#side")),
+    "esporta-psd": ("editor", "openExp(); setFmt('psd')", "#exp .dlg"),
+    # dopo due modifiche a mano (vedi ritocchi()): il controllo trova spazi e tono da sistemare
+    "controlla": ("editor", "go(2); apriControlla(true)", None),
+    # schermata degli album: un album nuovo con un prodotto del catalogo Generico, le impostazioni dell'assistente AI
+    "nuovo-album": ("home", "openNew(); cataloghi().then(() => { const s = document.getElementById('prod'); s.value = 'generico/orizzontale-30x22'; prodotto(); })", "#vnew .dlg"),
+    "assistente": ("home", "apriAssistente()", "#vassist .dlg"),
+}
 
 
-def avvia_editor(progetto):
-    from impaginatore.editor import server as E
-    E.riavvia_processo = lambda: None
-    E.inizializza(progetto, home="http://127.0.0.1:9")
-    srv = E.crea_server(0)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return E, srv
+def foto_sintetiche(cartella, n=36, scala=3):
+    """le foto di schermate_ux.foto_finte, ingrandite «scala» volte con la stessa data di scatto (EXIF)"""
+    from PIL import Image
+    from schermate_ux import foto_finte
+    foto_finte(cartella, n)
+    for f in sorted(os.listdir(cartella)):
+        p = os.path.join(cartella, f); im = Image.open(p); exif = im.info.get("exif", b"")
+        im.resize((im.width * scala, im.height * scala), Image.LANCZOS).save(p, "JPEG", quality=88, exif=exif)
 
 
-def scegli(proposte):
-    """fra i modelli proposti dall'editor, il più adatto (costo minore) che riempie tutte e due le pagine, se c'è"""
-    piene = [t for t in proposte if "BLANK" not in (t["L"]["module"], t["R"]["module"])]
-    return min(piene or proposte, key=lambda t: t["cost"])
+def licenza_pro():
+    """una licenza Pro attivata nella casa finta, firmata con una coppia di chiavi nata qui e buttata alla fine (come nei
+    test): le schermate mostrano il programma come lo vede chi ha comprato il Pro (PSD compresi, niente filigrana)"""
+    import secrets
+
+    from aiuti import Chiavi
+
+    from impaginatore import licenze
+    from impaginatore.licenze import chiave as K
+    ch = Chiavi(secrets.token_bytes(32))
+    K.CHIAVI_PUBBLICHE = {1: K.Pubblica(ch.pubblica.hex())}
+    os.makedirs(licenze.cartella(), exist_ok=True)
+    with open(os.path.join(licenze.cartella(), "chiave.txt"), "w", encoding="utf-8") as f:
+        f.write(ch.chiave(fascia="pro", computer=2, intestatario="Studio di prova") + "\n")
 
 
-def bozza(E):
-    """la bozza dell'album: foto in ordine di scatto, a gruppi (le panoramiche da sole), nel modello proposto più adatto"""
-    st = E.state()
-    foto = sorted(st["photos"], key=lambda f: (f["dt"] or "", f["n"]))
-    nomi = [f["n"] for f in foto]; pano = {f["n"] for f in foto if f["ar"] >= 1.8}
-    k = pos = r = 0
-    while k < len(nomi):
-        if nomi[k] in pano: n = 1
-        else:
-            n = min(RITMO[r % len(RITMO)], len(nomi) - k); r += 1
-            fino = next((j for j in range(k, k + n) if nomi[j] in pano), k + n); n = max(1, fino - k)
-        gruppo = nomi[k:k + n]
-        d = E.templates_for(gruppo); prop = (d.get("items") or []) + (d.get("piu") or [])
-        if not prop and n > 1:                       # nessun modello per questo gruppo: uno spread per foto
-            gruppo = gruppo[:1]; d = E.templates_for(gruppo); prop = (d.get("items") or []) + (d.get("piu") or [])
-        if not prop: k += len(gruppo); continue
-        t = scegli(prop)
-        E.do_op(dict(op="newspread", pos=pos, L=t["L"], R=t["R"]))
-        pos += 1; k += len(gruppo)
-    E.save()
-    return E.state()
+def ritocchi(c):
+    """due modifiche a mano, come capitano lavorando: una foto più chiara (+0,9 EV) e una foto spostata di qualche
+    millimetro nello spread 05–06. Così «Controlla» ha qualcosa da far sistemare a «Sistema»"""
+    st = c.get("/api/state"); usate = [p["n"] for p in st["photos"] if p.get("sp") is not None]
+    c.post("/api/op", {"op": "ev", "photo": usate[4], "value": 0.9})
+    c.post("/api/op", {"op": "nudge", "s": 2, "ats": [["L", 1]], "dx": 0, "dy": 8})
+    c.post("/api/save")
 
 
-def rettangolo(c, selettore):
-    """riquadro (x, y, larghezza, altezza) in px CSS di un elemento della pagina"""
-    return c.valuta(f"(() => {{ const r = document.querySelector({json.dumps(selettore)}).getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; }})()")
+def scatta(b, percorso, js, ritaglio, attesa):
+    w, h = FINESTRA
+    b.chiama("Emulation.setDeviceMetricsOverride", width=w, height=h, deviceScaleFactor=DENSITA, mobile=False)
+    b.js("document.documentElement.dataset.theme = 'light'; window.dispatchEvent(new Event('resize'))")
+    if js: b.js(js)
+    b.pausa(attesa)
+    clip = None
+    if ritaglio:              # un selettore, o più selettori: la larghezza di tutti, l'altezza del primo
+        sel = [ritaglio] if isinstance(ritaglio, str) else list(ritaglio)
+        r = b.js(f"(() => {{ const q = {json.dumps(sel)}.map(s => document.querySelector(s)); if (q.some(e => !e)) return null; const r = q.map(e => e.getBoundingClientRect()); "
+                 "return [Math.min(...r.map(x => x.left)), r[0].top, Math.max(...r.map(x => x.right)) - Math.min(...r.map(x => x.left)), r[0].height]; })()")
+        if not r: raise RuntimeError(f"{os.path.basename(percorso)}: non trovo {ritaglio}")
+        clip = dict(x=r[0], y=r[1], width=r[2], height=r[3], scale=1)
+    import base64
+    d = b.chiama("Page.captureScreenshot", format="png", **({"clip": clip} if clip else {}))
+    with open(percorso, "wb") as f: f.write(base64.b64decode(d["data"]))
+    print(" ", os.path.relpath(percorso, RADICE), flush=True)
 
 
-def schermate(url, uscita, spread_eroe, spread_dettaglio):
-    os.makedirs(uscita, exist_ok=True)
-    fatte = {}
-    with cromo.Chrome() as c:
-        # 1. l'editor intero, finestra 1440 × 900 a densità 2: lo spread dell'apertura in vista
-        c.vista(1440, 900, 2)
-        c.apri(url)
-        time.sleep(2)
-        c.valuta(f"(async () => {{ cur = {spread_eroe}; sel = null; render(); return true; }})()")
-        time.sleep(4)
-        fatte["editor-album"] = c.foto(os.path.join(uscita, "editor-album.png"), pagina_intera=False)
-        # 2. controllo degli stacchi su tutto l'album: solo la finestra che elenca gli spread con spazi diversi
-        c.valuta("(async () => { gapAll(); return true; })()")
-        time.sleep(4)
-        fatte["controllo-stacchi"] = c.foto(os.path.join(uscita, "controllo-stacchi.png"), pagina_intera=False, ritaglio=rettangolo(c, "#gapall .a_gc"))
-        c.valuta("(async () => { const g = document.getElementById('gapall'); if (g) g.remove(); return true; })()")
-        # 3. uno spread di dettaglio: solo la tela, con i righelli in centimetri
-        c.valuta(f"(async () => {{ cur = {spread_dettaglio}; sel = null; render(); return true; }})()")
-        time.sleep(4)
-        fatte["editor-spread"] = c.foto(os.path.join(uscita, "editor-spread.png"), pagina_intera=False, ritaglio=rettangolo(c, "#stage"))
-    return fatte
+def una_lingua(lingua, uscita, scelte):
+    from schermate_ux import ambiente
+    tmp = tempfile.mkdtemp(prefix="sito-", dir="/tmp" if os.path.isdir("/tmp") else None)
+    try:
+        ambiente(tmp, lingua); licenza_pro()
+        from aiuti import Client
+        from cdp import Browser
 
-
-def spread_renderizzati(E, uscita, quali, larghezza=2000):
-    """gli spread come li esporta il motore (stessa resa dell'export), lato lungo «larghezza» px"""
-    from impaginatore.motore import album as A
-    fatti = []
-    for n, s in enumerate(quali, 1):
-        K = larghezza / (A.CW if hasattr(A, "CW") and A.CW else larghezza)
-        dati = E.spread_jpg(s, K)
-        p = os.path.join(uscita, f"spread-{n:02d}.jpg")
-        with open(p, "wb") as f: f.write(dati)
-        fatti.append(p)
-    return fatti
+        from impaginatore import aggiornamenti
+        from impaginatore.editor import server as E
+        from impaginatore.home import server as H
+        H.configura(os.path.join(tmp, "Progetti"), 0, aggiornamenti.NonDisponibili())
+        hs = H.crea_server(0); threading.Thread(target=hs.serve_forever, daemon=True).start()
+        nomi = ("Matrimonio Rossi Bianchi", "Battesimo di Serena", "Comunione Luca") if lingua == "it" else ("Wedding Smith Jones", "Serena's christening", "Luke's communion")
+        progetti = []
+        for k, nome in enumerate(nomi):
+            dati = {"nome": nome, "w": 60, "h": 22.5}
+            if k == 0: dati["prodotto"] = "generico/orizzontale-30x22"
+            progetti.append(H.nuovo(dati))
+        foto_sintetiche(os.path.join(progetti[0], "Foto"))
+        E.inizializza(progetti[0], home=f"http://127.0.0.1:{hs.server_address[1]}")
+        es = E.crea_server(0); threading.Thread(target=es.serve_forever, daemon=True).start()
+        ec = Client(es.server_address[1], es.sessione.gettone)
+        suff = "" if lingua == "it" else "-en"
+        voglio = lambda n: not scelte or n in scelte
+        with Browser(tmp) as b:
+            # 1. la bozza, prima di applicarla
+            if voglio("bozza"):
+                b.apri(es.indirizzo_avvio(), 2.5)
+                scatta(b, os.path.join(uscita, f"bozza{suff}.png"), SCENE["bozza"][1], SCENE["bozza"][2], 4)
+            # 2. la bozza vera nell'album, poi le altre scene dell'editor
+            r = ec.post("/api/op", {"op": "bozza", "pos": 0}); ec.post("/api/save")
+            print(f"  bozza applicata: {len(ec.get('/api/state')['spreads'])} spread", r.get("ok", ""), flush=True)
+            for nome, (dove, js, rit) in SCENE.items():
+                if nome == "bozza" or not voglio(nome): continue
+                if nome == "controlla": ritocchi(ec)
+                srv = es if dove == "editor" else hs
+                b.apri(srv.indirizzo_avvio(), 2.5)
+                scatta(b, os.path.join(uscita, f"{nome}{suff}.png"), js, rit, 4)
+            if b.problemi(): print("  problemi nella pagina:", *b.problemi(), sep="\n    ", flush=True)
+        es.shutdown(); es.server_close(); E.ferma(); hs.shutdown(); hs.server_close()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--lavoro", required=True, help="cartella temporanea (verrà creata): copia delle foto, progetto, casa finta")
-    ap.add_argument("--foto", default=os.path.join(RADICE, "marketing", "demo", "foto"))
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--lingua", choices=("it", "en", "tutte"), default="tutte")
     ap.add_argument("--uscita", default=os.path.join(SITO, "img", "originali"))
-    ap.add_argument("--eroe", type=int, default=None, help="indice dello spread per la schermata grande (da 0)")
-    ap.add_argument("--dettaglio", type=int, default=None, help="indice dello spread di dettaglio (da 0)")
-    ap.add_argument("--spread", default="", help="indici degli spread da rendere come immagini, separati da virgole")
-    ap.add_argument("--solo-bozza", action="store_true", help="costruisce l'album e rende tutti gli spread in piccolo, per sceglierli")
+    ap.add_argument("scene", nargs="*", help=f"scene da rifare (di serie tutte): {', '.join(SCENE)}")
     a = ap.parse_args(argv)
-    if not os.path.isdir(a.foto) or not any(f.endswith(".jpg") for f in os.listdir(a.foto)):
-        sys.exit(f"mancano le foto dimostrative in {a.foto}: rigenerale con «uv run marketing/demo/scarica_demo.py»")
-    lavoro = os.path.abspath(a.lavoro)
-    if os.path.commonpath([lavoro, RADICE]) == RADICE: sys.exit("la cartella di lavoro deve stare fuori dal repository")
-    prepara_ambiente(lavoro)
-    sys.path.insert(0, os.path.join(RADICE, "src"))
-    progetto = costruisci_album(lavoro, a.foto)
-    E, srv = avvia_editor(progetto)
-    try:
-        st = bozza(E)
-        n = len(st["spreads"])
-        print(f"album: {progetto} · {n} spread · {len(st['photos'])} foto")
-        if a.solo_bozza:
-            prove = os.path.join(lavoro, "prove"); os.makedirs(prove, exist_ok=True)
-            for s in range(n):
-                with open(os.path.join(prove, f"spread-{s:02d}.jpg"), "wb") as f: f.write(E.spread_jpg(s, 0.12))
-            print("spread in piccolo:", prove)
-            return 0
-        eroe = a.eroe if a.eroe is not None else min(3, n - 1)
-        dett = a.dettaglio if a.dettaglio is not None else min(5, n - 1)
-        url = f"http://127.0.0.1:{srv.server_address[1]}/"
-        fatte = schermate(url, a.uscita, eroe, dett)
-        quali = [int(x) for x in a.spread.split(",") if x.strip()] if a.spread else []
-        if quali:
-            for p in spread_renderizzati(E, a.uscita, quali): fatte[os.path.basename(p)] = p
-        with open(os.path.join(a.uscita, "schermate.json"), "w", encoding="utf-8") as f:
-            json.dump(dict(creato=time.strftime("%Y-%m-%d %H:%M"), progetto=progetto, spread=n, eroe=eroe, dettaglio=dett, spread_renderizzati=quali, file=sorted(fatte)), f, ensure_ascii=False, indent=2)
-        for k, v in sorted(fatte.items()): print(k, "→", v)
-    finally:
-        srv.shutdown(); srv.server_close()
-        try: E.ferma()
-        except Exception: pass
+    os.makedirs(a.uscita, exist_ok=True)
+    for lingua in (("it", "en") if a.lingua == "tutte" else (a.lingua,)):
+        print(f"lingua {lingua}:", flush=True)
+        # ogni lingua in un processo a parte: editor e schermata tengono uno stato globale (progetto, lingua)
+        if a.lingua == "tutte":
+            import subprocess
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), "--lingua", lingua, "--uscita", a.uscita, *a.scene])
+            if r.returncode: return r.returncode
+        else:
+            una_lingua(lingua, a.uscita, set(a.scene))
+    with open(os.path.join(a.uscita, "schermate.json"), "w", encoding="utf-8") as f:
+        json.dump(dict(creato=time.strftime("%Y-%m-%d %H:%M"), finestra=FINESTRA, densita=DENSITA, scene=list(SCENE)), f, ensure_ascii=False, indent=2)
     return 0
 
 

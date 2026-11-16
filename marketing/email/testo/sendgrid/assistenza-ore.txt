@@ -8,14 +8,14 @@ Richiesta: {{{numero_richiesta}}}
 COME PRENOTARE
 Rispondi a questa email e scrivi:
 01 due o tre orari che ti vanno bene;
-02 l’argomento: installazione, primo album, modelli, preset del laboratorio, o altro;
+02 l’argomento: installazione, primo album, modelli, cataloghi dei laboratori, o altro;
 03 il sistema che usi: Mac, Windows o Linux.
 
 Ti mandiamo il link della videochiamata. Se serve lavorare sul tuo computer da remoto, ti spieghiamo come: il collegamento lo avvii tu e lo chiudi quando vuoi.
 
 DA SAPERE
 - Il tempo si conta a blocchi di 30 minuti. Alla fine di ogni sessione ti scriviamo quante ore restano.
-- I difetti del programma non consumano ore. Se il problema è un nostro errore, la correzione è gratuita, come il manuale e le guide video.
+- I difetti del programma non consumano ore. Se il problema è un nostro errore, la correzione è gratuita, come il manuale.
 
 A presto,
 {{{firma_nome}}}

@@ -45,10 +45,10 @@ Categoria: «Software». Pulsanti di contatto: solo email (`{{email_supporto}}`)
 |---|---|---|
 | Foto tue | La prova del wi‑fi, le tre promesse, dove finiscono le foto | U02, U06, U35 |
 | Prezzi | Le tre licenze, prima con i prezzi di lancio e dal 24 aprile con il listino | U15, U22, U44 |
-| Prova | Com’è fatta la prova, come si installa | U16, U25 |
+| Prova | Com’è fatta la prova, il primo album | U16, U25 |
 | Assistenza | Le ore con una persona, che cosa resta gratis | U23, U43 |
 | Mestiere | I consigli di bottega numerati | U07, U28, U36, U41 |
-| Laboratori | Misure del laboratorio, preset, edizione per laboratori | U24, U32 |
+| Laboratori | Misure del laboratorio, cataloghi, edizione per laboratori (in arrivo) | U24, U32 |
 
 Testi delle copertine «In evidenza» (uno per riga, nello stesso ordine):
 
@@ -90,7 +90,7 @@ Descrizione del canale in italiano (massimo 1000 caratteri):
 ```text
 Impaginatore è un programma per impaginare album di matrimonio sul tuo computer, scritto da un fotografo per il suo lavoro.
 
-Qui trovi le guide: come si installa, come si imposta un album con le misure del tuo laboratorio, come si esporta in JPG, PDF e PSD a livelli. Video brevi, senza musica di sottofondo e senza fretta.
+Qui trovi le guide: come si imposta un album con le misure del tuo laboratorio, come si esporta in JPG, PDF e PSD a livelli. Video brevi, senza musica di sottofondo e senza fretta.
 
 Tre cose che non cambiano: le foto restano sul tuo computer, la licenza si paga una volta, le misure sono in millimetri.
 
@@ -101,14 +101,14 @@ Domande e segnalazioni: {{email_supporto}}
 ```text
 Impaginatore is wedding album design software that runs on your computer, written by a photographer for his own work.
 
-Here you will find the guides: how to install it, how to set up an album with your lab’s measurements, how to export JPG, PDF and layered PSD. Short videos, no background music, no rush.
+Here you will find the guides: how to set up an album with your lab’s measurements, how to export JPG, PDF and layered PSD. Short videos, no background music, no rush.
 
 Three things that don’t change: your photos stay on your computer, the licence is paid once, measurements are in millimetres.
 
 Questions and reports: {{email_supporto}}
 ```
 
-Playlist iniziali: «Installare Impaginatore», «Il primo album», «Consigli di bottega», «Brevi» (gli Shorts).
+Playlist iniziali: «Il primo album», «Consigli di bottega», «Brevi» (gli Shorts).
 
 ## LinkedIn
 
@@ -120,23 +120,23 @@ Slogan (tagline, massimo 120 caratteri):
 
 <!-- campo canale=linkedin tipo=tagline lingua=it -->
 ```text
-Software per impaginare album fotografici sul computer del fotografo. Licenza perpetua, edizioni per i laboratori.
+Software per impaginare album fotografici sul computer del fotografo. Licenza perpetua. Presto, edizioni per laboratori.
 ```
 
 <!-- campo canale=linkedin tipo=tagline lingua=en -->
 ```text
-Photo album design software that runs on the photographer’s computer. Perpetual licence, editions for print labs.
+Photo album design software that runs on the photographer’s computer. Perpetual licence. Lab editions coming.
 ```
 
 Descrizione (massimo 2000 caratteri):
 
 <!-- campo canale=linkedin tipo=descrizione lingua=it -->
 ```text
-Impaginatore è un programma desktop per impaginare album fotografici, nato dal lavoro di un fotografo di matrimoni. Funziona su Mac, Windows e Linux.
+Impaginatore è un programma desktop per impaginare album fotografici, nato dal lavoro di un fotografo di matrimoni. È pensato per Mac, Windows e Linux.
 
 Per i fotografi: impaginazione sul proprio computer, con le foto nelle proprie cartelle; nessuna funzione le carica in rete. Misure in millimetri con i valori del laboratorio, export in JPG, PDF e PSD a livelli. La licenza si paga una volta e non scade.
 
-Per i laboratori di stampa: un’edizione con il catalogo dei vostri formati e il vostro marchio, perché i file arrivino già con le misure giuste.
+Per i laboratori di stampa: stiamo preparando un’edizione con il catalogo dei vostri formati e il vostro marchio, perché i file arrivino già con le misure giuste.
 
 Per chi fa formazione: licenze per mostrare il programma ai corsisti.
 
@@ -145,7 +145,7 @@ Contatti: {{email_supporto}}
 
 <!-- campo canale=linkedin tipo=descrizione lingua=en -->
 ```text
-Impaginatore is desktop software for laying out photo albums, born from the work of a wedding photographer. It runs on Mac, Windows and Linux.
+Impaginatore is desktop software for laying out photo albums, born from the work of a wedding photographer. It is designed for Mac, Windows and Linux.
 
 For photographers: layout on your own computer, with the photos in your own folders; no feature uploads them. Measurements in millimetres with your lab’s values, export to JPG, PDF and layered PSD. The licence is paid once and doesn’t expire.
 

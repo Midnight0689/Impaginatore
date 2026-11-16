@@ -6,7 +6,7 @@
   <mj-body>
     <!-- Versione inglese di aggiornamento.mjml. Nuova versione, ai clienti. Novità e correzioni sono dati d'invio (--dati): tre novità, ognuna con
          una misura o un fatto verificabile, mai aggettivi. -->
-    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">{{novita_1_titolo}}, {{novita_2_titolo}} and more. Included in your licence: the app offers it to you.</div></mj-raw>
+    <mj-raw><div style="display:none;max-height:0;max-width:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;opacity:0;">{{novita_1_titolo}}, {{novita_2_titolo}} and more. Included in your licence.</div></mj-raw>
     <mj-include path="./_base/testata.mjml" />
 
     <mj-section padding="40px 40px 0">
@@ -54,7 +54,7 @@
       <mj-column>
         <mj-text mj-class="etichetta">HOW TO UPDATE</mj-text>
         <mj-spacer height="8px" />
-        <mj-text>Impaginatore offers the update next time you open it. Projects, layouts and licence stay as they are. If it doesn’t appear, the new version is also on the <a class="lnk" href="{{link_installa}}">Install page</a>.</mj-text>
+        <mj-text>The steps to install the new version are on the <a class="lnk" href="{{link_installa}}">Install page</a>. Projects, layouts and licence stay as they are.</mj-text>
         <mj-spacer height="24px" />
         <mj-button href="{{link_note_versione}}">Read what’s new</mj-button>
         <mj-spacer height="32px" />
