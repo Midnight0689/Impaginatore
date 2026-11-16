@@ -2,7 +2,7 @@
 
 Questo capitolo è per chi prova Impaginatore nella **beta privata**, con la chiave che ti abbiamo mandato. Se hai una
 licenza normale o la prova gratuita, il programma non ti chiede niente di quello che leggi qui e non raccoglie
-statistiche.
+statistiche (se le avevi accese durante la beta, vedi «Dopo la beta», in fondo).
 
 ## La licenza della beta
 
@@ -71,3 +71,9 @@ La apri dal menu «⋯» della schermata Album. Dentro trovi:
 
 Per cancellare i dati che ci hai già mandato, scrivi all'assistenza indicando il numero di serie o il codice
 dell'installazione.
+
+## Dopo la beta
+
+La tua scelta non dipende dalla licenza. Se hai detto sì, il programma continua ad annotare anche dopo la fine della beta
+o con una licenza normale, senza il numero di serie, finché non spegni l'interruttore nella finestra «Statistiche
+d'uso»: la finestra resta nel menu «⋯» finché c'è una scelta o un registro da vedere.
