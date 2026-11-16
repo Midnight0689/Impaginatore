@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from aiuti import FOTO_SCENARIO, crea_foto, riduci
+from aiuti import FOTO_SCENARIO, crea_foto, progetto_152, riduci
 
 from impaginatore import formato, formato_1x, validazione
 from impaginatore.motore import album, album_libere
@@ -467,7 +467,6 @@ def test_stesse_operazioni_stesso_risultato_della_152(home_srv, apri_editor, tmp
     nuovo = formato_1x.testo_spec(formato.carica(proj), "Parità àè", album.name).split("\n")[1:]
     with open(os.path.join(P152, "spec.py"), encoding="utf-8") as fh: vecchio = fh.read().split("\n")[1:]
     assert _senza_misure_testi(nuovo) == _senza_misure_testi(vecchio)
-    with open(os.path.join(P152, "progetto.json"), encoding="utf-8") as fh: atteso = json.loads(fh.read().replace("{PROGETTO}", proj.replace("\\", "/")))
-    assert formato.leggi_json(os.path.join(proj, "progetto.json")) == atteso
+    assert formato.leggi_json(os.path.join(proj, "progetto.json")) == progetto_152(proj)
     c.E.inizializza(proj)
     with open(os.path.join(P152, "stato_ridotto.json"), encoding="utf-8") as fh: assert riduci(c.get("/api/state")) == json.load(fh)

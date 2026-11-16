@@ -16,6 +16,15 @@ FOTO_SCENARIO = [("H01", 900, 600, "2026:05:23 10:00:01"), ("H02", 900, 600, "20
 
 
 DATA_FILE = time.mktime((2026, 6, 1, 12, 0, 0, 0, 0, -1))     # data dei file sintetici (ora locale): è la data delle foto senza EXIF
+P152 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dati", "progetto_152")
+
+
+def progetto_152(cartella):
+    """progetto.json dello scenario 1.5.2 (tests/dati/progetto_152) per l'album nella cartella data, con i percorsi
+    «{PROGETTO}/Foto» e «{PROGETTO}/PSD» come li scrive il programma sul sistema che esegue i test (os.path.join: su
+    Windows con «\\»)"""
+    with open(os.path.join(P152, "progetto.json"), encoding="utf-8") as f: cfg = json.load(f)
+    return {k: os.path.join(str(cartella), *v.split("/")[1:]) if isinstance(v, str) and v.startswith("{PROGETTO}/") else v for k, v in cfg.items()}
 
 
 def crea_foto(cartella, elenco=FOTO_SCENARIO, orientamento=None, estensione=".jpg"):

@@ -1,7 +1,6 @@
 """Fixture comuni. Ogni test gira con una casa finta: niente di quello che fa tocca la cartella dell'utente, nessuna
 finestra di sistema si apre (IMPAGINATORE_DIALOGHI=nessuno), né quella del programma (IMPAGINATORE_FINESTRA=no), nessun
 aggiornamento parte, nessun riavvio vero."""
-import json
 import os
 import shutil
 import sys
@@ -10,7 +9,7 @@ import threading
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from aiuti import Client, crea_foto  # noqa: E402
+from aiuti import Client, crea_foto, progetto_152  # noqa: E402
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATI = os.path.join(RADICE, "tests", "dati")
@@ -113,8 +112,7 @@ def prj(tmp_path):
     from impaginatore import formato
     p = tmp_path / "Album àè"; crea_foto(str(p / "Foto"))
     shutil.copy(os.path.join(DATI, "progetto_152", "spec.py"), p / "spec.py")
-    with open(os.path.join(DATI, "progetto_152", "progetto.json"), encoding="utf-8") as f: cfg = json.loads(f.read().replace("{PROGETTO}", str(p).replace("\\", "/")))
-    formato.scrivi_json(str(p / "progetto.json"), cfg, indent=2, ensure_ascii=False)
+    formato.scrivi_json(str(p / "progetto.json"), progetto_152(p), indent=2, ensure_ascii=False)
     return str(p)
 
 
